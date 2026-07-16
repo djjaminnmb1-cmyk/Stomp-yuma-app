@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "976347017092",
+    "project_id": "stompin-ground-yuma",
+    "storage_bucket": "stompin-ground-yuma.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976347017092:android:57db71d2340994f7a277d1",
+        "android_client_info": {
+          "package_name": "com.stompinyuma.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAq6TMApIQHNM0_6rqupfBE2GhhNcSBv3Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
