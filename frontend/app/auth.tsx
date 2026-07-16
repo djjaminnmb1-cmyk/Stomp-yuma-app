@@ -136,7 +136,7 @@ export default function AuthScreen() {
               style={StyleSheet.absoluteFillObject as any}
             />
             <View style={styles.heroContent}>
-              <BrandLogo variant="light" size="md" showTagline />
+              <BrandLogo variant="light" size="lg" showTagline />
             </View>
           </View>
 
@@ -241,7 +241,7 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  hero: { height: 320, justifyContent: "flex-end" },
+  hero: { height: 400, justifyContent: "flex-end" },
   heroContent: { padding: spacing.xl, alignItems: "center" },
   form: { padding: spacing.xl, gap: spacing.md },
   tabs: {

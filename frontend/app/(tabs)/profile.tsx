@@ -117,6 +117,20 @@ export default function Profile() {
           ) : null}
 
           <Pressable
+            testID="profile-suggest-row"
+            style={styles.row}
+            onPress={() => router.push("/suggest")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="bulb" size={22} color={colors.brandTertiary} />
+              <Text style={styles.rowText}>
+                {user?.is_admin ? "Review Suggestions" : "Suggest a Dance to Erin"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
             testID="logout-btn"
             style={styles.row}
             onPress={async () => {

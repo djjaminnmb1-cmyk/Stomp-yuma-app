@@ -88,6 +88,15 @@ class TrackingOut(BaseModel):
     updated_at: str
 
 
+class SuggestionIn(BaseModel):
+    dance_name: str
+    song: Optional[str] = ""
+    artist: Optional[str] = ""
+    difficulty: Optional[str] = ""
+    youtube_url: Optional[str] = ""
+    notes: Optional[str] = ""
+
+
 # ---------------- Helpers ----------------
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -372,6 +381,69 @@ async def delete_tracking(dance_id: str, user: dict = Depends(get_current_user))
     return {"ok": True}
 
 
+# ---------------- Suggestions Routes ----------------
+@api_router.post("/suggestions")
+async def submit_suggestion(inp: SuggestionIn, user: dict = Depends(get_current_user)):
+    if not inp.dance_name or not inp.dance_name.strip():
+        raise HTTPException(400, "Dance name is required")
+    doc = {
+        "id": f"sug_{uuid.uuid4().hex[:10]}",
+        "user_id": user["user_id"],
+        "user_name": user.get("name", ""),
+        "user_email": user.get("email", ""),
+        "dance_name": inp.dance_name.strip(),
+        "song": (inp.song or "").strip(),
+        "artist": (inp.artist or "").strip(),
+        "difficulty": (inp.difficulty or "").strip(),
+        "youtube_url": (inp.youtube_url or "").strip(),
+        "notes": (inp.notes or "").strip(),
+        "status": "pending",
+        "created_at": now_iso(),
+    }
+    await db.suggestions.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.get("/suggestions/mine")
+async def my_suggestions(user: dict = Depends(get_current_user)):
+    docs = await db.suggestions.find(
+        {"user_id": user["user_id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    return docs
+
+
+@api_router.get("/suggestions")
+async def list_suggestions(admin: dict = Depends(require_admin)):
+    docs = await db.suggestions.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return docs
+
+
+@api_router.put("/suggestions/{sug_id}/status")
+async def update_suggestion_status(
+    sug_id: str, status: str, admin: dict = Depends(require_admin)
+):
+    if status not in ("pending", "reviewed", "queued", "declined"):
+        raise HTTPException(400, "Invalid status")
+    await db.suggestions.update_one({"id": sug_id}, {"$set": {"status": status}})
+    d = await db.suggestions.find_one({"id": sug_id}, {"_id": 0})
+    if not d:
+        raise HTTPException(404, "Not found")
+    return d
+
+
+@api_router.delete("/suggestions/{sug_id}")
+async def delete_suggestion(sug_id: str, user: dict = Depends(get_current_user)):
+    # Owner can delete their own; admin can delete any
+    doc = await db.suggestions.find_one({"id": sug_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Not found")
+    if doc["user_id"] != user["user_id"] and not user.get("is_admin"):
+        raise HTTPException(403, "Not allowed")
+    await db.suggestions.delete_one({"id": sug_id})
+    return {"ok": True}
+
+
 # ---------------- Venue Info ----------------
 @api_router.get("/venue")
 async def venue_info():
@@ -382,6 +454,10 @@ async def venue_info():
         "about": ("Stompin' Ground Yuma is a friendly community where dancers of every "
                   "age and skill level come together to learn, laugh, and boot-scoot the "
                   "night away. Grab your boots and let's dance."),
+        "instructor": {
+            "name": "Erin Brown",
+            "role": "Line Dance Instructor",
+        },
         "contact": {
             "phone": "",
             "email": "",

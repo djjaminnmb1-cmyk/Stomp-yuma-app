@@ -29,7 +29,7 @@ export default function Home() {
             style={StyleSheet.absoluteFillObject as any}
           />
           <View style={styles.heroContent}>
-            <BrandLogo variant="light" size="md" />
+            <BrandLogo variant="light" size="lg" />
             <Text style={styles.tagline}>
               Yuma, Arizona's home for country line dancing — all ages welcome.
             </Text>
@@ -59,6 +59,23 @@ export default function Home() {
               <Text style={styles.link}>See all</Text>
             </Pressable>
           </View>
+
+          <Pressable
+            testID="home-suggest-cta"
+            onPress={() => router.push("/suggest")}
+            style={styles.suggestCard}
+          >
+            <View style={styles.suggestIcon}>
+              <Ionicons name="bulb" size={22} color={colors.brandPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.suggestTitle}>Suggest a Dance for Erin</Text>
+              <Text style={styles.suggestSub}>
+                Got an idea? Send it to instructor Erin Brown.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
           {recent.map((d) => (
             <Pressable
               key={d.id}
@@ -111,7 +128,7 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   c: { flex: 1, backgroundColor: colors.surface },
-  hero: { height: 340, justifyContent: "flex-end" },
+  hero: { height: 420, justifyContent: "flex-end" },
   heroContent: { padding: spacing.xl, alignItems: "center", gap: spacing.md },
   tag: { color: colors.onSurfaceInverse, opacity: 0.8, letterSpacing: 2, fontSize: 11, fontWeight: "700" },
   brand: { color: colors.onSurfaceInverse, fontFamily: "serif", fontSize: 22, fontStyle: "italic", opacity: 0.95 },
@@ -165,4 +182,26 @@ const styles = StyleSheet.create({
   rowIcons: { flexDirection: "row", justifyContent: "space-around", marginTop: spacing.md },
   iconItem: { alignItems: "center", gap: 6 },
   iconLabel: { fontSize: 12, color: colors.onSurface, fontWeight: "600" },
+  suggestCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    backgroundColor: colors.brandTertiary + "22",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandTertiary,
+  },
+  suggestIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.brandTertiary,
+  },
+  suggestTitle: { fontSize: 15, fontWeight: "700", color: colors.onSurface },
+  suggestSub: { fontSize: 12, color: colors.onSurfaceSecondary, marginTop: 2 },
 });

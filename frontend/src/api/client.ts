@@ -39,6 +39,21 @@ export type User = {
   auth_provider: string;
 };
 
+export type Suggestion = {
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  dance_name: string;
+  song: string;
+  artist: string;
+  difficulty: string;
+  youtube_url: string;
+  notes: string;
+  status: string;
+  created_at: string;
+};
+
 async function req<T>(
   path: string,
   opts: RequestInit = {},
@@ -113,4 +128,27 @@ export const api = {
     req<{ ok: boolean }>(`/tracking/${dance_id}`, { method: "DELETE" }, token),
 
   venue: () => req<any>("/venue"),
+
+  submitSuggestion: (
+    body: {
+      dance_name: string;
+      song?: string;
+      artist?: string;
+      difficulty?: string;
+      youtube_url?: string;
+      notes?: string;
+    },
+    token: string
+  ) =>
+    req<Suggestion>("/suggestions", { method: "POST", body: JSON.stringify(body) }, token),
+  mySuggestions: (token: string) => req<Suggestion[]>("/suggestions/mine", {}, token),
+  allSuggestions: (token: string) => req<Suggestion[]>("/suggestions", {}, token),
+  updateSuggestionStatus: (id: string, status: string, token: string) =>
+    req<Suggestion>(
+      `/suggestions/${id}/status?status=${encodeURIComponent(status)}`,
+      { method: "PUT" },
+      token
+    ),
+  deleteSuggestion: (id: string, token: string) =>
+    req<{ ok: boolean }>(`/suggestions/${id}`, { method: "DELETE" }, token),
 };
