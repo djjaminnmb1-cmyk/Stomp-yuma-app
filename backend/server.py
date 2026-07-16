@@ -31,6 +31,39 @@ ADMIN_EMAILS = {
     if e.strip()
 }
 
+# ---------------- Push notifications (Emergent relay) ----------------
+PUSH_BASE_URL = "https://integrations.emergentagent.com"
+PUSH_KEY = os.environ.get("EMERGENT_PUSH_KEY", "placeholder")
+_push_client = httpx.AsyncClient(
+    base_url=PUSH_BASE_URL,
+    headers={"X-Push-Key": PUSH_KEY},
+    timeout=10.0,
+)
+
+
+async def send_push(recipients: List[str], data: dict, idempotency_key: Optional[str] = None) -> None:
+    if not recipients:
+        return
+    if "title" not in data or "message" not in data:
+        raise ValueError("data must include title and message")
+    # Chunk to 100
+    for i in range(0, len(recipients), 100):
+        chunk = recipients[i:i + 100]
+        payload: dict = {"recipients": chunk, "data": data}
+        if idempotency_key:
+            payload["$idempotency_key"] = f"{idempotency_key}-{i}"
+        resp = await _push_client.post("/api/v1/push/trigger", json=payload)
+        if resp.status_code == 401:
+            logger.warning("EMERGENT_PUSH_KEY missing or invalid — skipping push")
+            return
+        if resp.status_code >= 500:
+            logger.warning(f"Push provider unavailable: {resp.status_code}")
+            return
+        try:
+            resp.raise_for_status()
+        except Exception as e:
+            logger.warning(f"Push trigger error: {e}")
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
@@ -104,6 +137,12 @@ class ClassSessionIn(BaseModel):
     session_label: Optional[str] = ""  # e.g. "Friday Night", "Beginner Class"
     dance_ids: List[str] = []
     notes: Optional[str] = ""
+
+
+class RegisterPushBody(BaseModel):
+    user_id: str
+    platform: str  # "android" | "ios"
+    device_token: str
 
 
 class SuggestionIn(BaseModel):
@@ -529,6 +568,29 @@ async def create_class(inp: ClassSessionIn, instructor: dict = Depends(require_i
     }
     await db.classes.insert_one(doc)
     doc.pop("_id", None)
+
+    # Fire push to all registered users if this is an upcoming class
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if inp.date >= today:
+        try:
+            all_users = await db.users.find({}, {"_id": 0, "user_id": 1}).to_list(5000)
+            recipients = [u["user_id"] for u in all_users]
+            label = doc["session_label"] or "New class"
+            dance_names = ", ".join([r["name"] for r in resolved[:3]])
+            more = f" +{len(resolved) - 3} more" if len(resolved) > 3 else ""
+            await send_push(
+                recipients=recipients,
+                data={
+                    "title": f"{label} · {inp.date}",
+                    "message": (f"{instructor.get('name', 'An instructor')} added a new class. "
+                                f"Dances: {dance_names}{more}"),
+                    "action_url": f"/classes",
+                },
+                idempotency_key=f"class-{doc['id']}",
+            )
+        except Exception as e:
+            logger.warning(f"Push failed (non-blocking): {e}")
+
     return doc
 
 
@@ -616,6 +678,24 @@ async def my_attendance(user: dict = Depends(get_current_user)):
     by_id = {c["id"]: c for c in classes}
     combined = [by_id[i] for i in ids if i in by_id]
     return {"class_ids": ids, "classes": combined}
+
+
+# ---------------- Push registration ----------------
+@api_router.post("/register-push", status_code=201)
+async def register_push(body: RegisterPushBody):
+    try:
+        resp = await _push_client.post(
+            "/api/v1/push/users/register", json=body.model_dump()
+        )
+    except Exception as e:
+        logger.warning(f"Push register upstream unreachable: {e}")
+        raise HTTPException(502, "Push provider unavailable")
+    if resp.status_code == 401:
+        raise HTTPException(500, "EMERGENT_PUSH_KEY missing or invalid")
+    if resp.status_code >= 500:
+        raise HTTPException(502, "Push provider unavailable")
+    resp.raise_for_status()
+    return {"status": "registered"}
 
 
 # ---------------- Venue Info ----------------
