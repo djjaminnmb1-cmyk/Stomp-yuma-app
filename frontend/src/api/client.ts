@@ -144,6 +144,28 @@ export const api = {
     req<Dance>(`/dances/${id}/publish`, { method: "PUT" }, token),
   unpublishDance: (id: string, token: string) =>
     req<Dance>(`/dances/${id}/unpublish`, { method: "PUT" }, token),
+  importDances: (
+    body: {
+      dances: Array<{
+        name: string;
+        choreographer?: string;
+        song?: string;
+        artist?: string;
+        difficulty?: string;
+        bpm?: number;
+        count?: string;
+        youtube_url?: string;
+        step_sheet?: string;
+      }>;
+      publish_all: boolean;
+    },
+    token: string
+  ) =>
+    req<{ imported: number; skipped_duplicates: number; errors: { row: number; reason: string }[] }>(
+      "/dances/import",
+      { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
 
   myTracking: (token: string) => req<Tracking[]>("/tracking/me", {}, token),
   saveTracking: (

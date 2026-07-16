@@ -115,6 +115,23 @@ class DanceIn(BaseModel):
     is_published: Optional[bool] = None  # None = keep existing / creation default
 
 
+class DanceImportRow(BaseModel):
+    name: str
+    choreographer: Optional[str] = ""
+    song: Optional[str] = ""
+    artist: Optional[str] = ""
+    difficulty: Optional[str] = "Beginner"
+    bpm: Optional[int] = None
+    count: Optional[str] = ""
+    youtube_url: Optional[str] = ""
+    step_sheet: Optional[str] = ""
+
+
+class DanceImportBody(BaseModel):
+    dances: List[DanceImportRow]
+    publish_all: bool = False
+
+
 class DanceOut(DanceIn):
     id: str
     created_at: str
@@ -399,6 +416,11 @@ async def get_dance(dance_id: str):
     return dance_to_out(d)
 
 
+def youtube_search_url(query: str) -> str:
+    q = "+".join(query.strip().split())
+    return f"https://www.youtube.com/results?search_query={q}"
+
+
 @api_router.post("/dances")
 async def create_dance(inp: DanceIn, user: dict = Depends(require_instructor)):
     doc = inp.dict()
@@ -406,12 +428,76 @@ async def create_dance(inp: DanceIn, user: dict = Depends(require_instructor)):
     doc["created_at"] = now_iso()
     doc["created_by"] = user["user_id"]
     doc["created_by_name"] = user.get("name", "")
+    if not (doc.get("youtube_url") or "").strip():
+        doc["youtube_url"] = youtube_search_url(f"{doc['name']} {doc.get('choreographer','')} line dance")
     # New dances start as DRAFT unless publisher explicitly sets is_published True
     if doc.get("is_published") is None:
         doc["is_published"] = False
     await db.dances.insert_one(doc)
     doc.pop("_id", None)
     return dance_to_out(doc)
+
+
+@api_router.post("/dances/import")
+async def import_dances(inp: DanceImportBody, user: dict = Depends(require_instructor)):
+    """Bulk import from CSV / list. Skips duplicates by name (case-insensitive)."""
+    if not inp.dances:
+        return {"imported": 0, "skipped_duplicates": 0, "errors": []}
+
+    # Fetch existing names (lowercased) in one query
+    existing_names = {
+        d["name"].lower()
+        async for d in db.dances.find({}, {"name": 1, "_id": 0})
+    }
+
+    to_insert = []
+    skipped = 0
+    errors: List[dict] = []
+    for i, row in enumerate(inp.dances):
+        name = (row.name or "").strip()
+        if not name:
+            errors.append({"row": i, "reason": "missing name"})
+            continue
+        if name.lower() in existing_names:
+            skipped += 1
+            continue
+        difficulty = (row.difficulty or "Beginner").strip().title()
+        if difficulty not in ("Beginner", "Improver", "Intermediate", "Advanced"):
+            difficulty = "Beginner"
+        chor = (row.choreographer or "").strip()
+        song = (row.song or "").strip()
+        yt = (row.youtube_url or "").strip()
+        if not yt:
+            yt = youtube_search_url(f"{name} {chor} line dance")
+        to_insert.append({
+            "id": f"dance_{uuid.uuid4().hex[:10]}",
+            "name": name,
+            "choreographer": chor,
+            "choreographer_country": "",
+            "song": song,
+            "artist": (row.artist or "").strip(),
+            "difficulty": difficulty,
+            "bpm": row.bpm,
+            "count": (row.count or "").strip(),
+            "youtube_url": yt,
+            "step_sheet": (row.step_sheet or "").strip(),
+            "step_sheet_image": "",
+            "description": "",
+            "tags": [],
+            "is_published": bool(inp.publish_all),
+            "created_by": user["user_id"],
+            "created_by_name": user.get("name", ""),
+            "created_at": now_iso(),
+        })
+        existing_names.add(name.lower())
+
+    if to_insert:
+        await db.dances.insert_many(to_insert)
+    return {
+        "imported": len(to_insert),
+        "skipped_duplicates": skipped,
+        "errors": errors,
+    }
 
 
 @api_router.put("/dances/{dance_id}")

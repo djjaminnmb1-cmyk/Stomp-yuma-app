@@ -23,6 +23,7 @@ import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { api, ClassSession, Dance, ChatMessage } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { useDraftCount } from "@/src/context/draft-count-context";
+import { parseCsv } from "@/src/lib/csv";
 
 const DIFFICULTIES = ["Beginner", "Improver", "Intermediate", "Advanced"];
 
@@ -37,6 +38,7 @@ export default function InstructorTab() {
   const [editDance, setEditDance] = useState<Dance | null>(null);
   const [newDanceOpen, setNewDanceOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!user || !token) return;
@@ -106,14 +108,24 @@ export default function InstructorTab() {
           <Text style={styles.subtitle}>Dances · Classes · Chat</Text>
         </View>
         {tab === "dances" ? (
-          <Pressable
-            testID="new-dance-btn"
-            onPress={() => setNewDanceOpen(true)}
-            style={styles.newBtn}
-          >
-            <Ionicons name="add" size={18} color={colors.onBrandPrimary} />
-            <Text style={styles.newBtnText}>New</Text>
-          </Pressable>
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <Pressable
+              testID="import-csv-btn"
+              onPress={() => setImportOpen(true)}
+              style={styles.importBtn}
+            >
+              <Ionicons name="cloud-upload" size={16} color={colors.brandPrimary} />
+              <Text style={styles.importBtnText}>CSV</Text>
+            </Pressable>
+            <Pressable
+              testID="new-dance-btn"
+              onPress={() => setNewDanceOpen(true)}
+              style={styles.newBtn}
+            >
+              <Ionicons name="add" size={18} color={colors.onBrandPrimary} />
+              <Text style={styles.newBtnText}>New</Text>
+            </Pressable>
+          </View>
         ) : null}
       </View>
 
@@ -355,6 +367,17 @@ export default function InstructorTab() {
         onClose={() => setNewDanceOpen(false)}
         onSaved={() => {
           setNewDanceOpen(false);
+          load();
+          refreshDrafts();
+        }}
+        token={token || ""}
+      />
+
+      <ImportCsvModal
+        visible={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => {
+          setImportOpen(false);
           load();
           refreshDrafts();
         }}
@@ -833,6 +856,22 @@ function NewDanceModal({
             <TextInput placeholder="BPM" keyboardType="number-pad" placeholderTextColor={colors.muted} value={bpm} onChangeText={setBpm} style={styles.input} />
             <TextInput placeholder="Count (e.g. 32 count, 4 wall)" placeholderTextColor={colors.muted} value={count} onChangeText={setCount} style={styles.input} />
             <TextInput placeholder="YouTube URL" placeholderTextColor={colors.muted} value={yt} onChangeText={setYt} autoCapitalize="none" style={styles.input} />
+            <Pressable
+              testID="nd-yt-autofill"
+              onPress={() => {
+                if (!name.trim()) {
+                  Alert.alert("Enter a name first", "Type the dance name so I can build the search.");
+                  return;
+                }
+                const q = [name, chor, "line dance"].filter(Boolean).join(" ").trim();
+                const url = `https://www.youtube.com/results?search_query=${q.split(/\s+/).join("+")}`;
+                setYt(url);
+              }}
+              style={styles.ytAutoBtn}
+            >
+              <Ionicons name="logo-youtube" size={14} color="#c4302b" />
+              <Text style={styles.ytAutoText}>Auto-fill YouTube search</Text>
+            </Pressable>
 
             <Text style={styles.miniLabel}>Step sheet image</Text>
             {image ? (
@@ -908,6 +947,195 @@ function NewDanceModal({
   );
 }
 
+// ---------------- Import CSV modal ----------------
+function ImportCsvModal({
+  visible,
+  onClose,
+  onImported,
+  token,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onImported: () => void;
+  token: string;
+}) {
+  const [csv, setCsv] = useState("");
+  const [publishAll, setPublishAll] = useState(false);
+  const [parsedCount, setParsedCount] = useState(0);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!csv.trim()) {
+      setParsedCount(0);
+      return;
+    }
+    try {
+      const rows = parseCsv(csv);
+      setParsedCount(rows.length);
+    } catch {
+      setParsedCount(0);
+    }
+  }, [csv]);
+
+  const submit = async () => {
+    const rows = parseCsv(csv);
+    if (rows.length === 0) {
+      Alert.alert("Nothing to import", "Paste a CSV with a header row + at least one data row.");
+      return;
+    }
+    const dances = rows.map((r) => ({
+      name: r.name || r.dance || "",
+      choreographer: r.choreographer || r.chor || "",
+      song: r.song || "",
+      artist: r.artist || "",
+      difficulty: r.difficulty || r.level || "Beginner",
+      bpm: r.bpm ? parseInt(r.bpm) || undefined : undefined,
+      count: r.count || r.counts || "",
+      youtube_url: r.youtube_url || r.youtube || r.url || "",
+      step_sheet: r.step_sheet || r.steps || r.notation || "",
+    })).filter((d) => d.name.trim().length > 0);
+
+    if (dances.length === 0) {
+      Alert.alert("Missing names", "Every row needs a 'name' column with a value.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await api.importDances({ dances, publish_all: publishAll }, token);
+      Alert.alert(
+        "Import complete",
+        `Added ${res.imported} dance(s).\nSkipped ${res.skipped_duplicates} duplicate(s).${res.errors.length ? `\n${res.errors.length} row error(s).` : ""}`
+      );
+      setCsv("");
+      setPublishAll(false);
+      onImported();
+    } catch (e: any) {
+      Alert.alert("Import failed", e?.message || "Could not import");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const loadSample = () => {
+    setCsv(
+      "name,choreographer,song,artist,difficulty,bpm,count,youtube_url,step_sheet\n" +
+        'Sample Dance A,Erin Brown,Some Country Song,Artist A,Beginner,120,"32 count, 4 wall",,\n' +
+        'Sample Dance B,Rob Fowler,Another Track,Artist B,Improver,128,"48 count, 4 wall",,"1-8 Grapevine right..."\n'
+    );
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.modalTitle}>Import from CSV</Text>
+            <Text style={styles.modalSub}>Bulk-add dances to the library</Text>
+          </View>
+          <Pressable onPress={onClose} testID="close-import">
+            <Ionicons name="close" size={26} color={colors.onSurface} />
+          </Pressable>
+        </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.legend}>
+              <Ionicons name="information-circle" size={16} color={colors.brandSecondary} />
+              <Text style={styles.legendText}>
+                Paste CSV text with a header row. Recognized columns:{" "}
+                <Text style={{ fontWeight: "700" }}>
+                  name, choreographer, song, artist, difficulty, bpm, count, youtube_url, step_sheet
+                </Text>
+                . Only <Text style={{ fontWeight: "700" }}>name</Text> is required. Duplicates (by name) are skipped.
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: spacing.sm }}>
+              <Pressable
+                testID="csv-load-sample"
+                onPress={loadSample}
+                style={[styles.importBtn, { flex: 1, justifyContent: "center" }]}
+              >
+                <Ionicons name="clipboard-outline" size={14} color={colors.brandPrimary} />
+                <Text style={styles.importBtnText}>Load sample</Text>
+              </Pressable>
+              <Pressable
+                testID="csv-clear"
+                onPress={() => setCsv("")}
+                style={[styles.importBtn, { flex: 1, justifyContent: "center" }]}
+              >
+                <Ionicons name="trash-outline" size={14} color={colors.brandPrimary} />
+                <Text style={styles.importBtnText}>Clear</Text>
+              </Pressable>
+            </View>
+
+            <TextInput
+              testID="csv-input"
+              value={csv}
+              onChangeText={setCsv}
+              multiline
+              placeholder="name,choreographer,song,...\nDance 1,Erin,...,..."
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={[styles.editArea, { minHeight: 260 }]}
+            />
+
+            <Text style={styles.parsedCount}>
+              {parsedCount > 0
+                ? `Detected ${parsedCount} row${parsedCount === 1 ? "" : "s"}`
+                : "Paste CSV to see a row count"}
+            </Text>
+
+            <Pressable
+              testID="csv-publish-toggle"
+              onPress={() => setPublishAll((v) => !v)}
+              style={styles.publishToggle}
+            >
+              <Ionicons
+                name={publishAll ? "checkbox" : "square-outline"}
+                size={22}
+                color={publishAll ? colors.brandPrimary : colors.muted}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.publishToggleTitle}>
+                  Publish everything immediately
+                </Text>
+                <Text style={styles.publishToggleSub}>
+                  {publishAll
+                    ? "All imported dances will appear in the public library."
+                    : "Save all as drafts — review then publish individually."}
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              testID="csv-import-submit"
+              onPress={submit}
+              disabled={busy || parsedCount === 0}
+              style={[styles.saveBtn, (busy || parsedCount === 0) && { opacity: 0.5 }]}
+            >
+              {busy ? (
+                <ActivityIndicator color={colors.onBrandPrimary} />
+              ) : (
+                <Text style={styles.saveBtnText}>
+                  Import {parsedCount > 0 ? `${parsedCount} dance${parsedCount === 1 ? "" : "s"}` : ""}
+                </Text>
+              )}
+            </Pressable>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   c: { flex: 1, backgroundColor: colors.surface },
   headerBar: {
@@ -931,6 +1159,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   newBtnText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 12 },
+  importBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+  },
+  importBtnText: { color: colors.brandPrimary, fontWeight: "700", fontSize: 12 },
   tabs: {
     flexDirection: "row",
     padding: 4,
@@ -1137,6 +1376,25 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   saveBtnText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 16 },
+  ytAutoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceSecondary,
+    marginTop: -6,
+  },
+  ytAutoText: { color: colors.onSurface, fontSize: 12, fontWeight: "600" },
+  parsedCount: {
+    color: colors.muted,
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: -4,
+  },
   publishToggle: {
     flexDirection: "row",
     alignItems: "center",
