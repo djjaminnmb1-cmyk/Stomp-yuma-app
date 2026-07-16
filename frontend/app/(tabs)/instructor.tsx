@@ -19,6 +19,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { api, ClassSession, Dance, ChatMessage } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
@@ -1025,6 +1027,37 @@ function ImportCsvModal({
     );
   };
 
+  const pickFile = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ["text/csv", "text/plain", "application/csv", "application/vnd.ms-excel", "*/*"],
+        multiple: false,
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled || !res.assets?.[0]?.uri) return;
+
+      const asset = res.assets[0];
+      let content = "";
+
+      if (Platform.OS === "web") {
+        // On web the picker returns a File object accessible via fetch(uri)
+        const r = await fetch(asset.uri);
+        content = await r.text();
+      } else {
+        content = await FileSystem.readAsStringAsync(asset.uri, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+      }
+      if (!content.trim()) {
+        Alert.alert("Empty file", "The selected file has no content.");
+        return;
+      }
+      setCsv(content);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Could not read file");
+    }
+  };
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
@@ -1058,20 +1091,27 @@ function ImportCsvModal({
 
             <View style={{ flexDirection: "row", gap: spacing.sm }}>
               <Pressable
+                testID="csv-pick-file"
+                onPress={pickFile}
+                style={[styles.importBtn, { flex: 1, justifyContent: "center", backgroundColor: colors.brandPrimary + "15" }]}
+              >
+                <Ionicons name="document-attach-outline" size={14} color={colors.brandPrimary} />
+                <Text style={styles.importBtnText}>Choose CSV file</Text>
+              </Pressable>
+              <Pressable
                 testID="csv-load-sample"
                 onPress={loadSample}
                 style={[styles.importBtn, { flex: 1, justifyContent: "center" }]}
               >
                 <Ionicons name="clipboard-outline" size={14} color={colors.brandPrimary} />
-                <Text style={styles.importBtnText}>Load sample</Text>
+                <Text style={styles.importBtnText}>Sample</Text>
               </Pressable>
               <Pressable
                 testID="csv-clear"
                 onPress={() => setCsv("")}
-                style={[styles.importBtn, { flex: 1, justifyContent: "center" }]}
+                style={[styles.importBtn, { justifyContent: "center", paddingHorizontal: 14 }]}
               >
                 <Ionicons name="trash-outline" size={14} color={colors.brandPrimary} />
-                <Text style={styles.importBtnText}>Clear</Text>
               </Pressable>
             </View>
 
