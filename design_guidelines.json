@@ -1,0 +1,156 @@
+{
+  "app_name": "Stompin' Ground Yuma",
+  "personality": "8 Hand-Drawn / Journal LIGHT with 3 Editorial structure",
+  "personality_one_liner": "An authentic, warm, and welcoming country line dance library that feels like weathered leather, barn wood, and desert sunsets.",
+  "color": {
+    "surface": "#FDFBF7",
+    "onSurface": "#2B1D16",
+    "surfaceSecondary": "#F4EFE6",
+    "onSurfaceSecondary": "#4A3528",
+    "surfaceTertiary": "#E8DFD1",
+    "onSurfaceTertiary": "#3E2B1F",
+    "surfaceInverse": "#2B1D16",
+    "onSurfaceInverse": "#FDFBF7",
+    "brand": "#8C3A35",
+    "brandPrimary": "#8C3A35",
+    "onBrandPrimary": "#FDFBF7",
+    "brandSecondary": "#4A6B82",
+    "onBrandSecondary": "#FDFBF7",
+    "brandTertiary": "#C27A59",
+    "onBrandTertiary": "#2B1D16",
+    "success": "#5D7A62",
+    "onSuccess": "#FFFFFF",
+    "warning": "#D99441",
+    "onWarning": "#FFFFFF",
+    "error": "#A8463F",
+    "onError": "#FFFFFF",
+    "border": "#DCD3C6",
+    "borderStrong": "#8C3A35",
+    "divider": "#E6DFD6"
+  },
+  "typography": {
+    "displayFontFamily": "Fraunces",
+    "textFontFamily": "Plus Jakarta Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous spacing. Allow the UI to breathe. Avoid dense lists. Let elements feel grounded and slightly tactile like pages in a journal.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": 0,
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": false,
+    "do's": [],
+    "dont's": [
+      "No blur/glass effects. Use solid surfaceSecondary or brandTertiary with low opacity to maintain the tactile, earthy, non-digital feel."
+    ]
+  },
+  "platform_libraries": {
+    "image": "expo-image",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Home",
+      "purpose": "A welcoming front door to the venue, inviting all ages to jump in and dance.",
+      "states": {
+        "loading": "Centered spinner matching the brandPrimary color.",
+        "empty": "N/A - Home is static content and quick links.",
+        "error": "Failed to load venue updates. Retry button."
+      },
+      "layout": "Header with 'Stompin Ground Yuma' wordmark in Fraunces. Hero section featuring the cowboy boots image with a warm gradient scrim and welcome text overlaid. Below the hero: a clean grid or stacked cards for 'New Dances Added', 'Venue Info' (Yuma, AZ), and a prominent CTA to 'Start Browsing'. Use tactile, slightly offset spacing."
+    },
+    {
+      "name": "Library (Dances)",
+      "purpose": "The core searchable and filterable database of line dances.",
+      "states": {
+        "loading": "Skeleton rows of dance cards.",
+        "empty": "Illustration of an empty dance floor or boots, 'No dances found for this filter. Try clearing your search.'",
+        "error": "Failed to load dances. Retry button."
+      },
+      "layout": "Sticky search bar at the top with a horizontal scrollable row of pill-shaped filter chips (All, Beginner, Improver, Intermediate, Advanced). Below, a vertical scrolling list of dance cards. Each card displays: Title (Fraunces), Choreographer (small text), Song Name, and a Difficulty badge (color-coded). Include a subtle chevron on the right. Avoid heavy shadows; use a 1px border or solid surfaceSecondary background for cards."
+    },
+    {
+      "name": "Dance Detail",
+      "purpose": "All the info a dancer needs to learn the routine, including video and personal tracking.",
+      "states": {
+        "loading": "Centered spinner.",
+        "empty": "N/A",
+        "error": "Could not load dance details."
+      },
+      "layout": "Full-bleed image/video thumbnail at the top with a gradient scrim and a large Play icon. Below the media: Title, Choreographer, Song Info, BPM. A distinct section below for 'My Notes & Rating' with interactive star ratings. Fixed sticky CTA container at the bottom over the scroll view with two buttons: 'Add to Wishlist' (Secondary) and 'Mark Completed' (Primary)."
+    },
+    {
+      "name": "My Dances",
+      "purpose": "Personal tracking of completed dances and wishlist.",
+      "states": {
+        "loading": "Skeleton rows.",
+        "empty": "A stylized hat icon with 'You haven\\'t added any dances yet. Head to the Library to find your next challenge!'",
+        "error": "Failed to load tracked dances."
+      },
+      "layout": "Large title 'My Tracker'. A segmented control (Completed | Wishlist) using surfaceTertiary and brandPrimary for the active indicator. The list mirrors the Library layout but adds the user's star rating and quick-action swipe to remove or move between lists."
+    },
+    {
+      "name": "Profile",
+      "purpose": "User stats, auth management, and admin access point.",
+      "states": {
+        "loading": "Centered spinner.",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Profile header with an avatar (or initials) over the brown leather texture banner. A stats row showing 'Dances Completed' and 'Wishlist Size' in large numbers. Below, settings rows in surfaceSecondary containers with Phosphor icons on the left. Includes Google Login / Email Auth entry points and an 'Admin Tools' section if the user has the correct role."
+    }
+  ],
+  "images": {
+    "venue_hero": {
+      "url": "https://images.unsplash.com/photo-1768858311094-62a0d2546c57?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MjJ8MHwxfHNlYXJjaHwyfHxjb3VudHJ5JTIwbGluZSUyMGRhbmNpbmclMjBib290c3xlbnwwfHx8fDE3ODQxNjE0NDV8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Cowboy boots filled with wildflowers"
+    },
+    "library_banner": {
+      "url": "https://images.unsplash.com/photo-1731848357705-d9883b01ef94?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxwZW9wbGUlMjBsaW5lJTIwZGFuY2luZyUyMGNvdW50cnklMjBiYXJ8ZW58MHx8fHwxNzg0MTYxNDQ1fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Group of people dancing at a country party"
+    },
+    "profile_cover": {
+      "url": "https://images.unsplash.com/photo-1571829604981-ea159f94e5ad?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHxsZWF0aGVyJTIwdGV4dHVyZSUyMGJhY2tncm91bmQlMjBydXN0aWN8ZW58MHx8fHwxNzg0MTYxNDQ1fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Rustic brown leather texture"
+    }
+  },
+  "haptics": {
+    "tab_press": "light",
+    "filter_chip_select": "light",
+    "add_to_wishlist": "medium",
+    "mark_completed": "success",
+    "star_rating_select": "light",
+    "list_swipe_action": "medium"
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the color palette. No blues except the brandSecondary (Denim Blue) and no purples. Keep the UI feeling warm and earthy.",
+    "Do NOT use glassmorphism or heavy drop shadows. This app relies on the 'Hand-Drawn / Journal' tactile style. Use subtle 1px borders (#DCD3C6) or solid surfaceSecondary blocks for separation.",
+    "Implement a mandatory gradient scrim (transparent to surfaceInverse) on the 'venue_hero' and 'library_banner' background images so that the text layered over them is legible.",
+    "Make sure the 'Add to Wishlist' / 'Mark Completed' CTA buttons in the Dance Detail screen are sticky and fixed at the bottom over the scroll view, easily accessible by the thumb.",
+    "Format difficulty badges with distinct colors (e.g., Beginner=success green, Intermediate=warning orange, Advanced=error red, Improver=brandSecondary blue).",
+    "For user auth, include Google Login as well as Email/Password forms on the Auth screen, matching the rustic UI design."
+  ]
+}
