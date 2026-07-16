@@ -7,21 +7,6 @@ const BASE =
 
 export const API_BASE = `${BASE}/api`;
 
-export type Dance = {
-  id: string;
-  name: string;
-  choreographer: string;
-  song: string;
-  artist: string;
-  difficulty: string;
-  bpm?: number | null;
-  count?: string;
-  youtube_url?: string;
-  description?: string;
-  tags?: string[];
-  created_at: string;
-};
-
 export type Tracking = {
   dance_id: string;
   status: "completed" | "wishlist";
@@ -36,7 +21,37 @@ export type User = {
   name: string;
   picture?: string;
   is_admin: boolean;
+  is_instructor: boolean;
   auth_provider: string;
+};
+
+export type Dance = {
+  id: string;
+  name: string;
+  choreographer: string;
+  choreographer_country?: string;
+  song: string;
+  artist: string;
+  difficulty: string;
+  bpm?: number | null;
+  count?: string;
+  youtube_url?: string;
+  step_sheet?: string;
+  description?: string;
+  tags?: string[];
+  created_at: string;
+};
+
+export type ClassSession = {
+  id: string;
+  date: string;
+  session_label: string;
+  notes: string;
+  instructor_id: string;
+  instructor_name: string;
+  dance_ids: string[];
+  dances: { id: string; name: string; difficulty: string }[];
+  created_at: string;
 };
 
 export type Suggestion = {
@@ -151,4 +166,30 @@ export const api = {
     ),
   deleteSuggestion: (id: string, token: string) =>
     req<{ ok: boolean }>(`/suggestions/${id}`, { method: "DELETE" }, token),
+
+  listClasses: (limit = 50) => req<ClassSession[]>(`/classes?limit=${limit}`),
+  getClass: (id: string) => req<ClassSession>(`/classes/${id}`),
+  createClass: (
+    body: {
+      date: string;
+      session_label?: string;
+      dance_ids: string[];
+      notes?: string;
+    },
+    token: string
+  ) =>
+    req<ClassSession>("/classes", { method: "POST", body: JSON.stringify(body) }, token),
+  updateClass: (
+    id: string,
+    body: {
+      date: string;
+      session_label?: string;
+      dance_ids: string[];
+      notes?: string;
+    },
+    token: string
+  ) =>
+    req<ClassSession>(`/classes/${id}`, { method: "PUT", body: JSON.stringify(body) }, token),
+  deleteClass: (id: string, token: string) =>
+    req<{ ok: boolean }>(`/classes/${id}`, { method: "DELETE" }, token),
 };

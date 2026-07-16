@@ -117,6 +117,20 @@ export default function Profile() {
           ) : null}
 
           <Pressable
+            testID="profile-classes-row"
+            style={styles.row}
+            onPress={() => router.push("/classes")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="calendar" size={22} color={colors.brandSecondary} />
+              <Text style={styles.rowText}>
+                {user?.is_admin || user?.is_instructor ? "Log a Class" : "Class Recap"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
             testID="profile-suggest-row"
             style={styles.row}
             onPress={() => router.push("/suggest")}

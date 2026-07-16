@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   TextInput,
+  Modal,
   Linking as RNLinking,
   Platform,
 } from "react-native";
@@ -21,12 +22,15 @@ import { useAuth } from "@/src/context/auth-context";
 export default function DanceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [dance, setDance] = useState<Dance | null>(null);
   const [track, setTrack] = useState<Tracking | null>(null);
   const [notes, setNotes] = useState("");
   const [rating, setRating] = useState(0);
   const [saving, setSaving] = useState<null | "completed" | "wishlist" | "notes">(null);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [editSheet, setEditSheet] = useState("");
+  const [savingSheet, setSavingSheet] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -71,6 +75,32 @@ export default function DanceDetail() {
 
   const openYT = () => {
     if (dance?.youtube_url) RNLinking.openURL(dance.youtube_url).catch(() => {});
+  };
+
+  const saveStepSheet = async () => {
+    if (!token || !dance) return;
+    setSavingSheet(true);
+    try {
+      const updated = await api.updateDance(
+        dance.id,
+        {
+          name: dance.name,
+          choreographer: dance.choreographer,
+          song: dance.song,
+          artist: dance.artist,
+          difficulty: dance.difficulty,
+          bpm: dance.bpm,
+          count: dance.count,
+          youtube_url: dance.youtube_url,
+          step_sheet: editSheet,
+        },
+        token
+      );
+      setDance(updated);
+      setEditSheetOpen(false);
+    } finally {
+      setSavingSheet(false);
+    }
   };
 
   if (!dance) {
@@ -134,6 +164,39 @@ export default function DanceDetail() {
             </Pressable>
           </View>
         ) : null}
+
+        <View style={styles.section}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={styles.sectionTitle}>Step Sheet</Text>
+            {(user?.is_admin || user?.is_instructor) ? (
+              <Pressable
+                testID="edit-step-sheet"
+                onPress={() => {
+                  setEditSheet(dance.step_sheet || "");
+                  setEditSheetOpen(true);
+                }}
+                style={styles.editBtn}
+              >
+                <Ionicons name="create-outline" size={14} color={colors.brandPrimary} />
+                <Text style={styles.editBtnText}>Edit</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          <View style={styles.stepSheet}>
+            {dance.step_sheet ? (
+              <Text style={styles.stepText}>{dance.step_sheet}</Text>
+            ) : (
+              <Text style={styles.stepEmpty}>
+                No step sheet yet. Watch the tutorial or ask Erin during class.
+              </Text>
+            )}
+            {dance.choreographer_country ? (
+              <Text style={styles.stepMeta}>
+                Choreographed in {dance.choreographer_country}
+              </Text>
+            ) : null}
+          </View>
+        </View>
 
         {track ? (
           <View style={styles.section}>
@@ -212,6 +275,48 @@ export default function DanceDetail() {
           </Pressable>
         </View>
       </SafeAreaView>
+
+      <Modal
+        visible={editSheetOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEditSheetOpen(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Edit Step Sheet</Text>
+            <Pressable onPress={() => setEditSheetOpen(false)} testID="close-edit-sheet">
+              <Ionicons name="close" size={26} color={colors.onSurface} />
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+            <Text style={styles.modalSub}>
+              Paste in the full step sheet notation. Use plain text — line breaks preserved.
+            </Text>
+            <TextInput
+              testID="step-sheet-input"
+              value={editSheet}
+              onChangeText={setEditSheet}
+              multiline
+              placeholder="1-8 Grapevine right..."
+              placeholderTextColor={colors.muted}
+              style={styles.editArea}
+            />
+            <Pressable
+              testID="save-step-sheet"
+              onPress={saveStepSheet}
+              disabled={savingSheet}
+              style={[styles.saveBtn, savingSheet && { opacity: 0.6 }]}
+            >
+              {savingSheet ? (
+                <ActivityIndicator color={colors.onBrandPrimary} />
+              ) : (
+                <Text style={styles.saveBtnText}>Save Step Sheet</Text>
+              )}
+            </Pressable>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -339,4 +444,67 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandPrimary,
   },
   primBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  editBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary,
+    borderRadius: radius.pill,
+  },
+  editBtnText: { color: colors.brandPrimary, fontSize: 12, fontWeight: "700" },
+  stepSheet: {
+    padding: spacing.lg,
+    backgroundColor: colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    gap: 8,
+  },
+  stepText: {
+    color: colors.onSurface,
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+  },
+  stepEmpty: { color: colors.muted, fontStyle: "italic", fontSize: 13 },
+  stepMeta: { color: colors.muted, fontSize: 11, marginTop: 4, letterSpacing: 0.5 },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  modalTitle: {
+    fontFamily: "serif",
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
+  modalSub: { color: colors.muted, fontSize: 13 },
+  editArea: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: 14,
+    minHeight: 260,
+    backgroundColor: colors.surfaceSecondary,
+    color: colors.onSurface,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlignVertical: "top",
+    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+  },
+  saveBtn: {
+    backgroundColor: colors.brandPrimary,
+    padding: 16,
+    borderRadius: radius.md,
+    alignItems: "center",
+    marginTop: spacing.md,
+  },
+  saveBtnText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 16 },
 });

@@ -61,6 +61,23 @@ export default function Home() {
           </View>
 
           <Pressable
+            testID="home-classes-cta"
+            onPress={() => router.push("/classes")}
+            style={styles.classesCard}
+          >
+            <View style={styles.classesIcon}>
+              <Ionicons name="calendar" size={22} color={colors.brandSecondary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.suggestTitle}>Recent Class Recap</Text>
+              <Text style={styles.suggestSub}>
+                See which dances were taught in recent classes.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
             testID="home-suggest-cta"
             onPress={() => router.push("/suggest")}
             style={styles.suggestCard}
@@ -204,4 +221,25 @@ const styles = StyleSheet.create({
   },
   suggestTitle: { fontSize: 15, fontWeight: "700", color: colors.onSurface },
   suggestSub: { fontSize: 12, color: colors.onSurfaceSecondary, marginTop: 2 },
+  classesCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    backgroundColor: colors.brandSecondary + "18",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandSecondary + "55",
+    marginBottom: spacing.sm,
+  },
+  classesIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.brandSecondary + "55",
+  },
 });

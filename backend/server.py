@@ -22,7 +22,14 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ.get("JWT_SECRET", "stompin-yuma-secret-change-me")
 JWT_ALG = "HS256"
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@stompinground.com").lower()
+ADMIN_EMAILS = {
+    e.strip().lower()
+    for e in os.environ.get(
+        "ADMIN_EMAILS",
+        "admin@stompinground.com,stompingroundyuma@gmail.com",
+    ).split(",")
+    if e.strip()
+}
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -38,6 +45,7 @@ class UserOut(BaseModel):
     name: str
     picture: Optional[str] = None
     is_admin: bool = False
+    is_instructor: bool = False
     auth_provider: str = "email"
 
 
@@ -59,12 +67,14 @@ class GoogleSessionIn(BaseModel):
 class DanceIn(BaseModel):
     name: str
     choreographer: str
+    choreographer_country: Optional[str] = ""
     song: str
     artist: Optional[str] = ""
     difficulty: str  # Beginner / Improver / Intermediate / Advanced
     bpm: Optional[int] = None
     count: Optional[str] = None  # e.g. "32 count, 4 wall"
     youtube_url: Optional[str] = ""
+    step_sheet: Optional[str] = ""
     description: Optional[str] = ""
     tags: Optional[List[str]] = []
 
@@ -86,6 +96,13 @@ class TrackingOut(BaseModel):
     rating: int
     notes: str
     updated_at: str
+
+
+class ClassSessionIn(BaseModel):
+    date: str  # YYYY-MM-DD
+    session_label: Optional[str] = ""  # e.g. "Friday Night", "Beginner Class"
+    dance_ids: List[str] = []
+    notes: Optional[str] = ""
 
 
 class SuggestionIn(BaseModel):
@@ -141,7 +158,8 @@ async def upsert_user(email: str, name: str, picture: str = "", provider: str = 
         "email": email,
         "name": name or email.split("@")[0],
         "picture": picture,
-        "is_admin": email == ADMIN_EMAIL,
+        "is_admin": email in ADMIN_EMAILS,
+        "is_instructor": email in ADMIN_EMAILS,
         "auth_provider": provider,
         "password_hash": password_hash or "",
         "created_at": now_iso(),
@@ -188,6 +206,12 @@ async def require_admin(user: dict = Depends(get_current_user)) -> dict:
     return user
 
 
+async def require_instructor(user: dict = Depends(get_current_user)) -> dict:
+    if not (user.get("is_admin") or user.get("is_instructor")):
+        raise HTTPException(403, "Instructor only")
+    return user
+
+
 def user_to_out(u: dict) -> dict:
     return {
         "user_id": u["user_id"],
@@ -195,6 +219,7 @@ def user_to_out(u: dict) -> dict:
         "name": u.get("name", ""),
         "picture": u.get("picture", ""),
         "is_admin": bool(u.get("is_admin")),
+        "is_instructor": bool(u.get("is_admin")) or bool(u.get("is_instructor")),
         "auth_provider": u.get("auth_provider", "email"),
     }
 
@@ -204,12 +229,14 @@ def dance_to_out(d: dict) -> dict:
         "id": d["id"],
         "name": d.get("name", ""),
         "choreographer": d.get("choreographer", ""),
+        "choreographer_country": d.get("choreographer_country", ""),
         "song": d.get("song", ""),
         "artist": d.get("artist", ""),
         "difficulty": d.get("difficulty", "Beginner"),
         "bpm": d.get("bpm"),
         "count": d.get("count", ""),
         "youtube_url": d.get("youtube_url", ""),
+        "step_sheet": d.get("step_sheet", ""),
         "description": d.get("description", ""),
         "tags": d.get("tags", []),
         "created_at": d.get("created_at", ""),
@@ -444,6 +471,95 @@ async def delete_suggestion(sug_id: str, user: dict = Depends(get_current_user))
     return {"ok": True}
 
 
+# ---------------- Classes / Instructor Log ----------------
+@api_router.get("/classes")
+async def list_classes(limit: int = 50):
+    docs = await db.classes.find({}, {"_id": 0}).sort("date", -1).to_list(max(1, min(limit, 200)))
+    return docs
+
+
+@api_router.get("/classes/{class_id}")
+async def get_class(class_id: str):
+    doc = await db.classes.find_one({"id": class_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Not found")
+    return doc
+
+
+@api_router.post("/classes")
+async def create_class(inp: ClassSessionIn, instructor: dict = Depends(require_instructor)):
+    if not inp.date:
+        raise HTTPException(400, "Date is required")
+    # Resolve dance names for display
+    dance_docs = await db.dances.find(
+        {"id": {"$in": inp.dance_ids}}, {"_id": 0}
+    ).to_list(500)
+    by_id = {d["id"]: d for d in dance_docs}
+    resolved = [
+        {
+            "id": did,
+            "name": by_id[did]["name"] if did in by_id else "(removed)",
+            "difficulty": by_id[did].get("difficulty", "") if did in by_id else "",
+        }
+        for did in inp.dance_ids
+    ]
+    doc = {
+        "id": f"class_{uuid.uuid4().hex[:10]}",
+        "date": inp.date,
+        "session_label": (inp.session_label or "").strip(),
+        "notes": (inp.notes or "").strip(),
+        "instructor_id": instructor["user_id"],
+        "instructor_name": instructor.get("name", ""),
+        "dance_ids": inp.dance_ids,
+        "dances": resolved,
+        "created_at": now_iso(),
+    }
+    await db.classes.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.put("/classes/{class_id}")
+async def update_class(class_id: str, inp: ClassSessionIn, user: dict = Depends(get_current_user)):
+    doc = await db.classes.find_one({"id": class_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Not found")
+    if doc["instructor_id"] != user["user_id"] and not user.get("is_admin"):
+        raise HTTPException(403, "Not allowed")
+    dance_docs = await db.dances.find(
+        {"id": {"$in": inp.dance_ids}}, {"_id": 0}
+    ).to_list(500)
+    by_id = {d["id"]: d for d in dance_docs}
+    resolved = [
+        {
+            "id": did,
+            "name": by_id[did]["name"] if did in by_id else "(removed)",
+            "difficulty": by_id[did].get("difficulty", "") if did in by_id else "",
+        }
+        for did in inp.dance_ids
+    ]
+    updates = {
+        "date": inp.date,
+        "session_label": (inp.session_label or "").strip(),
+        "notes": (inp.notes or "").strip(),
+        "dance_ids": inp.dance_ids,
+        "dances": resolved,
+    }
+    await db.classes.update_one({"id": class_id}, {"$set": updates})
+    return {**doc, **updates}
+
+
+@api_router.delete("/classes/{class_id}")
+async def delete_class(class_id: str, user: dict = Depends(get_current_user)):
+    doc = await db.classes.find_one({"id": class_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Not found")
+    if doc["instructor_id"] != user["user_id"] and not user.get("is_admin"):
+        raise HTTPException(403, "Not allowed")
+    await db.classes.delete_one({"id": class_id})
+    return {"ok": True}
+
+
 # ---------------- Venue Info ----------------
 @api_router.get("/venue")
 async def venue_info():
@@ -472,48 +588,7 @@ async def root():
 
 
 # ---------------- Seed ----------------
-SEED_DANCES = [
-    ("Watermelon Crawl", "Sue Lipscomb", "Watermelon Crawl", "Tracy Byrd", "Beginner", 96, "32 count, 4 wall", "https://www.youtube.com/results?search_query=watermelon+crawl+line+dance"),
-    ("Cowboy Cha Cha", "Traditional", "Neon Moon", "Brooks & Dunn", "Beginner", 100, "Partner", "https://www.youtube.com/results?search_query=cowboy+cha+cha"),
-    ("Electric Slide", "Ric Silver", "Electric Boogie", "Marcia Griffiths", "Beginner", 118, "18 count, 4 wall", "https://www.youtube.com/results?search_query=electric+slide"),
-    ("Boot Scootin' Boogie", "Bill Bader", "Boot Scootin' Boogie", "Brooks & Dunn", "Beginner", 128, "32 count, 4 wall", "https://www.youtube.com/results?search_query=boot+scootin+boogie+line+dance"),
-    ("Tush Push", "Jim Ferrazzano", "Tush Push", "Various", "Improver", 120, "40 count, 4 wall", "https://www.youtube.com/results?search_query=tush+push+line+dance"),
-    ("Cotton Eye Joe", "Traditional", "Cotton Eye Joe", "Rednex", "Beginner", 140, "16 count, 4 wall", "https://www.youtube.com/results?search_query=cotton+eye+joe+line+dance"),
-    ("Copperhead Road", "Traditional", "Copperhead Road", "Steve Earle", "Improver", 138, "36 count, 4 wall", "https://www.youtube.com/results?search_query=copperhead+road+line+dance"),
-    ("Wagon Wheel Rock", "Michele Perron", "Wagon Wheel", "Darius Rucker", "Beginner", 148, "32 count, 4 wall", "https://www.youtube.com/results?search_query=wagon+wheel+rock+line+dance"),
-    ("Cupid Shuffle", "Cupid", "Cupid Shuffle", "Cupid", "Beginner", 120, "32 count, 4 wall", "https://www.youtube.com/results?search_query=cupid+shuffle"),
-    ("Cha Cha Slide", "DJ Casper", "Cha Cha Slide", "DJ Casper", "Beginner", 120, "Guided", "https://www.youtube.com/results?search_query=cha+cha+slide"),
-    ("Achy Breaky Heart", "Melanie Greenwood", "Achy Breaky Heart", "Billy Ray Cyrus", "Beginner", 120, "32 count, 4 wall", "https://www.youtube.com/results?search_query=achy+breaky+heart+line+dance"),
-    ("Country Girl Shake", "Rachael McEnaney", "Country Girl (Shake It For Me)", "Luke Bryan", "Improver", 128, "32 count, 4 wall", "https://www.youtube.com/results?search_query=country+girl+shake+line+dance"),
-    ("Cruise", "Rob Fowler", "Cruise", "Florida Georgia Line", "Improver", 128, "48 count, 4 wall", "https://www.youtube.com/results?search_query=cruise+line+dance"),
-    ("Footloose", "Various", "Footloose", "Kenny Loggins", "Improver", 130, "32 count, 4 wall", "https://www.youtube.com/results?search_query=footloose+line+dance"),
-    ("Chattahoochee", "Traditional", "Chattahoochee", "Alan Jackson", "Improver", 140, "48 count, 2 wall", "https://www.youtube.com/results?search_query=chattahoochee+line+dance"),
-    ("Redneck Girl", "Traditional", "Redneck Girl", "The Bellamy Brothers", "Beginner", 110, "40 count, 4 wall", "https://www.youtube.com/results?search_query=redneck+girl+line+dance"),
-    ("Slap Leather", "Gayle Brandon", "Slap Leather", "Various", "Improver", 118, "40 count, 4 wall", "https://www.youtube.com/results?search_query=slap+leather+line+dance"),
-    ("Two-Step Around The Christmas Tree", "Traditional", "Rockin' Around The Christmas Tree", "Brenda Lee", "Beginner", 132, "32 count, 4 wall", "https://www.youtube.com/results?search_query=two+step+christmas+line+dance"),
-    ("The Git Up", "Various", "The Git Up", "Blanco Brown", "Beginner", 92, "32 count, 4 wall", "https://www.youtube.com/results?search_query=the+git+up+line+dance"),
-    ("Old Town Road", "Various", "Old Town Road", "Lil Nas X", "Beginner", 136, "32 count, 4 wall", "https://www.youtube.com/results?search_query=old+town+road+line+dance"),
-    ("Meant To Be", "Rachael McEnaney", "Meant To Be", "Bebe Rexha & FGL", "Beginner", 130, "32 count, 4 wall", "https://www.youtube.com/results?search_query=meant+to+be+line+dance"),
-    ("Body Like a Back Road", "Ira Weisburd", "Body Like a Back Road", "Sam Hunt", "Beginner", 106, "32 count, 4 wall", "https://www.youtube.com/results?search_query=body+like+back+road+line+dance"),
-    ("Whiskey On My Breath", "Karl-Harry Winson", "Whiskey On My Breath", "Love and Theft", "Intermediate", 132, "64 count, 2 wall", "https://www.youtube.com/results?search_query=whiskey+on+my+breath+line+dance"),
-    ("Bosa Nova", "Rob Fowler", "Various", "Various", "Intermediate", 116, "48 count, 4 wall", "https://www.youtube.com/results?search_query=bosa+nova+line+dance"),
-    ("Neon Cowgirl", "Guyton Mundy", "Neon Cowgirl", "Dan + Shay", "Intermediate", 126, "32 count, 4 wall", "https://www.youtube.com/results?search_query=neon+cowgirl+line+dance"),
-    ("Hurricane", "Guyton Mundy", "Hurricane", "Luke Combs", "Intermediate", 148, "32 count, 4 wall", "https://www.youtube.com/results?search_query=hurricane+line+dance"),
-    ("Fake ID", "Rachael McEnaney", "Fake ID", "Big & Rich", "Improver", 130, "32 count, 4 wall", "https://www.youtube.com/results?search_query=fake+id+line+dance"),
-    ("Save a Horse", "Traditional", "Save A Horse (Ride A Cowboy)", "Big & Rich", "Improver", 130, "48 count, 2 wall", "https://www.youtube.com/results?search_query=save+a+horse+line+dance"),
-    ("Man! I Feel Like a Woman", "Max Perry", "Man! I Feel Like a Woman", "Shania Twain", "Improver", 124, "32 count, 4 wall", "https://www.youtube.com/results?search_query=man+i+feel+like+a+woman+line+dance"),
-    ("God Blessed Texas", "Traditional", "God Blessed Texas", "Little Texas", "Improver", 138, "32 count, 4 wall", "https://www.youtube.com/results?search_query=god+blessed+texas+line+dance"),
-    ("Trashy Women", "Traditional", "Trashy Women", "Confederate Railroad", "Improver", 128, "32 count, 4 wall", "https://www.youtube.com/results?search_query=trashy+women+line+dance"),
-    ("She's Country", "Rachael McEnaney", "She's Country", "Jason Aldean", "Intermediate", 140, "64 count, 4 wall", "https://www.youtube.com/results?search_query=shes+country+line+dance"),
-    ("Whiskey River", "Various", "Whiskey River", "Willie Nelson", "Beginner", 116, "32 count, 4 wall", "https://www.youtube.com/results?search_query=whiskey+river+line+dance"),
-    ("Alan's 6", "Alan Birchall", "Various", "Various", "Intermediate", 128, "32 count, 4 wall", "https://www.youtube.com/results?search_query=alan+6+line+dance"),
-    ("Amame", "Rachael McEnaney", "Amame", "Various", "Intermediate", 100, "64 count, 4 wall", "https://www.youtube.com/results?search_query=amame+line+dance"),
-    ("Get Down Country", "Guyton Mundy", "Get Down Country", "Various", "Improver", 130, "32 count, 4 wall", "https://www.youtube.com/results?search_query=get+down+country+line+dance"),
-    ("Ten Toes", "Michele Perron", "Ten Toes", "Various", "Beginner", 108, "32 count, 4 wall", "https://www.youtube.com/results?search_query=ten+toes+line+dance"),
-    ("Wobble", "V.I.C.", "Wobble", "V.I.C.", "Beginner", 130, "32 count, 4 wall", "https://www.youtube.com/results?search_query=wobble+line+dance"),
-    ("Redneck Rodeo", "Rob Fowler", "Redneck Rodeo", "Various", "Improver", 130, "32 count, 4 wall", "https://www.youtube.com/results?search_query=redneck+rodeo+line+dance"),
-    ("Lose Control", "Sobrielo Mario", "Lose Control", "Meduza", "Advanced", 124, "32 count, 4 wall", "https://www.youtube.com/results?search_query=lose+control+line+dance"),
-]
+from seed_dances import SEED_DANCES  # noqa: E402
 
 
 @app.on_event("startup")
@@ -526,40 +601,73 @@ async def startup():
         await db.user_sessions.create_index("expires_at", expireAfterSeconds=0)
         await db.dances.create_index("name")
         await db.tracking.create_index([("user_id", 1), ("dance_id", 1)], unique=True)
+        await db.classes.create_index("date")
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 
-    # Seed dances if empty
-    count = await db.dances.count_documents({})
-    if count == 0:
-        docs = []
-        for (name, chor, song, artist, diff, bpm, cnt, yt) in SEED_DANCES:
-            docs.append({
-                "id": f"dance_{uuid.uuid4().hex[:10]}",
-                "name": name,
-                "choreographer": chor,
-                "song": song,
-                "artist": artist,
-                "difficulty": diff,
-                "bpm": bpm,
-                "count": cnt,
-                "youtube_url": yt,
-                "description": "",
-                "tags": [],
-                "created_at": now_iso(),
-            })
-        await db.dances.insert_many(docs)
-        logger.info(f"Seeded {len(docs)} dances")
+    # Backfill step_sheet & choreographer_country on existing docs (idempotent)
+    seed_by_name = {d[0]: d for d in SEED_DANCES}
+    async for existing in db.dances.find({}, {"_id": 0}):
+        if not existing.get("step_sheet") or not existing.get("choreographer_country"):
+            seed = seed_by_name.get(existing["name"])
+            if seed:
+                _, _, country, _, _, _, _, _, _, step_sheet = seed
+                await db.dances.update_one(
+                    {"id": existing["id"]},
+                    {"$set": {
+                        "step_sheet": existing.get("step_sheet") or step_sheet,
+                        "choreographer_country": existing.get("choreographer_country") or country,
+                    }},
+                )
 
-    # Seed admin user if not exists
-    existing_admin = await db.users.find_one({"email": ADMIN_EMAIL})
-    if not existing_admin:
-        await upsert_user(
-            ADMIN_EMAIL, "Stompin' Admin",
-            provider="email",
-            password_hash=hash_password("Admin123!"),
-        )
-        logger.info(f"Seeded admin user: {ADMIN_EMAIL}")
+    # Seed dances if empty; otherwise add any new dances not yet present.
+    existing_names = {d["name"] async for d in db.dances.find({}, {"name": 1})}
+    to_insert = []
+    for (name, chor, country, song, artist, diff, bpm, cnt, yt, step) in SEED_DANCES:
+        if name in existing_names:
+            continue
+        to_insert.append({
+            "id": f"dance_{uuid.uuid4().hex[:10]}",
+            "name": name,
+            "choreographer": chor,
+            "choreographer_country": country,
+            "song": song,
+            "artist": artist,
+            "difficulty": diff,
+            "bpm": bpm,
+            "count": cnt,
+            "youtube_url": f"https://www.youtube.com/results?search_query={yt.replace(' ', '+')}",
+            "step_sheet": step,
+            "description": "",
+            "tags": [],
+            "created_at": now_iso(),
+        })
+    if to_insert:
+        await db.dances.insert_many(to_insert)
+        logger.info(f"Seeded {len(to_insert)} new dances")
+
+    # Seed admin accounts (idempotent)
+    seed_admin_map = {
+        "admin@stompinground.com": ("Stompin' Admin", "Admin123!"),
+        "stompingroundyuma@gmail.com": ("Erin Brown", "Stompin2026!"),
+    }
+    for admin_email in ADMIN_EMAILS:
+        display, default_pw = seed_admin_map.get(admin_email, ("Admin", "Admin123!"))
+        existing_admin = await db.users.find_one({"email": admin_email})
+        if not existing_admin:
+            await upsert_user(
+                admin_email, display,
+                provider="email",
+                password_hash=hash_password(default_pw),
+            )
+            logger.info(f"Seeded admin user: {admin_email}")
+        else:
+            # Ensure admin flag; reset password to default only if none set
+            updates = {"is_admin": True, "is_instructor": True}
+            if not existing_admin.get("password_hash"):
+                updates["password_hash"] = hash_password(default_pw)
+                updates["name"] = existing_admin.get("name") or display
+            await db.users.update_one({"email": admin_email}, {"$set": updates})
 
 
 app.include_router(api_router)
