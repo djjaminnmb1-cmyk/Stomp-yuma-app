@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { colors, spacing, radius, images } from "@/src/theme";
 import { api, Dance } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
+import { BrandLogo } from "../../src/components/BrandLogo";
 
 export default function Home() {
   const router = useRouter();
@@ -28,9 +29,7 @@ export default function Home() {
             style={StyleSheet.absoluteFillObject as any}
           />
           <View style={styles.heroContent}>
-            <Text style={styles.tag}>WELCOME TO</Text>
-            <Text style={styles.brand}>Stompin' Ground</Text>
-            <Text style={styles.brandBig}>Yuma</Text>
+            <BrandLogo variant="light" size="md" />
             <Text style={styles.tagline}>
               Yuma, Arizona's home for country line dancing — all ages welcome.
             </Text>
@@ -112,12 +111,12 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   c: { flex: 1, backgroundColor: colors.surface },
-  hero: { height: 300, justifyContent: "flex-end" },
-  heroContent: { padding: spacing.xl },
+  hero: { height: 340, justifyContent: "flex-end" },
+  heroContent: { padding: spacing.xl, alignItems: "center", gap: spacing.md },
   tag: { color: colors.onSurfaceInverse, opacity: 0.8, letterSpacing: 2, fontSize: 11, fontWeight: "700" },
   brand: { color: colors.onSurfaceInverse, fontFamily: "serif", fontSize: 22, fontStyle: "italic", opacity: 0.95 },
   brandBig: { color: colors.onSurfaceInverse, fontFamily: "serif", fontSize: 48, fontWeight: "700", letterSpacing: -1 },
-  tagline: { color: colors.onSurfaceInverse, marginTop: spacing.sm, fontSize: 13, opacity: 0.9, lineHeight: 18 },
+  tagline: { color: colors.onSurfaceInverse, marginTop: spacing.xs, fontSize: 13, opacity: 0.9, lineHeight: 18, textAlign: "center", paddingHorizontal: spacing.lg },
   section: { padding: spacing.xl, gap: spacing.md },
   helloText: { fontFamily: "serif", fontSize: 28, color: colors.onSurface, fontWeight: "700" },
   subHello: { fontSize: 15, color: colors.muted, marginTop: -6 },

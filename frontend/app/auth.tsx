@@ -21,6 +21,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/src/context/auth-context";
 import { api } from "@/src/api/client";
 import { colors, spacing, radius, images } from "@/src/theme";
+import { BrandLogo } from "../src/components/BrandLogo";
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -135,9 +136,7 @@ export default function AuthScreen() {
               style={StyleSheet.absoluteFillObject as any}
             />
             <View style={styles.heroContent}>
-              <Text style={styles.brand}>Stompin' Ground</Text>
-              <Text style={styles.brandBig}>Yuma</Text>
-              <Text style={styles.tagline}>All ages welcome. Grab your boots.</Text>
+              <BrandLogo variant="light" size="md" showTagline />
             </View>
           </View>
 
@@ -242,28 +241,8 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  hero: { height: 260, justifyContent: "flex-end" },
-  heroContent: { padding: spacing.xl },
-  brand: {
-    color: colors.onSurfaceInverse,
-    fontFamily: "serif",
-    fontSize: 22,
-    fontStyle: "italic",
-    opacity: 0.9,
-  },
-  brandBig: {
-    color: colors.onSurfaceInverse,
-    fontFamily: "serif",
-    fontSize: 52,
-    fontWeight: "700",
-    letterSpacing: -1,
-  },
-  tagline: {
-    color: colors.onSurfaceInverse,
-    marginTop: spacing.xs,
-    fontSize: 14,
-    opacity: 0.9,
-  },
+  hero: { height: 320, justifyContent: "flex-end" },
+  heroContent: { padding: spacing.xl, alignItems: "center" },
   form: { padding: spacing.xl, gap: spacing.md },
   tabs: {
     flexDirection: "row",
