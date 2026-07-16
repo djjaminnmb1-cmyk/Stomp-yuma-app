@@ -10,7 +10,10 @@ import {
   Modal,
   Linking as RNLinking,
   Platform,
+  Image,
+  Alert,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,7 +33,9 @@ export default function DanceDetail() {
   const [saving, setSaving] = useState<null | "completed" | "wishlist" | "notes">(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [editSheet, setEditSheet] = useState("");
+  const [editImage, setEditImage] = useState<string>("");
   const [savingSheet, setSavingSheet] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -93,6 +98,7 @@ export default function DanceDetail() {
           count: dance.count,
           youtube_url: dance.youtube_url,
           step_sheet: editSheet,
+          step_sheet_image: editImage,
         },
         token
       );
@@ -102,6 +108,40 @@ export default function DanceDetail() {
       setSavingSheet(false);
     }
   };
+
+  const pickImage = async () => {
+    setUploadingImg(true);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          "Permission needed",
+          "Please allow photo library access to upload a step sheet image.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => RNLinking.openSettings() },
+          ]
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.6,
+        base64: true,
+      });
+      if (result.canceled || !result.assets?.[0]?.base64) return;
+      const b64 = result.assets[0].base64;
+      const mime = result.assets[0].mimeType || "image/jpeg";
+      setEditImage(`data:${mime};base64,${b64}`);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Could not pick image");
+    } finally {
+      setUploadingImg(false);
+    }
+  };
+
+  const clearImage = () => setEditImage("");
 
   if (!dance) {
     return (
@@ -173,6 +213,7 @@ export default function DanceDetail() {
                 testID="edit-step-sheet"
                 onPress={() => {
                   setEditSheet(dance.step_sheet || "");
+                  setEditImage(dance.step_sheet_image || "");
                   setEditSheetOpen(true);
                 }}
                 style={styles.editBtn}
@@ -183,13 +224,20 @@ export default function DanceDetail() {
             ) : null}
           </View>
           <View style={styles.stepSheet}>
+            {dance.step_sheet_image ? (
+              <Image
+                source={{ uri: dance.step_sheet_image }}
+                style={styles.stepImage}
+                resizeMode="contain"
+              />
+            ) : null}
             {dance.step_sheet ? (
               <Text style={styles.stepText}>{dance.step_sheet}</Text>
-            ) : (
+            ) : !dance.step_sheet_image ? (
               <Text style={styles.stepEmpty}>
                 No step sheet yet. Watch the tutorial or ask Erin during class.
               </Text>
-            )}
+            ) : null}
             {dance.choreographer_country ? (
               <Text style={styles.stepMeta}>
                 Choreographed in {dance.choreographer_country}
@@ -291,8 +339,47 @@ export default function DanceDetail() {
           </View>
           <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
             <Text style={styles.modalSub}>
-              Paste in the full step sheet notation. Use plain text — line breaks preserved.
+              Paste in the full step sheet notation, or upload an image (screenshot / scan).
             </Text>
+
+            <View style={{ gap: spacing.sm }}>
+              <Text style={styles.miniLabel}>Step sheet image</Text>
+              {editImage ? (
+                <View>
+                  <Image
+                    source={{ uri: editImage }}
+                    style={styles.previewImage}
+                    resizeMode="contain"
+                  />
+                  <Pressable
+                    testID="clear-step-image"
+                    onPress={clearImage}
+                    style={styles.clearImgBtn}
+                  >
+                    <Ionicons name="trash" size={14} color="#fff" />
+                    <Text style={styles.clearImgText}>Remove image</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable
+                  testID="upload-step-image"
+                  onPress={pickImage}
+                  disabled={uploadingImg}
+                  style={styles.uploadBtn}
+                >
+                  {uploadingImg ? (
+                    <ActivityIndicator color={colors.brandPrimary} />
+                  ) : (
+                    <>
+                      <Ionicons name="image-outline" size={22} color={colors.brandPrimary} />
+                      <Text style={styles.uploadBtnText}>Upload image (PNG/JPG)</Text>
+                    </>
+                  )}
+                </Pressable>
+              )}
+            </View>
+
+            <Text style={styles.miniLabel}>Step sheet text</Text>
             <TextInput
               testID="step-sheet-input"
               value={editSheet}
@@ -507,4 +594,50 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   saveBtnText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 16 },
+  stepImage: {
+    width: "100%",
+    height: 400,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    marginBottom: spacing.sm,
+  },
+  previewImage: {
+    width: "100%",
+    height: 240,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceTertiary,
+  },
+  uploadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    padding: 20,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: colors.brandPrimary,
+    borderStyle: "dashed",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  uploadBtnText: { color: colors.brandPrimary, fontWeight: "700", fontSize: 14 },
+  clearImgBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.error,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  clearImgText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  miniLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.onSurface,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
 });

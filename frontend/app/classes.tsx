@@ -25,18 +25,25 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 export default function ClassesScreen() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const [scope, setScope] = useState<"upcoming" | "past">("past");
   const [items, setItems] = useState<ClassSession[]>([]);
+  const [attended, setAttended] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.listClasses(100);
+      const data = await api.listClasses(scope, 200);
       setItems(data);
+      if (token) {
+        const att = await api.myAttendance(token);
+        setAttended(new Set(att.class_ids));
+      }
     } catch {}
     setLoading(false);
-  }, []);
+  }, [scope, token]);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,6 +53,29 @@ export default function ClassesScreen() {
 
   const canAdd = !!user && (user.is_admin || user.is_instructor);
 
+  const toggleAttend = async (classId: string) => {
+    if (!token) return;
+    setBusy(classId);
+    try {
+      const isAttended = attended.has(classId);
+      if (isAttended) {
+        await api.unattend(classId, token);
+        const next = new Set(attended);
+        next.delete(classId);
+        setAttended(next);
+      } else {
+        await api.attend(classId, token);
+        const next = new Set(attended);
+        next.add(classId);
+        setAttended(next);
+      }
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Could not update");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
       <View style={styles.headerBar}>
@@ -53,8 +83,8 @@ export default function ClassesScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Class Recap</Text>
-          <Text style={styles.subtitle}>Dances taught by our instructors</Text>
+          <Text style={styles.title}>Classes</Text>
+          <Text style={styles.subtitle}>Upcoming schedule & past recaps</Text>
         </View>
         {canAdd ? (
           <Pressable
@@ -63,9 +93,40 @@ export default function ClassesScreen() {
             style={styles.newBtn}
           >
             <Ionicons name="add" size={18} color={colors.onBrandPrimary} />
-            <Text style={styles.newBtnText}>Log Class</Text>
+            <Text style={styles.newBtnText}>Log</Text>
           </Pressable>
         ) : null}
+      </View>
+
+      <View style={styles.tabs}>
+        <Pressable
+          testID="tab-upcoming"
+          onPress={() => setScope("upcoming")}
+          style={[styles.tabBtn, scope === "upcoming" && styles.tabBtnActive]}
+        >
+          <Ionicons
+            name="calendar"
+            size={14}
+            color={scope === "upcoming" ? colors.onBrandPrimary : colors.onSurface}
+          />
+          <Text style={[styles.tabText, scope === "upcoming" && styles.tabTextActive]}>
+            Upcoming
+          </Text>
+        </Pressable>
+        <Pressable
+          testID="tab-past"
+          onPress={() => setScope("past")}
+          style={[styles.tabBtn, scope === "past" && styles.tabBtnActive]}
+        >
+          <Ionicons
+            name="time"
+            size={14}
+            color={scope === "past" ? colors.onBrandPrimary : colors.onSurface}
+          />
+          <Text style={[styles.tabText, scope === "past" && styles.tabTextActive]}>
+            Past Recap
+          </Text>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -79,65 +140,110 @@ export default function ClassesScreen() {
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 40 }}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="calendar-outline" size={44} color={colors.muted} />
+              <Ionicons
+                name={scope === "upcoming" ? "calendar-outline" : "time-outline"}
+                size={44}
+                color={colors.muted}
+              />
               <Text style={styles.emptyText}>
-                No classes logged yet. {canAdd ? "Tap 'Log Class' to add one." : ""}
+                {scope === "upcoming"
+                  ? "No upcoming classes scheduled yet."
+                  : "No past classes logged yet."}
+                {canAdd ? " Tap 'Log' to add one." : ""}
               </Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.cardHead}>
-                <View style={styles.dateChip}>
-                  <Text style={styles.dateChipText}>
-                    {formatDate(item.date)}
-                  </Text>
-                </View>
-                {item.session_label ? (
-                  <Text style={styles.sessionLabel}>{item.session_label}</Text>
-                ) : null}
-              </View>
-              <Text style={styles.instructor}>
-                Taught by {item.instructor_name || "Instructor"}
-              </Text>
-              <View style={styles.dancesWrap}>
-                {item.dances.map((d) => (
-                  <Pressable
-                    key={d.id}
-                    testID={`class-${item.id}-dance-${d.id}`}
-                    onPress={() => router.push(`/dance/${d.id}`)}
-                    style={styles.danceRow}
+          renderItem={({ item }) => {
+            const isPast = scope === "past";
+            const isAttended = attended.has(item.id);
+            return (
+              <View style={styles.card}>
+                <View style={styles.cardHead}>
+                  <View
+                    style={[
+                      styles.dateChip,
+                      { backgroundColor: isPast ? colors.brandPrimary : colors.brandSecondary },
+                    ]}
                   >
-                    <View
-                      style={[
-                        styles.diffDot,
-                        { backgroundColor: difficultyColor(d.difficulty) },
-                      ]}
-                    />
-                    <Text style={styles.danceName}>{d.name}</Text>
-                    <Ionicons name="chevron-forward" size={14} color={colors.muted} />
-                  </Pressable>
-                ))}
-              </View>
-              {item.notes ? (
-                <Text style={styles.classNotes}>“{item.notes}”</Text>
-              ) : null}
+                    <Text style={styles.dateChipText}>{formatDate(item.date)}</Text>
+                  </View>
+                  {item.session_label ? (
+                    <Text style={styles.sessionLabel}>{item.session_label}</Text>
+                  ) : null}
+                </View>
+                <Text style={styles.instructor}>
+                  {isPast ? "Taught by" : "With"} {item.instructor_name || "Instructor"}
+                </Text>
+                <View style={styles.dancesWrap}>
+                  {item.dances.map((d) => (
+                    <Pressable
+                      key={d.id}
+                      testID={`class-${item.id}-dance-${d.id}`}
+                      onPress={() => router.push(`/dance/${d.id}`)}
+                      style={styles.danceRow}
+                    >
+                      <View
+                        style={[
+                          styles.diffDot,
+                          { backgroundColor: difficultyColor(d.difficulty) },
+                        ]}
+                      />
+                      <Text style={styles.danceName}>{d.name}</Text>
+                      <Ionicons name="chevron-forward" size={14} color={colors.muted} />
+                    </Pressable>
+                  ))}
+                </View>
+                {item.notes ? (
+                  <Text style={styles.classNotes}>“{item.notes}”</Text>
+                ) : null}
 
-              {(user?.is_admin || user?.user_id === item.instructor_id) && token ? (
-                <Pressable
-                  testID={`delete-class-${item.id}`}
-                  onPress={async () => {
-                    await api.deleteClass(item.id, token);
-                    load();
-                  }}
-                  style={styles.deleteBtn}
-                >
-                  <Ionicons name="trash-outline" size={12} color={colors.error} />
-                  <Text style={styles.deleteText}>Delete</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          )}
+                <View style={styles.cardActions}>
+                  {isPast && token ? (
+                    <Pressable
+                      testID={`attend-${item.id}`}
+                      onPress={() => toggleAttend(item.id)}
+                      disabled={busy === item.id}
+                      style={[styles.attendBtn, isAttended && styles.attendBtnActive]}
+                    >
+                      {busy === item.id ? (
+                        <ActivityIndicator size="small" color={isAttended ? "#fff" : colors.success} />
+                      ) : (
+                        <>
+                          <Ionicons
+                            name={isAttended ? "checkmark-circle" : "add-circle-outline"}
+                            size={16}
+                            color={isAttended ? "#fff" : colors.success}
+                          />
+                          <Text
+                            style={[
+                              styles.attendText,
+                              isAttended && { color: "#fff" },
+                            ]}
+                          >
+                            {isAttended ? "I was there" : "Mark I was here"}
+                          </Text>
+                        </>
+                      )}
+                    </Pressable>
+                  ) : null}
+
+                  {(user?.is_admin || user?.user_id === item.instructor_id) && token ? (
+                    <Pressable
+                      testID={`delete-class-${item.id}`}
+                      onPress={async () => {
+                        await api.deleteClass(item.id, token);
+                        load();
+                      }}
+                      style={styles.deleteBtn}
+                    >
+                      <Ionicons name="trash-outline" size={12} color={colors.error} />
+                      <Text style={styles.deleteText}>Delete</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+            );
+          }}
         />
       )}
 
@@ -202,7 +308,7 @@ function ClassFormModal({
       return;
     }
     if (selected.length === 0) {
-      Alert.alert("Pick dances", "Select at least one dance taught.");
+      Alert.alert("Pick dances", "Select at least one dance.");
       return;
     }
     setSaving(true);
@@ -218,7 +324,7 @@ function ClassFormModal({
       setQ("");
       onSaved();
     } catch (e: any) {
-      Alert.alert("Error", e?.message || "Could not save class");
+      Alert.alert("Error", e?.message || "Could not save");
     } finally {
       setSaving(false);
     }
@@ -246,6 +352,9 @@ function ClassFormModal({
             contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 40 }}
             keyboardShouldPersistTaps="handled"
           >
+            <Text style={styles.hint}>
+              Use today's date (or earlier) to post a recap. Use a future date to publish an upcoming class.
+            </Text>
             <Label text="Date (YYYY-MM-DD) *" />
             <TextInput
               testID="class-date"
@@ -273,19 +382,19 @@ function ClassFormModal({
               value={notes}
               onChangeText={setNotes}
               multiline
-              placeholder="Any highlights from the class..."
+              placeholder="Any highlights or preview info..."
               placeholderTextColor={colors.muted}
               style={[styles.input, { minHeight: 70, textAlignVertical: "top" }]}
             />
 
-            <Label text={`Dances taught (${selected.length} selected) *`} />
+            <Label text={`Dances (${selected.length} selected) *`} />
             <View style={styles.searchWrap}>
               <Ionicons name="search" size={16} color={colors.muted} />
               <TextInput
                 testID="class-dance-search"
                 value={q}
                 onChangeText={setQ}
-                placeholder="Filter dances by name/song/choreographer"
+                placeholder="Filter dances"
                 placeholderTextColor={colors.muted}
                 style={styles.searchInput}
               />
@@ -379,6 +488,26 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   newBtnText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 12 },
+  tabs: {
+    flexDirection: "row",
+    padding: 4,
+    margin: spacing.lg,
+    marginBottom: 0,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.pill,
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: radius.pill,
+  },
+  tabBtnActive: { backgroundColor: colors.brandPrimary },
+  tabText: { color: colors.onSurface, fontWeight: "700", fontSize: 13 },
+  tabTextActive: { color: colors.onBrandPrimary },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
   card: {
     padding: spacing.lg,
@@ -389,13 +518,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
-  dateChip: {
-    backgroundColor: colors.brandPrimary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  dateChipText: { color: colors.onBrandPrimary, fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
+  dateChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
+  dateChipText: { color: "#fff", fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
   sessionLabel: {
     fontFamily: "serif",
     fontSize: 17,
@@ -415,13 +539,21 @@ const styles = StyleSheet.create({
   diffDot: { width: 8, height: 8, borderRadius: 4 },
   danceName: { flex: 1, color: colors.onSurface, fontSize: 14, fontWeight: "600" },
   classNotes: { color: colors.onSurfaceSecondary, fontStyle: "italic", fontSize: 13, marginTop: 6 },
-  deleteBtn: {
+  cardActions: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: 8, flexWrap: "wrap" },
+  attendBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    marginTop: 8,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: colors.success,
+    backgroundColor: colors.surface,
   },
+  attendBtnActive: { backgroundColor: colors.success, borderColor: colors.success },
+  attendText: { color: colors.success, fontSize: 12, fontWeight: "700" },
+  deleteBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   deleteText: { color: colors.error, fontSize: 12, fontWeight: "600" },
   empty: { alignItems: "center", padding: spacing.xxl, gap: spacing.md },
   emptyText: { color: colors.muted, textAlign: "center" },
@@ -438,6 +570,15 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: colors.onSurface,
+  },
+  hint: {
+    color: colors.onSurfaceSecondary,
+    fontSize: 12,
+    backgroundColor: colors.surfaceSecondary,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   label: {
     fontSize: 11,

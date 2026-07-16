@@ -75,6 +75,7 @@ class DanceIn(BaseModel):
     count: Optional[str] = None  # e.g. "32 count, 4 wall"
     youtube_url: Optional[str] = ""
     step_sheet: Optional[str] = ""
+    step_sheet_image: Optional[str] = ""  # base64 data URL
     description: Optional[str] = ""
     tags: Optional[List[str]] = []
 
@@ -237,6 +238,7 @@ def dance_to_out(d: dict) -> dict:
         "count": d.get("count", ""),
         "youtube_url": d.get("youtube_url", ""),
         "step_sheet": d.get("step_sheet", ""),
+        "step_sheet_image": d.get("step_sheet_image", ""),
         "description": d.get("description", ""),
         "tags": d.get("tags", []),
         "created_at": d.get("created_at", ""),
@@ -473,8 +475,19 @@ async def delete_suggestion(sug_id: str, user: dict = Depends(get_current_user))
 
 # ---------------- Classes / Instructor Log ----------------
 @api_router.get("/classes")
-async def list_classes(limit: int = 50):
-    docs = await db.classes.find({}, {"_id": 0}).sort("date", -1).to_list(max(1, min(limit, 200)))
+async def list_classes(scope: str = "all", limit: int = 100):
+    query: dict = {}
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if scope == "upcoming":
+        query["date"] = {"$gte": today}
+    elif scope == "past":
+        query["date"] = {"$lt": today}
+    sort_dir = 1 if scope == "upcoming" else -1
+    docs = (
+        await db.classes.find(query, {"_id": 0})
+        .sort("date", sort_dir)
+        .to_list(max(1, min(limit, 500)))
+    )
     return docs
 
 
@@ -557,7 +570,52 @@ async def delete_class(class_id: str, user: dict = Depends(get_current_user)):
     if doc["instructor_id"] != user["user_id"] and not user.get("is_admin"):
         raise HTTPException(403, "Not allowed")
     await db.classes.delete_one({"id": class_id})
+    await db.attendance.delete_many({"class_id": class_id})
     return {"ok": True}
+
+
+# ---------------- Attendance ----------------
+@api_router.post("/classes/{class_id}/attend")
+async def mark_attended(class_id: str, user: dict = Depends(get_current_user)):
+    klass = await db.classes.find_one({"id": class_id}, {"_id": 0})
+    if not klass:
+        raise HTTPException(404, "Class not found")
+    await db.attendance.update_one(
+        {"user_id": user["user_id"], "class_id": class_id},
+        {
+            "$set": {
+                "user_id": user["user_id"],
+                "user_name": user.get("name", ""),
+                "class_id": class_id,
+                "class_date": klass.get("date", ""),
+                "class_label": klass.get("session_label", ""),
+                "marked_at": now_iso(),
+            }
+        },
+        upsert=True,
+    )
+    return {"ok": True, "attended": True}
+
+
+@api_router.delete("/classes/{class_id}/attend")
+async def unmark_attended(class_id: str, user: dict = Depends(get_current_user)):
+    await db.attendance.delete_one({"user_id": user["user_id"], "class_id": class_id})
+    return {"ok": True, "attended": False}
+
+
+@api_router.get("/attendance/me")
+async def my_attendance(user: dict = Depends(get_current_user)):
+    """Return list of class objects the user attended, plus a simple set of class IDs."""
+    rows = await db.attendance.find(
+        {"user_id": user["user_id"]}, {"_id": 0}
+    ).sort("class_date", -1).to_list(500)
+    ids = [r["class_id"] for r in rows]
+    classes = await db.classes.find(
+        {"id": {"$in": ids}}, {"_id": 0}
+    ).to_list(500)
+    by_id = {c["id"]: c for c in classes}
+    combined = [by_id[i] for i in ids if i in by_id]
+    return {"class_ids": ids, "classes": combined}
 
 
 # ---------------- Venue Info ----------------
@@ -602,6 +660,7 @@ async def startup():
         await db.dances.create_index("name")
         await db.tracking.create_index([("user_id", 1), ("dance_id", 1)], unique=True)
         await db.classes.create_index("date")
+        await db.attendance.create_index([("user_id", 1), ("class_id", 1)], unique=True)
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 

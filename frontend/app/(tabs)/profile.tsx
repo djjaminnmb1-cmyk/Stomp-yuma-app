@@ -23,6 +23,7 @@ export default function Profile() {
   const router = useRouter();
   const { user, token, signOut } = useAuth();
   const [tracking, setTracking] = useState<Tracking[]>([]);
+  const [attendanceCount, setAttendanceCount] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -30,6 +31,8 @@ export default function Profile() {
     try {
       const t = await api.myTracking(token);
       setTracking(t);
+      const a = await api.myAttendance(token);
+      setAttendanceCount(a.class_ids.length);
     } catch {}
   }, [token]);
 
@@ -91,6 +94,11 @@ export default function Profile() {
           <View style={styles.stat}>
             <Text style={styles.statNum} testID="stat-wishlist">{wishlist}</Text>
             <Text style={styles.statLabel}>Wishlist</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <Text style={styles.statNum} testID="stat-attended">{attendanceCount}</Text>
+            <Text style={styles.statLabel}>Classes</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>

@@ -37,6 +37,7 @@ export type Dance = {
   count?: string;
   youtube_url?: string;
   step_sheet?: string;
+  step_sheet_image?: string;
   description?: string;
   tags?: string[];
   created_at: string;
@@ -167,7 +168,8 @@ export const api = {
   deleteSuggestion: (id: string, token: string) =>
     req<{ ok: boolean }>(`/suggestions/${id}`, { method: "DELETE" }, token),
 
-  listClasses: (limit = 50) => req<ClassSession[]>(`/classes?limit=${limit}`),
+  listClasses: (scope: "all" | "upcoming" | "past" = "all", limit = 100) =>
+    req<ClassSession[]>(`/classes?scope=${scope}&limit=${limit}`),
   getClass: (id: string) => req<ClassSession>(`/classes/${id}`),
   createClass: (
     body: {
@@ -192,4 +194,23 @@ export const api = {
     req<ClassSession>(`/classes/${id}`, { method: "PUT", body: JSON.stringify(body) }, token),
   deleteClass: (id: string, token: string) =>
     req<{ ok: boolean }>(`/classes/${id}`, { method: "DELETE" }, token),
+
+  attend: (classId: string, token: string) =>
+    req<{ ok: boolean; attended: boolean }>(
+      `/classes/${classId}/attend`,
+      { method: "POST" },
+      token
+    ),
+  unattend: (classId: string, token: string) =>
+    req<{ ok: boolean; attended: boolean }>(
+      `/classes/${classId}/attend`,
+      { method: "DELETE" },
+      token
+    ),
+  myAttendance: (token: string) =>
+    req<{ class_ids: string[]; classes: ClassSession[] }>(
+      "/attendance/me",
+      {},
+      token
+    ),
 };
