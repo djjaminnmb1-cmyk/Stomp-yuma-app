@@ -2,9 +2,11 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
+import { useDraftCount } from "@/src/context/draft-count-context";
 
 export default function TabsLayout() {
   const { user } = useAuth();
+  const { draftCount } = useDraftCount();
   const isInstructor = !!(user && (user.is_admin || user.is_instructor));
 
   return (
@@ -56,6 +58,16 @@ export default function TabsLayout() {
         options={{
           title: "Instructor",
           href: isInstructor ? "/instructor" : null,
+          tabBarBadge: isInstructor && draftCount > 0 ? draftCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.warning,
+            color: "#fff",
+            fontSize: 10,
+            fontWeight: "700",
+            minWidth: 18,
+            height: 18,
+            lineHeight: 18,
+          },
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="school" size={size} color={color} />
           ),

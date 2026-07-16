@@ -22,12 +22,14 @@ import * as ImagePicker from "expo-image-picker";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { api, ClassSession, Dance, ChatMessage } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
+import { useDraftCount } from "@/src/context/draft-count-context";
 
 const DIFFICULTIES = ["Beginner", "Improver", "Intermediate", "Advanced"];
 
 export default function InstructorTab() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { refresh: refreshDrafts } = useDraftCount();
   const [tab, setTab] = useState<"dances" | "classes" | "chat">("dances");
   const [myClasses, setMyClasses] = useState<ClassSession[]>([]);
   const [myDances, setMyDances] = useState<Dance[]>([]);
@@ -77,6 +79,7 @@ export default function InstructorTab() {
         ? await api.unpublishDance(d.id, token)
         : await api.publishDance(d.id, token);
       setMyDances((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+      refreshDrafts();
     } catch (e: any) {
       Alert.alert("Error", e?.message || "Could not update publish state");
     } finally {
@@ -353,6 +356,7 @@ export default function InstructorTab() {
         onSaved={() => {
           setNewDanceOpen(false);
           load();
+          refreshDrafts();
         }}
         token={token || ""}
       />
