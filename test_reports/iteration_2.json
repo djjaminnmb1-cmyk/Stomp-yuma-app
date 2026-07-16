@@ -1,0 +1,41 @@
+{
+  "summary": "Regression pass after Android package rename com.emergent.stompinyumaapp.uyr5zg -> com.stompinyuma.app in /app/frontend/app.json. app.json parses cleanly, supervisor shows expo + backend RUNNING. Backend: 22/22 pytest tests pass (venue, dances list/search/filter/get, auth register+login+me, admin & Erin login, admin dance gating, tracking full CRUD, classes list scope=all/upcoming/past, create upcoming class with attendance mark/unmark and /attendance/me verification, create past class recap and I-was-there toggle, non-instructor cannot create class, suggestions submit+mine+admin-list+delete, non-admin cannot list all suggestions, /register-push correctly returns 500 with placeholder EMERGENT_PUSH_KEY). Frontend (Playwright, mobile 390x844): Auth screen loads with SGY logo; Erin login succeeds and lands on Home ('Howdy, Erin!'); Dance Library shows 101 dances with search + All/Beginner/Improver/Intermediate/Advanced chips; Dance Detail shows Step Sheet with sticky Wishlist / Mark Completed buttons; /classes route shows Upcoming / Past Recap tabs, existing 'Friday Night' recap with 'Mark I was here' + Delete, and 'Log' button visible to instructor; /suggest shows New / Mine (0) / All (1) tabs for admin with full form fields; Profile shows Completed/Wishlist/Classes/Avg stat tiles (Classes count present) plus Add New Dance / Log a Class / Review Suggestions / Sign Out admin actions.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "classes", "issues": ["Instructor action button label is just 'Log' (top-right). 'Log a Class' is used in Profile. Consider consistent label 'Log Class' or 'Log a Class' in both places."]},
+      {"screen": "profile", "issues": ["Stat tile label is 'Classes' (not 'Classes attended'). Number is correct; label is fine but abbreviated — a tooltip or 'Classes attended' label could improve clarity."]}
+    ],
+    "react_native_issues": [
+      {"component": "expo-notifications (web)", "issue": "Console warning: '[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.' — non-blocking on web preview; expected. Reference: /app/frontend/app/_layout.tsx (push listener wiring)."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_stompin_backend.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: also shorten iOS bundleIdentifier in /app/frontend/app.json (currently still 'com.emergent.stompinyumaapp.uyr5zg') for symmetry with Android — not blocking Firebase but keeps identifiers consistent.",
+    "Optional: add testID attributes to auth inputs/buttons, library search & difficulty chips, dance cards, class list rows, and profile action rows to make future Playwright tests robust.",
+    "Optional: unify 'Log' vs 'Log a Class' button labels between Classes screen header and Profile action row."
+  ],
+  "critical_code_review_comments": [
+    "/app/frontend/app.json: android.package='com.stompinyuma.app' — valid reverse-DNS, satisfies Firebase 4-255 char and dot-separated segment rules; JSON parses cleanly. iOS bundleIdentifier unchanged (still long emergent form) — flagged as optional cleanup.",
+    "server.py /api/register-push correctly maps upstream 401 to HTTP 500 and upstream >=500 to 502, matching the expected placeholder-key behaviour.",
+    "server.py class create sends push in a try/except so failure is non-blocking — good design; our test creating an upcoming class succeeded even though push provider is unreachable."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_stompin_backend.py"
+  ],
+  "success_rate": {"backend": "100% (22/22)", "frontend": "100% of tested flows (auth, home, library w/ search+filter, dance detail w/ step sheet + Wishlist/Mark Completed, classes w/ Upcoming/Past Recap + attendance + Log, suggest w/ New/Mine/All tabs, profile w/ Classes stat + admin actions)"},
+  "seed_data_creation": "Registered a few TEST_u_*/TEST_r_* users via /api/auth/register during tests. Created and cleaned up one TEST_Class_* (upcoming) and one TEST_PastClass_* (past) via Erin's token; associated attendance rows created and then cleaned via unmark + class delete cascade. Created and cleaned up one TEST_Suggest_* suggestion.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Package rename verified — no runtime regressions. Auth flow: fill email+password, then click the SECOND 'Sign In' text occurrence (first is the tab, second is submit). /classes and /suggest are routes reached from Home banner/Profile actions, not bottom tabs. Bottom tabs are Home, Dances, My Dances, Profile. EMERGENT_PUSH_KEY is still 'placeholder' so /api/register-push intentionally 500s.",
+  "rca_of_issue": "N/A - no regressions found from the Android package rename."
+}

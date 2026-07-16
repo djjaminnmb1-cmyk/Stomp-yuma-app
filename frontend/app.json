@@ -18,7 +18,7 @@
         "backgroundColor": "#F2A628"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.emergent.stompinyumaapp.uyr5zg",
+      "package": "com.stompinyuma.app",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
