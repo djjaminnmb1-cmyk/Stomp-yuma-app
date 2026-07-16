@@ -11,7 +11,8 @@ import httpx
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -698,6 +699,61 @@ async def register_push(body: RegisterPushBody):
     return {"status": "registered"}
 
 
+# ---------------- Scheduled reminders ----------------
+scheduler = AsyncIOScheduler(timezone="UTC")
+
+
+async def send_24h_class_reminders():
+    """Runs hourly. Pushes a heads-up to attendees whose 'I was there' record
+    is on a class dated tomorrow. Uses per-class idempotency to avoid duplicates.
+    """
+    try:
+        tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+        upcoming = await db.classes.find(
+            {"date": tomorrow}, {"_id": 0}
+        ).to_list(500)
+        for klass in upcoming:
+            # Attendees who "signed up" (marked they'll be there)
+            atts = await db.attendance.find(
+                {"class_id": klass["id"]}, {"_id": 0, "user_id": 1}
+            ).to_list(2000)
+            recipients = [a["user_id"] for a in atts]
+            if not recipients:
+                continue
+
+            # Have we already sent this reminder?
+            key = f"reminder-24h-{klass['id']}"
+            already = await db.sent_reminders.find_one({"key": key})
+            if already:
+                continue
+
+            label = klass.get("session_label") or "Line dance class"
+            dance_names = ", ".join([d["name"] for d in klass.get("dances", [])[:3]])
+            more = f" +{len(klass.get('dances', [])) - 3} more" if len(klass.get("dances", [])) > 3 else ""
+            try:
+                await send_push(
+                    recipients=recipients,
+                    data={
+                        "title": f"Tomorrow: {label}",
+                        "message": (f"See you at {klass.get('date')}! "
+                                    f"Dances: {dance_names}{more}"),
+                        "action_url": "/classes",
+                    },
+                    idempotency_key=key,
+                )
+                await db.sent_reminders.insert_one({
+                    "key": key,
+                    "class_id": klass["id"],
+                    "sent_at": now_iso(),
+                    "recipient_count": len(recipients),
+                })
+                logger.info(f"Sent 24h reminder for class {klass['id']} to {len(recipients)} attendees")
+            except Exception as e:
+                logger.warning(f"Reminder push failed for {klass['id']}: {e}")
+    except Exception as e:
+        logger.exception(f"send_24h_class_reminders crashed: {e}")
+
+
 # ---------------- Venue Info ----------------
 @api_router.get("/venue")
 async def venue_info():
@@ -741,6 +797,7 @@ async def startup():
         await db.tracking.create_index([("user_id", 1), ("dance_id", 1)], unique=True)
         await db.classes.create_index("date")
         await db.attendance.create_index([("user_id", 1), ("class_id", 1)], unique=True)
+        await db.sent_reminders.create_index("key", unique=True)
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 
@@ -820,6 +877,30 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def start_scheduler():
+    # Hourly reminder job. Also run once on boot to catch any missed hour.
+    try:
+        scheduler.add_job(
+            send_24h_class_reminders,
+            "interval",
+            hours=1,
+            id="class_24h_reminders",
+            replace_existing=True,
+            next_run_time=datetime.now(timezone.utc) + timedelta(seconds=30),
+        )
+        if not scheduler.running:
+            scheduler.start()
+        logger.info("Reminder scheduler started (hourly)")
+    except Exception as e:
+        logger.warning(f"Could not start scheduler: {e}")
+
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    try:
+        if scheduler.running:
+            scheduler.shutdown(wait=False)
+    except Exception:
+        pass
     client.close()

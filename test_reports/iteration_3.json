@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 3 verification of (1) APScheduler 24h reminder job with idempotency and (2) new Instructor Dashboard at /instructor. Backend: 22/22 regression tests + 1 new scheduler idempotency end-to-end test all PASS (23/23). Scheduler direct-invocation confirms: tomorrow-dated class with attendance yields exactly 1 sent_reminders row on run #1 and STILL 1 on run #2 (idempotent). Class without attendance yields 0 rows (correctly skipped). send_push swallows upstream 401 gracefully so the sent_reminders insert still happens post-send — matching main-agent-described behaviour. /api/register-push still returns 500 with placeholder key (expected). Frontend (Playwright, 390x844): Erin (admin+instructor) login → Profile shows new 'Instructor Dashboard' row (testID profile-instructor-btn) above 'Quick Add Dance' → tapping opens /instructor which renders header 'Instructor Dashboard', two tabs 'Dances I've Taught (4)' / 'My Classes (4)', 'New' button, back arrow. Dance cards show name, choreographer/song, difficulty badge, and 'Sheet ready' / 'Needs sheet' status pill + Upload button (4 uploads, 4 'Sheet ready', 0 'Needs sheet' with current seeded data). Tapping Upload opens StepSheetModal with prefilled text notation, image upload dropzone, and Save. Tapping 'New' opens NewDanceModal — filled name/chor/song/step, tapped nd-save, modal closed, dance appears via GET /api/dances?q=... (verified count=1) and cleanup delete returned 200. My Classes tab lists 4 class cards in reverse-chronological order (2026-09-01, 2026-08-15, 2026-07-17, 2026-02-14). Regular fresh-registered user hitting /instructor sees the 'Instructors only.' blocked screen — confirmed. No regressions on prior flows.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "instructor", "issues": ["'My Classes' cards are sorted descending (most recent first). Header copy says 'Your classes & dances taught' which is fine, but consider labelling the sort or offering an ascending toggle since the review request mentions 'chronological history' (ambiguous)."]}
+    ],
+    "react_native_issues": [
+      {"component": "expo-notifications (web)", "issue": "Non-blocking console warning '[expo-notifications] Listening to push token changes is not yet fully supported on web'. Expected on web preview. Reference: /app/frontend/app/_layout.tsx (push listener wiring)."},
+      {"component": "props.pointerEvents deprecation", "issue": "Console warning: 'props.pointerEvents is deprecated. Use style.pointerEvents'. Emitted on auth screen. Non-blocking but should be migrated in a future pass. Likely from a third-party or Pressable/View somewhere in auth/tabs layout."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_stompin_backend.py",
+    "/app/backend/tests/test_scheduler_idempotency.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: replace props.pointerEvents with style.pointerEvents in whichever component triggers the deprecation warning (fires on the auth screen).",
+    "Optional: prior test iterations left several TEST_* classes in the DB (Line Dance Bootcamp / Beginner Class / 24h Test / Friday Night entries visible to Erin). Consider a maintenance cleanup script — not blocking.",
+    "Optional: consider a lightweight admin trigger endpoint (e.g. POST /api/admin/run-reminders) for manually kicking send_24h_class_reminders in production for QA — currently only reachable via the hourly schedule or in-process import."
+  ],
+  "critical_code_review_comments": [
+    "server.py send_push: swallows 401/>=500 non-fatally by returning early (no raise). This means send_24h_class_reminders proceeds to db.sent_reminders.insert_one even when upstream push actually failed — exactly the pre-deploy behaviour requested. Once EMERGENT_PUSH_KEY is real, the same code path still works because resp.raise_for_status() only fires on non-401/<500 errors.",
+    "server.py send_24h_class_reminders: correctly uses idempotency key f'reminder-24h-{class_id}' plus unique index on sent_reminders.key. Even if idempotency check somehow fails, the unique index would prevent duplicates.",
+    "instructor.tsx (line 65): access gate `if (!user || (!user.is_admin && !user.is_instructor))` renders the blocked screen. Confirmed visually for a fresh regular user.",
+    "instructor.tsx (line 42): filter uses `c.instructor_id === user.user_id` — correctly scopes to the logged-in instructor's own classes only. Good.",
+    "instructor.tsx: My Classes list is sorted by whatever order the backend returns, which for scope='all' is by date desc. Depending on desired 'chronological history' meaning this may be intentional; flagged as a design nit only."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_scheduler_idempotency.py"
+  ],
+  "success_rate": {"backend": "100% (23/23 including new scheduler idempotency test)", "frontend": "100% of tested flows (profile→dashboard entry, /instructor for admin+instructor, Dances tab with sheet status pills + Upload, My Classes tab, New Dance modal create+persist, StepSheetModal open+prefill, /instructor blocked screen for regular user)"},
+  "seed_data_creation": "Created and cleaned up 1 TEST_Dance_* via NewDanceModal (cleanup delete 200). Scheduler test created two tomorrow-dated TEST_Rem_A_* / TEST_Rem_B_* classes + one attendance row, invoked send_24h_class_reminders twice, then deleted classes, unmarked attendance, and cleared sent_reminders entries. Registered a fresh TEST_reg_*@example.com and TEST_sched_*@example.com regular users during tests (not deleted — no DELETE user endpoint).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "For scheduler idempotency verification, direct-invoke pattern works: import server module, monkey-patch server.db to a loop-local AsyncIOMotorClient (motor is loop-bound), run send_24h_class_reminders inside asyncio.run, verify db.sent_reminders counts. Auth: on the /auth screen there are TWO 'Sign In' text nodes (tab + submit); click the LAST occurrence to submit. Bottom tabs are Home, Dances, My Dances, Profile — /instructor and /classes and /suggest are reached from Profile rows, not tabs. testIDs added on instructor screen: instructor-back, new-dance-btn, instr-tab-dances, instr-tab-classes, instr-open-<id>, instr-edit-<id>, instr-class-<id>, nd-name/chor/song/step/save, sheet-text, pick-sheet-image, save-sheet. On Profile: profile-instructor-btn, admin-add-dance-btn, profile-classes-row, profile-suggest-row, logout-btn.",
+  "rca_of_issue": "N/A — both new features (APScheduler 24h reminder w/ idempotency + Instructor Dashboard w/ StepSheetModal + NewDanceModal + blocked-screen gate) work end-to-end as specified. Non-blocking issues only: two React-Native web deprecation warnings and a design nit about chronological sort direction."
+}

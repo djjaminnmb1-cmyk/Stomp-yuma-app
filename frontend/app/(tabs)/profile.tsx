@@ -110,6 +110,20 @@ export default function Profile() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
 
+          {(user?.is_admin || user?.is_instructor) ? (
+            <Pressable
+              testID="profile-instructor-btn"
+              style={styles.row}
+              onPress={() => router.push("/instructor")}
+            >
+              <View style={styles.rowLeft}>
+                <Ionicons name="school" size={22} color={colors.brandPrimary} />
+                <Text style={styles.rowText}>Instructor Dashboard</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </Pressable>
+          ) : null}
+
           {user?.is_admin ? (
             <Pressable
               testID="admin-add-dance-btn"
@@ -118,7 +132,7 @@ export default function Profile() {
             >
               <View style={styles.rowLeft}>
                 <Ionicons name="add-circle" size={22} color={colors.brandPrimary} />
-                <Text style={styles.rowText}>Add New Dance</Text>
+                <Text style={styles.rowText}>Quick Add Dance</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
