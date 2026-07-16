@@ -112,6 +112,7 @@ class DanceIn(BaseModel):
     step_sheet_image: Optional[str] = ""  # base64 data URL
     description: Optional[str] = ""
     tags: Optional[List[str]] = []
+    is_published: Optional[bool] = None  # None = keep existing / creation default
 
 
 class DanceOut(DanceIn):
@@ -144,6 +145,10 @@ class RegisterPushBody(BaseModel):
     user_id: str
     platform: str  # "android" | "ios"
     device_token: str
+
+
+class ChatMessageIn(BaseModel):
+    message: str
 
 
 class SuggestionIn(BaseModel):
@@ -281,6 +286,9 @@ def dance_to_out(d: dict) -> dict:
         "step_sheet_image": d.get("step_sheet_image", ""),
         "description": d.get("description", ""),
         "tags": d.get("tags", []),
+        "is_published": bool(d.get("is_published", True)),
+        "created_by": d.get("created_by", ""),
+        "created_by_name": d.get("created_by_name", ""),
         "created_at": d.get("created_at", ""),
     }
 
@@ -351,7 +359,14 @@ async def logout(authorization: Optional[str] = Header(None)):
 
 # ---------------- Dance Routes ----------------
 @api_router.get("/dances")
-async def list_dances(q: Optional[str] = None, difficulty: Optional[str] = None):
+async def list_dances(
+    q: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    scope: str = "public",  # public | mine | all
+    authorization: Optional[str] = Header(None),
+):
+    """Public feed shows only published dances. `scope=mine` returns caller's dances
+    (drafts + published). `scope=all` requires admin and returns everything."""
     query: dict = {}
     if difficulty and difficulty.lower() != "all":
         query["difficulty"] = difficulty
@@ -362,7 +377,17 @@ async def list_dances(q: Optional[str] = None, difficulty: Optional[str] = None)
             {"song": {"$regex": q, "$options": "i"}},
             {"artist": {"$regex": q, "$options": "i"}},
         ]
-    docs = await db.dances.find(query, {"_id": 0}).sort("name", 1).to_list(1000)
+
+    if scope in ("mine", "all"):
+        user = await get_current_user(authorization)
+        if scope == "mine":
+            query["created_by"] = user["user_id"]
+        elif scope == "all" and not user.get("is_admin"):
+            raise HTTPException(403, "Admin only")
+    else:
+        query["is_published"] = True
+
+    docs = await db.dances.find(query, {"_id": 0}).sort("name", 1).to_list(2000)
     return [dance_to_out(d) for d in docs]
 
 
@@ -375,27 +400,101 @@ async def get_dance(dance_id: str):
 
 
 @api_router.post("/dances")
-async def create_dance(inp: DanceIn, admin: dict = Depends(require_admin)):
+async def create_dance(inp: DanceIn, user: dict = Depends(require_instructor)):
     doc = inp.dict()
     doc["id"] = f"dance_{uuid.uuid4().hex[:10]}"
     doc["created_at"] = now_iso()
+    doc["created_by"] = user["user_id"]
+    doc["created_by_name"] = user.get("name", "")
+    # New dances start as DRAFT unless publisher explicitly sets is_published True
+    if doc.get("is_published") is None:
+        doc["is_published"] = False
     await db.dances.insert_one(doc)
     doc.pop("_id", None)
     return dance_to_out(doc)
 
 
 @api_router.put("/dances/{dance_id}")
-async def update_dance(dance_id: str, inp: DanceIn, admin: dict = Depends(require_admin)):
-    await db.dances.update_one({"id": dance_id}, {"$set": inp.dict()})
+async def update_dance(dance_id: str, inp: DanceIn, user: dict = Depends(require_instructor)):
+    existing = await db.dances.find_one({"id": dance_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(404, "Not found")
+    # Only owner or admin can update
+    owner_id = existing.get("created_by")
+    if owner_id and owner_id != user["user_id"] and not user.get("is_admin"):
+        raise HTTPException(403, "Not allowed")
+    updates = inp.dict()
+    if updates.get("is_published") is None:
+        updates["is_published"] = existing.get("is_published", True)
+    await db.dances.update_one({"id": dance_id}, {"$set": updates})
+    d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
+    return dance_to_out(d)
+
+
+@api_router.put("/dances/{dance_id}/publish")
+async def publish_dance(dance_id: str, user: dict = Depends(require_instructor)):
     d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
     if not d:
         raise HTTPException(404, "Not found")
+    owner_id = d.get("created_by")
+    if owner_id and owner_id != user["user_id"] and not user.get("is_admin"):
+        raise HTTPException(403, "Not allowed")
+    await db.dances.update_one({"id": dance_id}, {"$set": {"is_published": True}})
+    d["is_published"] = True
+    return dance_to_out(d)
+
+
+@api_router.put("/dances/{dance_id}/unpublish")
+async def unpublish_dance(dance_id: str, user: dict = Depends(require_instructor)):
+    d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
+    if not d:
+        raise HTTPException(404, "Not found")
+    owner_id = d.get("created_by")
+    if owner_id and owner_id != user["user_id"] and not user.get("is_admin"):
+        raise HTTPException(403, "Not allowed")
+    await db.dances.update_one({"id": dance_id}, {"$set": {"is_published": False}})
+    d["is_published"] = False
     return dance_to_out(d)
 
 
 @api_router.delete("/dances/{dance_id}")
 async def delete_dance(dance_id: str, admin: dict = Depends(require_admin)):
     await db.dances.delete_one({"id": dance_id})
+    return {"ok": True}
+
+
+# ---------------- Instructor Chat ----------------
+@api_router.get("/chat/messages")
+async def list_chat(instructor: dict = Depends(require_instructor), limit: int = 200):
+    docs = await db.instructor_messages.find({}, {"_id": 0}).sort("created_at", -1).to_list(max(1, min(limit, 500)))
+    return list(reversed(docs))  # oldest → newest
+
+
+@api_router.post("/chat/messages")
+async def post_chat(inp: ChatMessageIn, instructor: dict = Depends(require_instructor)):
+    text = (inp.message or "").strip()
+    if not text:
+        raise HTTPException(400, "Empty message")
+    doc = {
+        "id": f"msg_{uuid.uuid4().hex[:10]}",
+        "user_id": instructor["user_id"],
+        "user_name": instructor.get("name", ""),
+        "message": text[:2000],
+        "created_at": now_iso(),
+    }
+    await db.instructor_messages.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.delete("/chat/messages/{msg_id}")
+async def delete_chat(msg_id: str, instructor: dict = Depends(require_instructor)):
+    doc = await db.instructor_messages.find_one({"id": msg_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Not found")
+    if doc["user_id"] != instructor["user_id"] and not instructor.get("is_admin"):
+        raise HTTPException(403, "Not allowed")
+    await db.instructor_messages.delete_one({"id": msg_id})
     return {"ok": True}
 
 
@@ -798,23 +897,27 @@ async def startup():
         await db.classes.create_index("date")
         await db.attendance.create_index([("user_id", 1), ("class_id", 1)], unique=True)
         await db.sent_reminders.create_index("key", unique=True)
+        await db.instructor_messages.create_index("created_at")
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 
     # Backfill step_sheet & choreographer_country on existing docs (idempotent)
     seed_by_name = {d[0]: d for d in SEED_DANCES}
     async for existing in db.dances.find({}, {"_id": 0}):
+        updates = {}
         if not existing.get("step_sheet") or not existing.get("choreographer_country"):
             seed = seed_by_name.get(existing["name"])
             if seed:
                 _, _, country, _, _, _, _, _, _, step_sheet = seed
-                await db.dances.update_one(
-                    {"id": existing["id"]},
-                    {"$set": {
-                        "step_sheet": existing.get("step_sheet") or step_sheet,
-                        "choreographer_country": existing.get("choreographer_country") or country,
-                    }},
-                )
+                if not existing.get("step_sheet"):
+                    updates["step_sheet"] = step_sheet
+                if not existing.get("choreographer_country"):
+                    updates["choreographer_country"] = country
+        # Any existing dance without is_published is a seed dance → publish it
+        if "is_published" not in existing:
+            updates["is_published"] = True
+        if updates:
+            await db.dances.update_one({"id": existing["id"]}, {"$set": updates})
 
     # Seed dances if empty; otherwise add any new dances not yet present.
     existing_names = {d["name"] async for d in db.dances.find({}, {"name": 1})}
@@ -834,8 +937,12 @@ async def startup():
             "count": cnt,
             "youtube_url": f"https://www.youtube.com/results?search_query={yt.replace(' ', '+')}",
             "step_sheet": step,
+            "step_sheet_image": "",
             "description": "",
             "tags": [],
+            "is_published": True,
+            "created_by": "",
+            "created_by_name": "Stompin' Ground Yuma",
             "created_at": now_iso(),
         })
     if to_insert:

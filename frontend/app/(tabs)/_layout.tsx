@@ -1,8 +1,12 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/src/theme";
+import { useAuth } from "@/src/context/auth-context";
 
 export default function TabsLayout() {
+  const { user } = useAuth();
+  const isInstructor = !!(user && (user.is_admin || user.is_instructor));
+
   return (
     <Tabs
       screenOptions={{
@@ -44,6 +48,16 @@ export default function TabsLayout() {
           title: "My Dances",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bookmark" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="instructor"
+        options={{
+          title: "Instructor",
+          href: isInstructor ? "/instructor" : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="school" size={size} color={color} />
           ),
         }}
       />

@@ -40,6 +40,17 @@ export type Dance = {
   step_sheet_image?: string;
   description?: string;
   tags?: string[];
+  is_published?: boolean;
+  created_by?: string;
+  created_by_name?: string;
+  created_at: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  user_id: string;
+  user_name: string;
+  message: string;
   created_at: string;
 };
 
@@ -116,18 +127,23 @@ export const api = {
   logout: (token: string) =>
     req<{ ok: boolean }>("/auth/logout", { method: "POST" }, token),
 
-  listDances: (q?: string, difficulty?: string) => {
+  listDances: (q?: string, difficulty?: string, scope?: "public" | "mine" | "all", token?: string) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (difficulty && difficulty !== "All") params.set("difficulty", difficulty);
+    if (scope) params.set("scope", scope);
     const qs = params.toString();
-    return req<Dance[]>(`/dances${qs ? `?${qs}` : ""}`);
+    return req<Dance[]>(`/dances${qs ? `?${qs}` : ""}`, {}, token);
   },
   getDance: (id: string) => req<Dance>(`/dances/${id}`),
   createDance: (body: Partial<Dance>, token: string) =>
     req<Dance>("/dances", { method: "POST", body: JSON.stringify(body) }, token),
   updateDance: (id: string, body: Partial<Dance>, token: string) =>
     req<Dance>(`/dances/${id}`, { method: "PUT", body: JSON.stringify(body) }, token),
+  publishDance: (id: string, token: string) =>
+    req<Dance>(`/dances/${id}/publish`, { method: "PUT" }, token),
+  unpublishDance: (id: string, token: string) =>
+    req<Dance>(`/dances/${id}/unpublish`, { method: "PUT" }, token),
 
   myTracking: (token: string) => req<Tracking[]>("/tracking/me", {}, token),
   saveTracking: (
@@ -213,4 +229,10 @@ export const api = {
       {},
       token
     ),
+
+  listChat: (token: string) => req<ChatMessage[]>("/chat/messages", {}, token),
+  postChat: (message: string, token: string) =>
+    req<ChatMessage>("/chat/messages", { method: "POST", body: JSON.stringify({ message }) }, token),
+  deleteChat: (id: string, token: string) =>
+    req<{ ok: boolean }>(`/chat/messages/${id}`, { method: "DELETE" }, token),
 };

@@ -114,25 +114,11 @@ export default function Profile() {
             <Pressable
               testID="profile-instructor-btn"
               style={styles.row}
-              onPress={() => router.push("/instructor")}
+              onPress={() => router.push("/(tabs)/instructor")}
             >
               <View style={styles.rowLeft}>
                 <Ionicons name="school" size={22} color={colors.brandPrimary} />
-                <Text style={styles.rowText}>Instructor Dashboard</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-            </Pressable>
-          ) : null}
-
-          {user?.is_admin ? (
-            <Pressable
-              testID="admin-add-dance-btn"
-              style={styles.row}
-              onPress={() => setAdminOpen(true)}
-            >
-              <View style={styles.rowLeft}>
-                <Ionicons name="add-circle" size={22} color={colors.brandPrimary} />
-                <Text style={styles.rowText}>Quick Add Dance</Text>
+                <Text style={styles.rowText}>Instructor Tab</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
