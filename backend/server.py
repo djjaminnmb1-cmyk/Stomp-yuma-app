@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import re
 import logging
 import uuid
 import bcrypt
@@ -21,7 +22,20 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "stompin-yuma-secret-change-me")
+# JWT secret is REQUIRED and must not be a well-known default.
+_INSECURE_JWT_DEFAULTS = {
+    "",
+    "stompin-yuma-secret-change-me",
+    "change-me",
+    "secret",
+}
+JWT_SECRET = os.environ.get("JWT_SECRET", "").strip()
+if not JWT_SECRET or JWT_SECRET in _INSECURE_JWT_DEFAULTS or len(JWT_SECRET) < 32:
+    raise RuntimeError(
+        "JWT_SECRET env var must be set to a strong random value "
+        "(>=32 chars, not a known default). Generate one with: "
+        "python -c 'import secrets; print(secrets.token_urlsafe(48))'"
+    )
 JWT_ALG = "HS256"
 ADMIN_EMAILS = {
     e.strip().lower()
@@ -403,11 +417,13 @@ async def list_dances(
     if difficulty and difficulty.lower() != "all":
         query["difficulty"] = difficulty
     if q:
+        # Escape regex meta-chars and cap length to prevent ReDoS on public search.
+        safe_q = re.escape(q.strip()[:80])
         query["$or"] = [
-            {"name": {"$regex": q, "$options": "i"}},
-            {"choreographer": {"$regex": q, "$options": "i"}},
-            {"song": {"$regex": q, "$options": "i"}},
-            {"artist": {"$regex": q, "$options": "i"}},
+            {"name": {"$regex": safe_q, "$options": "i"}},
+            {"choreographer": {"$regex": safe_q, "$options": "i"}},
+            {"song": {"$regex": safe_q, "$options": "i"}},
+            {"artist": {"$regex": safe_q, "$options": "i"}},
         ]
 
     if scope in ("mine", "all"):
@@ -883,16 +899,21 @@ async def my_attendance(user: dict = Depends(get_current_user)):
 
 # ---------------- Push registration ----------------
 @api_router.post("/register-push", status_code=201)
-async def register_push(body: RegisterPushBody):
+async def register_push(body: RegisterPushBody, user: dict = Depends(get_current_user)):
+    # Ignore any client-supplied user_id — bind to the authenticated caller.
+    payload = body.model_dump()
+    payload["user_id"] = user["user_id"]
     try:
         resp = await _push_client.post(
-            "/api/v1/push/users/register", json=body.model_dump()
+            "/api/v1/push/users/register", json=payload
         )
     except Exception as e:
         logger.warning(f"Push register upstream unreachable: {e}")
         raise HTTPException(502, "Push provider unavailable")
     if resp.status_code == 401:
-        raise HTTPException(500, "EMERGENT_PUSH_KEY missing or invalid")
+        # Do not leak upstream config state to the client.
+        logger.error("Push relay returned 401 — EMERGENT_PUSH_KEY missing or invalid")
+        raise HTTPException(502, "Push provider unavailable")
     if resp.status_code >= 500:
         raise HTTPException(502, "Push provider unavailable")
     resp.raise_for_status()
@@ -1050,51 +1071,79 @@ async def startup():
         await db.dances.insert_many(to_insert)
         logger.info(f"Seeded {len(to_insert)} new dances")
 
-    # Seed admin accounts (idempotent)
-    seed_admin_map = {
-        "admin@stompinground.com": ("Stompin' Admin", "Admin123!"),
-        "stompingroundyuma@gmail.com": ("Erin Brown", "Stompin2026!"),
-    }
-    for admin_email in ADMIN_EMAILS:
-        display, default_pw = seed_admin_map.get(admin_email, ("Admin", "Admin123!"))
-        existing_admin = await db.users.find_one({"email": admin_email})
-        if not existing_admin:
-            await upsert_user(
-                admin_email, display,
-                provider="email",
-                password_hash=hash_password(default_pw),
-            )
-            logger.info(f"Seeded admin user: {admin_email}")
-        else:
-            # Ensure admin flag; reset password to default only if none set
-            updates = {"is_admin": True, "is_instructor": True}
-            if not existing_admin.get("password_hash"):
-                updates["password_hash"] = hash_password(default_pw)
-                updates["name"] = existing_admin.get("name") or display
-            await db.users.update_one({"email": admin_email}, {"$set": updates})
+    # ------------------------------------------------------------------
+    # Account seeding (safe)
+    # ------------------------------------------------------------------
+    # No passwords are hard-coded here. For each seeded email:
+    #   - If the account already has a password_hash, DO NOT touch it.
+    #   - If it doesn't, use a password from env `SEED_PW_<email-safe>` or
+    #     generate a random one-time password and log it ONCE so the operator
+    #     can hand it to the owner. The user should reset on first login.
+    # Email keys for env lookup: replace @ and . with _  (upper-cased).
+    import secrets as _secrets
 
-    # Seed instructor-only accounts (idempotent)
-    seed_instructor_map = {
-        "luvtowork247@yahoo.com": ("Jamin Brown", "Stompin2026!"),
+    def _env_password_for(email: str) -> Optional[str]:
+        key = "SEED_PW_" + email.replace("@", "_").replace(".", "_").upper()
+        val = os.environ.get(key, "").strip()
+        return val or None
+
+    async def _seed_account(email: str, display: str, want_admin: bool, want_instructor: bool):
+        existing = await db.users.find_one({"email": email})
+        if existing:
+            updates = {}
+            if want_admin and not existing.get("is_admin"):
+                updates["is_admin"] = True
+            if want_instructor and not existing.get("is_instructor"):
+                updates["is_instructor"] = True
+            if not existing.get("password_hash"):
+                pw = _env_password_for(email) or _secrets.token_urlsafe(12)
+                updates["password_hash"] = hash_password(pw)
+                if not _env_password_for(email):
+                    logger.warning(
+                        "One-time password generated for %s: %s "
+                        "(share securely, force reset on first login)",
+                        email, pw,
+                    )
+            if not existing.get("name") and display:
+                updates["name"] = display
+            if updates:
+                await db.users.update_one({"email": email}, {"$set": updates})
+            return
+        # No existing record -> create one
+        pw = _env_password_for(email) or _secrets.token_urlsafe(12)
+        if not _env_password_for(email):
+            logger.warning(
+                "One-time password generated for %s: %s "
+                "(share securely, force reset on first login)",
+                email, pw,
+            )
+        await upsert_user(email, display, provider="email", password_hash=hash_password(pw))
+        # upsert_user already applies admin/instructor flags based on env lists;
+        # nothing more to do here.
+
+    seed_display_names = {
+        "admin@stompinground.com": "Stompin' Admin",
+        "stompingroundyuma@gmail.com": "Erin Brown",
+        "luvtowork247@yahoo.com": "Jamin Brown",
     }
+
+    for admin_email in ADMIN_EMAILS:
+        await _seed_account(
+            admin_email,
+            seed_display_names.get(admin_email, admin_email.split("@")[0]),
+            want_admin=True,
+            want_instructor=True,
+        )
+
     for inst_email in INSTRUCTOR_EMAILS:
         if inst_email in ADMIN_EMAILS:
-            continue  # already handled above
-        display, default_pw = seed_instructor_map.get(inst_email, (inst_email.split("@")[0], "Stompin2026!"))
-        existing_inst = await db.users.find_one({"email": inst_email})
-        if not existing_inst:
-            await upsert_user(
-                inst_email, display,
-                provider="email",
-                password_hash=hash_password(default_pw),
-            )
-            logger.info(f"Seeded instructor user: {inst_email}")
-        else:
-            updates = {"is_instructor": True}
-            if not existing_inst.get("password_hash"):
-                updates["password_hash"] = hash_password(default_pw)
-                updates["name"] = existing_inst.get("name") or display
-            await db.users.update_one({"email": inst_email}, {"$set": updates})
+            continue
+        await _seed_account(
+            inst_email,
+            seed_display_names.get(inst_email, inst_email.split("@")[0]),
+            want_admin=False,
+            want_instructor=True,
+        )
 
 
 app.include_router(api_router)

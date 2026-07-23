@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const me = await api.me(t);
           setUser(me);
           setToken(t);
-          registerForPush(me.user_id);
+          registerForPush(t);
         } catch {
           await saveToken(null);
           setUser(null);
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await saveToken(t);
     setToken(t);
     setUser(u);
-    registerForPush(u.user_id);
+    registerForPush(t);
   }, []);
 
   const signOut = useCallback(async () => {

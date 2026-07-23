@@ -7,11 +7,12 @@ import { API_BASE } from "../api/client";
  * token to the backend. Safe to call on every app open; tokens rotate and
  * the backend upserts.
  *
- * Silently no-ops on web.
+ * Silently no-ops on web or if no auth token is provided.
  */
-export async function registerForPush(user_id: string): Promise<void> {
+export async function registerForPush(token: string | null): Promise<void> {
   try {
     if (Platform.OS === "web") return;
+    if (!token) return;
 
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== "granted") return;
@@ -21,9 +22,14 @@ export async function registerForPush(user_id: string): Promise<void> {
 
     await fetch(`${API_BASE}/register-push`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
-        user_id,
+        // user_id is ignored server-side (bound to auth token) but kept for
+        // backward-compat with any older backend deploys.
+        user_id: "",
         platform: Platform.OS,
         device_token: tokenResp.data,
       }),
