@@ -31,6 +31,14 @@ ADMIN_EMAILS = {
     ).split(",")
     if e.strip()
 }
+INSTRUCTOR_EMAILS = {
+    e.strip().lower()
+    for e in os.environ.get(
+        "INSTRUCTOR_EMAILS",
+        "luvtowork247@yahoo.com",
+    ).split(",")
+    if e.strip()
+}
 
 # ---------------- Push notifications (Emergent relay) ----------------
 PUSH_BASE_URL = "https://integrations.emergentagent.com"
@@ -205,6 +213,8 @@ def make_jwt(user_id: str) -> str:
 async def upsert_user(email: str, name: str, picture: str = "", provider: str = "email",
                       password_hash: Optional[str] = None) -> dict:
     email = email.lower().strip()
+    should_be_admin = email in ADMIN_EMAILS
+    should_be_instructor = email in ADMIN_EMAILS or email in INSTRUCTOR_EMAILS
     existing = await db.users.find_one({"email": email}, {"_id": 0})
     if existing:
         updates = {"name": name or existing.get("name", email)}
@@ -212,6 +222,11 @@ async def upsert_user(email: str, name: str, picture: str = "", provider: str = 
             updates["picture"] = picture
         if password_hash:
             updates["password_hash"] = password_hash
+        # Self-heal instructor/admin flags for whitelisted emails
+        if should_be_admin and not existing.get("is_admin"):
+            updates["is_admin"] = True
+        if should_be_instructor and not existing.get("is_instructor"):
+            updates["is_instructor"] = True
         await db.users.update_one({"email": email}, {"$set": updates})
         existing.update(updates)
         return existing
@@ -221,8 +236,8 @@ async def upsert_user(email: str, name: str, picture: str = "", provider: str = 
         "email": email,
         "name": name or email.split("@")[0],
         "picture": picture,
-        "is_admin": email in ADMIN_EMAILS,
-        "is_instructor": email in ADMIN_EMAILS,
+        "is_admin": should_be_admin,
+        "is_instructor": should_be_instructor,
         "auth_provider": provider,
         "password_hash": password_hash or "",
         "created_at": now_iso(),
@@ -1057,6 +1072,29 @@ async def startup():
                 updates["password_hash"] = hash_password(default_pw)
                 updates["name"] = existing_admin.get("name") or display
             await db.users.update_one({"email": admin_email}, {"$set": updates})
+
+    # Seed instructor-only accounts (idempotent)
+    seed_instructor_map = {
+        "luvtowork247@yahoo.com": ("Jamin Brown", "Stompin2026!"),
+    }
+    for inst_email in INSTRUCTOR_EMAILS:
+        if inst_email in ADMIN_EMAILS:
+            continue  # already handled above
+        display, default_pw = seed_instructor_map.get(inst_email, (inst_email.split("@")[0], "Stompin2026!"))
+        existing_inst = await db.users.find_one({"email": inst_email})
+        if not existing_inst:
+            await upsert_user(
+                inst_email, display,
+                provider="email",
+                password_hash=hash_password(default_pw),
+            )
+            logger.info(f"Seeded instructor user: {inst_email}")
+        else:
+            updates = {"is_instructor": True}
+            if not existing_inst.get("password_hash"):
+                updates["password_hash"] = hash_password(default_pw)
+                updates["name"] = existing_inst.get("name") or display
+            await db.users.update_one({"email": inst_email}, {"$set": updates})
 
 
 app.include_router(api_router)
