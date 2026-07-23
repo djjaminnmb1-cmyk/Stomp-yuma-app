@@ -1,0 +1,31 @@
+{
+  "summary": "Config-only regression verification after re-adding --tunnel flag to supervisor and restoring EXPO_PACKAGER_PROXY_URL to ngrok. Verified running process, supervisord.conf command, env vars, all critical backend endpoints, and full Erin login → 5-tab frontend flow (Home / Dances / My Dances / Instructor / Profile). Dance Library shows 101 dances, dance detail renders (Achy Breaky Heart: song, artist Billy Ray Cyrus, BPM 120, 32 count/4 wall, step sheet, YouTube button, Wishlist/Mark Completed CTAs). Instructor tab loads with sub-tabs 'Dances · Classes · Chat'. No red-screen errors, no console errors (only benign expo-notifications web + pointerEvents deprecation warnings).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_stompin_backend.py",
+    "/app/backend/tests/test_instructor_features.py",
+    "/app/backend/tests/test_scheduler_idempotency.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Confirmed /etc/supervisor/conf.d/supervisord.conf [program:expo] command includes '--tunnel --port 3000'.",
+    "Confirmed /app/frontend/.env EXPO_PACKAGER_PROXY_URL=https://stompin-yuma-app.ngrok.io (not .preview.emergentagent.com).",
+    "Running process (PID 1662): '/app/frontend/node_modules/.bin/expo start --tunnel --port 3000' — matches expected command."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Supervisor now runs 'yarn expo start --tunnel --port 3000' and EXPO_PACKAGER_PROXY_URL=https://stompin-yuma-app.ngrok.io. Metro still serves via preview URL (https://stompin-yuma-app.preview.emergentagent.com) which is what E2E playwright uses; the ngrok tunnel is for Expo Go device connections. Backend regression across /api/venue, /api/dances (101), /api/classes, /api/auth/login (Erin, is_instructor=True), /api/chat/messages (200 authed, 401 unauth) — all green. Frontend Erin login shows 5 tabs; Dance Library, dance detail, and Instructor sub-tabs (Dances/Classes/Chat) all render.",
+  "rca_of_issue": "N/A — no bug this iteration. Verification of config restoration was successful."
+}
