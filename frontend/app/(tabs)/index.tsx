@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -137,6 +137,20 @@ export default function Home() {
               <Text style={styles.iconLabel}>Family friendly</Text>
             </View>
           </View>
+
+          <Pressable
+            testID="home-website-cta"
+            onPress={() =>
+              Linking.openURL(
+                "https://sites.google.com/stompingroundyuma.org/stompingroundyuma/home"
+              ).catch(() => {})
+            }
+            style={styles.websiteBtn}
+          >
+            <Ionicons name="globe-outline" size={18} color={colors.onBrandPrimary} />
+            <Text style={styles.websiteBtnText}>Visit stompingroundyuma.org</Text>
+            <Ionicons name="open-outline" size={16} color={colors.onBrandPrimary} />
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -242,4 +256,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.brandSecondary + "55",
   },
+  websiteBtn: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.brandPrimary,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  websiteBtnText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 15 },
 });

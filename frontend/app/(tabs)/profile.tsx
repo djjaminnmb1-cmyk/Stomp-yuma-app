@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -150,6 +151,22 @@ export default function Profile() {
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
+            testID="profile-website-row"
+            style={styles.row}
+            onPress={() =>
+              Linking.openURL(
+                "https://sites.google.com/stompingroundyuma.org/stompingroundyuma/home"
+              ).catch(() => Alert.alert("Unable to open website"))
+            }
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="globe-outline" size={22} color={colors.brandSecondary} />
+              <Text style={styles.rowText}>Visit Our Website</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={colors.muted} />
           </Pressable>
 
           <Pressable
