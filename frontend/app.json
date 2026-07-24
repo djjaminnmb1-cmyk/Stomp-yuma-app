@@ -12,6 +12,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.emergent.stompinyumaapp.uyr5zg",
       "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Upload step-sheet images for dances",
+        "NSPhotoLibraryAddUsageDescription": "Save step-sheet images to your device",
+        "NSCameraUsageDescription": "Take step-sheet photos to attach to dances",
         "LSApplicationQueriesSchemes": [
           "vnd.youtube",
           "youtube",
