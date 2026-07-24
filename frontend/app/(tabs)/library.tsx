@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -16,13 +16,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { api, Dance } from "@/src/api/client";
+import { useAuth } from "@/src/context/auth-context";
 
 const FILTERS = ["All", "Beginner", "Improver", "Intermediate", "Advanced"];
 
 export default function Library() {
   const router = useRouter();
+  const { user } = useAuth();
+  const canEditSheets = !!user?.can_edit_step_sheets;
   const [q, setQ] = useState("");
   const [diff, setDiff] = useState("All");
+  const [missingOnly, setMissingOnly] = useState(false);
   const [items, setItems] = useState<Dance[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,6 +46,24 @@ export default function Library() {
     return () => clearTimeout(t);
   }, [load]);
 
+  // Reset the missing filter if the user loses step-sheet edit rights.
+  useEffect(() => {
+    if (!canEditSheets && missingOnly) setMissingOnly(false);
+  }, [canEditSheets, missingOnly]);
+
+  // Client-side filter for "step sheet image missing".
+  // Only meaningful for whitelisted editors (Erin, Jamin) — the toggle is
+  // hidden otherwise.
+  const visible = useMemo(() => {
+    if (!missingOnly) return items;
+    return items.filter((d) => !((d as any).step_sheet_image || "").trim());
+  }, [items, missingOnly]);
+
+  const missingCount = useMemo(
+    () => items.filter((d) => !((d as any).step_sheet_image || "").trim()).length,
+    [items]
+  );
+
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
       <View style={styles.header}>
@@ -52,10 +74,10 @@ export default function Library() {
             resizeMode="contain"
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.brandName}>Stompin' Ground Yuma</Text>
+            <Text style={styles.brandName}>Stompin&apos; Ground Yuma</Text>
             <Text style={styles.brandSub}>Line dance library</Text>
           </View>
-          <Text style={styles.countBadge}>{items.length}</Text>
+          <Text style={styles.countBadge}>{visible.length}</Text>
         </View>
         <View style={styles.searchWrap}>
           <Ionicons name="search" size={18} color={colors.muted} />
@@ -89,6 +111,34 @@ export default function Library() {
               </Pressable>
             );
           })}
+
+          {canEditSheets && (
+            <Pressable
+              testID="filter-chip-missing-sheet"
+              onPress={() => setMissingOnly((v) => !v)}
+              style={[
+                styles.chip,
+                styles.missingChip,
+                missingOnly && styles.missingChipActive,
+              ]}
+            >
+              <Ionicons
+                name={missingOnly ? "flag" : "flag-outline"}
+                size={14}
+                color={missingOnly ? colors.onBrandPrimary : colors.brandPrimary}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: missingOnly ? colors.onBrandPrimary : colors.brandPrimary },
+                ]}
+              >
+                Sheet missing
+                {missingCount ? ` (${missingCount})` : ""}
+              </Text>
+            </Pressable>
+          )}
         </ScrollView>
       </View>
 
@@ -98,7 +148,7 @@ export default function Library() {
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={visible}
           keyExtractor={(i) => i.id}
           contentContainerStyle={{ padding: spacing.lg, paddingBottom: 40, gap: spacing.md }}
           refreshControl={
@@ -113,8 +163,16 @@ export default function Library() {
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="search" size={40} color={colors.muted} />
-              <Text style={styles.emptyText}>No dances found. Try clearing your search.</Text>
+              <Ionicons
+                name={missingOnly ? "checkmark-circle" : "search"}
+                size={40}
+                color={colors.muted}
+              />
+              <Text style={styles.emptyText}>
+                {missingOnly
+                  ? "All dances have a step sheet — great job!"
+                  : "No dances found. Try clearing your search."}
+              </Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -215,6 +273,16 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.brandPrimary, borderColor: colors.brandPrimary },
   chipText: { color: colors.onSurface, fontWeight: "600", fontSize: 13 },
   chipTextActive: { color: colors.onBrandPrimary },
+  missingChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderColor: colors.brandPrimary,
+    backgroundColor: colors.brandPrimary + "12",
+  },
+  missingChipActive: {
+    backgroundColor: colors.brandPrimary,
+    borderColor: colors.brandPrimary,
+  },
   card: {
     flexDirection: "row",
     alignItems: "center",
