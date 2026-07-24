@@ -10,6 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Switch,
+  Alert,
   Linking as RNLinking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,6 +34,7 @@ export default function AuthScreen() {
   const [name, setName] = useState("");
   const [isInstructor, setIsInstructor] = useState(false);
   const [instructorCode, setInstructorCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -58,9 +60,13 @@ export default function AuthScreen() {
               isInstructor ? instructorCode.trim() : undefined
             );
       await signIn(res.token, res.user);
-      // Warn (but don't block) if they toggled instructor and it didn't stick
+      // Warn (via Alert so it survives the navigation) if instructor toggle
+      // was on but the code didn't match — account still succeeds.
       if (mode === "register" && isInstructor && !res.user.is_instructor) {
-        setErr("Account created, but the instructor code didn't match. You can try again from Profile → Become an Instructor.");
+        Alert.alert(
+          "Account created",
+          "The instructor access code didn't match, so you're signed in as a regular member. You can try again anytime from Profile → Switch to instructor profile."
+        );
       }
       router.replace("/(tabs)");
     } catch (e: any) {
@@ -198,15 +204,32 @@ export default function AuthScreen() {
               keyboardType="email-address"
               style={styles.input}
             />
-            <TextInput
-              testID="auth-input-password"
-              placeholder="Password"
-              placeholderTextColor={colors.muted}
-              value={pw}
-              onChangeText={setPw}
-              secureTextEntry
-              style={styles.input}
-            />
+            <View style={styles.pwWrap}>
+              <TextInput
+                testID="auth-input-password"
+                placeholder="Password"
+                placeholderTextColor={colors.muted}
+                value={pw}
+                onChangeText={setPw}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.pwInput}
+              />
+              <Pressable
+                testID="auth-password-toggle"
+                onPress={() => setShowPassword((s) => !s)}
+                style={styles.pwEye}
+                hitSlop={10}
+                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={colors.muted}
+                />
+              </Pressable>
+            </View>
 
             {mode === "register" && (
               <>
@@ -335,6 +358,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     color: colors.onSurface,
     fontSize: 15,
+  },
+  pwWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    paddingRight: 6,
+  },
+  pwInput: {
+    flex: 1,
+    padding: 14,
+    color: colors.onSurface,
+    fontSize: 15,
+  },
+  pwEye: {
+    padding: 10,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   err: { color: colors.error, fontSize: 13 },
   primaryBtn: {

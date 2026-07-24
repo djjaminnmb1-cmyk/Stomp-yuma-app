@@ -281,7 +281,7 @@ export default function Profile() {
               <View style={styles.rowLeft}>
                 <Ionicons name="school-outline" size={22} color={colors.brandPrimary} />
                 <Text style={[styles.rowText, { color: colors.brandPrimary }]}>
-                  Become an Instructor
+                  Switch to instructor profile
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.brandPrimary} />
@@ -406,7 +406,7 @@ export default function Profile() {
                 size={26}
                 color={colors.brandPrimary}
               />
-              <Text style={styles.codeModalTitle}>Become an Instructor</Text>
+              <Text style={styles.codeModalTitle}>Switch to instructor profile</Text>
             </View>
             <Text style={styles.modalSub}>
               Enter the access code your studio gave you to unlock instructor
