@@ -208,7 +208,7 @@ export default function DanceDetail() {
         <View style={styles.section}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={styles.sectionTitle}>Step Sheet</Text>
-            {(user?.is_admin || user?.is_instructor) ? (
+            {user?.can_edit_step_sheets ? (
               <Pressable
                 testID="edit-step-sheet"
                 onPress={() => {

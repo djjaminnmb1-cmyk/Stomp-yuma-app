@@ -258,14 +258,16 @@ export default function InstructorTab() {
                       </View>
                     </Pressable>
                     <View style={{ gap: 6 }}>
-                      <Pressable
-                        testID={`instr-edit-${d.id}`}
-                        onPress={() => setEditDance(d)}
-                        style={styles.editBtn}
-                      >
-                        <Ionicons name="create-outline" size={13} color={colors.brandPrimary} />
-                        <Text style={styles.editBtnText}>Sheet</Text>
-                      </Pressable>
+                      {user.can_edit_step_sheets ? (
+                        <Pressable
+                          testID={`instr-edit-${d.id}`}
+                          onPress={() => setEditDance(d)}
+                          style={styles.editBtn}
+                        >
+                          <Ionicons name="create-outline" size={13} color={colors.brandPrimary} />
+                          <Text style={styles.editBtnText}>Sheet</Text>
+                        </Pressable>
+                      ) : null}
                       {isMine ? (
                         <Pressable
                           testID={`instr-publish-${d.id}`}

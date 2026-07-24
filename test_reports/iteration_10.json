@@ -1,0 +1,40 @@
+{
+  "summary": "Step-sheet edit whitelist (STEP_SHEET_EDITOR_EMAILS) enforced end-to-end. All 11 backend pytest cases pass and all 3 frontend user-role UI checks pass. Only Jamin (whitelist) can edit step sheets; admin@stompinground.com and fresh self-serve instructors are blocked in both the API (403 with body 'Only Erin or Jamin can edit step sheets') and the UI (edit-step-sheet pencil and instr-edit-* buttons hidden). Non-editor POST /api/dances and POST /api/dances/import silently blank step_sheet / step_sheet_image. Non-step-sheet metadata edits still respect owner-or-admin gating (self-serve instructor gets 403 on seeded dances they don't own, admin can edit metadata). Deprecated warnings expo-notifications web + props.pointerEvents were observed but are pre-existing cosmetic issues, already reported in iteration_9.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "expo-notifications", "issue": "Pre-existing console warning on web: '[expo-notifications] Listening to push token changes is not yet fully supported on web.' Guard registerForPushNotifications with Platform.OS !== 'web'. Reference: already flagged in iteration_9."},
+      {"component": "View/Pressable", "issue": "Pre-existing deprecation warning: 'props.pointerEvents is deprecated. Use style.pointerEvents.' Reference: already flagged in iteration_9."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_step_sheet_permissions.py",
+    "/app/test_reports/pytest/pytest_step_sheet.xml"
+  ],
+  "action_items": [
+    "None required for this feature — behavior matches spec.",
+    "(Optional cleanup carried over from iteration_9) Silence expo-notifications web warning by guarding push registration with Platform.OS !== 'web'; migrate deprecated pointerEvents prop to style.pointerEvents."
+  ],
+  "critical_code_review_comments": [
+    "server.py user_can_edit_step_sheets(user) correctly uses lowercase email lookup against STEP_SHEET_EDITOR_EMAILS with no admin bypass — matches PRD.",
+    "update_dance cleanly separates step-sheet permission (whitelist only) from other-field permission (owner OR admin OR whitelist), so senior instructors on the whitelist can also edit metadata of dances they don't own — required because all 507 seeded dances were owned by the deleted Erin user_id.",
+    "create_dance and import_dances silently blank step_sheet/step_sheet_image for non-editors (do not 400/403), which is intentional per spec ('silently stripped') and confirmed working.",
+    "Frontend /dance/[id].tsx line 211 gates the pencil on user?.can_edit_step_sheets, and /(tabs)/instructor.tsx line 261 gates the 'Sheet' button on user.can_edit_step_sheets. GET /api/auth/me returns this flag in user_to_out().",
+    "server.py is 1496 lines — over the 700-line guideline. Consider splitting into routers/modules (auth, dances, classes, suggestions, chat, notifications) in a future refactor. Not blocking this iteration."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_step_sheet_permissions.py (new — 11 tests, all passing)"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (3/3 role scenarios)"},
+  "seed_data_creation": "Registered one throwaway self-serve instructor via /api/auth/register with instructor_code=lineup4life (TEST_ss_*@example.com, TEST_ui_*@example.com) — will remain in DB (no user-delete endpoint exposed). Test dances created during import/create tests were cleaned up via admin DELETE at the end of each test.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Whitelist env var: STEP_SHEET_EDITOR_EMAILS=erinboroughs@gmail.com,luvtowork247@yahoo.com in /app/backend/.env. Erin's account (erinboroughs@gmail.com) is currently NOT in the users collection — do not attempt to log in as Erin. Use Jamin (luvtowork247@yahoo.com / BootsDance49!) for whitelist-editor scenarios. The pytest file at /app/backend/tests/test_step_sheet_permissions.py can be re-run as regression: `EXPO_PUBLIC_BACKEND_URL=<public-url> pytest /app/backend/tests/test_step_sheet_permissions.py -v`. Test data prefixed with TEST_ for identification. The /api/dances endpoint hides drafts by default; when verifying imported dances by a non-editor, pass scope=mine with the importer's token. All 507 legacy dances were seeded by deleted user_id 'user_2843f37a22b3' so no live user owns them — the whitelist bypass for other-field edits in update_dance is what allows senior instructors to edit their metadata.",
+  "rca_of_issue": "N/A — this is a feature addition test, not a bug fix. All acceptance criteria in the review request are satisfied by the current implementation."
+}

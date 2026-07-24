@@ -58,6 +58,18 @@ INSTRUCTOR_EMAILS = {
     ).split(",")
     if e.strip()
 }
+# Emails allowed to CREATE / EDIT / DELETE step sheets (both text and image).
+# This is a stricter privilege than the general instructor role: any user who
+# knows the studio access code can become an "instructor" (log classes, chat),
+# but only the emails on this list may modify official dance step-sheet content.
+STEP_SHEET_EDITOR_EMAILS = {
+    e.strip().lower()
+    for e in os.environ.get(
+        "STEP_SHEET_EDITOR_EMAILS",
+        "erinboroughs@gmail.com,luvtowork247@yahoo.com",
+    ).split(",")
+    if e.strip()
+}
 # Shared secret that unlocks self-serve instructor role for the studio's
 # real instructors. Keep server-side only; never expose to the client bundle.
 INSTRUCTOR_CODE = os.environ.get("INSTRUCTOR_CODE", "lineup4life").strip()
@@ -399,6 +411,19 @@ async def require_instructor(user: dict = Depends(get_current_user)) -> dict:
     return user
 
 
+def user_can_edit_step_sheets(user: dict) -> bool:
+    """Strictly the whitelist — no admin backdoor.
+    User said 'no one other than Erin and Jamin' so we honour that literally."""
+    email = (user.get("email") or "").lower()
+    return email in STEP_SHEET_EDITOR_EMAILS
+
+
+async def require_step_sheet_editor(user: dict = Depends(get_current_user)) -> dict:
+    if not user_can_edit_step_sheets(user):
+        raise HTTPException(403, "Only Erin or Jamin can edit step sheets")
+    return user
+
+
 def user_to_out(u: dict) -> dict:
     return {
         "user_id": u["user_id"],
@@ -407,6 +432,7 @@ def user_to_out(u: dict) -> dict:
         "picture": u.get("picture", ""),
         "is_admin": bool(u.get("is_admin")),
         "is_instructor": bool(u.get("is_admin")) or bool(u.get("is_instructor")),
+        "can_edit_step_sheets": user_can_edit_step_sheets(u),
         "auth_provider": u.get("auth_provider", "email"),
     }
 
@@ -713,6 +739,11 @@ async def create_dance(inp: DanceIn, user: dict = Depends(require_instructor)):
     doc["created_at"] = now_iso()
     doc["created_by"] = user["user_id"]
     doc["created_by_name"] = user.get("name", "")
+    # STEP-SHEET GUARD: non-editors can create dances but not attach step-sheet
+    # content. Blank the fields silently so the dance is created cleanly.
+    if not user_can_edit_step_sheets(user):
+        doc["step_sheet"] = ""
+        doc["step_sheet_image"] = ""
     if not (doc.get("youtube_url") or "").strip():
         doc["youtube_url"] = youtube_search_url(f"{doc['name']} {doc.get('choreographer','')} line dance")
     # New dances start as DRAFT unless publisher explicitly sets is_published True
@@ -734,6 +765,8 @@ async def import_dances(inp: DanceImportBody, user: dict = Depends(require_instr
         d["name"].lower()
         async for d in db.dances.find({}, {"name": 1, "_id": 0})
     }
+    # STEP-SHEET GUARD: non-editors get their step_sheet column silently blanked
+    can_edit_ss = user_can_edit_step_sheets(user)
 
     to_insert = []
     skipped = 0
@@ -765,7 +798,7 @@ async def import_dances(inp: DanceImportBody, user: dict = Depends(require_instr
             "bpm": row.bpm,
             "count": (row.count or "").strip(),
             "youtube_url": yt,
-            "step_sheet": (row.step_sheet or "").strip(),
+            "step_sheet": (row.step_sheet or "").strip() if can_edit_ss else "",
             "step_sheet_image": "",
             "description": "",
             "tags": [],
@@ -790,11 +823,30 @@ async def update_dance(dance_id: str, inp: DanceIn, user: dict = Depends(require
     existing = await db.dances.find_one({"id": dance_id}, {"_id": 0})
     if not existing:
         raise HTTPException(404, "Not found")
-    # Only owner or admin can update
-    owner_id = existing.get("created_by")
-    if owner_id and owner_id != user["user_id"] and not user.get("is_admin"):
-        raise HTTPException(403, "Not allowed")
+
+    can_edit_ss = user_can_edit_step_sheets(user)
+    is_owner_or_admin = (
+        (existing.get("created_by") == user["user_id"]) or bool(user.get("is_admin"))
+    )
     updates = inp.dict()
+
+    # ---- Step-sheet fields: whitelist-only ----
+    prev_ss = existing.get("step_sheet", "") or ""
+    prev_img = existing.get("step_sheet_image", "") or ""
+    incoming_ss = (updates.get("step_sheet") or "")
+    incoming_img = (updates.get("step_sheet_image") or "")
+    ss_changed = (incoming_ss != prev_ss) or (incoming_img != prev_img)
+    if ss_changed and not can_edit_ss:
+        raise HTTPException(403, "Only Erin or Jamin can edit step sheets")
+    # Non-editors: silently preserve the existing step-sheet content
+    if not can_edit_ss:
+        updates["step_sheet"] = prev_ss
+        updates["step_sheet_image"] = prev_img
+
+    # ---- Other fields: owner OR admin OR step-sheet editor (senior instructor) ----
+    if not (is_owner_or_admin or can_edit_ss):
+        raise HTTPException(403, "Not allowed")
+
     if updates.get("is_published") is None:
         updates["is_published"] = existing.get("is_published", True)
     await db.dances.update_one({"id": dance_id}, {"$set": updates})

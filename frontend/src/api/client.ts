@@ -22,6 +22,7 @@ export type User = {
   picture?: string;
   is_admin: boolean;
   is_instructor: boolean;
+  can_edit_step_sheets?: boolean;
   auth_provider: string;
 };
 
