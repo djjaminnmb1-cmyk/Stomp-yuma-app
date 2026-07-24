@@ -108,10 +108,10 @@ async function req<T>(
 }
 
 export const api = {
-  register: (email: string, password: string, name: string) =>
+  register: (email: string, password: string, name: string, instructor_code?: string) =>
     req<{ token: string; user: User }>("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, instructor_code }),
     }),
   login: (email: string, password: string) =>
     req<{ token: string; user: User }>("/auth/login", {
@@ -124,6 +124,12 @@ export const api = {
       body: JSON.stringify({ session_id }),
     }),
   me: (token: string) => req<User>("/auth/me", {}, token),
+  setInstructor: (instructor_code: string, token: string) =>
+    req<{ ok: boolean; user: User }>(
+      "/auth/set-instructor",
+      { method: "POST", body: JSON.stringify({ instructor_code }) },
+      token,
+    ),
   logout: (token: string) =>
     req<{ ok: boolean }>("/auth/logout", { method: "POST" }, token),
   forgotPassword: (email: string) =>

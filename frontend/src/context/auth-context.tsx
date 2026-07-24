@@ -17,6 +17,7 @@ type AuthState = {
   signIn: (t: string, u: User) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
+  updateUser: (patch: Partial<User>) => void;
 };
 
 const TOKEN_KEY = "sgy_token";
@@ -88,9 +89,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, [token]);
 
+  const updateUser = useCallback((patch: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...patch } : prev));
+  }, []);
+
   return (
     <AuthCtx.Provider
-      value={{ user, token, loading, signIn, signOut, refresh: bootstrap }}
+      value={{ user, token, loading, signIn, signOut, refresh: bootstrap, updateUser }}
     >
       {children}
     </AuthCtx.Provider>

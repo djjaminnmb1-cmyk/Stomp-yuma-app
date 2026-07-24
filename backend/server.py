@@ -58,6 +58,9 @@ INSTRUCTOR_EMAILS = {
     ).split(",")
     if e.strip()
 }
+# Shared secret that unlocks self-serve instructor role for the studio's
+# real instructors. Keep server-side only; never expose to the client bundle.
+INSTRUCTOR_CODE = os.environ.get("INSTRUCTOR_CODE", "lineup4life").strip()
 
 # ---------------- Push notifications (Emergent relay) ----------------
 PUSH_BASE_URL = "https://integrations.emergentagent.com"
@@ -187,6 +190,11 @@ class RegisterIn(BaseModel):
     email: EmailStr
     password: str
     name: str
+    instructor_code: Optional[str] = None  # self-serve at signup if code matches
+
+
+class SetInstructorIn(BaseModel):
+    instructor_code: str  # server checks against INSTRUCTOR_CODE env
 
 
 class LoginIn(BaseModel):
@@ -427,6 +435,13 @@ def dance_to_out(d: dict) -> dict:
 
 
 # ---------------- Auth Routes ----------------
+def _instructor_code_ok(candidate: Optional[str]) -> bool:
+    """Constant-time comparison against the server-side INSTRUCTOR_CODE."""
+    if not candidate or not INSTRUCTOR_CODE:
+        return False
+    return hmac.compare_digest(candidate.strip(), INSTRUCTOR_CODE)
+
+
 @api_router.post("/auth/register")
 async def register(inp: RegisterIn):
     existing = await db.users.find_one({"email": inp.email.lower()})
@@ -434,8 +449,32 @@ async def register(inp: RegisterIn):
         raise HTTPException(400, "Email already registered")
     user = await upsert_user(inp.email, inp.name, provider="email",
                              password_hash=hash_password(inp.password))
+    # If they entered the studio's instructor code on signup, unlock the role.
+    # (Admin/whitelist status set by upsert_user is preserved — we never demote.)
+    if _instructor_code_ok(inp.instructor_code) and not user.get("is_instructor"):
+        await db.users.update_one(
+            {"user_id": user["user_id"]},
+            {"$set": {"is_instructor": True}},
+        )
+        user["is_instructor"] = True
     token = make_jwt(user["user_id"])
     return {"token": token, "user": user_to_out(user)}
+
+
+@api_router.post("/auth/set-instructor")
+async def set_instructor(inp: SetInstructorIn, user: dict = Depends(get_current_user)):
+    """Self-serve instructor upgrade for signed-in users.
+    Requires the shared instructor access code. Admins are always instructors."""
+    if not _instructor_code_ok(inp.instructor_code):
+        # Small artificial delay to blunt brute-force attempts
+        await bcrypt_dummy_delay()
+        raise HTTPException(400, "Invalid access code")
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"is_instructor": True}},
+    )
+    fresh = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    return {"ok": True, "user": user_to_out(fresh)}
 
 
 @api_router.post("/auth/login")

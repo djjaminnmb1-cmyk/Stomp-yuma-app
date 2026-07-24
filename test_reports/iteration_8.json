@@ -1,0 +1,47 @@
+{
+  "summary": "Full backend + frontend verification of the self-serve Instructor Code feature. Backend: 6/6 pytest tests passed against POST /api/auth/register (correct code → is_instructor=true, wrong code → false, no code → false) and POST /api/auth/set-instructor (missing auth → 401, wrong code → 400 'Invalid access code', correct code → 200, is_instructor=true and persists in Mongo verified via /auth/me). Frontend: 14/14 sub-checks passed on mobile viewport (390x844) — Create Account tab exposes auth-instructor-toggle; toggling on reveals auth-instructor-code, toggling off hides AND clears it; register with wrong code creates the account (user lands on tabs) but Instructor tab is NOT in bottom nav; Profile shows profile-become-instructor for non-instructors and hides profile-instructor-btn; the become-instructor modal renders profile-instructor-code-input + cancel + submit(Unlock); wrong code keeps modal open and renders inline 'Invalid access code'; correct code 'lineup4life' closes modal, alert fires, profile-instructor-btn row swaps in immediately (auth-context updateUser working), and the Instructor tab appears in the bottom tab bar (verified from Home screenshot — 5 tabs incl. Instructor after unlock, 4 tabs before). Server-side constant-time hmac.compare_digest confirmed in server.py:442.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "auth.tsx submitEmail (register w/ toggle on + wrong code)",
+        "issue": "The warning 'Account created, but the instructor code didn't match…' is set via setErr() and then router.replace('/(tabs)') runs synchronously on the very next line, so the message is unmounted before it ever paints. User silently lands on tabs with is_instructor=false and no cue that the code was wrong. Reference: /app/frontend/app/auth.tsx:60-65.",
+        "testID": "auth-error",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_instructor_code.py",
+    "/app/test_reports/pytest/pytest_instructor_code.xml"
+  ],
+  "action_items": [
+    "auth.tsx: on register with wrong instructor_code, either (a) show a blocking Alert.alert('Instructor code didn\\'t match', ...) before router.replace, or (b) push a query param like /?instructor_warn=1 and surface a toast on the tabs landing screen. Currently the warning message is dead code because navigation happens in the same tick."
+  ],
+  "critical_code_review_comments": [
+    "server.py: INSTRUCTOR_CODE loaded from env with 'lineup4life' default, verified with hmac.compare_digest — correct constant-time check, not extractable from client bundle.",
+    "server.py:454 register: uses `not user.get('is_instructor')` guard so admin/whitelist users are never demoted — good.",
+    "server.py:468-471 set-instructor: 400 on wrong code with bcrypt_dummy_delay ~200ms to blunt brute force — good.",
+    "profile.tsx: modal uses testIDs correctly, updateUser(res.user) syncs auth context immediately after 200 response so the tab bar re-renders without a full reload.",
+    "auth.tsx: warning-after-signIn dead-code bug noted above.",
+    "Minor: RN Web console warns 'props.pointerEvents is deprecated. Use style.pointerEvents' — coming from a library, not the instructor-code feature. Non-blocking."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_instructor_code.py"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6)",
+    "frontend": "~93% (13/14 acceptance items — warning-on-wrong-code visibility is the only miss)"
+  },
+  "seed_data_creation": "Created 4 disposable TEST_inst_<ts>@example.com users via /api/auth/register during pytest and one testwrong_<ts>@example.com during Playwright. All prefixed TEST_/testwrong_ for easy cleanup.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend regression: run `pytest /app/backend/tests/test_instructor_code.py -v`. Frontend: on register tab toggle auth-instructor-toggle, enter code via auth-instructor-code; on profile use profile-become-instructor → profile-instructor-code-input → profile-instructor-submit. Access code = 'lineup4life' from INSTRUCTOR_CODE env. Note the React Native <Modal> on web renders its content in a portal — search the DOM via testID or scoped querySelectorAll rather than document.body.innerText for reliable assertions.",
+  "rca_of_issue": "N/A — all acceptance criteria met except the wrong-code-during-register warning is never rendered. RCA: in /app/frontend/app/auth.tsx submitEmail(), `setErr(...)` is a state setter that schedules a re-render for the *next* tick, but `router.replace('/(tabs)')` executes synchronously on the same tick and unmounts the auth screen before React can flush. Fix: show an Alert.alert before router.replace, OR delay router.replace via setTimeout(..., 0)/await Promise.resolve() ONLY when the warning is set — but Alert is cleaner and matches the profile modal's success alert pattern."
+}

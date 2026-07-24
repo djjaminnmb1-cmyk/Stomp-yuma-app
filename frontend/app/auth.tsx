@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Switch,
   Linking as RNLinking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,6 +31,8 @@ export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [name, setName] = useState("");
+  const [isInstructor, setIsInstructor] = useState(false);
+  const [instructorCode, setInstructorCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -39,13 +42,26 @@ export default function AuthScreen() {
       setErr("Fill all fields");
       return;
     }
+    if (mode === "register" && isInstructor && !instructorCode.trim()) {
+      setErr("Please enter your instructor access code");
+      return;
+    }
     setBusy(true);
     try {
       const res =
         mode === "login"
           ? await api.login(email.trim(), pw)
-          : await api.register(email.trim(), pw, name.trim());
+          : await api.register(
+              email.trim(),
+              pw,
+              name.trim(),
+              isInstructor ? instructorCode.trim() : undefined
+            );
       await signIn(res.token, res.user);
+      // Warn (but don't block) if they toggled instructor and it didn't stick
+      if (mode === "register" && isInstructor && !res.user.is_instructor) {
+        setErr("Account created, but the instructor code didn't match. You can try again from Profile → Become an Instructor.");
+      }
       router.replace("/(tabs)");
     } catch (e: any) {
       setErr(e?.message || "Something went wrong");
@@ -192,6 +208,46 @@ export default function AuthScreen() {
               style={styles.input}
             />
 
+            {mode === "register" && (
+              <>
+                <View style={styles.toggleRow}>
+                  <View style={{ flex: 1, paddingRight: spacing.md }}>
+                    <Text style={styles.toggleLabel}>I am an instructor</Text>
+                    <Text style={styles.toggleSub}>
+                      Requires the studio access code
+                    </Text>
+                  </View>
+                  <Switch
+                    testID="auth-instructor-toggle"
+                    value={isInstructor}
+                    onValueChange={(v) => {
+                      setIsInstructor(v);
+                      if (!v) setInstructorCode("");
+                    }}
+                    trackColor={{
+                      false: colors.divider,
+                      true: colors.brandPrimary,
+                    }}
+                    thumbColor={colors.surface}
+                    ios_backgroundColor={colors.divider}
+                  />
+                </View>
+                {isInstructor && (
+                  <TextInput
+                    testID="auth-instructor-code"
+                    placeholder="Instructor access code"
+                    placeholderTextColor={colors.muted}
+                    value={instructorCode}
+                    onChangeText={setInstructorCode}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    secureTextEntry
+                    style={styles.input}
+                  />
+                )}
+              </>
+            )}
+
             {err ? (
               <Text testID="auth-error" style={styles.err}>
                 {err}
@@ -293,6 +349,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
   },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    marginTop: 2,
+  },
+  toggleLabel: { color: colors.onSurface, fontWeight: "700", fontSize: 15 },
+  toggleSub: { color: colors.muted, fontSize: 12, marginTop: 2 },
   forgotWrap: { alignItems: "center", paddingVertical: spacing.sm, marginTop: 2 },
   forgotText: {
     color: colors.brandPrimary,

@@ -142,10 +142,35 @@ async function openSocial(s: SocialLink) {
 
 export default function Profile() {
   const router = useRouter();
-  const { user, token, signOut } = useAuth();
+  const { user, token, signOut, updateUser } = useAuth();
   const [tracking, setTracking] = useState<Tracking[]>([]);
   const [attendanceCount, setAttendanceCount] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeErr, setCodeErr] = useState<string | null>(null);
+
+  const submitInstructorCode = async () => {
+    setCodeErr(null);
+    if (!codeInput.trim()) {
+      setCodeErr("Enter your access code");
+      return;
+    }
+    if (!token) return;
+    setCodeBusy(true);
+    try {
+      const res = await api.setInstructor(codeInput.trim(), token);
+      updateUser(res.user);
+      setCodeInput("");
+      setCodeOpen(false);
+      Alert.alert("You're an instructor!", "Your Instructor tab is now unlocked.");
+    } catch (e: any) {
+      setCodeErr(e?.message || "Invalid access code");
+    } finally {
+      setCodeBusy(false);
+    }
+  };
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -243,7 +268,25 @@ export default function Profile() {
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
-          ) : null}
+          ) : (
+            <Pressable
+              testID="profile-become-instructor"
+              style={[styles.row, styles.becomeInstructorRow]}
+              onPress={() => {
+                setCodeErr(null);
+                setCodeInput("");
+                setCodeOpen(true);
+              }}
+            >
+              <View style={styles.rowLeft}>
+                <Ionicons name="school-outline" size={22} color={colors.brandPrimary} />
+                <Text style={[styles.rowText, { color: colors.brandPrimary }]}>
+                  Become an Instructor
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.brandPrimary} />
+            </Pressable>
+          )}
 
           <Pressable
             testID="profile-classes-row"
@@ -347,6 +390,69 @@ export default function Profile() {
         }}
         token={token || ""}
       />
+
+      {/* Instructor access code modal */}
+      <Modal
+        visible={codeOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setCodeOpen(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setCodeOpen(false)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <View style={styles.codeModalHeader}>
+              <Ionicons
+                name="school"
+                size={26}
+                color={colors.brandPrimary}
+              />
+              <Text style={styles.codeModalTitle}>Become an Instructor</Text>
+            </View>
+            <Text style={styles.modalSub}>
+              Enter the access code your studio gave you to unlock instructor
+              tools (log classes, upload step sheets, edit dances, chat).
+            </Text>
+
+            <TextInput
+              testID="profile-instructor-code-input"
+              placeholder="Instructor access code"
+              placeholderTextColor={colors.muted}
+              value={codeInput}
+              onChangeText={setCodeInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+              style={styles.modalInput}
+            />
+
+            {codeErr ? (
+              <Text style={styles.modalErr}>{codeErr}</Text>
+            ) : null}
+
+            <View style={styles.modalActions}>
+              <Pressable
+                testID="profile-instructor-cancel"
+                onPress={() => setCodeOpen(false)}
+                style={styles.modalCancelBtn}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                testID="profile-instructor-submit"
+                onPress={submitInstructorCode}
+                disabled={codeBusy}
+                style={[styles.modalPrimaryBtn, codeBusy && { opacity: 0.6 }]}
+              >
+                {codeBusy ? (
+                  <ActivityIndicator color={colors.onBrandPrimary} />
+                ) : (
+                  <Text style={styles.modalPrimaryText}>Unlock</Text>
+                )}
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -508,6 +614,71 @@ const styles = StyleSheet.create({
     borderColor: colors.divider,
     borderRadius: radius.md,
     marginTop: spacing.sm,
+  },
+  becomeInstructorRow: {
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "66",
+    backgroundColor: colors.brandPrimary + "10",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    padding: spacing.lg,
+  },
+  modalCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  codeModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  codeModalTitle: {
+    fontFamily: "serif",
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
+  modalSub: { color: colors.muted, fontSize: 14, lineHeight: 20 },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    height: 48,
+    color: colors.onSurface,
+    fontSize: 15,
+  },
+  modalErr: { color: colors.error, fontSize: 13 },
+  modalActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    alignItems: "center",
+  },
+  modalCancelText: { color: colors.onSurface, fontWeight: "600", fontSize: 15 },
+  modalPrimaryBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: radius.md,
+    backgroundColor: colors.brandPrimary,
+    alignItems: "center",
+  },
+  modalPrimaryText: {
+    color: colors.onBrandPrimary,
+    fontWeight: "700",
+    fontSize: 15,
   },
   row: {
     flexDirection: "row",
