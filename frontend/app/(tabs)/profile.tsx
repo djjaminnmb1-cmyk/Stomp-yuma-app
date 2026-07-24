@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -84,22 +85,55 @@ const SITE_LINK: SocialLink = {
     "https://sites.google.com/stompingroundyuma.org/stompingroundyuma/home",
 };
 
-// Open a native app if we can, otherwise fall back to web. `canOpenURL` may
-// return false on iOS for schemes not declared in Info.plist, so we ALSO
-// swallow errors from openURL and try the web fallback as a safety net.
+// Open a native app if we can, otherwise fall back to web.
+//
+// Critical: on web, the fallback MUST be a synchronous window.open() call from
+// inside the user gesture — otherwise popup blockers silently swallow it. That
+// is exactly the bug we hit before: `await canOpenURL(...)` yielded to the
+// event loop, and the subsequent `openURL(webUrl)` happened outside the tap
+// gesture, so nothing opened.
 async function openSocial(s: SocialLink) {
-  try {
-    if (s.nativeUrl) {
-      const supported = await Linking.canOpenURL(s.nativeUrl).catch(() => false);
-      if (supported) {
-        try {
-          await Linking.openURL(s.nativeUrl);
-          return;
-        } catch {
-          // fall through to web
+  // ---------- Web ----------
+  if (Platform.OS === "web") {
+    // Use window.open synchronously (still inside the click handler stack).
+    // React Native Web's Linking.openURL also calls window.open, but wrapping
+    // it in try/catch and calling it directly gives us a reliable single call.
+    try {
+      const w = typeof window !== "undefined" ? window : null;
+      if (w) {
+        const opened = w.open(s.webUrl, "_blank", "noopener,noreferrer");
+        if (!opened) {
+          // Popup blocked → hard-navigate the current tab as a last resort.
+          w.location.href = s.webUrl;
         }
+        return;
+      }
+    } catch {}
+    // Fallback: RN Linking (mainly for RN-Web polyfills without `window`)
+    try {
+      await Linking.openURL(s.webUrl);
+    } catch {
+      Alert.alert(`Unable to open ${s.label}`);
+    }
+    return;
+  }
+
+  // ---------- Native (iOS / Android) ----------
+  // Try native URL scheme first (opens the app if installed), fall back to
+  // https URL (universal linking still opens the app on modern OSes; if not
+  // installed, it opens the browser).
+  if (s.nativeUrl) {
+    const canOpen = await Linking.canOpenURL(s.nativeUrl).catch(() => false);
+    if (canOpen) {
+      try {
+        await Linking.openURL(s.nativeUrl);
+        return;
+      } catch {
+        // fall through to https
       }
     }
+  }
+  try {
     await Linking.openURL(s.webUrl);
   } catch {
     Alert.alert(`Unable to open ${s.label}`);

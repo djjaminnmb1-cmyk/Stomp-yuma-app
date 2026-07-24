@@ -1,0 +1,32 @@
+{
+  "summary": "Frontend-only verification of 'Connect With Us' social buttons on Profile + Home 'Visit stompingroundyuma.org' CTA on the Expo web preview. Instrumented window.open() prior to each tap and asserted the URL/target/features passed. All 6 buttons (YouTube, Instagram, TikTok, Facebook, Profile website row, Home website CTA) correctly call window.open(<expected https url>, '_blank', 'noopener,noreferrer') SYNCHRONOUSLY inside the onPress handler — the popup-blocker regression is fixed. Only one 'Visit our website' row remains on Profile (inside Connect With Us); no duplicate under Account. All 4 social cards render with correct labels (YouTube, Instagram, TikTok, Facebook) and the correct Ionicons glyphs (logo-youtube, logo-instagram, logo-tiktok, logo-facebook). Login used admin@stompinground.com / Admin123!. 6/6 verified.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_7.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "profile.tsx openSocial() correctly uses synchronous window.open on Platform.OS === 'web' inside the tap handler; native path still tries deep-link scheme (vnd.youtube://, instagram://, snssdk1233://, fb://) via Linking.canOpenURL/openURL before falling back to https — good.",
+    "index.tsx home-website-cta uses inline synchronous window.open on web with location.href fallback — matches the Profile pattern.",
+    "Cannot verify native deep-link opening from a headless browser; only the web fallback path was tested (which is what the bug report was about)."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "n/a (frontend-only request)",
+    "frontend": "100% (6/6 buttons open the correct URL via window.open)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "To retest social buttons on web: (1) login with admin@stompinground.com / Admin123!, (2) instrument window.open BEFORE clicking (headless browsers do not open real tabs), (3) navigate directly to /profile via page.goto and re-instrument (goto reloads the SPA so window.open override is lost), (4) click each testID: profile-social-youtube, profile-social-instagram, profile-social-tiktok, profile-social-facebook, profile-website-cta, and on Home: home-website-cta. Expected URLs: https://www.youtube.com/@stompingroundyuma, https://www.instagram.com/stompingroundyuma, https://www.tiktok.com/@stompingroundyuma, https://www.facebook.com/stompingroundyuma, https://sites.google.com/stompingroundyuma.org/stompingroundyuma/home (same for both website CTAs).",
+  "rca_of_issue": "Original bug: on Expo web, previous impl awaited Linking.canOpenURL() before calling openURL, which broke the user-gesture chain and caused Chromium's popup blocker to swallow window.open. Fix (already applied by main agent): on Platform.OS==='web' call window.open(url,'_blank','noopener,noreferrer') synchronously inside onPress with a window.location.href fallback if the return value is null. Verified via window.open instrumentation on all 6 buttons — every one records the expected URL immediately after tap, no async gap. Native path preserved with Linking scheme+https fallback."
+}

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -140,11 +140,15 @@ export default function Home() {
 
           <Pressable
             testID="home-website-cta"
-            onPress={() =>
-              Linking.openURL(
-                "https://sites.google.com/stompingroundyuma.org/stompingroundyuma/home"
-              ).catch(() => {})
-            }
+            onPress={() => {
+              const url = "https://sites.google.com/stompingroundyuma.org/stompingroundyuma/home";
+              if (Platform.OS === "web" && typeof window !== "undefined") {
+                const opened = window.open(url, "_blank", "noopener,noreferrer");
+                if (!opened) window.location.href = url;
+                return;
+              }
+              Linking.openURL(url).catch(() => {});
+            }}
             style={styles.websiteBtn}
           >
             <Ionicons name="globe-outline" size={18} color={colors.onBrandPrimary} />
