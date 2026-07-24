@@ -86,8 +86,12 @@ export default function AuthScreen() {
       } else {
         redirect = Linking.createURL("");
       }
-      const authBase =
-        process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL || "https://auth.emergentagent.com/";
+      const authBase = process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL;
+      if (!authBase) {
+        setErr("Google sign-in isn't configured for this build.");
+        setBusy(false);
+        return;
+      }
       const authUrl = `${authBase}?redirect=${encodeURIComponent(redirect)}`;
 
       if (Platform.OS === "web") {
