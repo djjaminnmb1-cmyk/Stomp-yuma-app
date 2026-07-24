@@ -41,7 +41,7 @@ ADMIN_EMAILS = {
     e.strip().lower()
     for e in os.environ.get(
         "ADMIN_EMAILS",
-        "admin@stompinground.com,stompingroundyuma@gmail.com",
+        "admin@stompinground.com,erinboroughs@gmail.com",
     ).split(",")
     if e.strip()
 }
@@ -1123,7 +1123,7 @@ async def startup():
 
     seed_display_names = {
         "admin@stompinground.com": "Stompin' Admin",
-        "stompingroundyuma@gmail.com": "Erin Brown",
+        "erinboroughs@gmail.com": "Erin Brown",
         "luvtowork247@yahoo.com": "Jamin Brown",
     }
 
