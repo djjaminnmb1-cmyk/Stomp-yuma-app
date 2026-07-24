@@ -285,6 +285,7 @@ class ClassSessionIn(BaseModel):
     session_label: Optional[str] = ""  # e.g. "Friday Night", "Beginner Class"
     dance_ids: List[str] = []
     notes: Optional[str] = ""
+    flyer_image: Optional[str] = ""  # base64 data URL, senior instructors only
 
 
 class RegisterPushBody(BaseModel):
@@ -1089,6 +1090,9 @@ async def create_class(inp: ClassSessionIn, instructor: dict = Depends(require_i
         "instructor_name": instructor.get("name", ""),
         "dance_ids": inp.dance_ids,
         "dances": resolved,
+        # Flyer image: senior-instructor whitelist only. Silently blanked
+        # for anyone else so the payload isn't rejected.
+        "flyer_image": (inp.flyer_image or "").strip() if user_can_edit_step_sheets(instructor) else "",
         "created_at": now_iso(),
     }
     await db.classes.insert_one(doc)
@@ -1124,7 +1128,9 @@ async def update_class(class_id: str, inp: ClassSessionIn, user: dict = Depends(
     doc = await db.classes.find_one({"id": class_id}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Not found")
-    if doc["instructor_id"] != user["user_id"] and not user.get("is_admin"):
+    # Owner, admin, or a whitelisted editor (Erin/Jamin) may edit any class
+    is_owner = doc["instructor_id"] == user["user_id"]
+    if not (is_owner or user.get("is_admin") or user_can_edit_step_sheets(user)):
         raise HTTPException(403, "Not allowed")
     dance_docs = await db.dances.find(
         {"id": {"$in": inp.dance_ids}}, {"_id": 0}
@@ -1145,6 +1151,15 @@ async def update_class(class_id: str, inp: ClassSessionIn, user: dict = Depends(
         "dance_ids": inp.dance_ids,
         "dances": resolved,
     }
+    # Flyer image: whitelist-only writes. If a non-editor tries to change it,
+    # 403 out to signal the UI shouldn't have surfaced the field.
+    can_edit_flyer = user_can_edit_step_sheets(user)
+    incoming_flyer = (inp.flyer_image or "").strip()
+    prev_flyer = (doc.get("flyer_image") or "").strip()
+    if incoming_flyer != prev_flyer:
+        if not can_edit_flyer:
+            raise HTTPException(403, "Only Erin or Jamin can upload class flyers")
+        updates["flyer_image"] = incoming_flyer
     await db.classes.update_one({"id": class_id}, {"$set": updates})
     return {**doc, **updates}
 
@@ -1154,7 +1169,9 @@ async def delete_class(class_id: str, user: dict = Depends(get_current_user)):
     doc = await db.classes.find_one({"id": class_id}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Not found")
-    if doc["instructor_id"] != user["user_id"] and not user.get("is_admin"):
+    # Owner, admin, or a whitelisted editor (Erin/Jamin) may delete any class
+    is_owner = doc["instructor_id"] == user["user_id"]
+    if not (is_owner or user.get("is_admin") or user_can_edit_step_sheets(user)):
         raise HTTPException(403, "Not allowed")
     await db.classes.delete_one({"id": class_id})
     await db.attendance.delete_many({"class_id": class_id})

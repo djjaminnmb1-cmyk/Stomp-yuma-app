@@ -12,7 +12,9 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
+  Image,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -30,7 +32,9 @@ export default function ClassesScreen() {
   const [attended, setAttended] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<ClassSession | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [flyerPreview, setFlyerPreview] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -174,6 +178,18 @@ export default function ClassesScreen() {
                 <Text style={styles.instructor}>
                   {isPast ? "Taught by" : "With"} {item.instructor_name || "Instructor"}
                 </Text>
+                {item.flyer_image ? (
+                  <Pressable
+                    testID={`class-flyer-${item.id}`}
+                    onPress={() => setFlyerPreview(item.flyer_image || null)}
+                  >
+                    <Image
+                      source={{ uri: item.flyer_image }}
+                      style={styles.flyerCardImage}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
+                ) : null}
                 <View style={styles.dancesWrap}>
                   {item.dances.map((d) => (
                     <Pressable
@@ -227,18 +243,50 @@ export default function ClassesScreen() {
                     </Pressable>
                   ) : null}
 
-                  {(user?.is_admin || user?.user_id === item.instructor_id) && token ? (
-                    <Pressable
-                      testID={`delete-class-${item.id}`}
-                      onPress={async () => {
-                        await api.deleteClass(item.id, token);
-                        load();
-                      }}
-                      style={styles.deleteBtn}
-                    >
-                      <Ionicons name="trash-outline" size={12} color={colors.error} />
-                      <Text style={styles.deleteText}>Delete</Text>
-                    </Pressable>
+                  {(user?.is_admin ||
+                    user?.can_edit_step_sheets ||
+                    user?.user_id === item.instructor_id) && token ? (
+                    <>
+                      <Pressable
+                        testID={`edit-class-${item.id}`}
+                        onPress={() => {
+                          setEditing(item);
+                          setFormOpen(true);
+                        }}
+                        style={styles.editBtn}
+                      >
+                        <Ionicons name="create-outline" size={12} color={colors.brandPrimary} />
+                        <Text style={styles.editText}>Edit</Text>
+                      </Pressable>
+                      <Pressable
+                        testID={`delete-class-${item.id}`}
+                        onPress={() => {
+                          Alert.alert(
+                            "Delete class?",
+                            `Remove "${item.session_label || formatDate(item.date)}"? This can't be undone.`,
+                            [
+                              { text: "Cancel", style: "cancel" },
+                              {
+                                text: "Delete",
+                                style: "destructive",
+                                onPress: async () => {
+                                  try {
+                                    await api.deleteClass(item.id, token);
+                                    load();
+                                  } catch (e: any) {
+                                    Alert.alert("Error", e?.message || "Could not delete");
+                                  }
+                                },
+                              },
+                            ]
+                          );
+                        }}
+                        style={styles.deleteBtn}
+                      >
+                        <Ionicons name="trash-outline" size={12} color={colors.error} />
+                        <Text style={styles.deleteText}>Delete</Text>
+                      </Pressable>
+                    </>
                   ) : null}
                 </View>
               </View>
@@ -249,13 +297,45 @@ export default function ClassesScreen() {
 
       <ClassFormModal
         visible={formOpen}
-        onClose={() => setFormOpen(false)}
+        onClose={() => {
+          setFormOpen(false);
+          setEditing(null);
+        }}
         onSaved={() => {
           setFormOpen(false);
+          setEditing(null);
           load();
         }}
         token={token || ""}
+        canUploadFlyer={!!user?.can_edit_step_sheets}
+        editing={editing}
       />
+
+      {/* Full-screen flyer preview when a card image is tapped */}
+      <Modal
+        visible={!!flyerPreview}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFlyerPreview(null)}
+      >
+        <Pressable style={styles.flyerModal} onPress={() => setFlyerPreview(null)}>
+          {flyerPreview ? (
+            <Image
+              source={{ uri: flyerPreview }}
+              style={styles.flyerModalImage}
+              resizeMode="contain"
+            />
+          ) : null}
+          <Pressable
+            testID="flyer-close"
+            onPress={() => setFlyerPreview(null)}
+            style={styles.flyerClose}
+            hitSlop={10}
+          >
+            <Ionicons name="close" size={26} color="#fff" />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -279,19 +359,44 @@ function ClassFormModal({
   onClose,
   onSaved,
   token,
+  canUploadFlyer,
+  editing,
 }: {
   visible: boolean;
   onClose: () => void;
   onSaved: () => void;
   token: string;
+  canUploadFlyer: boolean;
+  editing: ClassSession | null;
 }) {
   const [date, setDate] = useState(todayISO());
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
+  const [flyerImage, setFlyerImage] = useState("");
+  const [flyerBusy, setFlyerBusy] = useState(false);
   const [q, setQ] = useState("");
   const [dances, setDances] = useState<Dance[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Pre-fill or reset when opening the modal (edit vs create)
+  useEffect(() => {
+    if (!visible) return;
+    if (editing) {
+      setDate(editing.date || todayISO());
+      setLabel(editing.session_label || "");
+      setNotes(editing.notes || "");
+      setFlyerImage(editing.flyer_image || "");
+      setSelected(editing.dance_ids || []);
+    } else {
+      setDate(todayISO());
+      setLabel("");
+      setNotes("");
+      setFlyerImage("");
+      setSelected([]);
+    }
+    setQ("");
+  }, [editing, visible]);
 
   useEffect(() => {
     if (!visible) return;
@@ -300,6 +405,48 @@ function ClassFormModal({
 
   const toggle = (id: string) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  const pickFlyer = async () => {
+    setFlyerBusy(true);
+    try {
+      // Request permission (no-op on web)
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted && Platform.OS !== "web") {
+        Alert.alert(
+          "Permission needed",
+          "Allow photo access to attach a flyer image."
+        );
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 5],
+        quality: 0.7,
+        base64: true,
+      });
+      if (res.canceled) return;
+      const asset = res.assets?.[0];
+      if (!asset?.base64) {
+        Alert.alert("Couldn't read that image", "Please try another photo.");
+        return;
+      }
+      // Rough size check — anything above ~3 MB base64 rejects
+      if (asset.base64.length > 3_000_000) {
+        Alert.alert(
+          "Image too large",
+          "That flyer is over 3 MB after encoding. Please pick a smaller image."
+        );
+        return;
+      }
+      const mime = asset.mimeType || "image/jpeg";
+      setFlyerImage(`data:${mime};base64,${asset.base64}`);
+    } catch (e: any) {
+      Alert.alert("Couldn't attach flyer", e?.message || "Try again.");
+    } finally {
+      setFlyerBusy(false);
+    }
+  };
 
   const submit = async () => {
     if (!token) return;
@@ -313,13 +460,23 @@ function ClassFormModal({
     }
     setSaving(true);
     try {
-      await api.createClass(
-        { date, session_label: label, dance_ids: selected, notes },
-        token
-      );
+      const payload = {
+        date,
+        session_label: label,
+        dance_ids: selected,
+        notes,
+        // Only send flyer when the caller is a whitelist editor
+        flyer_image: canUploadFlyer ? flyerImage : undefined,
+      };
+      if (editing) {
+        await api.updateClass(editing.id, payload, token);
+      } else {
+        await api.createClass(payload, token);
+      }
       setDate(todayISO());
       setLabel("");
       setNotes("");
+      setFlyerImage("");
       setSelected([]);
       setQ("");
       onSaved();
@@ -339,7 +496,7 @@ function ClassFormModal({
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
         <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Log Class</Text>
+          <Text style={styles.modalTitle}>{editing ? "Edit Class" : "Log Class"}</Text>
           <Pressable onPress={onClose} testID="close-class-form">
             <Ionicons name="close" size={26} color={colors.onSurface} />
           </Pressable>
@@ -353,7 +510,7 @@ function ClassFormModal({
             keyboardShouldPersistTaps="handled"
           >
             <Text style={styles.hint}>
-              Use today's date (or earlier) to post a recap. Use a future date to publish an upcoming class.
+              Use today&apos;s date (or earlier) to post a recap. Use a future date to publish an upcoming class.
             </Text>
             <Label text="Date (YYYY-MM-DD) *" />
             <TextInput
@@ -386,6 +543,53 @@ function ClassFormModal({
               placeholderTextColor={colors.muted}
               style={[styles.input, { minHeight: 70, textAlignVertical: "top" }]}
             />
+
+            {canUploadFlyer && (
+              <>
+                <Label text="Flyer image (optional)" />
+                {flyerImage ? (
+                  <View style={styles.flyerPreviewWrap}>
+                    <Image source={{ uri: flyerImage }} style={styles.flyerPreview} resizeMode="cover" />
+                    <View style={styles.flyerActions}>
+                      <Pressable
+                        testID="class-flyer-replace"
+                        onPress={pickFlyer}
+                        style={styles.flyerBtnLight}
+                        disabled={flyerBusy}
+                      >
+                        <Ionicons name="swap-horizontal" size={16} color={colors.brandPrimary} />
+                        <Text style={styles.flyerBtnLightText}>Replace</Text>
+                      </Pressable>
+                      <Pressable
+                        testID="class-flyer-remove"
+                        onPress={() => setFlyerImage("")}
+                        style={styles.flyerBtnLight}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={colors.error} />
+                        <Text style={[styles.flyerBtnLightText, { color: colors.error }]}>Remove</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : (
+                  <Pressable
+                    testID="class-flyer-add"
+                    onPress={pickFlyer}
+                    disabled={flyerBusy}
+                    style={styles.flyerAdd}
+                  >
+                    {flyerBusy ? (
+                      <ActivityIndicator color={colors.brandPrimary} />
+                    ) : (
+                      <>
+                        <Ionicons name="image-outline" size={22} color={colors.brandPrimary} />
+                        <Text style={styles.flyerAddText}>Attach a flyer image</Text>
+                        <Text style={styles.flyerHint}>Shown to everyone viewing this class</Text>
+                      </>
+                    )}
+                  </Pressable>
+                )}
+              </>
+            )}
 
             <Label text={`Dances (${selected.length} selected) *`} />
             <View style={styles.searchWrap}>
@@ -443,7 +647,7 @@ function ClassFormModal({
               {saving ? (
                 <ActivityIndicator color={colors.onBrandPrimary} />
               ) : (
-                <Text style={styles.saveBtnText}>Save Class</Text>
+                <Text style={styles.saveBtnText}>{editing ? "Update Class" : "Save Class"}</Text>
               )}
             </Pressable>
           </ScrollView>
@@ -528,6 +732,81 @@ const styles = StyleSheet.create({
   },
   instructor: { color: colors.muted, fontSize: 12 },
   dancesWrap: { gap: 4, marginTop: 4 },
+  flyerCardImage: {
+    width: "100%",
+    aspectRatio: 4 / 5,
+    maxHeight: 320,
+    borderRadius: radius.md,
+    marginTop: 8,
+    marginBottom: 4,
+    backgroundColor: colors.divider,
+  },
+  flyerPreviewWrap: {
+    borderRadius: radius.md,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.divider,
+    marginBottom: spacing.sm,
+  },
+  flyerPreview: { width: "100%", aspectRatio: 4 / 5, maxHeight: 300 },
+  flyerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  flyerBtnLight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    backgroundColor: colors.surface,
+  },
+  flyerBtnLightText: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  flyerAdd: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "66",
+    borderStyle: "dashed",
+    backgroundColor: colors.brandPrimary + "0A",
+    marginBottom: spacing.sm,
+    gap: 4,
+  },
+  flyerAddText: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  flyerHint: { color: colors.muted, fontSize: 12 },
+  flyerModal: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flyerModalImage: { width: "94%", height: "80%" },
+  flyerClose: {
+    position: "absolute",
+    top: 44,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   danceRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -555,6 +834,8 @@ const styles = StyleSheet.create({
   attendText: { color: colors.success, fontSize: 12, fontWeight: "700" },
   deleteBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   deleteText: { color: colors.error, fontSize: 12, fontWeight: "600" },
+  editBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  editText: { color: colors.brandPrimary, fontSize: 12, fontWeight: "600" },
   empty: { alignItems: "center", padding: spacing.xxl, gap: spacing.md },
   emptyText: { color: colors.muted, textAlign: "center" },
   modalHeader: {

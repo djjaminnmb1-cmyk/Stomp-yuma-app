@@ -64,6 +64,7 @@ export type ClassSession = {
   instructor_name: string;
   dance_ids: string[];
   dances: { id: string; name: string; difficulty: string }[];
+  flyer_image?: string;
   created_at: string;
 };
 
@@ -232,6 +233,7 @@ export const api = {
       session_label?: string;
       dance_ids: string[];
       notes?: string;
+      flyer_image?: string;
     },
     token: string
   ) =>
@@ -243,6 +245,7 @@ export const api = {
       session_label?: string;
       dance_ids: string[];
       notes?: string;
+      flyer_image?: string;
     },
     token: string
   ) =>
