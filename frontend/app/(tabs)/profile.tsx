@@ -20,6 +20,92 @@ import { colors, spacing, radius, images } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
 import { api, Tracking } from "@/src/api/client";
 
+// ---------- Social links ----------
+// Each entry has:
+//  - nativeUrl: platform-specific deep link that opens the native app if installed
+//  - webUrl:    https fallback that opens in browser (also universal-links into
+//               the native app on modern iOS/Android)
+type SocialLink = {
+  key: string;
+  label: string;
+  icon: string;
+  iconColor: string;
+  bg: string;
+  nativeUrl?: string;
+  webUrl: string;
+};
+
+const SOCIAL_LINKS: SocialLink[] = [
+  {
+    key: "youtube",
+    label: "YouTube",
+    icon: "logo-youtube",
+    iconColor: "#FFFFFF",
+    bg: "#FF0000",
+    nativeUrl: "vnd.youtube://www.youtube.com/@stompingroundyuma",
+    webUrl: "https://www.youtube.com/@stompingroundyuma",
+  },
+  {
+    key: "instagram",
+    label: "Instagram",
+    icon: "logo-instagram",
+    iconColor: "#FFFFFF",
+    bg: "#E1306C",
+    nativeUrl: "instagram://user?username=stompingroundyuma",
+    webUrl: "https://www.instagram.com/stompingroundyuma",
+  },
+  {
+    key: "tiktok",
+    label: "TikTok",
+    icon: "logo-tiktok",
+    iconColor: "#FFFFFF",
+    bg: "#000000",
+    nativeUrl: "snssdk1233://user/profile/@stompingroundyuma",
+    webUrl: "https://www.tiktok.com/@stompingroundyuma",
+  },
+  {
+    key: "facebook",
+    label: "Facebook",
+    icon: "logo-facebook",
+    iconColor: "#FFFFFF",
+    bg: "#1877F2",
+    nativeUrl: "fb://profile/stompingroundyuma",
+    webUrl: "https://www.facebook.com/stompingroundyuma",
+  },
+];
+
+const SITE_LINK: SocialLink = {
+  key: "website",
+  label: "Website",
+  icon: "globe-outline",
+  iconColor: colors.brandPrimary,
+  bg: "transparent",
+  webUrl:
+    "https://sites.google.com/stompingroundyuma.org/stompingroundyuma/home",
+};
+
+// Open a native app if we can, otherwise fall back to web. `canOpenURL` may
+// return false on iOS for schemes not declared in Info.plist, so we ALSO
+// swallow errors from openURL and try the web fallback as a safety net.
+async function openSocial(s: SocialLink) {
+  try {
+    if (s.nativeUrl) {
+      const supported = await Linking.canOpenURL(s.nativeUrl).catch(() => false);
+      if (supported) {
+        try {
+          await Linking.openURL(s.nativeUrl);
+          return;
+        } catch {
+          // fall through to web
+        }
+      }
+    }
+    await Linking.openURL(s.webUrl);
+  } catch {
+    Alert.alert(`Unable to open ${s.label}`);
+  }
+}
+
 export default function Profile() {
   const router = useRouter();
   const { user, token, signOut } = useAuth();
@@ -154,22 +240,6 @@ export default function Profile() {
           </Pressable>
 
           <Pressable
-            testID="profile-website-row"
-            style={styles.row}
-            onPress={() =>
-              Linking.openURL(
-                "https://sites.google.com/stompingroundyuma.org/stompingroundyuma/home"
-              ).catch(() => Alert.alert("Unable to open website"))
-            }
-          >
-            <View style={styles.rowLeft}>
-              <Ionicons name="globe-outline" size={22} color={colors.brandSecondary} />
-              <Text style={styles.rowText}>Visit Our Website</Text>
-            </View>
-            <Ionicons name="open-outline" size={18} color={colors.muted} />
-          </Pressable>
-
-          <Pressable
             testID="logout-btn"
             style={styles.row}
             onPress={async () => {
@@ -184,8 +254,50 @@ export default function Profile() {
           </Pressable>
         </View>
 
+        {/* -------------------- Connect With Us -------------------- */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About Stompin' Ground Yuma</Text>
+          <Text style={styles.sectionTitle}>Connect With Us</Text>
+          <Text style={styles.connectSub}>
+            Follow Stompin&apos; Ground Yuma on your favourite platform — links open
+            in the native app if installed.
+          </Text>
+
+          <View style={styles.socialGrid}>
+            {SOCIAL_LINKS.map((s) => (
+              <Pressable
+                key={s.key}
+                testID={`profile-social-${s.key}`}
+                onPress={() => openSocial(s)}
+                style={({ pressed }) => [
+                  styles.socialCard,
+                  { backgroundColor: s.bg },
+                  pressed && { opacity: 0.85 },
+                ]}
+                hitSlop={6}
+              >
+                <Ionicons name={s.icon as any} size={26} color={s.iconColor} />
+                <Text style={[styles.socialCardLabel, { color: s.iconColor }]}>
+                  {s.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Pressable
+            testID="profile-website-cta"
+            onPress={() => openSocial(SITE_LINK)}
+            style={styles.websiteRow}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="globe-outline" size={22} color={colors.brandPrimary} />
+              <Text style={styles.rowText}>Visit our website</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={colors.muted} />
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About Stompin&apos; Ground Yuma</Text>
           <Text style={styles.aboutText}>
             Country line dancing for all ages in Yuma, AZ. Join us, learn a new step,
             and make new friends on the dance floor.
@@ -332,6 +444,37 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, backgroundColor: colors.divider },
   section: { paddingHorizontal: spacing.lg, marginTop: spacing.xl, gap: spacing.sm },
   sectionTitle: { fontFamily: "serif", fontSize: 20, fontWeight: "700", color: colors.onSurface },
+  connectSub: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: -2, marginBottom: spacing.xs },
+  socialGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  socialCard: {
+    // 2-per-row on phones (min-touch 48pt+, gap-aware)
+    flexBasis: "48%",
+    flexGrow: 1,
+    minHeight: 76,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  socialCardLabel: { fontSize: 14, fontWeight: "700" },
+  websiteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    borderRadius: radius.md,
+    marginTop: spacing.sm,
+  },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",

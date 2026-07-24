@@ -10,7 +10,18 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emergent.stompinyumaapp.uyr5zg"
+      "bundleIdentifier": "com.emergent.stompinyumaapp.uyr5zg",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "vnd.youtube",
+          "youtube",
+          "instagram",
+          "fb",
+          "fbapiauthlogin",
+          "snssdk1233",
+          "tiktok"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
