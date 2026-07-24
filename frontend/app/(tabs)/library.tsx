@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -44,7 +45,18 @@ export default function Library() {
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Dance Library</Text>
+        <View style={styles.brandRow}>
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.brandName}>Stompin' Ground Yuma</Text>
+            <Text style={styles.brandSub}>Line dance library</Text>
+          </View>
+          <Text style={styles.countBadge}>{items.length}</Text>
+        </View>
         <View style={styles.searchWrap}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput
@@ -149,6 +161,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.divider,
     paddingBottom: spacing.sm,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  brandLogo: { width: 44, height: 44 },
+  brandName: {
+    fontFamily: "serif",
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.onSurface,
+    letterSpacing: -0.3,
+  },
+  brandSub: { fontSize: 12, color: colors.muted, marginTop: 1 },
+  countBadge: {
+    backgroundColor: colors.brandPrimary,
+    color: colors.onBrandPrimary,
+    fontSize: 12,
+    fontWeight: "700",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    overflow: "hidden",
   },
   title: { fontFamily: "serif", fontSize: 30, fontWeight: "700", color: colors.onSurface },
   searchWrap: {
