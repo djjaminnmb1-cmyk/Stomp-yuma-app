@@ -61,8 +61,8 @@ const SOCIAL_LINKS: SocialLink[] = [
     icon: "logo-tiktok",
     iconColor: "#FFFFFF",
     bg: "#000000",
-    nativeUrl: "snssdk1233://user/profile/@stompingroundyuma",
-    webUrl: "https://www.tiktok.com/@stompingroundyuma",
+    nativeUrl: "snssdk1233://user/profile/@stompin.ground.yu",
+    webUrl: "https://www.tiktok.com/@stompin.ground.yu?_r=1&_t=ZT-98Ht5GKtSxB",
   },
   {
     key: "facebook",
@@ -70,8 +70,8 @@ const SOCIAL_LINKS: SocialLink[] = [
     icon: "logo-facebook",
     iconColor: "#FFFFFF",
     bg: "#1877F2",
-    nativeUrl: "fb://profile/stompingroundyuma",
-    webUrl: "https://www.facebook.com/stompingroundyuma",
+    nativeUrl: "fb://profile/61579203815172",
+    webUrl: "https://www.facebook.com/profile.php?id=61579203815172",
   },
 ];
 
