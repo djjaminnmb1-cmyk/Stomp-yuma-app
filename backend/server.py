@@ -72,7 +72,7 @@ STEP_SHEET_EDITOR_EMAILS = {
 }
 # Shared secret that unlocks self-serve instructor role for the studio's
 # real instructors. Keep server-side only; never expose to the client bundle.
-INSTRUCTOR_CODE = os.environ.get("INSTRUCTOR_CODE", "lineup4life").strip()
+INSTRUCTOR_CODE = os.environ.get("INSTRUCTOR_CODE", "").strip()
 
 # ---------------- Push notifications (Emergent relay) ----------------
 PUSH_BASE_URL = "https://integrations.emergentagent.com"
@@ -589,8 +589,10 @@ async def forgot_password(inp: ForgotPasswordIn):
         "used": False,
     })
 
-    base = APP_PUBLIC_URL or "https://stompin-yuma-app.preview.emergentagent.com"
-    reset_url = f"{base}/reset-password?token={raw}"
+    if not APP_PUBLIC_URL:
+        logger.error("APP_PUBLIC_URL not set — cannot build reset URL")
+        raise HTTPException(500, "Reset flow misconfigured — contact support")
+    reset_url = f"{APP_PUBLIC_URL}/reset-password?token={raw}"
     display_name = user.get("name") or email.split("@")[0]
 
     text_body = (
