@@ -86,7 +86,9 @@ export default function AuthScreen() {
       } else {
         redirect = Linking.createURL("");
       }
-      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirect)}`;
+      const authBase =
+        process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL || "https://auth.emergentagent.com/";
+      const authUrl = `${authBase}?redirect=${encodeURIComponent(redirect)}`;
 
       if (Platform.OS === "web") {
         if (typeof window !== "undefined") window.location.href = authUrl;

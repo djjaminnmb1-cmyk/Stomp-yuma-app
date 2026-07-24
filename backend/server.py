@@ -517,13 +517,15 @@ async def login(inp: LoginIn):
 
 @api_router.post("/auth/google-session")
 async def google_session(inp: GoogleSessionIn):
-    # Emergent-managed Google Auth session-exchange URL. Overridable via env
-    # (EMERGENT_AUTH_SESSION_URL) so we never leak an environment-specific URL
-    # into source.
-    session_url = os.environ.get(
-        "EMERGENT_AUTH_SESSION_URL",
-        "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-    )
+    # Emergent-managed Google Auth session-exchange URL. Required from env so
+    # no environment-specific URL is baked into source. In dev/preview this is
+    # set in backend/.env; production overrides it in the deploy config.
+    session_url = os.environ.get("EMERGENT_AUTH_SESSION_URL", "").strip()
+    if not session_url:
+        raise HTTPException(
+            500,
+            "Server misconfigured: EMERGENT_AUTH_SESSION_URL not set",
+        )
     async with httpx.AsyncClient(timeout=15) as hc:
         r = await hc.get(
             session_url,
