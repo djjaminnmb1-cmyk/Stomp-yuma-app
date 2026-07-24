@@ -18,9 +18,9 @@ from seed_dances_v3 import SEED_V3
 load_dotenv()
 
 STEP_TEMPLATE = (
-    "Official step sheet available on CopperKnob (search by title + "
-    "choreographer). Instructors: use the dance detail page to upload the "
-    "printable image so it appears here for members."
+    "Step sheet not yet uploaded to this dance. Instructors can attach the "
+    "official printable image via the dance detail page — tap Edit next to "
+    "Step Sheet."
 )
 
 

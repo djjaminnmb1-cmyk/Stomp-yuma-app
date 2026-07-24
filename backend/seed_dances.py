@@ -3,7 +3,7 @@ Curated worldwide selection with step sheet notes.
 Format: (name, choreographer, choreographer_country, song, artist, difficulty,
          bpm, count, youtube_query, step_sheet).
 Step sheets are compact reference notes — for full official notation,
-visit copperknob.co.uk or the choreographer's site.
+visit the choreographer's site.
 """
 
 SEED_DANCES = [

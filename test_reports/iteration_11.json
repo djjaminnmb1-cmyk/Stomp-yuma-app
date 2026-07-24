@@ -1,0 +1,31 @@
+{
+  "summary": "Backend verification of CopperKnob scrub / step_sheet normalization migration. All 12 pytest assertions passed. GET /api/dances returns 507 dances; 0 dances mention 'copperknob' (case-insensitive) or 'copperknob.co.uk'; every dance has non-empty choreographer and song; Stompin' Ground retains Erin Boroughs credit, DJ Jamin credit, and movement summary with no dangling 'Official step sheet:' line; 354 dances use the canonical clean placeholder (matches expected ~350). Grep of /app/backend/seed_dances.py, seed_dances_v2.py, seed_dances_v3_run.py, seed_dances_v4_run.py confirmed 0 occurrences of 'copperknob'/'CopperKnob'.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_copperknob_scrub.py",
+    "/app/test_reports/pytest/copperknob_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Migration script /app/backend/scrub_copperknob.py is a one-shot cleanup. Consider deleting or archiving it after this iteration to keep the backend directory lean.",
+    "Only /app/backend/scrub_copperknob.py still contains the 'copperknob' string (as an intentional filter/regex target). All seed source files are clean, so a fresh re-seed will not reintroduce the reference."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_copperknob_scrub.py"
+  ],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "N/A - backend only"},
+  "seed_data_creation": "None - read-only verification against existing DB state.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Reusable regression test at /app/backend/tests/test_copperknob_scrub.py covers: dance count invariant (507), copperknob substring/URL absence, choreographer/song presence, Stompin' Ground content invariants, canonical placeholder presence and volume. Uses EXPO_PUBLIC_BACKEND_URL from env (with fallback to /app/frontend/.env parsing). Placeholder text uses an em-dash (—); if that ever changes, update CANONICAL_PLACEHOLDER constant.",
+  "rca_of_issue": "N/A - no bugs found. Migration successfully removed all 358 copperknob references and normalized 352 leftover placeholder snippets to the canonical 354-count placeholder (delta of 2 likely from records that already had it before normalization)."
+}

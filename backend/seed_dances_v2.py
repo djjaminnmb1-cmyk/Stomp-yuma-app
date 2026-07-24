@@ -28,7 +28,7 @@ SEED_DANCES_V2 = [
 
     ("Amazed", "Sue Lipscomb", "USA", "Amazed", "Lonestar", "Improver", 84, "48 count, 2 wall",
      "amazed line dance lonestar",
-     "Smooth waltz-feel improver. Combines sway drags, crossing waltz box, and a ½ turn pivot. Full step sheet on CopperKnob — instructor to upload image."),
+     "Smooth waltz-feel improver. Combines sway drags, crossing waltz box, and a ½ turn pivot. Instructor to upload the printable step-sheet image."),
 
     ("God's Country", "Rob Fowler", "UK", "God's Country", "Blake Shelton", "Improver", 129, "32 count, 4 wall",
      "gods country line dance rob fowler",
@@ -40,7 +40,7 @@ SEED_DANCES_V2 = [
 
     ("Redneck Woman", "Various", "USA", "Redneck Woman", "Gretchen Wilson", "Beginner", 110, "32 count, 4 wall",
      "redneck woman line dance",
-     "High-energy beginner. Vines with stomps, hip bumps, ½ pivot, jazz box. Full step sheet on CopperKnob."),
+     "High-energy beginner. Vines with stomps, hip bumps, ½ pivot, jazz box."),
 
     ("Chicken Fried", "Rachael McEnaney", "USA/UK", "Chicken Fried", "Zac Brown Band", "Improver", 130, "32 count, 4 wall",
      "chicken fried line dance",
