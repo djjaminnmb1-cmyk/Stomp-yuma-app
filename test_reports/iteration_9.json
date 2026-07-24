@@ -1,0 +1,30 @@
+{
+  "summary": "Independent verification of user 'website is offline' complaint. Deployed public preview URL is fully functional across all 6 requested checks. Root cause of user report is client-side (stale bookmark/PWA shortcut/DNS/network on user side), NOT the deployed app.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "expo-notifications", "issue": "Non-fatal console warning on web preview: '[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.' — cosmetic only, does not cause offline behaviour."},
+      {"component": "View/Pressable", "issue": "Deprecation warning: 'props.pointerEvents is deprecated. Use style.pointerEvents' — cosmetic, non-blocking."}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "No code fixes required — deployed site is healthy.",
+    "User-side triage suggestions (share with reporter): (1) Verify the URL they typed/bookmarked is exactly https://stompin-yuma-app.preview.emergentagent.com/ — an old bookmark pointing to https://stompin-yuma-app.ngrok.io returns 404 (confirmed dead tunnel) and browsers may show a generic 'offline' / 'site cannot be reached' page. (2) Ask them to hard-refresh (Ctrl/Cmd+Shift+R) or clear the site data — the app does NOT register a service worker (navigator.serviceWorker.controller === null, getRegistrations() returns []) so a stale SW is unlikely, but old browser cache could still show a cached shell. (3) If they added the site to their phone home screen while it was on the ngrok URL, that PWA-style shortcut is pointing at the dead tunnel — they must re-add from the current preview URL. (4) Test on cellular vs Wi-Fi to rule out captive portal / DNS filtering.",
+    "Minor cleanup (optional): silence expo-notifications web warnings by guarding registerForPushNotifications with Platform.OS !== 'web'; migrate deprecated pointerEvents prop to style.pointerEvents."
+  ],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None — used existing admin@stompinground.com credentials.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 6 review checks passed. Notes for future agents: auth submit button testID is 'auth-submit-button' (NOT 'auth-submit'). There are TWO 'Sign In' text nodes on /auth — the first is the tab (auth-tab-login), the second is the submit button. Use the testID to disambiguate. The GET /sw.js path returns HTTP 200 with content-type text/html — this is Expo Router's SPA fallback returning index.html for unknown routes, NOT an actual service worker file. Browser confirms no service worker is registered.",
+  "rca_of_issue": "USER-SIDE, not app-side. Verified evidence: (a) https://stompin-yuma-app.preview.emergentagent.com/ → HTTP 200, 219ms, renders auth screen with Stompin' Ground Yuma logo, no 'offline' text anywhere on page. (b) GET /api/dances → HTTP 200 returning JSON array of 507 dances. (c) Login as admin@stompinground.com / Admin123! via UI succeeds — lands on Home tab with 'Howdy, Stompin''!' header and bottom tabs (Home/Dances/My Dances/Instructor/Profile). (d) /library route loads with header 'Stompin' Ground Yuma / Line dance library' and dance count badge '507'. (e) https://stompin-yuma-app.ngrok.io → HTTP 404 (old tunnel retired). (f) navigator.serviceWorker.controller is null and getRegistrations() returns [] — no SW cache can be serving an offline page. Most likely cause of user's 'offline' report: they hit an old bookmark or home-screen shortcut pointing at the retired ngrok URL, and their browser rendered its native 'This site can't be reached / You are offline' error page. Mitigation: send them the current preview URL and instruct them to re-bookmark / re-add to home screen; hard-refresh to clear any cached shell."
+}
