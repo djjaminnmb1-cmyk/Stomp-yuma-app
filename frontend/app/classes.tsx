@@ -15,6 +15,7 @@ import {
   Image,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -186,8 +187,12 @@ export default function ClassesScreen() {
                     <Image
                       source={{ uri: item.flyer_image }}
                       style={styles.flyerCardImage}
-                      resizeMode="cover"
+                      resizeMode="contain"
                     />
+                    <View style={styles.flyerTapHint}>
+                      <Ionicons name="expand-outline" size={12} color="#fff" />
+                      <Text style={styles.flyerTapHintText}>Tap to enlarge</Text>
+                    </View>
                   </Pressable>
                 ) : null}
                 <View style={styles.dancesWrap}>
@@ -418,29 +423,72 @@ function ClassFormModal({
         );
         return;
       }
+      // Use the new mediaTypes array (MediaTypeOptions is deprecated in SDK 54).
+      // Skip the built-in editor — some devices drop base64 when the cropper runs.
       const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 5],
-        quality: 0.7,
-        base64: true,
+        mediaTypes: ["images"] as any,
+        allowsEditing: false,
+        quality: 1,
+        base64: false,
+        exif: false,
       });
       if (res.canceled) return;
       const asset = res.assets?.[0];
-      if (!asset?.base64) {
+      if (!asset?.uri) {
         Alert.alert("Couldn't read that image", "Please try another photo.");
         return;
       }
-      // Rough size check — anything above ~3 MB base64 rejects
-      if (asset.base64.length > 3_000_000) {
+
+      // Downscale + re-encode so ANY input becomes a safe, ~<1.5MB JPEG.
+      // Long edge capped at 1400px, JPEG @ 0.75 quality.
+      let manipulated;
+      try {
+        manipulated = await ImageManipulator.manipulateAsync(
+          asset.uri,
+          [{ resize: { width: 1400 } }],
+          {
+            compress: 0.75,
+            format: ImageManipulator.SaveFormat.JPEG,
+            base64: true,
+          }
+        );
+      } catch (mErr) {
+        // Fallback: try to read the raw uri via fetch on web/native
+        try {
+          const resp = await fetch(asset.uri);
+          const blob = await resp.blob();
+          const dataUrl: string = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(reader.error);
+            reader.onloadend = () => resolve(String(reader.result || ""));
+            reader.readAsDataURL(blob);
+          });
+          if (dataUrl && dataUrl.startsWith("data:")) {
+            setFlyerImage(dataUrl);
+            return;
+          }
+        } catch {}
         Alert.alert(
-          "Image too large",
-          "That flyer is over 3 MB after encoding. Please pick a smaller image."
+          "Couldn't process that flyer",
+          (mErr as any)?.message || "Try a different photo."
         );
         return;
       }
-      const mime = asset.mimeType || "image/jpeg";
-      setFlyerImage(`data:${mime};base64,${asset.base64}`);
+
+      if (!manipulated?.base64) {
+        Alert.alert("Couldn't read that image", "Please try another photo.");
+        return;
+      }
+      const dataUri = `data:image/jpeg;base64,${manipulated.base64}`;
+      // Safety net: hard cap ~4 MB post-compression
+      if (dataUri.length > 4_500_000) {
+        Alert.alert(
+          "Image too large",
+          "Even after compression, that flyer is over 4 MB. Please pick a smaller image."
+        );
+        return;
+      }
+      setFlyerImage(dataUri);
     } catch (e: any) {
       Alert.alert("Couldn't attach flyer", e?.message || "Try again.");
     } finally {
@@ -549,7 +597,7 @@ function ClassFormModal({
                 <Label text="Flyer image (optional)" />
                 {flyerImage ? (
                   <View style={styles.flyerPreviewWrap}>
-                    <Image source={{ uri: flyerImage }} style={styles.flyerPreview} resizeMode="cover" />
+                    <Image source={{ uri: flyerImage }} style={styles.flyerPreview} resizeMode="contain" />
                     <View style={styles.flyerActions}>
                       <Pressable
                         testID="class-flyer-replace"
@@ -734,13 +782,25 @@ const styles = StyleSheet.create({
   dancesWrap: { gap: 4, marginTop: 4 },
   flyerCardImage: {
     width: "100%",
-    aspectRatio: 4 / 5,
-    maxHeight: 320,
+    height: 320,
     borderRadius: radius.md,
     marginTop: 8,
     marginBottom: 4,
     backgroundColor: colors.divider,
   },
+  flyerTapHint: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  flyerTapHintText: { color: "#fff", fontSize: 10, fontWeight: "600" },
   flyerPreviewWrap: {
     borderRadius: radius.md,
     overflow: "hidden",
@@ -748,7 +808,7 @@ const styles = StyleSheet.create({
     borderColor: colors.divider,
     marginBottom: spacing.sm,
   },
-  flyerPreview: { width: "100%", aspectRatio: 4 / 5, maxHeight: 300 },
+  flyerPreview: { width: "100%", height: 300, backgroundColor: colors.divider },
   flyerActions: {
     flexDirection: "row",
     gap: spacing.sm,
