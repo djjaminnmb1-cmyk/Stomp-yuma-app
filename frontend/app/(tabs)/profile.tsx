@@ -423,6 +423,18 @@ export default function Profile() {
             </View>
             <Ionicons name="open-outline" size={18} color={colors.muted} />
           </Pressable>
+
+          <Pressable
+            testID="profile-privacy-cta"
+            onPress={() => router.push("/privacy")}
+            style={styles.websiteRow}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="shield-checkmark-outline" size={22} color={colors.brandPrimary} />
+              <Text style={styles.rowText}>Privacy Policy</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
         </View>
 
         <View style={styles.section}>

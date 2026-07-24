@@ -14,6 +14,12 @@ export async function registerForPush(token: string | null): Promise<void> {
     if (Platform.OS === "web") return;
     if (!token) return;
 
+    // iOS push requires a GoogleService-Info.plist bound to the app's bundle
+    // identifier. Until that's added to app.json (expo.ios.googleServicesFile),
+    // skip iOS registration silently so we don't spam Emergent's push service
+    // with tokens we can't deliver to.
+    if (Platform.OS === "ios") return;
+
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== "granted") return;
 

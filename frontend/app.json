@@ -55,6 +55,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "privacyPolicyUrl": "https://stompin-yuma-app.preview.emergentagent.com/privacy"
     }
   }
 }

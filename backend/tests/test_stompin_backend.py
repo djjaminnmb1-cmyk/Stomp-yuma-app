@@ -16,10 +16,20 @@ import requests
 
 BASE = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://stompin-yuma-app.preview.emergentagent.com").rstrip("/")
 API = f"{BASE}/api"
-ADMIN_EMAIL = "admin@stompinground.com"
-ADMIN_PASS = "Admin123!"
-ERIN_EMAIL = "stompingroundyuma@gmail.com"
-ERIN_PASS = "Stompin2026!"
+
+# Test credentials are loaded from environment so no secrets are committed.
+# Provide these via a local .env or CI secret store before running the suite:
+#   TEST_ADMIN_EMAIL / TEST_ADMIN_PASS / TEST_ERIN_EMAIL / TEST_ERIN_PASS
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@stompinground.com")
+ADMIN_PASS = os.environ.get("TEST_ADMIN_PASS", "")
+ERIN_EMAIL = os.environ.get("TEST_ERIN_EMAIL", "stompingroundyuma@gmail.com")
+ERIN_PASS = os.environ.get("TEST_ERIN_PASS", "")
+
+if not (ADMIN_PASS and ERIN_PASS):
+    pytest.skip(
+        "TEST_ADMIN_PASS / TEST_ERIN_PASS env vars not set; skipping suite.",
+        allow_module_level=True,
+    )
 
 
 @pytest.fixture(scope="session")

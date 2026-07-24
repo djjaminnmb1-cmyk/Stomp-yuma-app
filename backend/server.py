@@ -517,9 +517,16 @@ async def login(inp: LoginIn):
 
 @api_router.post("/auth/google-session")
 async def google_session(inp: GoogleSessionIn):
+    # Emergent-managed Google Auth session-exchange URL. Overridable via env
+    # (EMERGENT_AUTH_SESSION_URL) so we never leak an environment-specific URL
+    # into source.
+    session_url = os.environ.get(
+        "EMERGENT_AUTH_SESSION_URL",
+        "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+    )
     async with httpx.AsyncClient(timeout=15) as hc:
         r = await hc.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+            session_url,
             headers={"X-Session-ID": inp.session_id},
         )
         if r.status_code != 200:
@@ -1477,6 +1484,7 @@ async def startup():
         return val or None
 
     async def _seed_account(email: str, display: str, want_admin: bool, want_instructor: bool):
+        env_pw = _env_password_for(email)
         existing = await db.users.find_one({"email": email})
         if existing:
             updates = {}
@@ -1484,23 +1492,31 @@ async def startup():
                 updates["is_admin"] = True
             if want_instructor and not existing.get("is_instructor"):
                 updates["is_instructor"] = True
-            if not existing.get("password_hash"):
-                pw = _env_password_for(email) or _secrets.token_urlsafe(12)
-                updates["password_hash"] = hash_password(pw)
-                if not _env_password_for(email):
-                    logger.warning(
-                        "One-time password generated for %s: %s "
-                        "(share securely, force reset on first login)",
-                        email, pw,
-                    )
+            # If an operator has explicitly pinned a SEED_PW_* env var for this
+            # account, always keep the on-disk hash in sync with it. This lets
+            # /app/memory/test_credentials.md be the single source of truth in
+            # dev/preview and never drift from what's actually stored.
+            needs_hash = not existing.get("password_hash")
+            if needs_hash or env_pw:
+                pw = env_pw or _secrets.token_urlsafe(12)
+                # Skip the rehash if the hash already matches the env pw
+                if not (env_pw and existing.get("password_hash") and
+                        verify_password(env_pw, existing["password_hash"])):
+                    updates["password_hash"] = hash_password(pw)
+                    if not env_pw:
+                        logger.warning(
+                            "One-time password generated for %s: %s "
+                            "(share securely, force reset on first login)",
+                            email, pw,
+                        )
             if not existing.get("name") and display:
                 updates["name"] = display
             if updates:
                 await db.users.update_one({"email": email}, {"$set": updates})
             return
         # No existing record -> create one
-        pw = _env_password_for(email) or _secrets.token_urlsafe(12)
-        if not _env_password_for(email):
+        pw = env_pw or _secrets.token_urlsafe(12)
+        if not env_pw:
             logger.warning(
                 "One-time password generated for %s: %s "
                 "(share securely, force reset on first login)",
