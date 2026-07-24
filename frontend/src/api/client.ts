@@ -126,6 +126,16 @@ export const api = {
   me: (token: string) => req<User>("/auth/me", {}, token),
   logout: (token: string) =>
     req<{ ok: boolean }>("/auth/logout", { method: "POST" }, token),
+  forgotPassword: (email: string) =>
+    req<{ ok: boolean; message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, new_password: string) =>
+    req<{ ok: boolean; message: string }>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, new_password }),
+    }),
 
   listDances: (q?: string, difficulty?: string, scope?: "public" | "mine" | "all", token?: string) => {
     const params = new URLSearchParams();

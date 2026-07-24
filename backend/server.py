@@ -6,9 +6,14 @@ import os
 import re
 import logging
 import uuid
+import hmac
+import hashlib
+import secrets as _secrets_mod
 import bcrypt
 import jwt as pyjwt
 import httpx
+import aiosmtplib
+from email.message import EmailMessage
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
@@ -87,6 +92,79 @@ async def send_push(recipients: List[str], data: dict, idempotency_key: Optional
         except Exception as e:
             logger.warning(f"Push trigger error: {e}")
 
+
+# ---------------- SMTP email helper ----------------
+SMTP_HOST = os.environ.get("SMTP_HOST", "").strip()
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587") or 587)
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "").strip()
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "").strip()
+SMTP_FROM = os.environ.get("SMTP_FROM", "").strip() or SMTP_USERNAME
+APP_PUBLIC_URL = os.environ.get("APP_PUBLIC_URL", "").strip().rstrip("/")
+
+
+def _smtp_configured() -> bool:
+    return bool(SMTP_HOST and SMTP_USERNAME and SMTP_PASSWORD and SMTP_FROM)
+
+
+async def send_email(to: str, subject: str, text: str, html: Optional[str] = None) -> bool:
+    """Best-effort email send via SMTP with STARTTLS.
+    Returns True on success. On failure (or when SMTP isn't configured yet), logs
+    the message body so the operator can inspect the reset link during setup."""
+    if not _smtp_configured():
+        logger.warning(
+            "[EMAIL:UNCONFIGURED] to=%s subject=%r\n%s",
+            to, subject, text,
+        )
+        return False
+    msg = EmailMessage()
+    msg["From"] = SMTP_FROM
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg.set_content(text)
+    if html:
+        msg.add_alternative(html, subtype="html")
+    try:
+        await aiosmtplib.send(
+            msg,
+            hostname=SMTP_HOST,
+            port=SMTP_PORT,
+            username=SMTP_USERNAME,
+            password=SMTP_PASSWORD,
+            start_tls=True,
+            timeout=15,
+        )
+        logger.info("[EMAIL:SENT] to=%s subject=%r", to, subject)
+        return True
+    except Exception as e:
+        logger.error(
+            "[EMAIL:FAILED] to=%s subject=%r err=%s\n(body follows so ops can act):\n%s",
+            to, subject, e, text,
+        )
+        return False
+
+
+# ---------------- Password reset helpers ----------------
+RESET_TOKEN_TTL_MIN = 15
+RESET_RATE_LIMIT_PER_15MIN = 3
+
+
+def _hash_reset_token(raw: str) -> str:
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+async def _ensure_reset_indexes() -> None:
+    """TTL + lookup indexes for password_reset_tokens.
+    Safe to call multiple times; Motor will no-op on duplicate index specs."""
+    try:
+        await db.password_reset_tokens.create_index("token_hash", unique=True)
+        await db.password_reset_tokens.create_index(
+            "expires_at", expireAfterSeconds=0
+        )
+        await db.password_reset_tokens.create_index("user_id")
+    except Exception as e:
+        logger.warning(f"reset indexes: {e}")
+
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
@@ -118,6 +196,15 @@ class LoginIn(BaseModel):
 
 class GoogleSessionIn(BaseModel):
     session_id: str
+
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8, max_length=128)
 
 
 class DanceIn(BaseModel):
@@ -393,6 +480,134 @@ async def google_session(inp: GoogleSessionIn):
 @api_router.get("/auth/me")
 async def me(user: dict = Depends(get_current_user)):
     return user_to_out(user)
+
+
+# ---------------- Password Reset ----------------
+@api_router.post("/auth/forgot-password")
+async def forgot_password(inp: ForgotPasswordIn):
+    """Always returns 200 (no user-enumeration).
+    If the email exists AND has a password (i.e. not a Google-only account) AND
+    the caller has not exceeded 3 requests in the last 15 minutes, a reset link
+    is emailed with a 15-minute single-use token."""
+    email = inp.email.lower().strip()
+    generic_ok = {"ok": True, "message": "If that email exists, a reset link has been sent."}
+
+    user = await db.users.find_one({"email": email})
+    # Silently ignore missing users / passwordless accounts to prevent enumeration.
+    if not user or not user.get("password_hash"):
+        # Still burn a small amount of time so timing doesn't leak existence.
+        await bcrypt_dummy_delay()
+        return generic_ok
+
+    # Rate limit: max 3 unused tokens issued in the last 15 min
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=RESET_TOKEN_TTL_MIN)
+    recent = await db.password_reset_tokens.count_documents({
+        "user_id": user["user_id"],
+        "issued_at": {"$gte": cutoff.isoformat()},
+    })
+    if recent >= RESET_RATE_LIMIT_PER_15MIN:
+        # Silent — do not disclose to caller
+        logger.info("reset rate-limited for user %s", email)
+        return generic_ok
+
+    # Generate and store hashed token
+    raw = _secrets_mod.token_urlsafe(32)
+    token_hash = _hash_reset_token(raw)
+    now = datetime.now(timezone.utc)
+    exp = now + timedelta(minutes=RESET_TOKEN_TTL_MIN)
+    await db.password_reset_tokens.insert_one({
+        "user_id": user["user_id"],
+        "email": email,
+        "token_hash": token_hash,
+        "issued_at": now.isoformat(),
+        "expires_at": exp,  # datetime -> Mongo TTL index cleans up
+        "used": False,
+    })
+
+    base = APP_PUBLIC_URL or "https://stompin-yuma-app.preview.emergentagent.com"
+    reset_url = f"{base}/reset-password?token={raw}"
+    display_name = user.get("name") or email.split("@")[0]
+
+    text_body = (
+        f"Hi {display_name},\n\n"
+        f"We received a request to reset your Stompin' Ground Yuma password.\n"
+        f"Open the link below to set a new password. This link expires in "
+        f"{RESET_TOKEN_TTL_MIN} minutes and can only be used once.\n\n"
+        f"{reset_url}\n\n"
+        f"If you didn't request this, you can safely ignore this email — "
+        f"your password will stay the same.\n\n"
+        f"— Stompin' Ground Yuma"
+    )
+    html_body = f"""
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;color:#2a1f18">
+        <h2 style="color:#8B2E1E">Reset your password</h2>
+        <p>Hi {display_name},</p>
+        <p>We received a request to reset your <strong>Stompin' Ground Yuma</strong> password.
+        Tap the button below to set a new password. This link expires in
+        <strong>{RESET_TOKEN_TTL_MIN} minutes</strong> and can only be used once.</p>
+        <p style="text-align:center;margin:24px 0">
+          <a href="{reset_url}"
+             style="background:#8B2E1E;color:#fff;padding:12px 22px;border-radius:8px;
+                    text-decoration:none;font-weight:700">Reset password</a>
+        </p>
+        <p style="font-size:12px;color:#666">Or copy this link into your browser:<br/>
+          <span style="word-break:break-all">{reset_url}</span></p>
+        <p>If you didn't request this, you can safely ignore this email — your
+        password will stay the same.</p>
+        <p>— Stompin' Ground Yuma</p>
+      </div>
+    """.strip()
+
+    await send_email(email, "Reset your Stompin' Ground Yuma password", text_body, html_body)
+    return generic_ok
+
+
+async def bcrypt_dummy_delay() -> None:
+    """Constant-time-ish delay to blunt user-enumeration timing attacks."""
+    try:
+        bcrypt.checkpw(b"x", bcrypt.hashpw(b"x", bcrypt.gensalt(rounds=8)))
+    except Exception:
+        pass
+
+
+@api_router.post("/auth/reset-password")
+async def reset_password(inp: ResetPasswordIn):
+    if len(inp.new_password) < 8:
+        raise HTTPException(400, "Password must be at least 8 characters")
+    token_hash = _hash_reset_token(inp.token)
+    doc = await db.password_reset_tokens.find_one({"token_hash": token_hash})
+    if not doc or doc.get("used"):
+        raise HTTPException(400, "Invalid or expired token")
+
+    # Explicit expiry check (TTL index is background; don't rely on it for correctness)
+    exp = doc.get("expires_at")
+    if isinstance(exp, str):
+        try:
+            exp = datetime.fromisoformat(exp)
+        except Exception:
+            exp = datetime.now(timezone.utc) - timedelta(seconds=1)
+    if exp and exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+    if not exp or exp < datetime.now(timezone.utc):
+        raise HTTPException(400, "Invalid or expired token")
+
+    user = await db.users.find_one({"user_id": doc["user_id"]})
+    if not user:
+        raise HTTPException(400, "Invalid or expired token")
+
+    new_hash = hash_password(inp.new_password)
+    await db.users.update_one({"user_id": user["user_id"]}, {"$set": {"password_hash": new_hash}})
+    await db.password_reset_tokens.update_one(
+        {"_id": doc["_id"]},
+        {"$set": {"used": True, "used_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    # Best-effort: invalidate other unused tokens for this user
+    await db.password_reset_tokens.update_many(
+        {"user_id": user["user_id"], "used": False},
+        {"$set": {"used": True, "used_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    logger.info("password reset for user %s", user.get("email"))
+    return {"ok": True, "message": "Password reset successful"}
 
 
 @api_router.post("/auth/logout")
@@ -1022,6 +1237,9 @@ async def startup():
         await db.instructor_messages.create_index("created_at")
     except Exception as e:
         logger.warning(f"Index issue: {e}")
+
+    # Password reset indexes (idempotent)
+    await _ensure_reset_indexes()
 
     # Backfill step_sheet & choreographer_country on existing docs (idempotent)
     seed_by_name = {d[0]: d for d in SEED_DANCES}

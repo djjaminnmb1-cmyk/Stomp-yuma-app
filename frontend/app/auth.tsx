@@ -213,6 +213,17 @@ export default function AuthScreen() {
               )}
             </Pressable>
 
+            {mode === "login" && (
+              <Pressable
+                testID="auth-forgot-password-link"
+                onPress={() => router.push("/forgot-password")}
+                style={styles.forgotWrap}
+                hitSlop={8}
+              >
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </Pressable>
+            )}
+
             <View style={styles.divider}>
               <View style={styles.line} />
               <Text style={styles.dividerText}>or</Text>
@@ -281,6 +292,12 @@ const styles = StyleSheet.create({
     color: colors.onBrandPrimary,
     fontWeight: "700",
     fontSize: 16,
+  },
+  forgotWrap: { alignItems: "center", paddingVertical: spacing.sm, marginTop: 2 },
+  forgotText: {
+    color: colors.brandPrimary,
+    fontSize: 14,
+    fontWeight: "600",
   },
   divider: {
     flexDirection: "row",
