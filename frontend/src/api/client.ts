@@ -134,6 +134,8 @@ export const api = {
     ),
   logout: (token: string) =>
     req<{ ok: boolean }>("/auth/logout", { method: "POST" }, token),
+  deleteAccount: (token: string) =>
+    req<{ ok: boolean; message: string }>("/auth/me", { method: "DELETE" }, token),
   forgotPassword: (email: string) =>
     req<{ ok: boolean; message: string }>("/auth/forgot-password", {
       method: "POST",

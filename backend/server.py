@@ -686,6 +686,67 @@ async def logout(authorization: Optional[str] = Header(None)):
     return {"ok": True}
 
 
+@api_router.delete("/auth/me")
+async def delete_my_account(user: dict = Depends(get_current_user)):
+    """Permanently delete the caller's account and personal data.
+
+    Required for App Store compliance (Apple Guideline 5.1.1(v)): users who can
+    create an account in-app must be able to delete it in-app.
+
+    Deletes:
+      - user record, all sessions, all password reset tokens
+      - all personal state (tracking, attendance, suggestions, chat messages,
+        push token subscription)
+
+    Anonymises (preserves for other users):
+      - dances the user authored (author blanked to "Deleted user")
+      - classes the user taught (instructor blanked to "Deleted user")
+
+    Guard: the last remaining admin cannot delete their own account (prevents
+    locking the tenant out).
+    """
+    uid = user["user_id"]
+    email = user.get("email", "")
+
+    # Guard: last admin standing cannot delete themselves
+    if user.get("is_admin"):
+        remaining_admins = await db.users.count_documents(
+            {"is_admin": True, "user_id": {"$ne": uid}}
+        )
+        if remaining_admins == 0:
+            raise HTTPException(
+                400,
+                "You are the last admin — promote another admin before deleting your account.",
+            )
+
+    # 1) Personal data — hard delete
+    await db.user_sessions.delete_many({"user_id": uid})
+    await db.password_reset_tokens.delete_many({"user_id": uid})
+    await db.tracking.delete_many({"user_id": uid})
+    await db.attendance.delete_many({"user_id": uid})
+    await db.suggestions.delete_many({"user_id": uid})
+    await db.instructor_messages.delete_many({"user_id": uid})
+    # push_tokens is a subdoc list keyed by user_id in the users collection
+    # (nothing to do — it disappears when the user doc is removed)
+    await db.sent_reminders.delete_many({"user_id": uid})
+
+    # 2) Shared content — anonymise so other users' tracking/attendance still works
+    await db.dances.update_many(
+        {"created_by": uid},
+        {"$set": {"created_by": "", "created_by_name": "Deleted user"}},
+    )
+    await db.classes.update_many(
+        {"instructor_id": uid},
+        {"$set": {"instructor_id": "", "instructor_name": "Deleted user"}},
+    )
+
+    # 3) The user itself
+    await db.users.delete_one({"user_id": uid})
+
+    logger.info("account deletion: %s (%s)", email, uid)
+    return {"ok": True, "message": "Account and personal data deleted."}
+
+
 # ---------------- Dance Routes ----------------
 @api_router.get("/dances")
 async def list_dances(

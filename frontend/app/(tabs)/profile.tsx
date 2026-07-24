@@ -150,6 +150,10 @@ export default function Profile() {
   const [codeInput, setCodeInput] = useState("");
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeErr, setCodeErr] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
 
   const submitInstructorCode = async () => {
     setCodeErr(null);
@@ -181,6 +185,33 @@ export default function Profile() {
       setAttendanceCount(a.class_ids.length);
     } catch {}
   }, [token]);
+
+  const submitAccountDeletion = async () => {
+    if (!token) return;
+    setDeleteErr(null);
+    if (deleteConfirmText.trim().toUpperCase() !== "DELETE") {
+      setDeleteErr('Type "DELETE" (all caps) to confirm.');
+      return;
+    }
+    setDeleteBusy(true);
+    try {
+      await api.deleteAccount(token);
+      setDeleteOpen(false);
+      // Sign out locally + drop the token before we bounce to /auth
+      try {
+        await signOut();
+      } catch {}
+      Alert.alert(
+        "Account deleted",
+        "Your account and personal data have been removed. Thanks for dancing with us!",
+      );
+      router.replace("/auth");
+    } catch (e: any) {
+      setDeleteErr(e?.message || "Could not delete account. Please try again.");
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -329,6 +360,27 @@ export default function Profile() {
               <Text style={[styles.rowText, { color: colors.error }]}>Sign Out</Text>
             </View>
           </Pressable>
+
+          <Pressable
+            testID="delete-account-btn"
+            style={[styles.row, styles.deleteRow]}
+            onPress={() => {
+              setDeleteConfirmText("");
+              setDeleteErr(null);
+              setDeleteOpen(true);
+            }}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="trash" size={22} color={colors.error} />
+              <View>
+                <Text style={[styles.rowText, { color: colors.error }]}>Delete My Account</Text>
+                <Text style={styles.deleteSub}>
+                  Permanently removes your account and personal data.
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.error} />
+          </Pressable>
         </View>
 
         {/* -------------------- Connect With Us -------------------- */}
@@ -447,6 +499,81 @@ export default function Profile() {
                   <ActivityIndicator color={colors.onBrandPrimary} />
                 ) : (
                   <Text style={styles.modalPrimaryText}>Unlock</Text>
+                )}
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Delete Account confirmation modal (Apple 5.1.1(v) compliance) */}
+      <Modal
+        visible={deleteOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => (deleteBusy ? null : setDeleteOpen(false))}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => (deleteBusy ? null : setDeleteOpen(false))}
+        >
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <View style={styles.codeModalHeader}>
+              <Ionicons name="warning" size={26} color={colors.error} />
+              <Text style={[styles.codeModalTitle, { color: colors.error }]}>
+                Delete your account?
+              </Text>
+            </View>
+            <Text style={styles.modalSub}>
+              This permanently removes:
+              {"\n"}• Your login & profile
+              {"\n"}• Your dance tracking (completed / wishlist)
+              {"\n"}• Your class attendance history
+              {"\n"}• Any suggestions or chat messages you sent
+              {"\n\n"}
+              Any dances or classes you authored will remain visible to the
+              community, but your name will be replaced with &quot;Deleted user&quot;.
+              {"\n\n"}
+              <Text style={{ fontWeight: "700", color: colors.onSurface }}>
+                This can&apos;t be undone.
+              </Text>
+            </Text>
+
+            <Text style={styles.deleteConfirmLabel}>
+              Type <Text style={{ fontWeight: "800" }}>DELETE</Text> to confirm
+            </Text>
+            <TextInput
+              testID="delete-account-confirm"
+              placeholder="DELETE"
+              placeholderTextColor={colors.muted}
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              style={styles.modalInput}
+            />
+
+            {deleteErr ? <Text style={styles.modalErr}>{deleteErr}</Text> : null}
+
+            <View style={styles.modalActions}>
+              <Pressable
+                testID="delete-account-cancel"
+                onPress={() => setDeleteOpen(false)}
+                disabled={deleteBusy}
+                style={styles.modalCancelBtn}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                testID="delete-account-submit"
+                onPress={submitAccountDeletion}
+                disabled={deleteBusy}
+                style={[styles.deletePrimaryBtn, deleteBusy && { opacity: 0.6 }]}
+              >
+                {deleteBusy ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.deletePrimaryText}>Delete Forever</Text>
                 )}
               </Pressable>
             </View>
@@ -679,6 +806,32 @@ const styles = StyleSheet.create({
     color: colors.onBrandPrimary,
     fontWeight: "700",
     fontSize: 15,
+  },
+  deletePrimaryBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: radius.md,
+    backgroundColor: colors.error,
+    alignItems: "center",
+  },
+  deletePrimaryText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  deleteConfirmLabel: {
+    color: colors.onSurfaceSecondary,
+    fontSize: 12,
+    marginTop: spacing.sm,
+    marginBottom: 4,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  deleteRow: {
+    borderColor: colors.error + "44",
+    backgroundColor: colors.error + "0D",
+  },
+  deleteSub: {
+    color: colors.error + "cc",
+    fontSize: 11,
+    marginTop: 2,
+    maxWidth: 240,
   },
   row: {
     flexDirection: "row",
