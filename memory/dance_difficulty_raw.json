@@ -1,0 +1,1059 @@
+[
+  {
+    "id": "dance_23820d80f7",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fe3fd288e6",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a8cdc7388d",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_8c8173d498",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5ca43da1e8",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4b39399722",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2133fa4d90",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_0a85ade314",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_40e3579686",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_8c89e6c7e0",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_aeb4b5ae78",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_94f89b863b",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_1945258bd5",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e13547508e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_9576278332",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_b090511253",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_bba6a1eb01",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_161e271f88",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_f63f2f1b44",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_fdbe6dee7d",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5a463bdadb",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_478ab4383e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2429c735e6",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4d8f0b0670",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9927757998",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_57265be54b",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_809d26e83e",
+    "verdict": "too_easy",
+    "suggested_level": "Improver",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_90e62bb79e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4b1cc624e7",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_184df8a793",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_a4cf27ad3e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_75d7947c6f",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b6fd5a0bb2",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_73bbd919a1",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_b809aae05e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_911f20c5fa",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5ea4b69703",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_272d5a958e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5a2ac40c43",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_3273bcb132",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_18cf7ee03f",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_7c7bed64cd",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_a775024d98",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d9e84e28e5",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_fb734345fb",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2cf55156dd",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ffd3426052",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ca6a7de1fc",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_3806ce20cf",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ce0ed23fa0",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_21830270db",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5558f37e76",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_70c8be4010",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_6114953c5b",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_af764bfa6e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_0ea9aa14cd",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d0150acf78",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_cf2e695f9f",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_54df6843b5",
+    "verdict": "too_hard",
+    "suggested_level": "Improver",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2896ec4268",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_995779a013",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_b4b0d6aa4f",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_8f5459a0b8",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_9b89cb25d5",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_711d56f3e8",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d26cc4c574",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5af323a0e9",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_add6c9bd2b",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_f43a6f37e9",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_297c3214f7",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e8c99b358d",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_668bfa7487",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4515789b79",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_0f1cc59d69",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c2f9c8471b",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5de0102c0d",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_58ebac9680",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_96a2a45701",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d6f1d6ad9e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_43695be5d2",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5eeb43f45d",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c5a8d73c4e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5fd90dcac1",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_962497c827",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ffebae0e78",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_49860af8b6",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_34598c4a6b",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_1a1bbf5fc3",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a2579c6cac",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4a274edda2",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d1284ed9db",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_ac1de3fdf0",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_bba0ef76bb",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_64a99dd26b",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6a19cb9fb2",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fab4f755a5",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_31918f816c",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_18c71308cb",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b3785107d6",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6230208ed0",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f5963c1e9a",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c8f16d4e26",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_24655e818e",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f2219312f0",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_79846e00e7",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2f3f2b1fea",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a4f3e6fcdf",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4c539c18f7",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_38cd47f35e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_109777c756",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_176731becd",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fa78e5045e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c01daec183",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_647887af32",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4a61f6662e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_a19865b744",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e6c89096bf",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6dd844eb5d",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4cb9ca9250",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f793f2ea79",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_69ca4012d0",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_f499299ab0",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_68864b1ddd",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_61b7d8dd1f",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_bbb10a8b54",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_87ab1c909a",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_f24ef23ccc",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e816eea478",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_57e39feabf",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_96b3c4da81",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2c1ce3639b",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_74100ca372",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_364d1f8a15",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_0a0ff6794a",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_50fec7acd8",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_80ada06324",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_57c815e4b3",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4d5fba0244",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_1244c0ed70",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5dbde4bd41",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e9efaff7c2",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_76dc14f779",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ea0525b37d",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_40a917b7e7",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_69d39e73cb",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_a454bc00b7",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e32f274289",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ba71375440",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_a297216303",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_20c6d38689",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e8d6c7836e",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d72fce66b7",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_6cbed962e7",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_95a69d9884",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ab4320df3c",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9c340bca0b",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_8f8fa635cf",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1986759c18",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c1a964047f",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_9f15a54877",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e394243caa",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_39291123cf",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_8bee947c97",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_3b17b3f468",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_412ed0284a",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_c68bc0812b",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_cc6776bda2",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_306f47bb2f",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fb0db41378",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_54bd1c7b60",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_489e55a3b3",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e3c7ef21f0",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_9ad52abd33",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d5cf650141",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_93949acb56",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c8735beab5",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_53e16895aa",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c2e320e6ce",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d68556ca78",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a81b60541a",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d97a4efe4a",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_73530f822b",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e111b91875",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_46df86c662",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d1fa8b209a",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_84ff208086",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_25acfaaa0f",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_603b4a9862",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_1b43a3d55e",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_5c8312144c",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_3202493271",
+    "verdict": "correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1a1bea8740",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_fc94e4db03",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a04c26dc29",
+    "verdict": "unknown",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_fafc14908d",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2705af5ffc",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c10a329386",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_67c0430a68",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_813d70c26f",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_79b6560f2c",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_404d3dca03",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ad56c1d5fb",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2d98c960ee",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c3704c01df",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_3890e1194d",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_42a6c242ca",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_6a38d45986",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_b6fd7ec4d6",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c6a6076eda",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_799bd59fb2",
+    "verdict": "correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_45580bceb6",
+    "verdict": "correct",
+    "confidence": "high"
+  }
+]
