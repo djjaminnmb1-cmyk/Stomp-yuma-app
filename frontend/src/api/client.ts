@@ -113,17 +113,17 @@ async function req<T>(
 
 export const api = {
   register: (email: string, password: string, name: string, instructor_code?: string) =>
-    req<{ token: string; user: User }>("/auth/register", {
+    req<{ token: string; user: User; is_new_user?: boolean }>("/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password, name, instructor_code }),
     }),
   login: (email: string, password: string) =>
-    req<{ token: string; user: User }>("/auth/login", {
+    req<{ token: string; user: User; is_new_user?: boolean }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
   googleSession: (session_id: string) =>
-    req<{ token: string; user: User }>("/auth/google-session", {
+    req<{ token: string; user: User; is_new_user?: boolean }>("/auth/google-session", {
       method: "POST",
       body: JSON.stringify({ session_id }),
     }),

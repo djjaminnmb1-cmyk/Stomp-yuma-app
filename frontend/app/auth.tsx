@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/src/context/auth-context";
 import { api } from "@/src/api/client";
+import { FireworksOverlay } from "@/src/components/FireworksOverlay";
 import { colors, spacing, radius, images } from "@/src/theme";
 import { BrandLogo } from "../src/components/BrandLogo";
 
@@ -37,6 +38,8 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState("Welcome to Stompin' Ground Yuma!");
 
   const submitEmail = async () => {
     setErr(null);
@@ -68,7 +71,19 @@ export default function AuthScreen() {
           "The instructor access code didn't match, so you're signed in as a regular member. You can try again anytime from Profile → Switch to instructor profile."
         );
       }
-      router.replace("/(tabs)");
+      // 🎆 First-time users get a fireworks welcome before we route to Home.
+      if (res.is_new_user) {
+        const first = (res.user?.name || "").split(" ")[0];
+        setWelcomeMessage(
+          first
+            ? `Welcome, ${first}! Let's get dancing 🥾`
+            : "Welcome to Stompin' Ground Yuma!"
+        );
+        setShowFireworks(true);
+        // The overlay auto-dismisses in ~2.5s and calls onDone → we navigate then.
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (e: any) {
       setErr(e?.message || "Something went wrong");
     } finally {
@@ -115,7 +130,15 @@ export default function AuthScreen() {
       const session_id = decodeURIComponent(sidMatch[1]);
       const res = await api.googleSession(session_id);
       await signIn(res.token, res.user);
-      router.replace("/(tabs)");
+      if (res.is_new_user) {
+        const first = (res.user?.name || "").split(" ")[0];
+        setWelcomeMessage(
+          first ? `Welcome, ${first}! Let's get dancing 🥾` : "Welcome to Stompin' Ground Yuma!"
+        );
+        setShowFireworks(true);
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (e: any) {
       setErr(e?.message || "Google sign-in failed");
     } finally {
@@ -136,7 +159,15 @@ export default function AuthScreen() {
         .googleSession(sid)
         .then(async (res) => {
           await signIn(res.token, res.user);
-          router.replace("/(tabs)");
+          if (res.is_new_user) {
+            const first = (res.user?.name || "").split(" ")[0];
+            setWelcomeMessage(
+              first ? `Welcome, ${first}! Let's get dancing 🥾` : "Welcome to Stompin' Ground Yuma!"
+            );
+            setShowFireworks(true);
+          } else {
+            router.replace("/(tabs)");
+          }
         })
         .catch((e) => setErr(e?.message || "Google sign-in failed"))
         .finally(() => setBusy(false));
@@ -145,7 +176,15 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
+      {showFireworks ? (
+        <FireworksOverlay
+          message={welcomeMessage}
+          onDone={() => {
+            setShowFireworks(false);
+            router.replace("/(tabs)");
+          }}
+        />
+      ) : null}      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >

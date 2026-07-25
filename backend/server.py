@@ -353,6 +353,9 @@ def make_jwt(user_id: str, *, pwd_ver: int = 0) -> str:
 
 async def upsert_user(email: str, name: str, picture: str = "", provider: str = "email",
                       password_hash: Optional[str] = None) -> dict:
+    """Return the user record. A synthetic `_is_new_user` bool is attached so
+    callers can trigger first-time UX (e.g. the fireworks overlay on register /
+    first Google login). The flag is NOT persisted to the DB."""
     email = email.lower().strip()
     should_be_admin = email in ADMIN_EMAILS
     should_be_instructor = email in ADMIN_EMAILS or email in INSTRUCTOR_EMAILS
@@ -370,6 +373,7 @@ async def upsert_user(email: str, name: str, picture: str = "", provider: str = 
             updates["is_instructor"] = True
         await db.users.update_one({"email": email}, {"$set": updates})
         existing.update(updates)
+        existing["_is_new_user"] = False
         return existing
     user_id = f"user_{uuid.uuid4().hex[:12]}"
     doc = {
@@ -385,6 +389,7 @@ async def upsert_user(email: str, name: str, picture: str = "", provider: str = 
     }
     await db.users.insert_one(doc)
     doc.pop("_id", None)
+    doc["_is_new_user"] = True
     return doc
 
 
@@ -541,7 +546,11 @@ async def register(inp: RegisterIn, request: Request):
         # Reset the throttle on success — good actors shouldn't be penalised
         _throttle_reset(f"code:{_client_ip(request)}")
     token = make_jwt(user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0))
-    return {"token": token, "user": user_to_out(user)}
+    return {
+        "token": token,
+        "user": user_to_out(user),
+        "is_new_user": bool(user.get("_is_new_user")),
+    }
 
 
 @api_router.post("/auth/set-instructor")
@@ -624,6 +633,7 @@ async def google_session(inp: GoogleSessionIn):
         raise HTTPException(401, "No email in session")
     user = await upsert_user(email, data.get("name", ""),
                              picture=data.get("picture", ""), provider="google")
+    is_new = bool(user.get("_is_new_user"))
     session_token = data.get("session_token")
     if session_token:
         await db.user_sessions.insert_one({
@@ -632,11 +642,16 @@ async def google_session(inp: GoogleSessionIn):
             "created_at": datetime.now(timezone.utc),
             "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
         })
-        return {"token": session_token, "user": user_to_out(user)}
+        return {
+            "token": session_token,
+            "user": user_to_out(user),
+            "is_new_user": is_new,
+        }
     # Fallback JWT
     return {
         "token": make_jwt(user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0)),
         "user": user_to_out(user),
+        "is_new_user": is_new,
     }
 
 
