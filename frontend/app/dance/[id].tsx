@@ -14,6 +14,7 @@ import {
   Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as WebBrowser from "expo-web-browser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -86,8 +87,27 @@ export default function DanceDetail() {
     }
   };
 
+  // Open external step-sheet / video URLs in an in-app browser so users
+  // stay inside the app (Safari View Controller on iOS, Chrome Custom
+  // Tabs on Android, new tab on web).
+  const openInApp = async (url: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(url, {
+        // Match brand colour on Android; iOS uses system default styling.
+        toolbarColor: colors.brandPrimary,
+        controlsColor: "#ffffff",
+        dismissButtonStyle: "close",
+        showTitle: true,
+        enableBarCollapsing: true,
+      });
+    } catch {
+      // Very rare — fall back to system browser.
+      RNLinking.openURL(url).catch(() => {});
+    }
+  };
+
   const openYT = () => {
-    if (dance?.youtube_url) RNLinking.openURL(dance.youtube_url).catch(() => {});
+    if (dance?.youtube_url) openInApp(dance.youtube_url);
   };
 
   const openCopperKnob = () => {
@@ -98,7 +118,7 @@ export default function DanceDetail() {
     const url =
       `https://www.copperknob.co.uk/search?Search=${encodeURIComponent(q)}` +
       `&SearchType=Any&Order=BestMatch&Lang=Any&Level=Any&Beat=-1&Wall=-1&recnum=0`;
-    RNLinking.openURL(url).catch(() => {});
+    openInApp(url);
   };
 
   const openBootStepper = () => {
@@ -106,7 +126,7 @@ export default function DanceDetail() {
     // Only pass the dance name — see openCopperKnob for reasoning.
     const q = (dance.name || "").trim();
     const url = `https://bootstepper.com/dances?search=${encodeURIComponent(q)}`;
-    RNLinking.openURL(url).catch(() => {});
+    openInApp(url);
   };
 
   const saveDance = async () => {
