@@ -19,7 +19,7 @@ SEED_V3 = [
     ("5-1-5-0", "Rachael McEnaney", "USA", "5-1-5-0", "Dierks Bentley", "Improver", 128, "32 count, 4 wall"),
     ("8 Second Ride", "Rachael McEnaney", "USA", "8 Second Ride", "Jake Owen", "Improver", 120, "32 count, 4 wall"),
     ("19 You + Me", "Rachael McEnaney-White", "USA", "19 You + Me", "Dan + Shay", "Improver", 76, "32 count, 4 wall"),
-    ("21 Summer", "Rachael McEnaney-White", "USA", "21 Summer", "Brothers Osborne", "Improver", 96, "32 count, 4 wall"),
+    ("Summer Sway", "Rachael McEnaney-White", "USA", "21 Summer", "Brothers Osborne", "Improver", 96, "32 count, 4 wall"),
     ("A Little More Country Than That", "Rob Fowler", "UK", "A Little More Country Than That", "Easton Corbin", "Improver", 128, "32 count, 4 wall"),
     ("A Woman Like You", "Rachael McEnaney", "USA", "A Woman Like You", "Lee Brice", "Improver", 74, "32 count, 4 wall"),
     ("Aw Naw", "Rachael McEnaney-White", "USA", "Aw Naw", "Chris Young", "Improver", 108, "32 count, 4 wall"),
