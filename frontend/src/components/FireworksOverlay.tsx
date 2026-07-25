@@ -239,15 +239,17 @@ export function FireworksOverlay({
         <BurstView key={i} burst={b} />
       ))}
 
-      <Animated.View
-        pointerEvents="box-none"
-        style={[styles.bannerWrap, bannerStyle]}
-      >
-        <Pressable onPress={dismiss} style={styles.banner} testID="fireworks-banner">
-          <Text style={styles.bannerEmoji}>🎉</Text>
-          <Text style={styles.bannerText}>{message}</Text>
-        </Pressable>
-      </Animated.View>
+      {message ? (
+        <Animated.View
+          pointerEvents="box-none"
+          style={[styles.bannerWrap, bannerStyle]}
+        >
+          <Pressable onPress={dismiss} style={styles.banner} testID="fireworks-banner">
+            <Text style={styles.bannerEmoji}>🎉</Text>
+            <Text style={styles.bannerText}>{message}</Text>
+          </Pressable>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
