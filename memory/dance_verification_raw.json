@@ -1,0 +1,2665 @@
+[
+  {
+    "id": "dance_23820d80f7",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e3e023e3ff",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_fe3fd288e6",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a8cdc7388d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_936d9705cb",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title; the Tush Push is danced to many songs but the artist field 'Various' confirms this is a placeholder",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_8c8173d498",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5ca43da1e8",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b2fbba5a2c",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_4b39399722",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2133fa4d90",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fd279f0a5b",
+    "verdict": "wrong_choreographer",
+    "suggestion": "The widely credited choreographer for Achy Breaky Heart is Melanie Greenwood \u2014 however some sources credit Billy Blackwood or attribute it differently; Melanie Greenwood is plausible but not universally confirmed, confidence is medium",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_7447271f80",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9643b6dcc2",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_4c3d752ec2",
+    "verdict": "generic_song",
+    "suggestion": "Choreographer field 'Various' is a placeholder; a specific choreographer should be named",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d89593fb06",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_63d65bb19c",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_aee2a14c22",
+    "verdict": "generic_song",
+    "suggestion": "Artist field 'Various' indicates no specific recording is cited; a real song title and artist should be provided",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_48d1bad8a0",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_da76839b31",
+    "verdict": "generic_song",
+    "suggestion": "Choreographer field 'Various' is a placeholder; The Git Up by Blanco Brown has specific known choreographers",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_6087e717f1",
+    "verdict": "generic_song",
+    "suggestion": "Choreographer field 'Various' is a placeholder; specific choreographies to Old Town Road exist with named choreographers",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_0a85ade314",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c108d295f1",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_40e3579686",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c671035ab8",
+    "verdict": "generic_song",
+    "suggestion": "Song and artist fields are both 'Various'; a specific song title and artist must be provided",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9a1639bba5",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_8c89e6c7e0",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_aeb4b5ae78",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_00fcacd4b0",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_94f89b863b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_94b246834a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9c1bf2fb61",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_1945258bd5",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1433879db2",
+    "verdict": "wrong_choreographer",
+    "suggestion": "Choreographer field 'Various' is a placeholder; multiple choreographers have created 'Whiskey River' dances \u2014 the most noted version is by Gary Lafferty or similar named choreographer, not 'Various'",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_f9038a3a36",
+    "verdict": "generic_song",
+    "suggestion": "A specific song title should be provided instead of 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ccf4a640ad",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_0886988580",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a371337e03",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b72cc2c79a",
+    "verdict": "wrong_choreographer",
+    "suggestion": "V.I.C. is the recording artist, not the choreographer. The Wobble line dance choreographer is typically credited to a line dance instructor, not the artist.",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c68e697483",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b643d492e6",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_eec8992ba5",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_4e711f414e",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a5ee9d5eab",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Any 4/4 country track' with a specific song title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1633545126",
+    "verdict": "generic_song",
+    "suggestion": "A specific song title should be provided instead of 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_0753cf0fe4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_79cf514a3e",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Country track' with a specific song title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_93a47c677e",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_e13547508e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a5d8dae3c3",
+    "verdict": "generic_song",
+    "suggestion": "A specific song title should be provided instead of 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4b332dd926",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_34c4b5c0b1",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title; artist listed as 'Various' suggests placeholder data",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_9576278332",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_7533a5879d",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_aad9bed00c",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Any Latin track'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b090511253",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_bba6a1eb01",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_54d9e0483e",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_c4ca7a69d3",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_161e271f88",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d5d1121e78",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_f63f2f1b44",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9e3abe1b44",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Various pop'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fdbe6dee7d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_59f82b2e62",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Any country track'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5a463bdadb",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_478ab4383e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2429c735e6",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4d8f0b0670",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9927757998",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4a25cc05e2",
+    "verdict": "generic_song",
+    "suggestion": "Artist listed as 'Various' suggests placeholder; specific artist should be Bobby G. Rice or similar classic country artist for 'Tequila Sheila'",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_57265be54b",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_809d26e83e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_90e62bb79e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5e6b71ff51",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Various latin'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4b1cc624e7",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fbbb2b0a85",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title rather than 'Various latin'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_184df8a793",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1dbc4ad35b",
+    "verdict": "wrong_artist",
+    "suggestion": "Tulsa Time is most associated with Eric Clapton or Don Williams; Don Williams did record it so this is plausible, but the more widely known line dance version uses Eric Clapton's recording",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a4cf27ad3e",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_75d7947c6f",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fa482d501b",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a41612370f",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title rather than 'Various cumbia'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1d8a41c063",
+    "verdict": "wrong_song",
+    "suggestion": "The Kate Sala dance 'Danish Nightingale' is danced to 'Nightingale' by Yanni or a classical/instrumental piece, not Demi Lovato; Demi Lovato does have a song called 'Nightingale' but this pairing is not recognised",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_4d19affa3b",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_007b678ca6",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title rather than 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b6fd5a0bb2",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5c43226ba2",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_36e863cea8",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title rather than 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_173324a268",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title rather than 'Various country'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e91593703a",
+    "verdict": "wrong_song",
+    "suggestion": "Ira Weisburd's 'Ok Ok' is danced to 'OK' by Robin Schulz feat. James Blunt, not a standalone 'Robin Schulz' credit; also the primary song association may differ \u2014 worth verifying the exact track",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_f847ad69ce",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_df90ac2f4f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_73bbd919a1",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b809aae05e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_911f20c5fa",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_81e9150585",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title rather than 'Various pop'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5ea4b69703",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_272d5a958e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f231d7a5e4",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title rather than 'Tango tracks'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e5c637dd0e",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9a64652374",
+    "verdict": "generic_song",
+    "suggestion": "Song field should reference a specific track; 'Various country' is a placeholder",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ea0dff9000",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_6b061a975b",
+    "verdict": "generic_song",
+    "suggestion": "Ten Step is a traditional pattern dance danced to various country tracks; song field is a placeholder",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1f4ca5d21b",
+    "verdict": "generic_song",
+    "suggestion": "Applejack is a traditional pattern dance; 'Various country' is a placeholder",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_43dcb346ab",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_31393da60f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_2cfc79bbcc",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_7c5434fbc7",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_08966ec961",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b0858e7b44",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_80f2fcb798",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_073f0212e7",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_51bd3350b3",
+    "verdict": "generic_song",
+    "suggestion": "'Various country swing' is a placeholder, not a specific song title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4693f2bacf",
+    "verdict": "generic_song",
+    "suggestion": "'Various country' is a placeholder, not a specific song title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_94b4a0f4ad",
+    "verdict": "generic_song",
+    "suggestion": "'Various country' is a placeholder, not a specific song title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_03c26168c1",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_ea7b29a2d7",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_893a33dce9",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_8a6265c059",
+    "verdict": "generic_song",
+    "suggestion": "'Various honky-tonk' is a placeholder, not a specific song title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_de4f7f3629",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b175765587",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b626c85178",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_6f5ab6e35a",
+    "verdict": "generic_song",
+    "suggestion": "'Various zydeco' is a placeholder, not a specific song title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c10e5f9d32",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_5ad1cce6a9",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_5a2ac40c43",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f196b4f204",
+    "verdict": "generic_song",
+    "suggestion": "Artist field 'Various' is a placeholder; 'Once A Day' is a classic country song (Connie Smith, etc.) \u2014 a specific artist should be named",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_3273bcb132",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_18cf7ee03f",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9944de7316",
+    "verdict": "generic_song",
+    "suggestion": "Artist field 'Various' is a placeholder; a specific recording artist should be named",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_7c7bed64cd",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a775024d98",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d9e84e28e5",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fb734345fb",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2cf55156dd",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ffd3426052",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a018421164",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_ca6a7de1fc",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_3806ce20cf",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ce0ed23fa0",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_21830270db",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5558f37e76",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_70c8be4010",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6114953c5b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_af764bfa6e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_0ea9aa14cd",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d0150acf78",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_50152e51d8",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_0760fd1f2a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b3fae94564",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Salsa track' and artist 'Various' are placeholders; a specific song title and artist should be named",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_7126192a75",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Bachata track'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_089641795a",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Reggaeton track'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2b0b511aa6",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Various country swing'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_cff46ec565",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_cf2e695f9f",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_54df6843b5",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2896ec4268",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2dba7b7973",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_995779a013",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b4b0d6aa4f",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_8f5459a0b8",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9b89cb25d5",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_711d56f3e8",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d26cc4c574",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5af323a0e9",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_add6c9bd2b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f43a6f37e9",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_297c3214f7",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e8c99b358d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_668bfa7487",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4515789b79",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_0f1cc59d69",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c2f9c8471b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5de0102c0d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a51de8b7b1",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_58ebac9680",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_96a2a45701",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d6f1d6ad9e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fa1a9109e6",
+    "verdict": "generic_song",
+    "suggestion": "Choreographer field contains 'Various' \u2014 a specific choreographer should be named if this is a distinct registered dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_eba2ab2359",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_3ff01bc1d4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_e8e507be39",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific song and artist should be recorded",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_43695be5d2",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5eeb43f45d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c5a8d73c4e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5fd90dcac1",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_962497c827",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ffebae0e78",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_49860af8b6",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_34598c4a6b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1a1bbf5fc3",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a2579c6cac",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4a274edda2",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d1284ed9db",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ac1de3fdf0",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_bba0ef76bb",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_7f8fc2f34f",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various country rock' and artist 'Various' are placeholders \u2014 a specific song and artist should be recorded",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_64a99dd26b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6a19cb9fb2",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fab4f755a5",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_31918f816c",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1ea08e6f3e",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_4553a088de",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_26c2a5021c",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title rather than 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_09353e0bde",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_3ad93f7c17",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_18c71308cb",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_8a02e7c49f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b649cbffc7",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_bfe49afc34",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_2e371b8885",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_02586dc202",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_eda8472bd5",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_bd138501b1",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_009faa94a4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_0c165dc97f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b3785107d6",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9e96b4d698",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_6230208ed0",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_0a175bc4bc",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_18b9c9d30c",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_01b9c5b313",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_f5963c1e9a",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c8f16d4e26",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_24655e818e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f2219312f0",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_79846e00e7",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2f3f2b1fea",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a4f3e6fcdf",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4c539c18f7",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_38cd47f35e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_109777c756",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9469285883",
+    "verdict": "wrong_song",
+    "suggestion": "The dance is named 'Little Red Book'; the recorded song 'Little Red Wagon' by Miranda Lambert does not match the dance name. If the dance was choreographed to 'Little Red Wagon' the dance name itself may be wrong, or this is a song mismatch. 'Little Red Book' as a line dance is not a title I can firmly match to Miranda Lambert \u2014 flagging as wrong_song pending verification.",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_176731becd",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fa78e5045e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c01daec183",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_647887af32",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4a61f6662e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a19865b744",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e6c89096bf",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6dd844eb5d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4cb9ca9250",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f793f2ea79",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_69ca4012d0",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f499299ab0",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_68864b1ddd",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_61b7d8dd1f",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c519f88f6b",
+    "verdict": "wrong_song",
+    "suggestion": "The song 'On the Verge' is associated with Collin Raye, but the well-known line dance 'On the Verge' choreographed by Rob Fowler is set to 'On the Verge' by Eric Church, not Collin Raye. Correct artist is likely Eric Church.",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_bbb10a8b54",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_87ab1c909a",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c45a3978aa",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a8487fb90c",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f24ef23ccc",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e816eea478",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_57e39feabf",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_96b3c4da81",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2c1ce3639b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_dc15c661bb",
+    "verdict": "wrong_choreographer",
+    "suggestion": "Choreographer listed as 'Various' is a placeholder; this dance is likely attributed to a specific choreographer \u2014 needs verification",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_74100ca372",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_364d1f8a15",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e4b8e915d4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_0a0ff6794a",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_49356aaa4f",
+    "verdict": "wrong_song",
+    "suggestion": "The correct song title is 'Sold (The Grundy County Auction Incident)' by John Michael Montgomery; also 'Traditional' choreographer attribution is questionable for this specific named dance",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_50fec7acd8",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_57f7431b33",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific title, not 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_80ada06324",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_57c815e4b3",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4d5fba0244",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_1244c0ed70",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5dbde4bd41",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5c65ab6e72",
+    "verdict": "wrong_choreographer",
+    "suggestion": "Choreographer listed as 'Various' is a placeholder; 'Tequila' to Dan + Shay is associated with specific choreographers \u2014 needs verification",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_e9efaff7c2",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_76dc14f779",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ea0525b37d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_40a917b7e7",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_69d39e73cb",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_bbfb31bce0",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_e1c8851722",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9419beb03f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_cb4db6cab0",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a215ffc988",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_28ee8a7d7f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_c1b987f626",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_d74baa136e",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_13b8a14dd9",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_efc471dc5d",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_850eed063f",
+    "verdict": "generic_song",
+    "suggestion": "The artist field 'Various' indicates no specific song is tied to this dance record; a real song title and artist should be provided.",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9349a7c9da",
+    "verdict": "wrong_song",
+    "suggestion": "\"Yeah!\" is by Usher (feat. Lil Jon & Ludacris), not Joe Nichols. Joe Nichols does not have a well-known song called \"Yeah!\".",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_22745e7383",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a454bc00b7",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e32f274289",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d9e1c6d702",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_ba71375440",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_393fad95d4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9ab6d889d1",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_c5d86923f2",
+    "verdict": "wrong_song",
+    "suggestion": "The dance is named \"Call Me\" but the song listed is \"Call Me Maybe\" by Carly Rae Jepsen. These are different songs; the dance name and song title mismatch suggests either the dance name or the song title is incorrect.",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_a297216303",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_20c6d38689",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e7cf68428a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_98a412f02f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_e4188ed080",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_2ea809a845",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_e8d6c7836e",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_07c1eea6cc",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_71e0fbeaeb",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_d72fce66b7",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e50c38d2fc",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_f1dac60347",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_557693e1d7",
+    "verdict": "generic_song",
+    "suggestion": "Artist field 'Various' is a placeholder; a specific recording of 'Lonely' should be identified",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_6cbed962e7",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ebb116d5e2",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_ba6ba35d29",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_496aad278b",
+    "verdict": "generic_song",
+    "suggestion": "Artist field 'Various' is a placeholder; a specific recording of 'Ocean' should be identified",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_970f4df8ec",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_3448c7aae2",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_91af43a9e4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a6e8682a7a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_4e9cf99b51",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_95a69d9884",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_8ae027093c",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_ab4320df3c",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ebe76caf12",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_7594f7efaa",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_35faee1bd4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_3e26b35ac3",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b2ff4ddd7a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_8e4d0a82ee",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_18b5eab4a5",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_5febf4de51",
+    "verdict": "generic_song",
+    "suggestion": "Artist field 'Various samba' is a genre placeholder, not a specific artist/song",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_3b26e903bd",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_6df3140828",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various cha' is a genre placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b7e6fc9880",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various cha' is a genre placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_f0569febf4",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various'; no specific song artist identified",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_234c1340c1",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Salsa track' is a genre placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c310f1d2d4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_0653e08559",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various'; no specific song artist identified",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_89941cbf5a",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various'; no specific song artist identified",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2e1e3faeb0",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various'; no specific song artist identified",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_f107099a65",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various'; a specific recording (e.g. Pete Seeger, Celia Cruz, Wyclef Jean) should be listed",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_3d94d52fd6",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_7e031a1700",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_da6ca8ce94",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_6596886b9f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_0347bce763",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Merengue track' is a genre placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ed83c22580",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_240a43e90a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_07cf9d649c",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Pachanga track' is a genre placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a28f15f432",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various rumba' is a genre placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6728b45274",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various samba' is a genre placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_649b1ae81a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_2305afb534",
+    "verdict": "generic_song",
+    "suggestion": "Song field should be a specific tango title rather than 'Various tango'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b3d1b75549",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_417d917ce1",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_15e1ab45d0",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific artist/recording should be listed",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_cec2976e11",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific artist/recording should be listed",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_d745feb355",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_8a0279e0e6",
+    "verdict": "generic_song",
+    "suggestion": "Both choreographer and artist are 'Various'; song title is vague \u2014 specific details needed",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_bc0cf9a50e",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific artist/recording should be listed",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_7261495121",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_f0aaf102e1",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific recording of Highland Cathedral should be cited",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e675e9c6f4",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific artist/recording should be listed",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_ce0abf9d69",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_6e9d9689e8",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various ballad' is a placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d67a25120a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9e9844238a",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_bacaaa6004",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific artist/recording should be listed",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_bc9f6b84a1",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific artist/recording should be listed",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_28626defec",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_eec35d33c7",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific artist/recording of Sway should be cited",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_7d4445aa09",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_f65fc7e97f",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various waltz' is a placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_44a035f5b8",
+    "verdict": "generic_song",
+    "suggestion": "Both song 'Various waltz' and choreographer 'Various' are placeholders \u2014 specific details needed",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_01fd7a7293",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_8da104d219",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9c340bca0b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_712867d4fa",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_7fe547feea",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_3cdae225ef",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_d754c2d234",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_2d49152f81",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_71292ec735",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_2e0e6a1dd8",
+    "verdict": "generic_song",
+    "suggestion": "The artist field 'Various' suggests no specific recording is cited; a known recording such as Creedence Clearwater Revival or Lead Belly should be specified",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_676935de15",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_72cfda2764",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9c6debcb99",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various country' is a placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b03b3ab70d",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_d11c2a06fe",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_4e59925aee",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various country' is a placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ae86404849",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various cha' is a placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e85e204664",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various country' is a placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_7f0421e260",
+    "verdict": "generic_song",
+    "suggestion": "Song field 'Various country' is a placeholder, not a specific title",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_8f8fa635cf",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_03114f9d33",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_bd76f9d3d0",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_a22e5a28f8",
+    "verdict": "generic_song",
+    "suggestion": "Artist field 'Various' suggests no specific recording is cited; a known recording should be specified",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_3207857c02",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_215177f906",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_23caa6f249",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_926fdbe6d4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_df09e5fdae",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_1986759c18",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c1a964047f",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_9f15a54877",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5017175a68",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_6479612a3f",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_e394243caa",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_39291123cf",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_4a2aab8592",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_8bee947c97",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_3b17b3f468",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_412ed0284a",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_375b08b936",
+    "verdict": "generic_song",
+    "suggestion": "Song and artist fields should reference a specific track rather than 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_698c0ee33e",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_80ba6accde",
+    "verdict": "generic_song",
+    "suggestion": "Song field is a placeholder 'Various'; a specific song should be listed",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c68bc0812b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2713214d47",
+    "verdict": "generic_song",
+    "suggestion": "Song field is a placeholder 'Various'; a specific song should be listed",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_3589455544",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_cc6776bda2",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fc5542b848",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_306f47bb2f",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fb0db41378",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_858112a37f",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various'; a specific recording/artist should be listed even if the dance can be done to multiple songs",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_54bd1c7b60",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_489e55a3b3",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e3c7ef21f0",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_b303a2cde4",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9ad52abd33",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_911989e8ae",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_01ff6dfe87",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_c64bcf3022",
+    "verdict": "generic_song",
+    "suggestion": "Choreographer field contains 'Various' \u2014 should be a specific choreographer name if one exists",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_9133f694cf",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_d5cf650141",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_7330f50efb",
+    "verdict": "generic_song",
+    "suggestion": "Choreographer field contains 'Various' \u2014 should be a specific choreographer name if one exists",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_af9ab2ba43",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_93949acb56",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c8735beab5",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_7f351c29cc",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_8b0acd43fa",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_53e16895aa",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6cd6d8c387",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_4539b0ac20",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various' \u2014 a specific artist/recording should be listed for the song 'Southbound Train'",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_c2e320e6ce",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e715955efd",
+    "verdict": "generic_song",
+    "suggestion": "Song and artist are both 'Various' \u2014 specific song title and artist should be provided",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d68556ca78",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_a81b60541a",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d97a4efe4a",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_73530f822b",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e111b91875",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_46df86c662",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_d1fa8b209a",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_84ff208086",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_25acfaaa0f",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_45a9e769a0",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_52e45198a8",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_0f0e751199",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_e4836872f8",
+    "verdict": "wrong_song",
+    "suggestion": "Song title should be 'Turn on the Radio' by Reba McEntire \u2014 the dance name 'Turn the Radio On' may itself be a minor title error, or the song field is correct and the dance name is slightly off; either way the song title on record does match Reba McEntire's actual song 'Turn on the Radio', so the dance name is the mismatch",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_603b4a9862",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_1b43a3d55e",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_2be92d39af",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_5f9d4f4c72",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_fb729d4b8d",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_5c8312144c",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_91fb876112",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_274189d8e2",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various cha' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_23a640ad72",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various cha' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_3202493271",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6784816c0e",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various cha' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_54b72d7440",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_e23188046a",
+    "verdict": "generic_song",
+    "suggestion": "Artist field is 'Various'; if the song is specifically 'Fuego' a known artist should be listed (e.g. Pitbull)",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_1a1bea8740",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_357a2a28e9",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_42e43276d3",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various mambo' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_476ba2b6a9",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various cha' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_745c0d8dda",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_cb8cbb2178",
+    "verdict": "generic_song",
+    "suggestion": "Replace 'Various rumba' with the specific song title used for this dance",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_468ddaa315",
+    "verdict": "generic_song",
+    "suggestion": "A specific salsa song title should be listed rather than 'Various salsa'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fc94e4db03",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_70dde3acbf",
+    "verdict": "generic_song",
+    "suggestion": "A specific song title should be listed rather than 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_3b0ce18552",
+    "verdict": "generic_song",
+    "suggestion": "A specific song title should be listed rather than 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_00aead838c",
+    "verdict": "generic_song",
+    "suggestion": "A specific song title should be listed rather than 'Various'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_a04c26dc29",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6a4cfedd90",
+    "verdict": "generic_song",
+    "suggestion": "A specific song title should be listed rather than 'Various zumba'",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_fafc14908d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2705af5ffc",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c4692f3263",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_9c2fe795bc",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_c10a329386",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_67c0430a68",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_e7f52bc663",
+    "verdict": "wrong_song",
+    "suggestion": "Cover Me Up is originally by Jason Isbell; the Morgan Wallen version exists but the well-known line dance by Rachael McEnaney-White was choreographed to the Jason Isbell recording \u2014 verify which version was intended",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_813d70c26f",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_79b6560f2c",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_404d3dca03",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_ad56c1d5fb",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_2d98c960ee",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c3704c01df",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_6d5d888de5",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_3890e1194d",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_8ef47a6d91",
+    "verdict": "wrong_choreographer",
+    "suggestion": "Life's a Dance is widely credited to John Brant / traditional community choreography, not simply 'Traditional' as a named choreographer \u2014 however the song/artist pairing with John Michael Montgomery is correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_42a6c242ca",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_92cab5ad52",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_6a38d45986",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_5fa76cd7cf",
+    "verdict": "wrong_song",
+    "suggestion": "Tequila Highway by Charlie Crockett, or verify if this dance was choreographed to 'Tequila Little Time' by Jon Pardi \u2014 'Tequila Highway' is a known Charlie Crockett song; the song title mismatch with the dance name is suspicious",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_0f20aacbf0",
+    "verdict": "unknown_dance",
+    "confidence": "low"
+  },
+  {
+    "id": "dance_b6fd7ec4d6",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_c6a6076eda",
+    "verdict": "looks_correct",
+    "confidence": "medium"
+  },
+  {
+    "id": "dance_799bd59fb2",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_45580bceb6",
+    "verdict": "looks_correct",
+    "confidence": "high"
+  },
+  {
+    "id": "dance_34580390ee",
+    "verdict": "generic_song",
+    "suggestion": "Record appears to be a test/import placeholder; dance name, choreographer, song, and artist fields all contain stub values",
+    "confidence": "high"
+  }
+]
