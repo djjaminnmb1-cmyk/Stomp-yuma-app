@@ -84,7 +84,19 @@ export default function ClassesScreen() {
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
       <View style={styles.headerBar}>
-        <Pressable onPress={() => router.back()} testID="classes-back" style={styles.backBtn}>
+        <Pressable
+          onPress={() => {
+            // If we have back stack use it, otherwise route straight to home
+            // (fixes deep-links / hard-loads where router.back() is a no-op).
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)");
+            }
+          }}
+          testID="classes-back"
+          style={styles.backBtn}
+        >
           <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
         </Pressable>
         <View style={{ flex: 1 }}>

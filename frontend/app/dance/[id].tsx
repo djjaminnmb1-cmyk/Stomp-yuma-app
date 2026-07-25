@@ -82,6 +82,22 @@ export default function DanceDetail() {
     if (dance?.youtube_url) RNLinking.openURL(dance.youtube_url).catch(() => {});
   };
 
+  const openCopperKnob = () => {
+    if (!dance) return;
+    const q = `${dance.name} ${dance.choreographer || ""}`.trim();
+    const url =
+      `https://www.copperknob.co.uk/search?Search=${encodeURIComponent(q)}` +
+      `&SearchType=Any&Order=BestMatch&Lang=Any&Level=Any&Beat=-1&Wall=-1&recnum=0`;
+    RNLinking.openURL(url).catch(() => {});
+  };
+
+  const openBootStepper = () => {
+    if (!dance) return;
+    const q = `${dance.name} ${dance.choreographer || ""}`.trim();
+    const url = `https://bootstepper.com/dances?search=${encodeURIComponent(q)}`;
+    RNLinking.openURL(url).catch(() => {});
+  };
+
   const saveStepSheet = async () => {
     if (!token || !dance) return;
     setSavingSheet(true);
@@ -223,27 +239,58 @@ export default function DanceDetail() {
               </Pressable>
             ) : null}
           </View>
-          <View style={styles.stepSheet}>
-            {dance.step_sheet_image ? (
+
+          <Text style={styles.stepIntro}>
+            View the choreographer&apos;s official step sheet on:
+          </Text>
+
+          <View style={styles.linkRow}>
+            <Pressable
+              testID="open-copperknob"
+              onPress={openCopperKnob}
+              style={[styles.linkBtn, styles.copperknobBtn]}
+            >
+              <Ionicons name="open-outline" size={18} color="#fff" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.linkBtnText}>CopperKnob</Text>
+                <Text style={styles.linkBtnSub}>copperknob.co.uk</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#fff" />
+            </Pressable>
+
+            <Pressable
+              testID="open-bootstepper"
+              onPress={openBootStepper}
+              style={[styles.linkBtn, styles.bootstepperBtn]}
+            >
+              <Ionicons name="open-outline" size={18} color="#fff" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.linkBtnText}>BootStepper</Text>
+                <Text style={styles.linkBtnSub}>bootstepper.com</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#fff" />
+            </Pressable>
+          </View>
+
+          {/* Instructor-uploaded scan (only shown if a whitelisted editor
+              attached one — otherwise we don't display the section at all
+              since the primary source is the external links above). */}
+          {dance.step_sheet_image ? (
+            <View style={styles.stepSheet}>
+              <Text style={styles.stepUploadedLabel}>Uploaded by your instructor</Text>
               <Image
                 source={{ uri: dance.step_sheet_image }}
                 style={styles.stepImage}
                 resizeMode="contain"
               />
-            ) : null}
-            {dance.step_sheet ? (
-              <Text style={styles.stepText}>{dance.step_sheet}</Text>
-            ) : !dance.step_sheet_image ? (
-              <Text style={styles.stepEmpty}>
-                No step sheet yet. Watch the tutorial or ask Erin during class.
-              </Text>
-            ) : null}
-            {dance.choreographer_country ? (
-              <Text style={styles.stepMeta}>
-                Choreographed in {dance.choreographer_country}
-              </Text>
-            ) : null}
-          </View>
+            </View>
+          ) : null}
+
+          {dance.choreographer_country ? (
+            <Text style={styles.stepMeta}>
+              Choreographed in {dance.choreographer_country}
+            </Text>
+          ) : null}
         </View>
 
         {track ? (
@@ -558,6 +605,28 @@ const styles = StyleSheet.create({
   },
   stepEmpty: { color: colors.muted, fontStyle: "italic", fontSize: 13 },
   stepMeta: { color: colors.muted, fontSize: 11, marginTop: 4, letterSpacing: 0.5 },
+  stepIntro: { color: colors.onSurfaceSecondary, fontSize: 13, marginTop: -4 },
+  stepUploadedLabel: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  linkRow: { gap: 10 },
+  linkBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: radius.md,
+  },
+  copperknobBtn: { backgroundColor: "#B87333" },
+  bootstepperBtn: { backgroundColor: "#1F2A44" },
+  linkBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  linkBtnSub: { color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 2 },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

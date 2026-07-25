@@ -1421,18 +1421,18 @@ async def startup():
     # Password reset indexes (idempotent)
     await _ensure_reset_indexes()
 
-    # Backfill step_sheet & choreographer_country on existing docs (idempotent)
+    # Backfill choreographer_country on existing docs (idempotent).
+    # Step sheets are no longer seeded from source data — the app links out to
+    # the choreographer's page on CopperKnob / BootStepper instead (copyright
+    # safety + always-current step sheets).
     seed_by_name = {d[0]: d for d in SEED_DANCES}
     async for existing in db.dances.find({}, {"_id": 0}):
         updates = {}
-        if not existing.get("step_sheet") or not existing.get("choreographer_country"):
+        if not existing.get("choreographer_country"):
             seed = seed_by_name.get(existing["name"])
             if seed:
-                _, _, country, _, _, _, _, _, _, step_sheet = seed
-                if not existing.get("step_sheet"):
-                    updates["step_sheet"] = step_sheet
-                if not existing.get("choreographer_country"):
-                    updates["choreographer_country"] = country
+                _, _, country, _, _, _, _, _, _, _ = seed
+                updates["choreographer_country"] = country
         # Any existing dance without is_published is a seed dance → publish it
         if "is_published" not in existing:
             updates["is_published"] = True
@@ -1442,7 +1442,7 @@ async def startup():
     # Seed dances if empty; otherwise add any new dances not yet present.
     existing_names = {d["name"] async for d in db.dances.find({}, {"name": 1})}
     to_insert = []
-    for (name, chor, country, song, artist, diff, bpm, cnt, yt, step) in SEED_DANCES:
+    for (name, chor, country, song, artist, diff, bpm, cnt, yt, _step) in SEED_DANCES:
         if name in existing_names:
             continue
         to_insert.append({
@@ -1456,7 +1456,8 @@ async def startup():
             "bpm": bpm,
             "count": cnt,
             "youtube_url": f"https://www.youtube.com/results?search_query={yt.replace(' ', '+')}",
-            "step_sheet": step,
+            # No step sheet content — the app links out to CopperKnob / BootStepper
+            "step_sheet": "",
             "step_sheet_image": "",
             "description": "",
             "tags": [],
