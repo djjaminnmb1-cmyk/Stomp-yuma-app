@@ -123,12 +123,15 @@ def _smtp_configured() -> bool:
 
 async def send_email(to: str, subject: str, text: str, html: Optional[str] = None) -> bool:
     """Best-effort email send via SMTP with STARTTLS.
-    Returns True on success. On failure (or when SMTP isn't configured yet), logs
-    the message body so the operator can inspect the reset link during setup."""
+    Returns True on success. On failure (or when SMTP isn't configured yet),
+    logs ONLY a correlation-id so ops can debug without leaking the email
+    body (which for password resets includes the raw reset token)."""
+    corr_id = _secrets_mod.token_urlsafe(6)
     if not _smtp_configured():
         logger.warning(
-            "[EMAIL:UNCONFIGURED] to=%s subject=%r\n%s",
-            to, subject, text,
+            "[EMAIL:UNCONFIGURED] cid=%s to=%s subject=%r "
+            "(body suppressed — contains sensitive tokens; check SMTP_* env vars)",
+            corr_id, to, subject,
         )
         return False
     msg = EmailMessage()
@@ -148,12 +151,13 @@ async def send_email(to: str, subject: str, text: str, html: Optional[str] = Non
             start_tls=True,
             timeout=15,
         )
-        logger.info("[EMAIL:SENT] to=%s subject=%r", to, subject)
+        logger.info("[EMAIL:SENT] cid=%s to=%s subject=%r", corr_id, to, subject)
         return True
     except Exception as e:
+        # NEVER log the body — password-reset emails carry a working token.
         logger.error(
-            "[EMAIL:FAILED] to=%s subject=%r err=%s\n(body follows so ops can act):\n%s",
-            to, subject, e, text,
+            "[EMAIL:FAILED] cid=%s to=%s subject=%r err=%s",
+            corr_id, to, subject, e,
         )
         return False
 
@@ -329,9 +333,18 @@ def verify_password(p: str, h: str) -> bool:
         return False
 
 
-def make_jwt(user_id: str) -> str:
+def make_jwt(user_id: str, *, pwd_ver: int = 0) -> str:
+    """Issue a signed JWT for a user.
+
+    `pwd_ver` is the user's `pwd_ver` field at the moment the token is
+    issued. On decode we verify that the token's `pwd_ver` still matches
+    the user's current value — bumping `pwd_ver` in the users collection
+    (e.g. after a password reset) instantly invalidates every previously
+    issued JWT for that account (SEC-004).
+    """
     payload = {
         "user_id": user_id,
+        "pwd_ver": pwd_ver,
         "exp": datetime.now(timezone.utc) + timedelta(days=30),
         "iat": datetime.now(timezone.utc),
     }
@@ -401,6 +414,12 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
                                        {"_id": 0, "password_hash": 0})
         if not user:
             raise HTTPException(401, "User not found")
+        # Invalidate JWTs issued before the last password reset (SEC-004).
+        # Legacy tokens without `pwd_ver` are treated as version 0.
+        tok_ver = int(payload.get("pwd_ver") or 0)
+        cur_ver = int(user.get("pwd_ver") or 0)
+        if tok_ver != cur_ver:
+            raise HTTPException(401, "Session invalidated — please sign in again.")
         return user
     except pyjwt.PyJWTError:
         raise HTTPException(401, "Invalid token")
@@ -453,7 +472,16 @@ def user_to_out(u: dict) -> dict:
     }
 
 
-def dance_to_out(d: dict) -> dict:
+def dance_to_out(d: dict, viewer_user_id: Optional[str] = None) -> dict:
+    """Serialise a dance for API responses.
+
+    `viewer_user_id`: when supplied, `created_by` (a user_id) is only echoed
+    back to the owner themselves. All other callers see it as an empty
+    string — this prevents leaking internal user_ids on the public feed
+    (SEC-005). `created_by_name` (display name only) is always returned.
+    """
+    owner_id = d.get("created_by", "") or ""
+    show_owner = bool(viewer_user_id and viewer_user_id == owner_id)
     return {
         "id": d["id"],
         "name": d.get("name", ""),
@@ -470,7 +498,7 @@ def dance_to_out(d: dict) -> dict:
         "description": d.get("description", ""),
         "tags": d.get("tags", []),
         "is_published": bool(d.get("is_published", True)),
-        "created_by": d.get("created_by", ""),
+        "created_by": owner_id if show_owner else "",
         "created_by_name": d.get("created_by_name", ""),
         "created_at": d.get("created_at", ""),
     }
@@ -485,10 +513,21 @@ def _instructor_code_ok(candidate: Optional[str]) -> bool:
 
 
 @api_router.post("/auth/register")
-async def register(inp: RegisterIn):
+async def register(inp: RegisterIn, request: Request):
     existing = await db.users.find_one({"email": inp.email.lower()})
     if existing and existing.get("password_hash"):
         raise HTTPException(400, "Email already registered")
+    # Throttle instructor-code guessing during signup (per client IP)
+    if inp.instructor_code:
+        ip = _client_ip(request)
+        allowed, retry = _throttle_check(
+            f"code:{ip}", max_hits=5, window_sec=15 * 60,
+        )
+        if not allowed:
+            raise HTTPException(
+                429,
+                f"Too many attempts — please wait {int(retry)}s and try again.",
+            )
     user = await upsert_user(inp.email, inp.name, provider="email",
                              password_hash=hash_password(inp.password))
     # If they entered the studio's instructor code on signup, unlock the role.
@@ -499,14 +538,29 @@ async def register(inp: RegisterIn):
             {"$set": {"is_instructor": True}},
         )
         user["is_instructor"] = True
-    token = make_jwt(user["user_id"])
+        # Reset the throttle on success — good actors shouldn't be penalised
+        _throttle_reset(f"code:{_client_ip(request)}")
+    token = make_jwt(user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0))
     return {"token": token, "user": user_to_out(user)}
 
 
 @api_router.post("/auth/set-instructor")
-async def set_instructor(inp: SetInstructorIn, user: dict = Depends(get_current_user)):
+async def set_instructor(
+    inp: SetInstructorIn,
+    request: Request,
+    user: dict = Depends(get_current_user),
+):
     """Self-serve instructor upgrade for signed-in users.
     Requires the shared instructor access code. Admins are always instructors."""
+    # Per-user + per-IP throttle: 5 attempts / 15 min per user, 20 / 15 min per IP
+    ip = _client_ip(request)
+    for key, cap in [(f"code-user:{user['user_id']}", 5), (f"code-ip:{ip}", 20)]:
+        allowed, retry = _throttle_check(key, max_hits=cap, window_sec=15 * 60)
+        if not allowed:
+            raise HTTPException(
+                429,
+                f"Too many attempts — please wait {int(retry)}s and try again.",
+            )
     if not _instructor_code_ok(inp.instructor_code):
         # Small artificial delay to blunt brute-force attempts
         await bcrypt_dummy_delay()
@@ -515,18 +569,34 @@ async def set_instructor(inp: SetInstructorIn, user: dict = Depends(get_current_
         {"user_id": user["user_id"]},
         {"$set": {"is_instructor": True}},
     )
+    # Success — reset the per-user throttle so future legitimate uses are free
+    _throttle_reset(f"code-user:{user['user_id']}")
     fresh = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
     return {"ok": True, "user": user_to_out(fresh)}
 
 
 @api_router.post("/auth/login")
-async def login(inp: LoginIn):
-    user = await db.users.find_one({"email": inp.email.lower()}, {"_id": 0})
+async def login(inp: LoginIn, request: Request):
+    ip = _client_ip(request)
+    email = inp.email.lower()
+    # Two-key throttle: per email (blocks account brute force) + per IP
+    # (blocks credential stuffing across accounts).
+    for key, cap in [(f"login:{email}", 10), (f"login-ip:{ip}", 40)]:
+        allowed, retry = _throttle_check(key, max_hits=cap, window_sec=15 * 60)
+        if not allowed:
+            raise HTTPException(
+                429,
+                f"Too many attempts — please wait {int(retry)}s and try again.",
+            )
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    # Timing-safe: always run bcrypt so unknown emails take the same time
     if not user or not user.get("password_hash"):
+        await bcrypt_dummy_delay()
         raise HTTPException(401, "Invalid credentials")
     if not verify_password(inp.password, user["password_hash"]):
         raise HTTPException(401, "Invalid credentials")
-    token = make_jwt(user["user_id"])
+    _throttle_reset(f"login:{email}")
+    token = make_jwt(user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0))
     return {"token": token, "user": user_to_out(user)}
 
 
@@ -564,7 +634,10 @@ async def google_session(inp: GoogleSessionIn):
         })
         return {"token": session_token, "user": user_to_out(user)}
     # Fallback JWT
-    return {"token": make_jwt(user["user_id"]), "user": user_to_out(user)}
+    return {
+        "token": make_jwt(user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0)),
+        "user": user_to_out(user),
+    }
 
 
 @api_router.get("/auth/me")
@@ -574,13 +647,23 @@ async def me(user: dict = Depends(get_current_user)):
 
 # ---------------- Password Reset ----------------
 @api_router.post("/auth/forgot-password")
-async def forgot_password(inp: ForgotPasswordIn):
+async def forgot_password(inp: ForgotPasswordIn, request: Request):
     """Always returns 200 (no user-enumeration).
     If the email exists AND has a password (i.e. not a Google-only account) AND
     the caller has not exceeded 3 requests in the last 15 minutes, a reset link
     is emailed with a 15-minute single-use token."""
     email = inp.email.lower().strip()
     generic_ok = {"ok": True, "message": "If that email exists, a reset link has been sent."}
+
+    # Per-IP throttle blocks fan-out attacks where one attacker fires reset
+    # requests at many emails to spam users. Keeps the DB tidy too.
+    ip = _client_ip(request)
+    allowed, _retry = _throttle_check(
+        f"forgot-ip:{ip}", max_hits=20, window_sec=15 * 60,
+    )
+    if not allowed:
+        # Silent — do not disclose the block to the caller
+        return generic_ok
 
     user = await db.users.find_one({"email": email})
     # Silently ignore missing users / passwordless accounts to prevent enumeration.
@@ -662,6 +745,54 @@ async def bcrypt_dummy_delay() -> None:
         pass
 
 
+# ---------------- Rate limiting (per-key sliding-window) ----------------
+# Simple in-process throttling — sufficient for a single-server MVP. Keys are
+# lowercased strings like "login:jamin@example.com" or "code:<user_id>" or
+# "forgot:jamin@example.com". If we ever scale to multiple backend workers,
+# move this to Redis / mongo TTL.
+_RATE_BUCKETS: dict[str, list[float]] = {}
+_RATE_BUCKETS_MAX_KEYS = 5000  # cap memory
+
+
+def _throttle_check(key: str, *, max_hits: int, window_sec: float) -> tuple[bool, float]:
+    """Return (allowed, retry_after_seconds).
+
+    Records a hit if allowed. If not allowed, returns the seconds until
+    the oldest hit inside the window expires.
+    """
+    import time as _t
+    now = _t.monotonic()
+    hits = _RATE_BUCKETS.get(key, [])
+    # Drop old hits outside the window
+    hits = [t for t in hits if now - t < window_sec]
+    if len(hits) >= max_hits:
+        oldest = hits[0]
+        retry_after = max(0.5, window_sec - (now - oldest))
+        _RATE_BUCKETS[key] = hits  # keep pruned list
+        return False, retry_after
+    hits.append(now)
+    # Evict oldest keys if the store is bloated
+    if len(_RATE_BUCKETS) > _RATE_BUCKETS_MAX_KEYS:
+        # Drop half of the oldest keys
+        for k in list(_RATE_BUCKETS.keys())[: len(_RATE_BUCKETS) // 2]:
+            _RATE_BUCKETS.pop(k, None)
+    _RATE_BUCKETS[key] = hits
+    return True, 0.0
+
+
+def _throttle_reset(key: str) -> None:
+    _RATE_BUCKETS.pop(key, None)
+
+
+def _client_ip(request: Request) -> str:
+    # Trust the first hop if X-Forwarded-For is set by the ingress (kubernetes
+    # proxy sets it); otherwise fall back to peer.
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return getattr(request.client, "host", "") or "unknown"
+
+
 @api_router.post("/auth/reset-password")
 async def reset_password(inp: ResetPasswordIn):
     if len(inp.new_password) < 8:
@@ -688,7 +819,15 @@ async def reset_password(inp: ResetPasswordIn):
         raise HTTPException(400, "Invalid or expired token")
 
     new_hash = hash_password(inp.new_password)
-    await db.users.update_one({"user_id": user["user_id"]}, {"$set": {"password_hash": new_hash}})
+    # Bump pwd_ver so every JWT issued before this instant is rejected
+    # by get_current_user (SEC-004). Also drop any lingering session
+    # rows so Google-auth sessions are revoked too.
+    new_pwd_ver = int(user.get("pwd_ver") or 0) + 1
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"password_hash": new_hash, "pwd_ver": new_pwd_ver}},
+    )
+    await db.user_sessions.delete_many({"user_id": user["user_id"]})
     await db.password_reset_tokens.update_one(
         {"_id": doc["_id"]},
         {"$set": {"used": True, "used_at": datetime.now(timezone.utc).isoformat()}},
@@ -794,17 +933,29 @@ async def list_dances(
             {"artist": {"$regex": safe_q, "$options": "i"}},
         ]
 
+    # Best-effort: identify caller so their own drafts show `created_by`
+    # for owner-only UX flags. Anonymous callers see created_by="" (SEC-005).
+    viewer_id: Optional[str] = None
     if scope in ("mine", "all"):
         user = await get_current_user(authorization)
+        viewer_id = user["user_id"]
         if scope == "mine":
             query["created_by"] = user["user_id"]
         elif scope == "all" and not user.get("is_admin"):
             raise HTTPException(403, "Admin only")
     else:
         query["is_published"] = True
+        # Attempt to resolve the viewer for owner-only fields, without
+        # requiring auth (public feed still works anonymously).
+        if authorization:
+            try:
+                _u = await get_current_user(authorization)
+                viewer_id = _u["user_id"]
+            except HTTPException:
+                viewer_id = None
 
     docs = await db.dances.find(query, {"_id": 0}).sort("name", 1).to_list(2000)
-    return [dance_to_out(d) for d in docs]
+    return [dance_to_out(d, viewer_id) for d in docs]
 
 
 # ---------------- Restore Deleted Dance (from backup) ----------------
@@ -919,15 +1070,22 @@ async def restore_dance_by_name(
     _save_blocklist(blocklist)
     logger.info("Restored dance %r by %s", name, user.get("email"))
     new_doc.pop("_id", None)
-    return dance_to_out(new_doc)
+    return dance_to_out(new_doc, user["user_id"])
 
 
 @api_router.get("/dances/{dance_id}")
-async def get_dance(dance_id: str):
+async def get_dance(dance_id: str, authorization: Optional[str] = Header(None)):
     d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
     if not d:
         raise HTTPException(404, "Not found")
-    return dance_to_out(d)
+    viewer_id: Optional[str] = None
+    if authorization:
+        try:
+            _u = await get_current_user(authorization)
+            viewer_id = _u["user_id"]
+        except HTTPException:
+            viewer_id = None
+    return dance_to_out(d, viewer_id)
 
 
 def youtube_search_url(query: str) -> str:
@@ -954,7 +1112,7 @@ async def create_dance(inp: DanceIn, user: dict = Depends(require_instructor)):
         doc["is_published"] = False
     await db.dances.insert_one(doc)
     doc.pop("_id", None)
-    return dance_to_out(doc)
+    return dance_to_out(doc, user["user_id"])
 
 
 @api_router.post("/dances/import")
@@ -1054,7 +1212,7 @@ async def update_dance(dance_id: str, inp: DanceIn, user: dict = Depends(require
         updates["is_published"] = existing.get("is_published", True)
     await db.dances.update_one({"id": dance_id}, {"$set": updates})
     d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
-    return dance_to_out(d)
+    return dance_to_out(d, user["user_id"])
 
 
 @api_router.put("/dances/{dance_id}/publish")
@@ -1067,7 +1225,7 @@ async def publish_dance(dance_id: str, user: dict = Depends(require_instructor))
         raise HTTPException(403, "Not allowed")
     await db.dances.update_one({"id": dance_id}, {"$set": {"is_published": True}})
     d["is_published"] = True
-    return dance_to_out(d)
+    return dance_to_out(d, user["user_id"])
 
 
 @api_router.put("/dances/{dance_id}/unpublish")
@@ -1080,7 +1238,7 @@ async def unpublish_dance(dance_id: str, user: dict = Depends(require_instructor
         raise HTTPException(403, "Not allowed")
     await db.dances.update_one({"id": dance_id}, {"$set": {"is_published": False}})
     d["is_published"] = False
-    return dance_to_out(d)
+    return dance_to_out(d, user["user_id"])
 
 
 @api_router.delete("/dances/{dance_id}")
@@ -1180,16 +1338,47 @@ async def delete_tracking(dance_id: str, user: dict = Depends(get_current_user))
 
 
 # ---------------- Suggestions Routes ----------------
+# Per-user daily quotas — prevents any signed-in user from filling the DB
+# with base64 uploads (SEC-003). Well above what any real user would submit.
+SUGGESTION_QUOTA_PER_DAY = 15         # total suggestions per user per 24h
+SUGGESTION_IMAGE_QUOTA_PER_DAY = 8    # of which at most 8 may carry images
+
+
 @api_router.post("/suggestions")
 async def submit_suggestion(inp: SuggestionIn, user: dict = Depends(get_current_user)):
     if not inp.dance_name or not inp.dance_name.strip():
         raise HTTPException(400, "Dance name is required")
 
     # Sanitise / cap the base64 image so a single suggestion can't OOM the DB.
-    # ~5 MB payload cap (JPEG @ ~90% quality of a full-page scan).
     img = (inp.step_sheet_image or "").strip()
     if img and len(img) > 6_000_000:
         raise HTTPException(413, "Step sheet image is too large — please pick a smaller file.")
+
+    # Per-user daily quota (24-hour rolling window)
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    total_today = await db.suggestions.count_documents({
+        "user_id": user["user_id"],
+        "created_at": {"$gte": since},
+    })
+    if total_today >= SUGGESTION_QUOTA_PER_DAY:
+        raise HTTPException(
+            429,
+            f"You've reached the daily limit of {SUGGESTION_QUOTA_PER_DAY} "
+            "suggestions. Please try again tomorrow.",
+        )
+    if img:
+        images_today = await db.suggestions.count_documents({
+            "user_id": user["user_id"],
+            "created_at": {"$gte": since},
+            "step_sheet_image": {"$ne": ""},
+        })
+        if images_today >= SUGGESTION_IMAGE_QUOTA_PER_DAY:
+            raise HTTPException(
+                429,
+                f"You've reached the daily limit of "
+                f"{SUGGESTION_IMAGE_QUOTA_PER_DAY} suggestions with attached "
+                "photos. Send more tomorrow, or submit without a photo.",
+            )
 
     doc = {
         "id": f"sug_{uuid.uuid4().hex[:10]}",
