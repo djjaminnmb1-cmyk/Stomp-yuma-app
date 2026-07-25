@@ -304,6 +304,12 @@ class SuggestionIn(BaseModel):
     artist: Optional[str] = ""
     difficulty: Optional[str] = ""
     youtube_url: Optional[str] = ""
+    # Direct URL to the choreographer's official step sheet (CopperKnob,
+    # BootStepper, choreographer's own site, etc.). We do not host copies.
+    step_sheet_url: Optional[str] = ""
+    # Optional user-uploaded photo of the step sheet, base64 data URL.
+    # The user must confirm it's the choreographer's official sheet.
+    step_sheet_image: Optional[str] = ""
     notes: Optional[str] = ""
 
 
@@ -1050,6 +1056,13 @@ async def delete_tracking(dance_id: str, user: dict = Depends(get_current_user))
 async def submit_suggestion(inp: SuggestionIn, user: dict = Depends(get_current_user)):
     if not inp.dance_name or not inp.dance_name.strip():
         raise HTTPException(400, "Dance name is required")
+
+    # Sanitise / cap the base64 image so a single suggestion can't OOM the DB.
+    # ~5 MB payload cap (JPEG @ ~90% quality of a full-page scan).
+    img = (inp.step_sheet_image or "").strip()
+    if img and len(img) > 6_000_000:
+        raise HTTPException(413, "Step sheet image is too large — please pick a smaller file.")
+
     doc = {
         "id": f"sug_{uuid.uuid4().hex[:10]}",
         "user_id": user["user_id"],
@@ -1060,6 +1073,8 @@ async def submit_suggestion(inp: SuggestionIn, user: dict = Depends(get_current_
         "artist": (inp.artist or "").strip(),
         "difficulty": (inp.difficulty or "").strip(),
         "youtube_url": (inp.youtube_url or "").strip(),
+        "step_sheet_url": (inp.step_sheet_url or "").strip(),
+        "step_sheet_image": img,
         "notes": (inp.notes or "").strip(),
         "status": "pending",
         "created_at": now_iso(),
@@ -1440,10 +1455,23 @@ async def startup():
             await db.dances.update_one({"id": existing["id"]}, {"$set": updates})
 
     # Seed dances if empty; otherwise add any new dances not yet present.
+    # A blocklist (dance_blocklist.json) lets us permanently exclude names
+    # that were verified as inaccurate — restarting the backend won't undo
+    # a manual cleanup.
+    blocklist: set[str] = set()
+    try:
+        _bl_path = ROOT_DIR / "dance_blocklist.json"
+        if _bl_path.exists():
+            import json as _json
+            blocklist = set(_json.loads(_bl_path.read_text()))
+            logger.info(f"Loaded {len(blocklist)} entries from dance_blocklist.json")
+    except Exception as _e:
+        logger.warning(f"Could not read dance_blocklist.json: {_e}")
+
     existing_names = {d["name"] async for d in db.dances.find({}, {"name": 1})}
     to_insert = []
     for (name, chor, country, song, artist, diff, bpm, cnt, yt, _step) in SEED_DANCES:
-        if name in existing_names:
+        if name in existing_names or name in blocklist:
             continue
         to_insert.append({
             "id": f"dance_{uuid.uuid4().hex[:10]}",

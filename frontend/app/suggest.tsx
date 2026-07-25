@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,15 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
+  Linking as RNLinking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as WebBrowser from "expo-web-browser";
 import { colors, spacing, radius } from "../src/theme";
 import { api, Suggestion } from "../src/api/client";
 import { useAuth } from "../src/context/auth-context";
@@ -38,7 +43,11 @@ export default function SuggestScreen() {
   const [artist, setArtist] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [yt, setYt] = useState("");
+  const [stepSheetUrl, setStepSheetUrl] = useState("");
+  const [stepSheetImage, setStepSheetImage] = useState("");
+  const [pickingImage, setPickingImage] = useState(false);
   const [notes, setNotes] = useState("");
+  const [confirmedOfficial, setConfirmedOfficial] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mine, setMine] = useState<Suggestion[]>([]);
   const [all, setAll] = useState<Suggestion[]>([]);
@@ -64,9 +73,73 @@ export default function SuggestScreen() {
     }, [load])
   );
 
+  const pickStepSheet = async () => {
+    setPickingImage(true);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted && Platform.OS !== "web") {
+        Alert.alert("Permission needed", "Allow photo access to attach a step sheet.");
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"] as any,
+        allowsEditing: false,
+        quality: 1,
+        base64: false,
+        exif: false,
+      });
+      if (res.canceled) return;
+      const asset = res.assets?.[0];
+      if (!asset?.uri) {
+        Alert.alert("Couldn't read that image", "Please try another photo.");
+        return;
+      }
+      // Resize + re-encode → safe base64 (max ~1.5 MB) regardless of input.
+      const m = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: 1600 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+      if (!m.base64) {
+        Alert.alert("Couldn't read that image", "Please try another photo.");
+        return;
+      }
+      const dataUri = `data:image/jpeg;base64,${m.base64}`;
+      if (dataUri.length > 5_500_000) {
+        Alert.alert("Image too large", "Please pick a smaller photo (<5 MB after compression).");
+        return;
+      }
+      setStepSheetImage(dataUri);
+    } catch (e: any) {
+      Alert.alert("Couldn't attach", e?.message || "Try again.");
+    } finally {
+      setPickingImage(false);
+    }
+  };
+
+  const openLink = async (url: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(url, {
+        toolbarColor: colors.brandPrimary,
+        controlsColor: "#ffffff",
+        dismissButtonStyle: "close",
+      });
+    } catch {
+      RNLinking.openURL(url).catch(() => {});
+    }
+  };
+
   const submit = async () => {
     if (!token || !name.trim()) {
       Alert.alert("Missing info", "Please enter a dance name.");
+      return;
+    }
+    const hasAttachment = !!(stepSheetUrl.trim() || stepSheetImage);
+    if (hasAttachment && !confirmedOfficial) {
+      Alert.alert(
+        "Confirm official source",
+        "Please tick the checkbox confirming that the link or image is the choreographer's official step sheet."
+      );
       return;
     }
     setSaving(true);
@@ -78,11 +151,15 @@ export default function SuggestScreen() {
           artist,
           difficulty,
           youtube_url: yt,
+          step_sheet_url: stepSheetUrl,
+          step_sheet_image: stepSheetImage,
           notes,
         },
         token
       );
-      setName(""); setSong(""); setArtist(""); setDifficulty(""); setYt(""); setNotes("");
+      setName(""); setSong(""); setArtist(""); setDifficulty(""); setYt("");
+      setStepSheetUrl(""); setStepSheetImage(""); setNotes("");
+      setConfirmedOfficial(false);
       Alert.alert("Suggestion sent!", "Erin will review your idea soon. Thank you!");
       setTab("mine");
       load();
@@ -128,7 +205,35 @@ export default function SuggestScreen() {
         <Text style={styles.sugMeta}>Suggested level: {s.difficulty}</Text>
       ) : null}
       {s.youtube_url ? (
-        <Text style={styles.sugLink} numberOfLines={1}>🎬 {s.youtube_url}</Text>
+        <Pressable
+          testID={`sug-${s.id}-yt`}
+          onPress={() => openLink(s.youtube_url)}
+          style={styles.sugLinkRow}
+        >
+          <Ionicons name="logo-youtube" size={13} color={colors.brandSecondary} />
+          <Text style={styles.sugLink} numberOfLines={1}>
+            {s.youtube_url}
+          </Text>
+        </Pressable>
+      ) : null}
+      {s.step_sheet_url ? (
+        <Pressable
+          testID={`sug-${s.id}-ss-url`}
+          onPress={() => openLink(s.step_sheet_url!)}
+          style={styles.sugLinkRow}
+        >
+          <Ionicons name="document-text-outline" size={13} color={colors.brandSecondary} />
+          <Text style={styles.sugLink} numberOfLines={1}>
+            {s.step_sheet_url}
+          </Text>
+        </Pressable>
+      ) : null}
+      {s.step_sheet_image ? (
+        <Image
+          source={{ uri: s.step_sheet_image }}
+          style={styles.sugImage}
+          resizeMode="contain"
+        />
       ) : null}
       {s.notes ? <Text style={styles.sugNotes}>“{s.notes}”</Text> : null}
       <Text style={styles.sugBy}>
@@ -169,7 +274,7 @@ export default function SuggestScreen() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Suggest to Erin</Text>
-          <Text style={styles.subtitle}>Got a dance idea? Send it to instructor Erin Brown.</Text>
+          <Text style={styles.subtitle}>Got a dance idea? Erin &amp; Jamin will review it.</Text>
         </View>
       </View>
 
@@ -203,7 +308,7 @@ export default function SuggestScreen() {
             <View style={styles.hint}>
               <Ionicons name="information-circle" size={18} color={colors.brandSecondary} />
               <Text style={styles.hintText}>
-                Suggest a line dance you'd love Erin to teach. She reviews these regularly to plan class lessons.
+                Suggest a line dance you&apos;d love Erin to teach. She reviews these regularly to plan class lessons.
               </Text>
             </View>
 
@@ -264,6 +369,100 @@ export default function SuggestScreen() {
               autoCapitalize="none"
               style={styles.input}
             />
+
+            <Label text="Choreographer's step sheet URL (optional)" />
+            <TextInput
+              testID="suggest-input-stepsheet-url"
+              placeholder="Paste the CopperKnob / BootStepper / choreographer's own site URL"
+              placeholderTextColor={colors.muted}
+              value={stepSheetUrl}
+              onChangeText={setStepSheetUrl}
+              autoCapitalize="none"
+              keyboardType="url"
+              style={styles.input}
+            />
+
+            <Label text="Step sheet photo (optional)" />
+            {stepSheetImage ? (
+              <View>
+                <Image
+                  source={{ uri: stepSheetImage }}
+                  style={styles.attachedImage}
+                  resizeMode="contain"
+                />
+                <Pressable
+                  testID="suggest-clear-image"
+                  onPress={() => setStepSheetImage("")}
+                  style={styles.removeImgBtn}
+                >
+                  <Ionicons name="trash" size={14} color="#fff" />
+                  <Text style={styles.removeImgText}>Remove</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                testID="suggest-attach-image"
+                onPress={pickStepSheet}
+                disabled={pickingImage}
+                style={styles.attachBtn}
+              >
+                {pickingImage ? (
+                  <ActivityIndicator color={colors.brandPrimary} />
+                ) : (
+                  <>
+                    <Ionicons name="image-outline" size={20} color={colors.brandPrimary} />
+                    <Text style={styles.attachBtnText}>Attach step sheet photo</Text>
+                  </>
+                )}
+              </Pressable>
+            )}
+
+            {(stepSheetUrl.trim() || stepSheetImage) ? (
+              <Pressable
+                testID="suggest-confirm-official"
+                onPress={() => setConfirmedOfficial((v) => !v)}
+                style={styles.confirmRow}
+              >
+                <View
+                  style={[
+                    styles.checkbox,
+                    confirmedOfficial && styles.checkboxOn,
+                  ]}
+                >
+                  {confirmedOfficial ? (
+                    <Ionicons name="checkmark" size={14} color="#fff" />
+                  ) : null}
+                </View>
+                <Text style={styles.confirmText}>
+                  I confirm this is the <Text style={{ fontWeight: "700" }}>choreographer&apos;s
+                  official</Text> step sheet, not a copy or unofficial recreation.
+                </Text>
+              </Pressable>
+            ) : null}
+
+            <View style={styles.copyrightBanner}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={16}
+                color={colors.brandSecondary}
+                style={{ marginTop: 1 }}
+              />
+              <Text style={styles.copyrightText}>
+                Please only submit links or photos of the{" "}
+                <Text style={{ fontWeight: "700" }}>choreographer&apos;s official
+                step sheet</Text> — usually hosted on{" "}
+                <Text style={styles.linkInline} onPress={() => openLink("https://www.copperknob.co.uk")}>
+                  copperknob.co.uk
+                </Text>
+                ,{" "}
+                <Text style={styles.linkInline} onPress={() => openLink("https://bootstepper.com")}>
+                  bootstepper.com
+                </Text>
+                , or the choreographer&apos;s own website. This keeps us
+                copyright-safe and helps Erin verify quickly.
+              </Text>
+            </View>
+
             <Label text="Notes for Erin" />
             <TextInput
               testID="suggest-input-notes"
@@ -439,7 +638,88 @@ const styles = StyleSheet.create({
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
   statusText: { color: "#fff", fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
   sugMeta: { fontSize: 13, color: colors.onSurfaceSecondary },
-  sugLink: { fontSize: 12, color: colors.brandSecondary, marginTop: 2 },
+  sugLink: { fontSize: 12, color: colors.brandSecondary, marginTop: 2, flex: 1 },
+  sugLinkRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  sugImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: radius.md,
+    marginTop: 8,
+    backgroundColor: colors.surface,
+  },
+  attachedImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceTertiary,
+  },
+  removeImgBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.error,
+  },
+  removeImgText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  attachBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 14,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: colors.brandPrimary,
+    borderStyle: "dashed",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  attachBtnText: { color: colors.brandPrimary, fontWeight: "700", fontSize: 13 },
+  confirmRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    paddingVertical: 6,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: colors.brandPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+    backgroundColor: colors.surface,
+  },
+  checkboxOn: { backgroundColor: colors.brandPrimary, borderColor: colors.brandPrimary },
+  confirmText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.onSurfaceSecondary,
+    lineHeight: 17,
+  },
+  copyrightBanner: {
+    flexDirection: "row",
+    gap: 8,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandSecondary + "44",
+    backgroundColor: colors.brandSecondary + "0D",
+    marginTop: 4,
+  },
+  copyrightText: {
+    flex: 1,
+    color: colors.onSurfaceSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  linkInline: { color: colors.brandSecondary, textDecorationLine: "underline" },
   sugNotes: { fontSize: 13, color: colors.onSurfaceSecondary, fontStyle: "italic", marginTop: 6 },
   sugBy: { fontSize: 11, color: colors.muted, marginTop: 8 },
   actionRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },

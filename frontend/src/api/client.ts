@@ -78,6 +78,8 @@ export type Suggestion = {
   artist: string;
   difficulty: string;
   youtube_url: string;
+  step_sheet_url?: string;
+  step_sheet_image?: string;
   notes: string;
   status: string;
   created_at: string;
@@ -210,6 +212,8 @@ export const api = {
       artist?: string;
       difficulty?: string;
       youtube_url?: string;
+      step_sheet_url?: string;
+      step_sheet_image?: string;
       notes?: string;
     },
     token: string
