@@ -84,7 +84,9 @@ export default function DanceDetail() {
 
   const openCopperKnob = () => {
     if (!dance) return;
-    const q = `${dance.name} ${dance.choreographer || ""}`.trim();
+    // Only pass the dance name — including the choreographer/artist can
+    // over-constrain their search engines and return no results.
+    const q = (dance.name || "").trim();
     const url =
       `https://www.copperknob.co.uk/search?Search=${encodeURIComponent(q)}` +
       `&SearchType=Any&Order=BestMatch&Lang=Any&Level=Any&Beat=-1&Wall=-1&recnum=0`;
@@ -93,7 +95,8 @@ export default function DanceDetail() {
 
   const openBootStepper = () => {
     if (!dance) return;
-    const q = `${dance.name} ${dance.choreographer || ""}`.trim();
+    // Only pass the dance name — see openCopperKnob for reasoning.
+    const q = (dance.name || "").trim();
     const url = `https://bootstepper.com/dances?search=${encodeURIComponent(q)}`;
     RNLinking.openURL(url).catch(() => {});
   };
