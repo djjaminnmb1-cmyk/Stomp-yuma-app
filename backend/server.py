@@ -431,6 +431,15 @@ async def require_step_sheet_editor(user: dict = Depends(get_current_user)) -> d
     return user
 
 
+async def require_admin_or_editor(user: dict = Depends(get_current_user)) -> dict:
+    """Admins OR step-sheet editors (Erin & Jamin). Used for reviewing user
+    suggestions — the review team is admin + the whitelisted senior
+    instructors."""
+    if user.get("is_admin") or user_can_edit_step_sheets(user):
+        return user
+    raise HTTPException(403, "Admin or step-sheet editor only")
+
+
 def user_to_out(u: dict) -> dict:
     return {
         "user_id": u["user_id"],
@@ -798,6 +807,121 @@ async def list_dances(
     return [dance_to_out(d) for d in docs]
 
 
+# ---------------- Restore Deleted Dance (from backup) ----------------
+# `/app/backend/dance_blocklist.json` — names that must never be re-seeded.
+# `/app/backend/backups/dances_before_prune.json` — the pre-prune snapshot.
+# These MUST be registered BEFORE /dances/{dance_id} so the literal paths
+# aren't shadowed by the parameterized route.
+
+_BLOCKLIST_PATH = ROOT_DIR / "dance_blocklist.json"
+_BACKUP_PATH = ROOT_DIR / "backups" / "dances_before_prune.json"
+
+
+def _load_blocklist() -> list[str]:
+    if not _BLOCKLIST_PATH.exists():
+        return []
+    try:
+        import json as _json
+        data = _json.loads(_BLOCKLIST_PATH.read_text())
+        return list(data) if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def _save_blocklist(names: list[str]) -> None:
+    import json as _json
+    _BLOCKLIST_PATH.write_text(_json.dumps(sorted(set(names)), indent=2))
+
+
+def _load_backup() -> list[dict]:
+    if not _BACKUP_PATH.exists():
+        return []
+    try:
+        import json as _json
+        return _json.loads(_BACKUP_PATH.read_text())
+    except Exception:
+        return []
+
+
+@api_router.get("/dances/removed")
+async def list_removed_dances(user: dict = Depends(require_admin_or_editor)):
+    """Return every dance that was pruned by the LLM verification pass but
+    is still available in the pre-prune backup. Editors can call
+    POST /dances/restore-by-name to bring one back."""
+    blocklist = set(_load_blocklist())
+    backup = _load_backup()
+    out = []
+    for d in backup:
+        if d.get("name") in blocklist:
+            out.append({
+                "id": d.get("id"),
+                "name": d.get("name"),
+                "choreographer": d.get("choreographer") or "",
+                "song": d.get("song") or "",
+                "artist": d.get("artist") or "",
+                "difficulty": d.get("difficulty") or "Beginner",
+                "bpm": d.get("bpm"),
+                "count": d.get("count") or "",
+                "youtube_url": d.get("youtube_url") or "",
+                "choreographer_country": d.get("choreographer_country") or "",
+            })
+    out.sort(key=lambda x: (x["name"] or "").lower())
+    return out
+
+
+@api_router.post("/dances/restore-by-name")
+async def restore_dance_by_name(
+    body: dict, user: dict = Depends(require_admin_or_editor)
+):
+    """Restore a specific removed dance by name."""
+    name = ((body or {}).get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "Dance name is required")
+
+    blocklist = _load_blocklist()
+    if name not in blocklist:
+        raise HTTPException(404, "That dance is not in the removed list")
+
+    backup = _load_backup()
+    src = next((d for d in backup if d.get("name") == name), None)
+    if not src:
+        raise HTTPException(404, "No backup entry for that dance name")
+
+    # Guard: don't create a duplicate if it's already been restored
+    if await db.dances.find_one({"name": name}, {"_id": 0, "id": 1}):
+        blocklist = [n for n in blocklist if n != name]
+        _save_blocklist(blocklist)
+        raise HTTPException(409, "That dance is already in the library")
+
+    new_doc = {
+        "id": f"dance_{uuid.uuid4().hex[:10]}",
+        "name": name,
+        "choreographer": src.get("choreographer") or "",
+        "choreographer_country": src.get("choreographer_country") or "",
+        "song": src.get("song") or "",
+        "artist": src.get("artist") or "",
+        "difficulty": src.get("difficulty") or "Beginner",
+        "bpm": src.get("bpm"),
+        "count": src.get("count") or "",
+        "youtube_url": src.get("youtube_url") or "",
+        # Blanked — we removed all seeded step sheet content globally.
+        "step_sheet": "",
+        "step_sheet_image": "",
+        "description": src.get("description") or "",
+        "tags": src.get("tags") or [],
+        "is_published": True,
+        "created_by": user["user_id"],
+        "created_by_name": user.get("name", "Restored"),
+        "created_at": now_iso(),
+    }
+    await db.dances.insert_one(new_doc)
+    blocklist = [n for n in blocklist if n != name]
+    _save_blocklist(blocklist)
+    logger.info("Restored dance %r by %s", name, user.get("email"))
+    new_doc.pop("_id", None)
+    return dance_to_out(new_doc)
+
+
 @api_router.get("/dances/{dance_id}")
 async def get_dance(dance_id: str):
     d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
@@ -965,6 +1089,10 @@ async def delete_dance(dance_id: str, admin: dict = Depends(require_admin)):
     return {"ok": True}
 
 
+# (Restore endpoints moved above the parameterized routes — see /dances/removed
+#  and /dances/restore-by-name near the top of the dances section.)
+
+
 # ---------------- Instructor Chat ----------------
 @api_router.get("/chat/messages")
 async def list_chat(instructor: dict = Depends(require_instructor), limit: int = 200):
@@ -1093,14 +1221,14 @@ async def my_suggestions(user: dict = Depends(get_current_user)):
 
 
 @api_router.get("/suggestions")
-async def list_suggestions(admin: dict = Depends(require_admin)):
+async def list_suggestions(reviewer: dict = Depends(require_admin_or_editor)):
     docs = await db.suggestions.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return docs
 
 
 @api_router.put("/suggestions/{sug_id}/status")
 async def update_suggestion_status(
-    sug_id: str, status: str, admin: dict = Depends(require_admin)
+    sug_id: str, status: str, reviewer: dict = Depends(require_admin_or_editor)
 ):
     if status not in ("pending", "reviewed", "queued", "declined"):
         raise HTTPException(400, "Invalid status")

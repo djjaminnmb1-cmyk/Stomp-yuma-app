@@ -162,6 +162,20 @@ export const api = {
     req<Dance>("/dances", { method: "POST", body: JSON.stringify(body) }, token),
   updateDance: (id: string, body: Partial<Dance>, token: string) =>
     req<Dance>(`/dances/${id}`, { method: "PUT", body: JSON.stringify(body) }, token),
+
+  // Restore-deleted-dance flow (whitelist editors + admins only)
+  listRemovedDances: (token: string) =>
+    req<Array<Omit<Dance, "step_sheet" | "step_sheet_image">>>(
+      "/dances/removed",
+      {},
+      token
+    ),
+  restoreDanceByName: (name: string, token: string) =>
+    req<Dance>(
+      "/dances/restore-by-name",
+      { method: "POST", body: JSON.stringify({ name }) },
+      token
+    ),
   publishDance: (id: string, token: string) =>
     req<Dance>(`/dances/${id}/publish`, { method: "PUT" }, token),
   unpublishDance: (id: string, token: string) =>

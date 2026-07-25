@@ -53,19 +53,21 @@ export default function SuggestScreen() {
   const [all, setAll] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const isReviewer = !!(user?.is_admin || user?.can_edit_step_sheets);
+
   const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
       const m = await api.mySuggestions(token);
       setMine(m);
-      if (user?.is_admin) {
+      if (isReviewer) {
         const a = await api.allSuggestions(token);
         setAll(a);
       }
     } catch {}
     setLoading(false);
-  }, [token, user]);
+  }, [token, isReviewer]);
 
   useFocusEffect(
     useCallback(() => {
@@ -286,7 +288,7 @@ export default function SuggestScreen() {
           onPress={() => setTab("mine")}
           testID="suggest-tab-mine"
         />
-        {user?.is_admin ? (
+        {isReviewer ? (
           <TabBtn
             label={`All (${all.length})`}
             active={tab === "all"}

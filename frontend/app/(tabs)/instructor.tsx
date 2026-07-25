@@ -41,6 +41,7 @@ export default function InstructorTab() {
   const [newDanceOpen, setNewDanceOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!user || !token) return;
@@ -111,6 +112,16 @@ export default function InstructorTab() {
         </View>
         {tab === "dances" ? (
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            {user.can_edit_step_sheets ? (
+              <Pressable
+                testID="restore-dance-btn"
+                onPress={() => setRestoreOpen(true)}
+                style={styles.importBtn}
+              >
+                <Ionicons name="arrow-undo" size={16} color={colors.brandPrimary} />
+                <Text style={styles.importBtnText}>Restore</Text>
+              </Pressable>
+            ) : null}
             <Pressable
               testID="import-csv-btn"
               onPress={() => setImportOpen(true)}
@@ -382,6 +393,16 @@ export default function InstructorTab() {
         onClose={() => setImportOpen(false)}
         onImported={() => {
           setImportOpen(false);
+          load();
+          refreshDrafts();
+        }}
+        token={token || ""}
+      />
+
+      <RestoreDancesModal
+        visible={restoreOpen}
+        onClose={() => setRestoreOpen(false)}
+        onRestored={() => {
           load();
           refreshDrafts();
         }}
@@ -1508,4 +1529,220 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  restoreListRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  restoreName: {
+    fontFamily: "serif",
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
+  restoreMeta: { color: colors.muted, fontSize: 12, marginTop: 2 },
+  restorePillBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandPrimary,
+  },
+  restorePillText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 12 },
+  restoreSearchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.surfaceSecondary,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    margin: spacing.lg,
+    marginBottom: 0,
+  },
+  restoreSearchInput: {
+    flex: 1,
+    color: colors.onSurface,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  restoreCountBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSecondary,
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 11,
+    overflow: "hidden",
+  },
 });
+
+// ---- Restore Deleted Dance modal ----------------------------------------
+// Whitelist editors (Erin + Jamin) can bring back any of the 297 dances
+// that were removed by the LLM verification pass. Restoring re-inserts the
+// dance from the pre-prune backup and removes it from `dance_blocklist.json`.
+type RemovedDance = {
+  id: string;
+  name: string;
+  choreographer: string;
+  song: string;
+  artist: string;
+  difficulty: string;
+  bpm?: number | null;
+  count?: string;
+  youtube_url?: string;
+  choreographer_country?: string;
+};
+
+function RestoreDancesModal({
+  visible,
+  onClose,
+  onRestored,
+  token,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onRestored: () => void;
+  token: string;
+}) {
+  const [items, setItems] = useState<RemovedDance[]>([]);
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [busyName, setBusyName] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const rows = await api.listRemovedDances(token);
+      setItems(rows as RemovedDance[]);
+    } catch (e: any) {
+      Alert.alert("Couldn't load", e?.message || "Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (visible) {
+      setQ("");
+      load();
+    }
+  }, [visible, load]);
+
+  const filtered = q.trim()
+    ? items.filter((d) => {
+        const s = q.toLowerCase();
+        return (
+          d.name.toLowerCase().includes(s) ||
+          (d.choreographer || "").toLowerCase().includes(s) ||
+          (d.song || "").toLowerCase().includes(s) ||
+          (d.artist || "").toLowerCase().includes(s)
+        );
+      })
+    : items;
+
+  const restore = async (name: string) => {
+    setBusyName(name);
+    try {
+      await api.restoreDanceByName(name, token);
+      setItems((prev) => prev.filter((d) => d.name !== name));
+      onRestored();
+    } catch (e: any) {
+      Alert.alert("Couldn't restore", e?.message || "Try again.");
+    } finally {
+      setBusyName(null);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
+        <View style={styles.modalHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.modalTitle}>Restore Removed Dances</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+              {items.length} in the archive. Tap Restore to bring any back.
+            </Text>
+          </View>
+          <Pressable onPress={onClose} testID="restore-close">
+            <Ionicons name="close" size={26} color={colors.onSurface} />
+          </Pressable>
+        </View>
+
+        <View style={styles.restoreSearchWrap}>
+          <Ionicons name="search" size={16} color={colors.muted} />
+          <TextInput
+            testID="restore-search"
+            placeholder="Search by dance, song, choreographer…"
+            placeholderTextColor={colors.muted}
+            value={q}
+            onChangeText={setQ}
+            style={styles.restoreSearchInput}
+          />
+          <Text style={styles.restoreCountBadge}>{filtered.length}</Text>
+        </View>
+
+        {loading ? (
+          <View style={{ padding: spacing.xl, alignItems: "center" }}>
+            <ActivityIndicator color={colors.brandPrimary} />
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.name}
+            contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm, paddingBottom: 40 }}
+            ListEmptyComponent={
+              <View style={{ padding: spacing.xl, alignItems: "center", gap: spacing.md }}>
+                <Ionicons name="checkmark-done" size={40} color={colors.muted} />
+                <Text style={{ color: colors.muted, textAlign: "center" }}>
+                  {q.trim() ? "No matches for your search." : "Nothing to restore."}
+                </Text>
+              </View>
+            }
+            renderItem={({ item }) => (
+              <View style={styles.restoreListRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.restoreName}>{item.name}</Text>
+                  <Text style={styles.restoreMeta}>
+                    {item.choreographer || "Unknown choreographer"}
+                    {item.song ? ` · ${item.song}` : ""}
+                    {item.artist ? ` — ${item.artist}` : ""}
+                  </Text>
+                </View>
+                <Pressable
+                  testID={`restore-${item.name}`}
+                  onPress={() => restore(item.name)}
+                  disabled={busyName === item.name}
+                  style={[styles.restorePillBtn, busyName === item.name && { opacity: 0.5 }]}
+                >
+                  {busyName === item.name ? (
+                    <ActivityIndicator color={colors.onBrandPrimary} size="small" />
+                  ) : (
+                    <>
+                      <Ionicons name="arrow-undo" size={12} color={colors.onBrandPrimary} />
+                      <Text style={styles.restorePillText}>Restore</Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            )}
+          />
+        )}
+      </SafeAreaView>
+    </Modal>
+  );
+}
