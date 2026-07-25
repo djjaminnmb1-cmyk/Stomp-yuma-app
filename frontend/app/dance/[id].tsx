@@ -32,8 +32,16 @@ export default function DanceDetail() {
   const [rating, setRating] = useState(0);
   const [saving, setSaving] = useState<null | "completed" | "wishlist" | "notes">(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
-  const [editSheet, setEditSheet] = useState("");
   const [editImage, setEditImage] = useState<string>("");
+  // Full metadata edit form (whitelist editors: Erin & Jamin)
+  const [fName, setFName] = useState("");
+  const [fChor, setFChor] = useState("");
+  const [fSong, setFSong] = useState("");
+  const [fArtist, setFArtist] = useState("");
+  const [fDiff, setFDiff] = useState("Beginner");
+  const [fBpm, setFBpm] = useState("");
+  const [fCount, setFCount] = useState("");
+  const [fYt, setFYt] = useState("");
   const [savingSheet, setSavingSheet] = useState(false);
   const [uploadingImg, setUploadingImg] = useState(false);
 
@@ -101,28 +109,35 @@ export default function DanceDetail() {
     RNLinking.openURL(url).catch(() => {});
   };
 
-  const saveStepSheet = async () => {
+  const saveDance = async () => {
     if (!token || !dance) return;
+    if (!fName.trim()) {
+      Alert.alert("Missing name", "Enter a dance name.");
+      return;
+    }
     setSavingSheet(true);
     try {
+      const bpmNum = fBpm.trim() ? parseInt(fBpm, 10) : null;
       const updated = await api.updateDance(
         dance.id,
         {
-          name: dance.name,
-          choreographer: dance.choreographer,
-          song: dance.song,
-          artist: dance.artist,
-          difficulty: dance.difficulty,
-          bpm: dance.bpm,
-          count: dance.count,
-          youtube_url: dance.youtube_url,
-          step_sheet: editSheet,
+          name: fName.trim(),
+          choreographer: fChor.trim(),
+          song: fSong.trim(),
+          artist: fArtist.trim(),
+          difficulty: fDiff,
+          bpm: Number.isFinite(bpmNum as number) ? (bpmNum as number) : null,
+          count: fCount.trim(),
+          youtube_url: fYt.trim(),
+          step_sheet: "",
           step_sheet_image: editImage,
         },
         token
       );
       setDance(updated);
       setEditSheetOpen(false);
+    } catch (e: any) {
+      Alert.alert("Couldn't save", e?.message || "Try again.");
     } finally {
       setSavingSheet(false);
     }
@@ -231,7 +246,14 @@ export default function DanceDetail() {
               <Pressable
                 testID="edit-step-sheet"
                 onPress={() => {
-                  setEditSheet(dance.step_sheet || "");
+                  setFName(dance.name || "");
+                  setFChor(dance.choreographer || "");
+                  setFSong(dance.song || "");
+                  setFArtist(dance.artist || "");
+                  setFDiff(dance.difficulty || "Beginner");
+                  setFBpm(dance.bpm ? String(dance.bpm) : "");
+                  setFCount(dance.count || "");
+                  setFYt(dance.youtube_url || "");
                   setEditImage(dance.step_sheet_image || "");
                   setEditSheetOpen(true);
                 }}
@@ -382,18 +404,136 @@ export default function DanceDetail() {
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Edit Step Sheet</Text>
+            <Text style={styles.modalTitle}>Edit Dance</Text>
             <Pressable onPress={() => setEditSheetOpen(false)} testID="close-edit-sheet">
               <Ionicons name="close" size={26} color={colors.onSurface} />
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+          <ScrollView
+            contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 48 }}
+            keyboardShouldPersistTaps="handled"
+          >
             <Text style={styles.modalSub}>
-              Paste in the full step sheet notation, or upload an image (screenshot / scan).
+              Fix the dance metadata below. Only Erin &amp; Jamin can edit these
+              fields. All changes are saved together.
             </Text>
 
-            <View style={{ gap: spacing.sm }}>
-              <Text style={styles.miniLabel}>Step sheet image</Text>
+            <View style={{ gap: 4 }}>
+              <Text style={styles.miniLabel}>Dance name *</Text>
+              <TextInput
+                testID="edit-name"
+                value={fName}
+                onChangeText={setFName}
+                placeholder="e.g. Summer Sway"
+                placeholderTextColor={colors.muted}
+                style={styles.textInput}
+              />
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text style={styles.miniLabel}>Choreographer</Text>
+              <TextInput
+                testID="edit-chor"
+                value={fChor}
+                onChangeText={setFChor}
+                placeholder="e.g. Rachael McEnaney-White"
+                placeholderTextColor={colors.muted}
+                style={styles.textInput}
+              />
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text style={styles.miniLabel}>Song</Text>
+              <TextInput
+                testID="edit-song"
+                value={fSong}
+                onChangeText={setFSong}
+                placeholder="Leave blank if genre-based"
+                placeholderTextColor={colors.muted}
+                style={styles.textInput}
+              />
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text style={styles.miniLabel}>Artist</Text>
+              <TextInput
+                testID="edit-artist"
+                value={fArtist}
+                onChangeText={setFArtist}
+                placeholder="e.g. Brothers Osborne"
+                placeholderTextColor={colors.muted}
+                style={styles.textInput}
+              />
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text style={styles.miniLabel}>Difficulty</Text>
+              <View style={styles.diffPickerRow}>
+                {["Beginner", "Improver", "Intermediate", "Advanced"].map((lvl) => {
+                  const on = fDiff === lvl;
+                  return (
+                    <Pressable
+                      key={lvl}
+                      testID={`edit-diff-${lvl.toLowerCase()}`}
+                      onPress={() => setFDiff(lvl)}
+                      style={[styles.diffPickerChip, on && styles.diffPickerChipOn]}
+                    >
+                      <Text
+                        style={[
+                          styles.diffPickerText,
+                          on && { color: colors.onBrandPrimary },
+                        ]}
+                      >
+                        {lvl}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: spacing.sm }}>
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={styles.miniLabel}>BPM</Text>
+                <TextInput
+                  testID="edit-bpm"
+                  value={fBpm}
+                  onChangeText={setFBpm}
+                  keyboardType="number-pad"
+                  placeholder="e.g. 96"
+                  placeholderTextColor={colors.muted}
+                  style={styles.textInput}
+                />
+              </View>
+              <View style={{ flex: 2, gap: 4 }}>
+                <Text style={styles.miniLabel}>Count / walls</Text>
+                <TextInput
+                  testID="edit-count"
+                  value={fCount}
+                  onChangeText={setFCount}
+                  placeholder="e.g. 32 count, 4 wall"
+                  placeholderTextColor={colors.muted}
+                  style={styles.textInput}
+                />
+              </View>
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text style={styles.miniLabel}>YouTube URL</Text>
+              <TextInput
+                testID="edit-yt"
+                value={fYt}
+                onChangeText={setFYt}
+                autoCapitalize="none"
+                keyboardType="url"
+                placeholder="https://www.youtube.com/results?..."
+                placeholderTextColor={colors.muted}
+                style={styles.textInput}
+              />
+            </View>
+
+            <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+              <Text style={styles.miniLabel}>Step-sheet image (optional)</Text>
               {editImage ? (
                 <View>
                   <Image
@@ -422,33 +562,28 @@ export default function DanceDetail() {
                   ) : (
                     <>
                       <Ionicons name="image-outline" size={22} color={colors.brandPrimary} />
-                      <Text style={styles.uploadBtnText}>Upload image (PNG/JPG)</Text>
+                      <Text style={styles.uploadBtnText}>Upload scan (PNG/JPG)</Text>
                     </>
                   )}
                 </Pressable>
               )}
+              <Text style={styles.hintText}>
+                Only upload material you own or have permission to share. For
+                published step sheets, prefer the CopperKnob / BootStepper links
+                on the dance page.
+              </Text>
             </View>
 
-            <Text style={styles.miniLabel}>Step sheet text</Text>
-            <TextInput
-              testID="step-sheet-input"
-              value={editSheet}
-              onChangeText={setEditSheet}
-              multiline
-              placeholder="1-8 Grapevine right..."
-              placeholderTextColor={colors.muted}
-              style={styles.editArea}
-            />
             <Pressable
               testID="save-step-sheet"
-              onPress={saveStepSheet}
+              onPress={saveDance}
               disabled={savingSheet}
               style={[styles.saveBtn, savingSheet && { opacity: 0.6 }]}
             >
               {savingSheet ? (
                 <ActivityIndicator color={colors.onBrandPrimary} />
               ) : (
-                <Text style={styles.saveBtnText}>Save Step Sheet</Text>
+                <Text style={styles.saveBtnText}>Save Changes</Text>
               )}
             </Pressable>
           </ScrollView>
@@ -712,4 +847,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
+  textInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: colors.surfaceSecondary,
+    color: colors.onSurface,
+    fontSize: 14,
+  },
+  diffPickerRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  diffPickerChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  diffPickerChipOn: {
+    backgroundColor: colors.brandPrimary,
+    borderColor: colors.brandPrimary,
+  },
+  diffPickerText: { fontSize: 12, fontWeight: "600", color: colors.onSurface },
+  hintText: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 4 },
 });
