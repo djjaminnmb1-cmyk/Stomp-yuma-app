@@ -638,6 +638,8 @@ export default function DanceDetail() {
         onClose={() => setPracticeOpen(false)}
         danceName={dance.name}
         danceBpm={dance.bpm ?? null}
+        song={dance.song}
+        artist={dance.artist}
       />
     </View>
   );

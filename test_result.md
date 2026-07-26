@@ -111,7 +111,7 @@ frontend:
   - task: "Practice Mode: wood-block metronome with countdown + BPM slider"
     implemented: true
     working: true
-    file: "frontend/src/components/PracticeModePanel.tsx, frontend/src/hooks/useMetronome.ts, frontend/app/dance/[id].tsx, frontend/assets/sounds/wood-block.wav"
+    file: "frontend/src/components/PracticeModePanel.tsx, frontend/src/hooks/useMetronome.ts, frontend/src/lib/song-preview.ts, frontend/app/dance/[id].tsx, frontend/assets/sounds/wood-block.wav"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -132,6 +132,28 @@ frontend:
             • Sticky Start/Stop button; timer counts elapsed seconds.
             • Haptic feedback fires on the downbeat on iOS/Android (no-op on web).
           Full flow tested with screenshots showing countdown "2", "3", running "BEAT 3 · 00:03".
+      - working: true
+        agent: "main"
+        comment: |
+          UPGRADE — actual song now plays at the shown BPM.
+            • New helper `src/lib/song-preview.ts` hits iTunes Search API (free, no auth) for a
+              30-second m4a preview of `song + artist`, falls back to song-only if needed,
+              caches per-runtime.
+            • Second `useAudioPlayer` for the song, `looping = true`, `shouldCorrectPitch = true`
+              so slow/fast BPM don't chipmunk the vocals; uses `setPlaybackRate(rate, "high")`
+              when available.
+            • Playback rate = `bpm / danceBpm`, clamped 0.5-2.0×. Song card shows live
+              "X% SPEED" that matches the BPM slider (e.g. 67 BPM on an 82 BPM song = 82% speed).
+            • Song starts on the "GO!" downbeat after the wood-block countdown so timing
+              stays aligned to the metronome click.
+            • Song info card: album art, track name, artist, "iTunes preview" attribution,
+              tap to toggle on/off.
+            • Independent metronome mute toggle — either can be muted without affecting the
+              other. Graceful fallback UI when a preview isn't found or the dance has no song.
+          Verified end-to-end via screenshots on "A Bar Song (Tipsy)" (82 BPM, Shaboozey — remix
+          matched by iTunes) and "Chattahoochee" (140 BPM, Alan Jackson). BPM changed to 67
+          showed "82% SPEED" and the "Use dance BPM (82)" reset chip; toggling song off shows
+          "Tap to play the song at this BPM"; toggling metronome off shows "Metronome muted".
 
   - task: "Enhanced library search & filter (BPM band, choreographer, sort)"
     implemented: true
