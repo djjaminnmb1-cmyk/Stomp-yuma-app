@@ -22,6 +22,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { colors, spacing, radius, difficultyColor, images } from "@/src/theme";
 import { api, Dance, Tracking } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
+import PracticeModePanel from "@/src/components/PracticeModePanel";
 
 export default function DanceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,6 +34,7 @@ export default function DanceDetail() {
   const [rating, setRating] = useState(0);
   const [saving, setSaving] = useState<null | "completed" | "wishlist" | "notes">(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
   const [editImage, setEditImage] = useState<string>("");
   // Full metadata edit form (whitelist editors: Erin & Jamin)
   const [fName, setFName] = useState("");
@@ -258,6 +260,27 @@ export default function DanceDetail() {
             </Pressable>
           </View>
         ) : null}
+
+        <View style={styles.section}>
+          <Pressable
+            testID="open-practice"
+            onPress={() => setPracticeOpen(true)}
+            style={styles.practiceBtn}
+          >
+            <View style={styles.practiceIconWrap}>
+              <Ionicons name="musical-notes" size={22} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.practiceBtnTitle}>Practice Mode</Text>
+              <Text style={styles.practiceBtnSub}>
+                {dance.bpm
+                  ? `Wood-block metronome  ·  ${dance.bpm} BPM`
+                  : "Wood-block metronome  ·  Set your own tempo"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.brandPrimary} />
+          </Pressable>
+        </View>
 
         <View style={styles.section}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -609,6 +632,13 @@ export default function DanceDetail() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      <PracticeModePanel
+        visible={practiceOpen}
+        onClose={() => setPracticeOpen(false)}
+        danceName={dance.name}
+        danceBpm={dance.bpm ?? null}
+      />
     </View>
   );
 }
@@ -675,6 +705,35 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   ytBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  practiceBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSecondary,
+    borderWidth: 1.5,
+    borderColor: colors.brandPrimary,
+  },
+  practiceIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.brandPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  practiceBtnTitle: {
+    color: colors.onSurface,
+    fontWeight: "700",
+    fontSize: 15,
+    fontFamily: "serif",
+  },
+  practiceBtnSub: {
+    color: colors.onSurfaceSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
   stars: { flexDirection: "row", gap: spacing.sm, justifyContent: "center", padding: spacing.md },
   notes: {
     borderWidth: 1,

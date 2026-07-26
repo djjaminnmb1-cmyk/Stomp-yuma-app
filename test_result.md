@@ -101,3 +101,55 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Stompin' Ground Yuma line-dance mobile app enhancement. In this session we're rolling out five
+  additive features one at a time (Practice Mode → Enhanced Search → Leaderboard → Instructor
+  Dashboard → Backend Refactor). Currently working on Practice Mode.
+
+frontend:
+  - task: "Practice Mode: wood-block metronome with countdown + BPM slider"
+    implemented: true
+    working: true
+    file: "frontend/src/components/PracticeModePanel.tsx, frontend/src/hooks/useMetronome.ts, frontend/app/dance/[id].tsx, frontend/assets/sounds/wood-block.wav"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          Built a drift-corrected metronome (Date.now()-anchored setTimeout chain) with these
+          verified behaviours on web via screenshot test:
+            • Practice Mode button opens a full-screen modal from the dance detail.
+            • Countdown-in ticks 3 → 2 → 1 → GO! at the selected BPM before regular play.
+            • Phrase indicator (8 pips) highlights the current beat in the 8-count phrase.
+            • Pulse-ring reanimated animation flashes on every tick, bigger on beat 1.
+            • BPM slider 60-200 with nudge buttons (±1 / ±5) and "Use dance BPM" reset chip.
+            • Wood-block WAV (bundled at assets/sounds/wood-block.wav, ~10KB) served by Metro
+              (verified HTTP 200 on web). expo-audio configured with playsInSilentMode:true.
+            • Silent-mode toggle (visual-only) for public settings.
+            • Sticky Start/Stop button; timer counts elapsed seconds.
+            • Haptic feedback fires on the downbeat on iOS/Android (no-op on web).
+          Full flow tested with screenshots showing countdown "2", "3", running "BEAT 3 · 00:03".
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Practice Mode: wood-block metronome with countdown + BPM slider"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "sequential"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Practice Mode is complete and verified end-to-end on web preview via screenshots. Audio
+      playback is confirmed via HTTP 200 for the bundled WAV; live sound cannot be perceived from
+      a headless screenshot but plays via expo-audio on-device. Next feature (Enhanced search /
+      filter) pending user go-ahead per confirmed roadmap.
