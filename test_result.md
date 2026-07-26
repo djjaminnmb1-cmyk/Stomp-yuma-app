@@ -133,6 +133,34 @@ frontend:
             • Haptic feedback fires on the downbeat on iOS/Android (no-op on web).
           Full flow tested with screenshots showing countdown "2", "3", running "BEAT 3 · 00:03".
 
+  - task: "Enhanced library search & filter (BPM band, choreographer, sort)"
+    implemented: true
+    working: true
+    file: "frontend/app/(tabs)/library.tsx, frontend/src/components/DanceFilterModal.tsx, frontend/src/lib/dance-filter.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          Rebuilt the library screen with client-side filtering (fast even at 211+ dances) and a
+          bottom-sheet filter modal. Verified end-to-end via screenshots:
+            • Search bar now matches across name / song / artist / choreographer (verified "song"
+              query returns 3 dances). Clear-X clears the query.
+            • Difficulty chips stay inline for the primary filter (unchanged UX).
+            • New Filter button (right of search) opens a bottom-sheet modal with:
+              - Sort (Name A→Z / Z→A, Easiest first, BPM Slow→Fast, BPM Fast→Slow, Newest first)
+              - Tempo (BPM) presets: Any / Slow <90 / Medium 90-120 / Fast 120-140 / Very Fast 140+
+              - Choreographer chip flow with per-chor count badges (21 unique choreographers).
+            • Badge on filter button shows # of secondary filters active.
+            • Active-filter chip row below the search shows each active filter with an X to
+              remove it individually.
+            • Reset button clears secondary filters; empty state has its own "Reset filters" CTA.
+            • Sticky "Show N dances" button in the modal previews the result count in real time.
+          Verified with a screenshot combo of Fast BPM + Rob Fowler + BPM Fast→Slow sort
+          (11 results, all Rob Fowler dances at 138/132/132/130 BPM in descending order).
+
 metadata:
   created_by: "main_agent"
   version: "1.0"

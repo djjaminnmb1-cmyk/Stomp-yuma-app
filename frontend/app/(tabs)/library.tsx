@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -16,31 +16,79 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { api, Dance } from "@/src/api/client";
+import DanceFilterModal, {
+  BPM_BANDS,
+  SORT_OPTIONS,
+  type BpmBand,
+  type SortKey,
+} from "@/src/components/DanceFilterModal";
+import {
+  filterAndSortDances,
+  countActiveFilters,
+} from "@/src/lib/dance-filter";
 
-const FILTERS = ["All", "Beginner", "Improver", "Intermediate", "Advanced"];
+const DIFFICULTIES = ["All", "Beginner", "Improver", "Intermediate", "Advanced"];
 
 export default function Library() {
   const router = useRouter();
+  // ---------- Filter/sort state ----------
   const [q, setQ] = useState("");
   const [diff, setDiff] = useState("All");
-  const [items, setItems] = useState<Dance[]>([]);
+  const [bpmBand, setBpmBand] = useState<BpmBand>("Any");
+  const [chor, setChor] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortKey>("name-asc");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // ---------- Data ----------
+  const [all, setAll] = useState<Dance[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const data = await api.listDances(q || undefined, diff);
-      setItems(data);
+      // Client-side filtering — fetch the entire published catalogue once so
+      // filtering and sorting is instant even at 200+ dances.
+      const data = await api.listDances();
+      setAll(data);
     } catch {}
     setLoading(false);
     setRefreshing(false);
-  }, [q, diff]);
+  }, []);
 
   useEffect(() => {
-    setLoading(true);
-    const t = setTimeout(load, 200);
-    return () => clearTimeout(t);
+    load();
   }, [load]);
+
+  // Sorted list of choreographers by frequency for the filter modal.
+  const choreographers = useMemo<[string, number][]>(() => {
+    const map = new Map<string, number>();
+    all.forEach((d) => {
+      const c = (d.choreographer || "").trim();
+      if (c) map.set(c, (map.get(c) || 0) + 1);
+    });
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [all]);
+
+  const items = useMemo(
+    () => filterAndSortDances(all, { q, diff, bpmBand, chor, sortBy }),
+    [all, q, diff, bpmBand, chor, sortBy]
+  );
+
+  const activeSecondaryCount = countActiveFilters({ bpmBand, chor, sortBy });
+  const bpmLabel =
+    BPM_BANDS.find((b) => b.key === bpmBand)?.label ?? "Any";
+  const sortLabel =
+    SORT_OPTIONS.find((o) => o.key === sortBy)?.label ?? "Name";
+
+  const resetAll = () => {
+    setQ("");
+    setDiff("All");
+    setBpmBand("Any");
+    setChor(null);
+    setSortBy("name-asc");
+  };
+
+  const anyFilter = q.length > 0 || diff !== "All" || activeSecondaryCount > 0;
 
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
@@ -57,24 +105,56 @@ export default function Library() {
           </View>
           <Text style={styles.countBadge}>{items.length}</Text>
         </View>
-        <View style={styles.searchWrap}>
-          <Ionicons name="search" size={18} color={colors.muted} />
-          <TextInput
-            testID="library-search"
-            placeholder="Search by name, song, choreographer"
-            placeholderTextColor={colors.muted}
-            value={q}
-            onChangeText={setQ}
-            style={styles.searchInput}
-          />
+
+        {/* Search + Filter button */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchWrap}>
+            <Ionicons name="search" size={18} color={colors.muted} />
+            <TextInput
+              testID="library-search"
+              placeholder="Search name, song, artist, choreographer"
+              placeholderTextColor={colors.muted}
+              value={q}
+              onChangeText={setQ}
+              returnKeyType="search"
+              style={styles.searchInput}
+            />
+            {q.length > 0 ? (
+              <Pressable
+                onPress={() => setQ("")}
+                testID="clear-search"
+                hitSlop={12}
+              >
+                <Ionicons name="close-circle" size={18} color={colors.muted} />
+              </Pressable>
+            ) : null}
+          </View>
+          <Pressable
+            onPress={() => setFiltersOpen(true)}
+            testID="open-filters"
+            style={[styles.filterBtn, activeSecondaryCount > 0 && styles.filterBtnActive]}
+          >
+            <Ionicons
+              name="options"
+              size={20}
+              color={activeSecondaryCount > 0 ? "#fff" : colors.brandPrimary}
+            />
+            {activeSecondaryCount > 0 ? (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{activeSecondaryCount}</Text>
+              </View>
+            ) : null}
+          </Pressable>
         </View>
+
+        {/* Inline difficulty chips (primary filter) */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipsContent}
           style={styles.chipsScroll}
         >
-          {FILTERS.map((f) => {
+          {DIFFICULTIES.map((f) => {
             const active = diff === f;
             return (
               <Pressable
@@ -90,6 +170,41 @@ export default function Library() {
             );
           })}
         </ScrollView>
+
+        {/* Active secondary-filter chips (removable) */}
+        {activeSecondaryCount > 0 || q.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.activeChipsContent}
+            style={styles.activeChipsScroll}
+          >
+            {bpmBand !== "Any" ? (
+              <ActiveChip
+                icon="speedometer"
+                label={bpmLabel}
+                onRemove={() => setBpmBand("Any")}
+                testID="active-chip-bpm"
+              />
+            ) : null}
+            {chor ? (
+              <ActiveChip
+                icon="person"
+                label={chor}
+                onRemove={() => setChor(null)}
+                testID="active-chip-chor"
+              />
+            ) : null}
+            {sortBy !== "name-asc" ? (
+              <ActiveChip
+                icon="swap-vertical"
+                label={sortLabel}
+                onRemove={() => setSortBy("name-asc")}
+                testID="active-chip-sort"
+              />
+            ) : null}
+          </ScrollView>
+        ) : null}
       </View>
 
       {loading ? (
@@ -115,8 +230,18 @@ export default function Library() {
             <View style={styles.empty}>
               <Ionicons name="search" size={40} color={colors.muted} />
               <Text style={styles.emptyText}>
-                No dances found. Try clearing your search.
+                No dances match these filters.
               </Text>
+              {anyFilter ? (
+                <Pressable
+                  onPress={resetAll}
+                  testID="empty-reset"
+                  style={styles.emptyResetBtn}
+                >
+                  <Ionicons name="refresh" size={14} color={colors.brandPrimary} />
+                  <Text style={styles.emptyResetText}>Reset filters</Text>
+                </Pressable>
+              ) : null}
             </View>
           }
           renderItem={({ item }) => (
@@ -150,7 +275,52 @@ export default function Library() {
           )}
         />
       )}
+
+      <DanceFilterModal
+        visible={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        bpmBand={bpmBand}
+        setBpmBand={setBpmBand}
+        chor={chor}
+        setChor={setChor}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        choreographers={choreographers}
+        resultCount={items.length}
+        onReset={() => {
+          setBpmBand("Any");
+          setChor(null);
+          setSortBy("name-asc");
+        }}
+      />
     </SafeAreaView>
+  );
+}
+
+function ActiveChip({
+  icon,
+  label,
+  onRemove,
+  testID,
+}: {
+  icon: any;
+  label: string;
+  onRemove: () => void;
+  testID?: string;
+}) {
+  return (
+    <Pressable
+      onPress={onRemove}
+      testID={testID}
+      style={styles.activeChip}
+      hitSlop={4}
+    >
+      <Ionicons name={icon} size={12} color={colors.onSurface} />
+      <Text style={styles.activeChipText} numberOfLines={1}>
+        {label}
+      </Text>
+      <Ionicons name="close" size={14} color={colors.onSurfaceSecondary} />
+    </Pressable>
   );
 }
 
@@ -189,9 +359,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     overflow: "hidden",
   },
-  title: { fontFamily: "serif", fontSize: 30, fontWeight: "700", color: colors.onSurface },
-  searchWrap: {
+
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     marginTop: spacing.md,
+  },
+  searchWrap: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
@@ -202,11 +378,41 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceSecondary,
   },
   searchInput: { flex: 1, padding: 12, color: colors.onSurface, fontSize: 14 },
-  chipsScroll: { height: 56, marginTop: spacing.sm },
+  filterBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  filterBtnActive: {
+    backgroundColor: colors.brandPrimary,
+    borderColor: colors.brandPrimary,
+  },
+  filterBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.brandSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  filterBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+
+  chipsScroll: { height: 46, marginTop: spacing.sm },
   chipsContent: { gap: spacing.sm, paddingRight: spacing.lg, alignItems: "center" },
   chip: {
-    height: 36,
-    paddingHorizontal: 16,
+    height: 32,
+    paddingHorizontal: 14,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
@@ -217,6 +423,28 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.brandPrimary, borderColor: colors.brandPrimary },
   chipText: { color: colors.onSurface, fontWeight: "600", fontSize: 13 },
   chipTextActive: { color: colors.onBrandPrimary },
+
+  activeChipsScroll: { marginTop: spacing.sm, maxHeight: 36 },
+  activeChipsContent: { gap: 6, alignItems: "center", paddingRight: spacing.lg },
+  activeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceTertiary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    maxWidth: 180,
+  },
+  activeChipText: {
+    color: colors.onSurface,
+    fontSize: 11,
+    fontWeight: "600",
+    flexShrink: 1,
+  },
+
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -234,7 +462,20 @@ const styles = StyleSheet.create({
   diffBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
   diffBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
   metaSmall: { fontSize: 11, color: colors.muted },
+
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
   empty: { alignItems: "center", padding: spacing.xxl, gap: spacing.md },
   emptyText: { color: colors.muted, textAlign: "center" },
+  emptyResetBtn: {
+    marginTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary,
+  },
+  emptyResetText: { color: colors.brandPrimary, fontSize: 13, fontWeight: "700" },
 });
