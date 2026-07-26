@@ -238,6 +238,37 @@ frontend:
               visible), private "Your rank" block shows for opted-out caller, range picker
               switches without re-fetching.
 
+  - task: "Celebration screen on dance completion (fireworks)"
+    implemented: true
+    working: true
+    file: "frontend/app/celebrate.tsx, frontend/app/dance/[id].tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          New /celebrate route mirrors the /welcome fireworks experience for a first-time
+          completion of any dance.
+            • Triggered from `setStatus("completed")` on the dance-detail sticky button —
+              only when transitioning from a non-completed status (re-toggling doesn't
+              re-fire the celebration).
+            • Passes `danceName` and `count` params so the page can show:
+                – "You danced <name>"
+                – "Your first completed dance 🎉" / "N dances completed"
+                – Milestone shoutouts at 1 / 5 / 10 / 25 / 50 / 100 / every 25 after 50.
+            • Same visual palette as /welcome — cowboy-boot background image, orbiting SGY
+              logo (2.5s pass), colourful FireworksOverlay bursting from the top 2/3, and
+              the same font/text-shadow treatment on the headline.
+            • Auto-dismisses back to the dance detail after 3.6s or on tap anywhere on the
+              screen or the round ✓ button (bottom-right).
+            • Count is computed by re-fetching `myTracking` after the save so the milestone
+              message is accurate.
+          Verified with fresh registration → mark completed → screenshot showing
+          "NICE WORK! / You danced 5-1-5-0 / Your first completed dance 🎉 / First one down!"
+          then auto-return to dance detail (which now shows "Completed" green pill).
+
 metadata:
   created_by: "main_agent"
   version: "1.0"

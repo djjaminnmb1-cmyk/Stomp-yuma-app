@@ -67,10 +67,28 @@ export default function DanceDetail() {
 
   const setStatus = async (status: "completed" | "wishlist") => {
     if (!token || !id) return;
+    // If the user is *transitioning into* the completed state we celebrate.
+    // (Toggling completed → completed again is a no-op; don't celebrate.)
+    const wasCompleted = track?.status === "completed";
     setSaving(status);
     try {
       const t = await api.saveTracking(id, { status, rating, notes }, token);
       setTrack(t);
+      if (status === "completed" && !wasCompleted && dance) {
+        // Compute the user's total completed count post-save so the
+        // celebration page can show a milestone message.
+        let total = 1;
+        try {
+          const all = await api.myTracking(token);
+          total = all.filter((x) => x.status === "completed").length;
+        } catch {
+          /* Non-fatal — fall back to a generic celebration. */
+        }
+        router.push({
+          pathname: "/celebrate",
+          params: { danceName: dance.name, count: String(total) },
+        });
+      }
     } finally {
       setSaving(null);
     }
