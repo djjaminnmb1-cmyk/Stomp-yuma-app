@@ -51,6 +51,52 @@ export type LeaderboardResponse = {
   } | null;
 };
 
+// ---------------- Instructor Dashboard ----------------
+export type DashboardOverview = {
+  total_students: number;
+  students_last_7d_active: number;
+  classes_last_30d: number;
+  completions_all_time: number;
+  completions_last_7d: number;
+  attendance_records: number;
+};
+export type DashboardTopDance = {
+  dance_id: string;
+  name: string;
+  choreographer: string;
+  difficulty: string;
+  bpm: number | null;
+  completions: number;
+};
+export type DashboardStudent = {
+  user_id: string;
+  name: string;
+  picture: string;
+  email?: string; // admin only
+  is_instructor: boolean;
+  completed_count: number;
+  wishlist_count: number;
+  attendance_count: number;
+  last_completed_at: string;
+  last_class_date: string;
+  last_active_at: string;
+  joined_at: string;
+};
+export type DashboardRecentClass = {
+  id: string;
+  date: string;
+  label: string;
+  dance_count: number;
+  attendee_count: number;
+};
+export type InstructorDashboard = {
+  as_admin: boolean;
+  overview: DashboardOverview;
+  top_dances: DashboardTopDance[];
+  students: DashboardStudent[];
+  recent_classes: DashboardRecentClass[];
+};
+
 export type Dance = {
   id: string;
   name: string;
@@ -180,6 +226,10 @@ export const api = {
       },
       token,
     ),
+
+  // ---------------- Instructor Dashboard ----------------
+  getInstructorDashboard: (token: string) =>
+    req<InstructorDashboard>("/instructor/dashboard", {}, token),
   forgotPassword: (email: string) =>
     req<{ ok: boolean; message: string }>("/auth/forgot-password", {
       method: "POST",

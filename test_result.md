@@ -269,6 +269,43 @@ frontend:
           "NICE WORK! / You danced 5-1-5-0 / Your first completed dance 🎉 / First one down!"
           then auto-return to dance detail (which now shows "Completed" green pill).
 
+  - task: "Instructor Dashboard"
+    implemented: true
+    working: true
+    file: "backend/server.py, frontend/app/instructor-dashboard.tsx, frontend/app/(tabs)/instructor.tsx, frontend/src/api/client.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          Backend
+            • GET /api/instructor/dashboard — instructors + admins only. Aggregates:
+                – overview (total students, active in last 7 days, completions all-time /
+                  weekly, classes in last 30 days, total attendance records)
+                – top 10 completed dances (with choreographer, difficulty, BPM)
+                – full student roster (name, picture, is_instructor, completed / wishlist /
+                  attendance counts, last completion, last class, last active, joined date)
+                – recent classes (last 20, with attendee count)
+            • Email is admin-only; regular instructors see everything else but no PII.
+
+          Frontend
+            • New /instructor-dashboard route with:
+                – Gradient stats-chart header
+                – 6 stat tiles (Students / Active 7d / Completions / This Week /
+                  Classes 30d / Attendance)
+                – Top completed dances section — 10 ranked rows with difficulty pill + BPM
+                – Roster section with search (name / email), 4 sort chips (Most completed,
+                  Most attendance, Recently active, Name A→Z), CSV export button
+                  (browser Blob download on web, native Share sheet on iOS/Android)
+                – Recent classes section (date, label, dance & attendee counts)
+            • Wired an "Insights" icon button into the Instructor tab header so instructors
+              can jump straight in from any sub-tab.
+          Verified end-to-end via screenshots: 43 students, 7 active (7d), 15 completions,
+          top-7 dances rendered in descending order (5-1-5-0 leading at 7 completions),
+          roster search "erin" filtered from 7 → 1, and header layout no longer wraps.
+
 metadata:
   created_by: "main_agent"
   version: "1.0"

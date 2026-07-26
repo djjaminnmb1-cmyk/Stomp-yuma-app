@@ -106,10 +106,18 @@ export default function InstructorTab() {
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
       <View style={styles.headerBar}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Instructor</Text>
-          <Text style={styles.subtitle}>Dances · Classes · Chat</Text>
+        <View style={styles.titleWrap}>
+          <Text style={styles.title} numberOfLines={1}>Instructor</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>Dances · Classes · Chat</Text>
         </View>
+        <Pressable
+          testID="open-dashboard"
+          onPress={() => router.push("/instructor-dashboard")}
+          style={styles.dashBtn}
+          hitSlop={8}
+        >
+          <Ionicons name="stats-chart" size={14} color={colors.brandPrimary} />
+        </Pressable>
         {tab === "dances" ? (
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
             {user.can_edit_step_sheets ? (
@@ -1233,6 +1241,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   importBtnText: { color: colors.brandPrimary, fontWeight: "700", fontSize: 12 },
+  dashBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: colors.brandTertiary,
+    backgroundColor: colors.brandTertiary + "22",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dashBtnText: { color: colors.brandPrimary, fontWeight: "700", fontSize: 12 },
+  titleWrap: { flexShrink: 1, minWidth: 0, marginRight: spacing.sm },
   tabs: {
     flexDirection: "row",
     padding: 4,
