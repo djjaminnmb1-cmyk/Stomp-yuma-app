@@ -154,6 +154,21 @@ frontend:
           matched by iTunes) and "Chattahoochee" (140 BPM, Alan Jackson). BPM changed to 67
           showed "82% SPEED" and the "Use dance BPM (82)" reset chip; toggling song off shows
           "Tap to play the song at this BPM"; toggling metronome off shows "Metronome muted".
+      - working: true
+        agent: "main"
+        comment: |
+          FIX — "iTunes can't find these tracks" on deployed environments.
+          Root cause: some deployed / restricted browser networks blocked the direct
+          `fetch('https://itunes.apple.com/search?...')` call from client-side JS. Now the
+          lookup is proxied through our own backend:
+            • Backend: added `GET /api/song-preview?song=…&artist=…` (server.py) that hits
+              iTunes on behalf of the client, caches results in-process, falls back to a
+              song-only query if `song + artist` misses, and returns 404 on true misses.
+            • Frontend: `fetchSongPreview` now calls `${API_BASE}/song-preview` — same-origin
+              from the browser's POV, so no more CORS/DNS/firewall issues.
+            • Verified via network trace: browser now hits
+              `https://…/api/song-preview?song=...&artist=...` → 200 with the preview JSON,
+              then streams the audio directly from Apple's CDN as before.
 
   - task: "Enhanced library search & filter (BPM band, choreographer, sort)"
     implemented: true

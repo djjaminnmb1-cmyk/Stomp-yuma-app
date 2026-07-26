@@ -1,16 +1,18 @@
+import { API_BASE } from "@/src/api/client";
+
 /**
- * iTunes Search API helper.
+ * Song preview lookup — routed through OUR backend proxy at
+ * `GET /api/song-preview?song=...&artist=...`.
  *
- * Returns the 30-second `.m4a` preview URL for a song, plus track/artist
- * metadata and cover art. Free, public, no auth required — see
- * https://performance-partners.apple.com/search-api
+ * We proxy rather than hitting `https://itunes.apple.com` directly because:
+ *   • Some deployed environments block or throttle cross-origin calls
+ *     from the mobile browser to itunes.apple.com.
+ *   • Users on restrictive corporate / school Wi-Fi networks that block
+ *     Apple domains still get a preview via our origin.
+ *   • The backend caches lookups, so re-opening the same dance is instant.
  *
- * We match by combining `song + artist` in the search term (safer than
- * relying on artist filtering, which iTunes doesn't natively support in
- * `search`). If nothing matches, we fall back to song-only.
- *
- * Results are cached per (song, artist) pair for the lifetime of the JS
- * runtime so re-opening Practice Mode is instant.
+ * Results are cached client-side per (song, artist) pair for the JS-runtime
+ * lifetime, avoiding a redundant round-trip on repeat opens.
  */
 export type SongPreview = {
   previewUrl: string;
@@ -26,33 +28,6 @@ function key(song: string, artist: string) {
   return `${(song || "").toLowerCase().trim()}|${(artist || "").toLowerCase().trim()}`;
 }
 
-async function fetchITunes(term: string): Promise<SongPreview | null> {
-  const url = `https://itunes.apple.com/search?media=music&entity=song&limit=5&term=${encodeURIComponent(
-    term
-  )}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const list: any[] = data?.results ?? [];
-    // Prefer the first result that has a preview URL.
-    for (const r of list) {
-      if (r?.previewUrl) {
-        return {
-          previewUrl: r.previewUrl as string,
-          trackName: r.trackName || "",
-          artistName: r.artistName || "",
-          artworkUrl: (r.artworkUrl100 || r.artworkUrl60 || "") as string,
-          provider: "itunes",
-        };
-      }
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 export async function fetchSongPreview(
   song?: string | null,
   artist?: string | null
@@ -63,11 +38,26 @@ export async function fetchSongPreview(
   const k = key(s, a);
   if (cache.has(k)) return cache.get(k) ?? null;
 
-  // Try song + artist first, then just the song title as a fallback.
-  const primary = a ? `${s} ${a}` : s;
-  let hit = await fetchITunes(primary);
-  if (!hit && a) hit = await fetchITunes(s);
-
-  cache.set(k, hit);
-  return hit;
+  const url = `${API_BASE}/song-preview?song=${encodeURIComponent(s)}&artist=${encodeURIComponent(a)}`;
+  try {
+    const res = await fetch(url);
+    if (res.status === 404) {
+      cache.set(k, null);
+      return null;
+    }
+    if (!res.ok) {
+      // Network / server hiccup — don't cache a negative result so a retry
+      // will re-attempt.
+      return null;
+    }
+    const data = (await res.json()) as SongPreview;
+    if (!data?.previewUrl) {
+      cache.set(k, null);
+      return null;
+    }
+    cache.set(k, data);
+    return data;
+  } catch {
+    return null;
+  }
 }
