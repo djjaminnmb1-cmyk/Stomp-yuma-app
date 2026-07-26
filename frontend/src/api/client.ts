@@ -23,7 +23,32 @@ export type User = {
   is_admin: boolean;
   is_instructor: boolean;
   can_edit_step_sheets?: boolean;
+  show_on_leaderboard?: boolean;
   auth_provider: string;
+};
+
+export type LeaderboardRange = "all" | "week" | "month";
+export type LeaderboardEntry = {
+  rank: number;
+  user_id: string;
+  name: string;
+  picture: string;
+  count: number;
+  last_completed_at: string;
+  is_instructor: boolean;
+};
+export type LeaderboardResponse = {
+  range: LeaderboardRange;
+  limit: number;
+  total_visible: number;
+  total_dancers: number;
+  entries: LeaderboardEntry[];
+  me: {
+    rank: number | null;
+    count: number;
+    opted_in: boolean;
+    in_top: boolean;
+  } | null;
 };
 
 export type Dance = {
@@ -138,6 +163,23 @@ export const api = {
     req<{ ok: boolean }>("/auth/logout", { method: "POST" }, token),
   deleteAccount: (token: string) =>
     req<{ ok: boolean; message: string }>("/auth/me", { method: "DELETE" }, token),
+
+  // ---------------- Leaderboard ----------------
+  getLeaderboard: (range: LeaderboardRange = "all", limit: number = 20, token?: string) =>
+    req<LeaderboardResponse>(
+      `/leaderboard?range=${range}&limit=${limit}`,
+      {},
+      token,
+    ),
+  toggleLeaderboard: (show_on_leaderboard: boolean, token: string) =>
+    req<{ ok: boolean; user: User }>(
+      "/users/me/leaderboard",
+      {
+        method: "PATCH",
+        body: JSON.stringify({ show_on_leaderboard }),
+      },
+      token,
+    ),
   forgotPassword: (email: string) =>
     req<{ ok: boolean; message: string }>("/auth/forgot-password", {
       method: "POST",

@@ -348,6 +348,25 @@ export default function Profile() {
           </Pressable>
 
           <Pressable
+            testID="profile-leaderboard-row"
+            style={styles.row}
+            onPress={() => router.push("/leaderboard")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="trophy" size={22} color={colors.brandTertiary} />
+              <View>
+                <Text style={styles.rowText}>Boot Scoot Board</Text>
+                <Text style={styles.deleteSub}>
+                  {user?.show_on_leaderboard
+                    ? "You're visible on the board."
+                    : "You're hidden. Tap to join."}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
             testID="logout-btn"
             style={styles.row}
             onPress={async () => {

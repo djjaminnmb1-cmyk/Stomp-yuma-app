@@ -161,6 +161,46 @@ frontend:
           Verified with a screenshot combo of Fast BPM + Rob Fowler + BPM Fast→Slow sort
           (11 results, all Rob Fowler dances at 138/132/132/130 BPM in descending order).
 
+  - task: "Boot Scoot Board leaderboard (opt-in) with home preview"
+    implemented: true
+    working: true
+    file: "frontend/app/leaderboard.tsx, frontend/app/(tabs)/index.tsx, frontend/app/(tabs)/profile.tsx, frontend/src/api/client.ts, backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          Full opt-in leaderboard flow shipped end-to-end.
+
+          Backend (server.py):
+            • Added `PATCH /api/users/me/leaderboard` toggle (LeaderboardOptInBody).
+            • Added `GET /api/leaderboard?range=all|week|month&limit=N` — aggregates
+              tracking (`status="completed"`) grouped by user_id, joins `users`, and returns:
+                - `entries`: top-N ranked visible users (opted-in only) with rank/name/pic/count.
+                - `me`: caller's absolute rank + count (private) even if opted out.
+                - `total_visible` / `total_dancers`.
+            • `user_to_out` now returns `show_on_leaderboard` so the client can gate UI.
+          Verified by seeding 5 admin + 3 Erin completions, opting both in, and hitting
+          the endpoint: entries returned in correct order.
+
+          Frontend:
+            • New /leaderboard route with gradient trophy header, range picker
+              (Week / Month / All Time), top-3 podium (medals gold/silver/bronze), rank rows
+              for #4+, "You" badge highlighting, Instructor mini-badge, private "Your rank"
+              card if user is out of top-N or opted-out, "N others chose to stay private"
+              footer.
+            • Home tab preview card ("Boot Scoot Board") shows top-3 as
+              "1. First (count) · 2. First (count) · 3. First (count)" and links into the
+              full board.
+            • Profile screen adds a row showing current visibility state and deep-links
+              into /leaderboard.
+            • Opt-in / Opt-out is a single-tap "Join" / "tap to hide" control on the board.
+            • Full end-to-end tested on web: podium renders, opt-out hides admin (Erin still
+              visible), private "Your rank" block shows for opted-out caller, range picker
+              switches without re-fetching.
+
 metadata:
   created_by: "main_agent"
   version: "1.0"

@@ -6,18 +6,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { colors, spacing, radius, images } from "@/src/theme";
-import { api, Dance } from "@/src/api/client";
+import { api, Dance, LeaderboardEntry } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { BrandLogo } from "../../src/components/BrandLogo";
 
 export default function Home() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [recent, setRecent] = useState<Dance[]>([]);
+  const [topDancers, setTopDancers] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
     api.listDances().then((all) => setRecent(all.slice(0, 4))).catch(() => {});
-  }, []);
+    api
+      .getLeaderboard("all", 3, token || undefined)
+      .then((lb) => setTopDancers(lb.entries || []))
+      .catch(() => {});
+  }, [token]);
 
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
@@ -73,6 +78,31 @@ export default function Home() {
               <Text style={styles.suggestSub}>
                 See which dances were taught in recent classes.
               </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
+            testID="home-leaderboard-cta"
+            onPress={() => router.push("/leaderboard")}
+            style={styles.leaderboardCard}
+          >
+            <View style={styles.leaderboardIcon}>
+              <Ionicons name="trophy" size={22} color={colors.brandTertiary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.suggestTitle}>Boot Scoot Board</Text>
+              {topDancers.length > 0 ? (
+                <Text style={styles.suggestSub} numberOfLines={1}>
+                  {topDancers
+                    .map((d, i) => `${i + 1}. ${d.name.split(" ")[0]} (${d.count})`)
+                    .join("  ·  ")}
+                </Text>
+              ) : (
+                <Text style={styles.suggestSub}>
+                  See who&apos;s topping the floor — join in.
+                </Text>
+              )}
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
@@ -259,6 +289,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.brandSecondary + "55",
+  },
+  leaderboardCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    backgroundColor: colors.brandTertiary + "22",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandTertiary + "88",
+    marginBottom: spacing.sm,
+  },
+  leaderboardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.brandTertiary + "88",
   },
   websiteBtn: {
     marginTop: spacing.lg,
