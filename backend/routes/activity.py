@@ -15,8 +15,9 @@ render a horizontal card row without an extra fetch.
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from core.database import db
 from core.security import get_current_user
@@ -57,7 +58,10 @@ async def log_practice(dance_id: str, user: dict = Depends(get_current_user)):
 
 @router.get("/recently-practiced")
 async def recently_practiced(
-    limit: int = 10, user: dict = Depends(get_current_user)
+    user: dict = Depends(get_current_user),
+    # Opaque-string param so ``?limit=abc`` falls back to 10 instead of a
+    # hard 422 from Pydantic.
+    limit: Optional[str] = Query(default=None),
 ):
     """Return the caller's most recent practice / completion activity.
 
@@ -67,7 +71,11 @@ async def recently_practiced(
       - ``status`` — tracking status if any (completed / wishlist / none)
       - ``practice_count`` — number of Practice Mode opens
     """
-    limit = max(1, min(50, int(limit) if limit is not None else 10))
+    try:
+        raw = 10 if not limit else int(limit)
+    except (TypeError, ValueError):
+        raw = 10
+    limit = max(1, min(50, raw))
     uid = user["user_id"]
 
     # Fetch both signals in parallel-ish (Motor cursors).

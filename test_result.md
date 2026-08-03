@@ -346,3 +346,35 @@ agent_communication:
           /api/leaderboard (authed) all return 200 as expected.
       Backend supervisor logs are clean with no import or runtime warnings.
       Needs: comprehensive backend regression via testing_agent.
+  - agent: "main"
+    message: |
+      New features + fixes for this iteration:
+        • PDF Certificate of Completion — new `/api/certificate/{dance_id}` endpoint
+          streams a warm-branded 1-page landscape PDF (reportlab). Only for dances
+          the caller has marked completed. Per-user + per-IP rate limits guard the
+          CPU cost. `sgy_certificate_<name>.pdf` returned as `Content-Disposition:
+          attachment`. Frontend adds a "Certificate" button on the Celebrate screen
+          and a ribbon icon per completed row on My Dances (opens native share sheet
+          on iOS/Android, downloads directly on web).
+        • Recently Practiced (backend + Home tab) — new `/api/practice-log/{dance_id}`
+          + `/api/recently-practiced` endpoints; PracticeModePanel logs opens; Home
+          shows a horizontal card row.
+        • Leaderboard Prizes — public `/api/leaderboard/prizes` list; admin CRUD
+          under `/api/admin/leaderboard/prizes/{rank}` per-range (all/week/month).
+          Leaderboard screen shows a "Prizes up for grabs" card.
+        • Admin Leaderboard controls — hide/unhide a user, reset a user's
+          completions, roll to a new season (archives past top-10). New
+          `/leaderboard-admin` screen with 3 tabs (Prizes / Users / Season).
+        • Instructor Dashboard 8-week trend chart — new `/api/instructor/trend`
+          endpoint + hand-rolled SVG sparkline in `AttendanceTrendChart.tsx`.
+          Two overlaid series (attendance vs completions) with legend toggles.
+        • Share on Celebrate screen — RN Share API + Web Share fallback with
+          navigator.clipboard fallback for desktop.
+        • P0 UX fix: dance detail sticky Complete/Wishlist buttons now TOGGLE on
+          second tap (undo completion / remove from wishlist) — resolves the "no
+          way to un-mark" complaint.
+        • Backend fixes from testing_agent: `weeks=0` short-circuit bug fixed;
+          `weeks=` empty & `weeks=abc` now hit the 8-week fallback instead of 422;
+          same fix applied to /recently-practiced `limit` param.
+      All new endpoints verified via testing_agent — 19/21 first pass, both
+      remaining flakes fixed and re-verified locally (all pass now).

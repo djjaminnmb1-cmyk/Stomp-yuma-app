@@ -10,7 +10,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from core.database import db
 from core.security import get_current_user
@@ -207,7 +209,12 @@ async def instructor_dashboard(user: dict = Depends(get_current_user)):
 
 @router.get("/instructor/trend")
 async def instructor_trend(
-    weeks: int = 8, user: dict = Depends(get_current_user)
+    user: dict = Depends(get_current_user),
+    # Accept the param as an opaque string so empty / non-numeric values hit
+    # our own fallback (int-parse via 8) instead of FastAPI/Pydantic
+    # returning a hard 422 before the handler runs. Sensible max value is
+    # enforced by the ``max(2, min(26, raw))`` clamp below.
+    weeks: Optional[str] = Query(default=None),
 ):
     """Return weekly rollups of attendance + completions + classes for the
     last ``weeks`` full weeks (default 8), oldest-first so the chart draws
@@ -225,9 +232,10 @@ async def instructor_trend(
         raise HTTPException(403, "Instructor only")
     # Clamp weeks to a sane range. NOTE: `int(weeks or 8)` would silently
     # short-circuit weeks=0 to 8 because 0 is falsy in Python — always run
-    # the clamp against the parsed integer.
+    # the clamp against the parsed integer. Empty string / bad input falls
+    # back to 8 instead of a 422.
     try:
-        raw = 8 if weeks is None else int(weeks)
+        raw = 8 if not weeks else int(weeks)
     except (TypeError, ValueError):
         raw = 8
     weeks = max(2, min(26, raw))
