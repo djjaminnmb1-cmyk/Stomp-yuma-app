@@ -314,12 +314,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "New: Recently Practiced (backend + Home tab)"
-    - "New: Leaderboard Prizes (public list + admin CRUD)"
-    - "New: Admin Leaderboard controls (hide/unhide, reset user, season reset)"
-    - "New: Instructor trend endpoint + chart"
-    - "New: Share button on Celebrate screen"
-    - "P0 fix: undo-completion toggle on dance detail"
+    - "New: PDF Certificate of Completion (backend generation + Celebrate button + My Dances icon)"
+    - "P0 fix: /api/instructor/trend weeks=0 now clamps to 2 (was returning 8)"
   stuck_tasks: []
   test_all: false
   test_priority: "sequential"

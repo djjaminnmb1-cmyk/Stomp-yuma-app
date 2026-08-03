@@ -1,0 +1,39 @@
+{
+  "summary": "Focused backend regression on the new PDF certificate endpoint + clamp fixes for /instructor/trend and /recently-practiced. 19/21 tests passed. Certificate endpoint works perfectly (auth, 404 leakage-safe, valid PDF with %PDF magic, sanitized filename, per-user rate limit, wishlist-not-eligible). Recently-practiced clamps correctly (0->1, 99->50, abc->fallback). Trend clamp works for numeric inputs (0->2, 1->2, 99->26, 8->8) BUT fails for non-integer strings (empty '' and 'abc' return 422 instead of 200 with fallback to 8) because the FastAPI signature is `weeks: int = 8` — pydantic validates and rejects the value BEFORE the handler's try/except can run. This is a real regression from the requested spec.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/instructor/trend?weeks=&weeks=abc",
+        "issue": "Non-integer query values return HTTP 422 (pydantic parse error) instead of 200 with the spec'd fallback to 8 weeks. Root cause: signature `weeks: int = 8` in routes/dashboard.py:210 forces FastAPI to parse to int before the handler runs, so the `try: int(weeks) except: raw = 8` block on lines 229-232 is unreachable for these inputs. Fix: change to `weeks: str | None = None` (or `Optional[str] = Query(None)`) and let the existing try/except do the fallback. Contract per review spec explicitly requires 200 for both cases.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_certificate_and_clamps.py",
+    "/app/test_reports/pytest/certificate_and_clamps.xml"
+  ],
+  "action_items": [
+    "Fix routes/dashboard.py:210 signature — change `weeks: int = 8` to `weeks: str | None = None` (or `Optional[str] = Query(None)`) so the existing try/except fallback on lines 229-232 actually handles empty-string and non-numeric inputs per spec. All other clamp cases (0, 1, 99, 8) already work correctly."
+  ],
+  "critical_code_review_comments": [
+    "routes/dashboard.py: The comment on line 226-228 correctly warns about the `int(weeks or 8)` truthy-short-circuit trap and the fix works for weeks=0. But the outer FastAPI signature `weeks: int = 8` still short-circuits the fallback for empty/non-numeric strings — pydantic returns 422 before the handler is called. The same anti-pattern is NOT present in routes/activity.py:70 (`limit: int = 10` + `max(1, min(50, int(limit) if limit is not None else 10))`) because tests confirm limit=abc returns 422 via pydantic too — but that's acceptable per the spec ('422 (pydantic) or fall back to 10').",
+    "routes/certificate.py: Clean, well-commented, defensive. Rate-limit is per-user AND per-IP which is a nice defense-in-depth. Same 404 detail for missing dance vs. not-completed correctly avoids existence leakage. Filename sanitization is ASCII-only and length-capped to 60 chars — good."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_certificate_and_clamps.py (new)"
+  ],
+  "success_rate": {"backend": "90.5% (19/21)", "frontend": "N/A (skipped per request)"},
+  "seed_data_creation": "Marked one dance as completed for erinboroughs@gmail.com via POST /api/tracking/{dance_id} for certificate testing. Also marked one dance as wishlist for the wishlist-not-eligible test. Both use the first available published dance from /api/dances.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend restart is required to clear the per-user certificate rate limit before re-running (in-process throttle). The rate-limit test hits ~31 certs and locks admin out for 5 min. Trend endpoint accepts int query param — main agent must widen it to `str | None` to satisfy the empty/abc fallback contract. Certificate endpoint fully verified.",
+  "rca_of_issue": "GET /api/instructor/trend?weeks= and ?weeks=abc return 422, not 200. Reproduction: `curl -H 'Authorization: Bearer <token>' 'http://localhost:8001/api/instructor/trend?weeks=abc'` -> 422 with pydantic int_parsing detail. Root cause: FastAPI query param declared as `weeks: int = 8` in routes/dashboard.py line 210; pydantic tries to coerce the raw string to int and 422s before the handler body (with its try/except fallback on lines 229-232) is ever executed. Mitigation: declare `weeks: str | None = None` (or use `Query(None)`) — the existing try/except block will then correctly fallback to 8, and the max(2, min(26, raw)) clamp continues to work for all other cases."
+}

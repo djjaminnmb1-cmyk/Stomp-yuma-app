@@ -101,7 +101,7 @@ export default function DanceDetail() {
         }
         router.push({
           pathname: "/celebrate",
-          params: { danceName: dance.name, count: String(total) },
+          params: { danceName: dance.name, count: String(total), danceId: dance.id },
         });
       }
     } finally {

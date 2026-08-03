@@ -22,6 +22,8 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { FireworksOverlay } from "@/src/components/FireworksOverlay";
 import { colors, spacing } from "@/src/theme";
+import { useAuth } from "@/src/context/auth-context";
+import { downloadCertificate } from "@/src/lib/certificate";
 
 /**
  * Celebration screen shown when a user marks a dance completed. Same visual
@@ -42,14 +44,20 @@ const ORBIT_CENTER_Y = SCREEN_H * 0.62;
 const ORBIT_RADIUS = Math.min(SCREEN_W * 0.32, 130);
 const LOGO_SIZE = 110;
 const CIRCLE_MS = 2500;
-const AUTO_DISMISS_MS = 6000; // Extra time so users can hit Share before we bail out.
+const AUTO_DISMISS_MS = 9000; // Enough time for Certificate + Share + read the milestone.
 
 export default function CelebrateScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ danceName?: string; count?: string }>();
+  const params = useLocalSearchParams<{
+    danceName?: string;
+    count?: string;
+    danceId?: string;
+  }>();
   const danceName = ((params.danceName as string) || "").trim();
+  const danceId = ((params.danceId as string) || "").trim();
   const rawCount = parseInt((params.count as string) || "", 10);
   const totalCount = Number.isFinite(rawCount) && rawCount > 0 ? rawCount : null;
+  const { token } = useAuth();
 
   const t = useSharedValue(0);
   const orbit = useSharedValue(0);
@@ -57,6 +65,8 @@ export default function CelebrateScreen() {
   const dismissTimerRef = useRef<any>(null);
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [certLoading, setCertLoading] = useState(false);
+  const [certOk, setCertOk] = useState(false);
 
   const cancelAutoDismiss = () => {
     if (dismissTimerRef.current) {
@@ -152,6 +162,34 @@ export default function CelebrateScreen() {
     }
   };
 
+  /**
+   * Fetch the PDF certificate from the backend and trigger the platform's
+   * native download / share flow. Non-blocking — quietly logs failures and
+   * shows a small in-line "Downloaded" checkmark on success so users get
+   * feedback without an interrupting alert.
+   */
+  const handleCertificate = async () => {
+    if (certLoading || !danceId) return;
+    cancelAutoDismiss();
+    setCertLoading(true);
+    setCertOk(false);
+    try {
+      const r = await downloadCertificate(
+        danceId,
+        danceName || "dance",
+        token || ""
+      );
+      if (r.ok) {
+        setCertOk(true);
+        setTimeout(() => setCertOk(false), 2800);
+      } else if (r.message) {
+        Alert.alert("Couldn't download certificate", r.message);
+      }
+    } finally {
+      setCertLoading(false);
+    }
+  };
+
   const bigStyle = useAnimatedStyle(() => ({
     opacity: t.value,
     transform: [
@@ -242,6 +280,29 @@ export default function CelebrateScreen() {
         />
 
         <View style={styles.doneWrap} pointerEvents="box-none">
+          {danceId && token ? (
+            <Pressable
+              onPress={handleCertificate}
+              onPressIn={cancelAutoDismiss}
+              disabled={certLoading}
+              style={[styles.shareBtn, certLoading && { opacity: 0.6 }]}
+              testID="celebrate-certificate"
+              accessibilityLabel="Download certificate of completion"
+            >
+              <Ionicons
+                name={certOk ? "checkmark-circle" : "document-text"}
+                size={18}
+                color="#fff"
+              />
+              <Text style={styles.shareBtnText}>
+                {certOk
+                  ? "Downloaded!"
+                  : certLoading
+                    ? "Preparing…"
+                    : "Certificate"}
+              </Text>
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={handleShare}
             onPressIn={cancelAutoDismiss}
@@ -375,9 +436,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: spacing.lg,
     bottom: spacing.xl,
+    left: spacing.lg,
     flexDirection: "row",
     gap: spacing.sm,
     alignItems: "center",
+    justifyContent: "flex-end",
+    flexWrap: "wrap",
   },
   shareBtn: {
     flexDirection: "row",
