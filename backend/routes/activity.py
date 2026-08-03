@@ -67,7 +67,7 @@ async def recently_practiced(
       - ``status`` — tracking status if any (completed / wishlist / none)
       - ``practice_count`` — number of Practice Mode opens
     """
-    limit = max(1, min(50, int(limit or 10)))
+    limit = max(1, min(50, int(limit) if limit is not None else 10))
     uid = user["user_id"]
 
     # Fetch both signals in parallel-ish (Motor cursors).

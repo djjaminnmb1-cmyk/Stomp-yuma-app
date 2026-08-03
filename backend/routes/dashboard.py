@@ -223,7 +223,14 @@ async def instructor_trend(
     """
     if not (user.get("is_admin") or user.get("is_instructor")):
         raise HTTPException(403, "Instructor only")
-    weeks = max(2, min(26, int(weeks or 8)))  # clamp: 2..26 weeks
+    # Clamp weeks to a sane range. NOTE: `int(weeks or 8)` would silently
+    # short-circuit weeks=0 to 8 because 0 is falsy in Python — always run
+    # the clamp against the parsed integer.
+    try:
+        raw = 8 if weeks is None else int(weeks)
+    except (TypeError, ValueError):
+        raw = 8
+    weeks = max(2, min(26, raw))
 
     now = datetime.now(timezone.utc)
     # Anchor to Monday of the current UTC week.
