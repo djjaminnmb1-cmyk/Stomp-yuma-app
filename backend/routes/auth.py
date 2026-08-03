@@ -380,6 +380,7 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
     await db.password_reset_tokens.delete_many({"user_id": uid})
     await db.tracking.delete_many({"user_id": uid})
     await db.attendance.delete_many({"user_id": uid})
+    await db.practice_sessions.delete_many({"user_id": uid})
     await db.suggestions.delete_many({"user_id": uid})
     await db.instructor_messages.delete_many({"user_id": uid})
     # push_tokens is a subdoc list keyed by user_id in the users collection

@@ -67,8 +67,23 @@ export default function DanceDetail() {
 
   const setStatus = async (status: "completed" | "wishlist") => {
     if (!token || !id) return;
+    // Toggle behavior: if the user taps the SAME status they're already in
+    // we clear the tracking (Completed → not-completed, Wishlist → removed).
+    // This gives them a way to undo a mis-tap without leaving the screen.
+    if (track?.status === status) {
+      setSaving(status);
+      try {
+        await api.removeTracking(id, token);
+        setTrack(null);
+        setRating(0);
+        setNotes("");
+      } finally {
+        setSaving(null);
+      }
+      return;
+    }
     // If the user is *transitioning into* the completed state we celebrate.
-    // (Toggling completed → completed again is a no-op; don't celebrate.)
+    // (Toggling completed → completed again is handled above; not celebrated.)
     const wasCompleted = track?.status === "completed";
     setSaving(status);
     try {
@@ -427,29 +442,53 @@ export default function DanceDetail() {
             onPress={() => setStatus("wishlist")}
             style={[styles.secBtn, isWishlist && styles.secBtnActive]}
             disabled={saving !== null}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isWishlist ? "Remove from wishlist" : "Add to wishlist"
+            }
+            accessibilityHint={
+              isWishlist ? "Tap again to remove from your wishlist." : ""
+            }
           >
-            <Ionicons
-              name={isWishlist ? "bookmark" : "bookmark-outline"}
-              size={18}
-              color={isWishlist ? colors.onBrandPrimary : colors.brandPrimary}
-            />
-            <Text style={[styles.secBtnText, isWishlist && { color: colors.onBrandPrimary }]}>
-              {isWishlist ? "In Wishlist" : "Wishlist"}
-            </Text>
+            {saving === "wishlist" ? (
+              <ActivityIndicator color={isWishlist ? "#fff" : colors.brandPrimary} />
+            ) : (
+              <>
+                <Ionicons
+                  name={isWishlist ? "bookmark" : "bookmark-outline"}
+                  size={18}
+                  color={isWishlist ? colors.onBrandPrimary : colors.brandPrimary}
+                />
+                <Text style={[styles.secBtnText, isWishlist && { color: colors.onBrandPrimary }]}>
+                  {isWishlist ? "In Wishlist" : "Wishlist"}
+                </Text>
+              </>
+            )}
           </Pressable>
           <Pressable
             testID="complete-btn"
             onPress={() => setStatus("completed")}
             style={[styles.primBtn, isCompleted && { backgroundColor: colors.success }]}
             disabled={saving !== null}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isCompleted ? "Mark as not completed" : "Mark as completed"
+            }
+            accessibilityHint={
+              isCompleted ? "Tap again to undo your completion." : ""
+            }
           >
             {saving === "completed" ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <>
-                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                <Ionicons
+                  name={isCompleted ? "checkmark-done-circle" : "checkmark-circle-outline"}
+                  size={20}
+                  color="#fff"
+                />
                 <Text style={styles.primBtnText}>
-                  {isCompleted ? "Completed" : "Mark Completed"}
+                  {isCompleted ? "Completed · Tap to undo" : "Mark Completed"}
                 </Text>
               </>
             )}

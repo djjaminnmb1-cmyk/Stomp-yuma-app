@@ -10,6 +10,7 @@ from fastapi import APIRouter
 
 from . import (
     auth,
+    activity,
     chat,
     classes,
     dances,
@@ -35,6 +36,7 @@ api_router.include_router(suggestions.router)
 api_router.include_router(chat.router)
 api_router.include_router(leaderboard.router)
 api_router.include_router(dashboard.router)
+api_router.include_router(activity.router)
 api_router.include_router(song_preview.router)
 api_router.include_router(push.router)
 api_router.include_router(misc.router)

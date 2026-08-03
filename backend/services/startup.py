@@ -39,6 +39,10 @@ async def _ensure_indexes() -> None:
         await db.attendance.create_index(
             [("user_id", 1), ("class_id", 1)], unique=True
         )
+        await db.practice_sessions.create_index(
+            [("user_id", 1), ("dance_id", 1)], unique=True
+        )
+        await db.practice_sessions.create_index("last_opened_at")
         await db.sent_reminders.create_index("key", unique=True)
         await db.instructor_messages.create_index("created_at")
     except Exception as e:

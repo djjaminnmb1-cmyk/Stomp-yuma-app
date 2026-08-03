@@ -391,4 +391,27 @@ export const api = {
     req<ChatMessage>("/chat/messages", { method: "POST", body: JSON.stringify({ message }) }, token),
   deleteChat: (id: string, token: string) =>
     req<{ ok: boolean }>(`/chat/messages/${id}`, { method: "DELETE" }, token),
+
+  // ---------------- Activity / Recently Practiced ----------------
+  logPractice: (dance_id: string, token: string) =>
+    req<{ ok: boolean; last_opened_at: string }>(
+      `/practice-log/${dance_id}`,
+      { method: "POST" },
+      token
+    ),
+  recentlyPracticed: (token: string, limit = 10) =>
+    req<{
+      items: {
+        dance: {
+          id: string;
+          name: string;
+          choreographer: string;
+          difficulty: string;
+          bpm: number | null;
+        };
+        last_activity_at: string;
+        status: string;
+        practice_count: number;
+      }[];
+    }>(`/recently-practiced?limit=${limit}`, {}, token),
 };
