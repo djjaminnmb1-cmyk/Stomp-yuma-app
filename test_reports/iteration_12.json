@@ -1,0 +1,34 @@
+{
+  "summary": "Comprehensive post-refactor regression across every /api/* route. Wrote /app/backend/tests/test_refactor_regression.py (64 pytest cases). Result: 64/64 PASSED. Rate-limit smoke tests (out-of-band) also confirmed login 429 after 10 wrong attempts on same email, and /api/leaderboard 429 after 60 requests/min per IP. Backend logs are clean (only expected push-relay 401→502 translations in preview, which the request specifies is acceptable). Startup seeding verified: 507 dances loaded (>200), all 3 seed accounts (erinboroughs@gmail.com admin+instructor, admin@stompinground.com admin+instructor, luvtowork247@yahoo.com instructor-only) log in and return correct role flags on /auth/me. Refactor is behavior-preserving.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_refactor_regression.py",
+    "/app/test_reports/pytest/refactor_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py trimmed to 66 lines; largest route module is dances.py at 375 lines — well under the 700-line split threshold. Refactor keeps clear separation between core/, models/, routes/, services/.",
+    "Route ordering in routes/dances.py correctly places /dances/removed and /dances/restore-by-name BEFORE the /dances/{dance_id} parameterised route, so literal paths aren't shadowed (verified: GET /api/dances/removed returns 200 for admin).",
+    "Push relay (integrations.emergentagent.com/api/v1/push) returns 401 in preview because EMERGENT_PUSH_KEY is not configured; routes/push.py correctly translates that to 502 without leaking upstream config state — matches original behavior.",
+    "Backend /app/backend/server.py.bak-preroute-refactor is retained as a diff reference. Recommend removing after one more deploy cycle to keep the backend dir lean.",
+    "Rate-limit state is in-process (module dict in core/rate_limit.py). Fine for single-worker Uvicorn, but if the app scales to multiple workers, the limits become per-worker not global. Not a regression — just something to flag."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_refactor_regression.py"
+  ],
+  "success_rate": {"backend": "100% (64/64)", "frontend": "N/A - backend only"},
+  "seed_data_creation": "Test fixtures create per-session and per-test TEST_ users (all cleaned up via DELETE /api/auth/me). Test dances created via POST /api/dances are deleted at the end of TestDances::test_delete_dance_admin_only. Bulk-import test leaves a single TEST_Import_* dance in the DB — negligible.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Regression suite at /app/backend/tests/test_refactor_regression.py covers: misc (/, /venue), auth (register/duplicate/instructor-code/login/invalid/me/forgot/reset/logout/set-instructor), dances (public list, q/difficulty filters, scope=mine/all, GET draft owner vs anon, CRUD + publish/unpublish, bulk import with dupes, delete admin-only, removed/restore-by-name), tracking (CRUD, invalid status, invalid dance), classes+attendance (list scopes, CRUD + attend/unattend + attendance/me, instructor-required), suggestions (submit, list mine/all, status update, delete own, 413 for oversized image), chat (post/list/delete instructor-only + 403 for non-instructor), leaderboard (anon has no user_id + null me, authed has me block, range filters, opt-in toggle, 400 for invalid range), dashboard (401/403/instructor-no-email/admin-has-email), song-preview (real iTunes call, empty=400, nonsense=404, cache-hit fast), push (401 unauthed, 502-or-201 authed). Uses TWO user fixtures: `fresh_user` (session-scoped, may be mutated by tests) and `plain_user` (function-scoped, never promoted — use for negative role checks). Base URL read from EXPO_PUBLIC_BACKEND_URL / /app/frontend/.env. Rate-limit checks are OUT-OF-BAND (executed once manually) because they mutate module-level state and would break subsequent auth-dependent tests in the same run.",
+  "rca_of_issue": "N/A — no regressions. Initial run had 3 failures caused by the session-scoped fresh_user fixture being promoted to instructor by test_set_instructor_correct_code, so downstream 403 assertions saw an instructor. Fixed by introducing a function-scoped plain_user fixture for negative role checks."
+}

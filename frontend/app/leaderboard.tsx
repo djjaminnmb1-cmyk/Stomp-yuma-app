@@ -61,7 +61,11 @@ export default function LeaderboardScreen() {
   };
 
   const optedIn = !!user?.show_on_leaderboard;
-  const isYou = (uid: string) => user?.user_id === uid;
+  // Backend no longer returns `user_id` in public entries (SEC hardening).
+  // Instead each entry carries an `is_you` boolean scoped to the caller —
+  // and each entry from the server needs a stable key for React.
+  const entryKey = (e: LeaderboardEntry, idx: number) =>
+    `${e.rank}-${e.name}-${idx}`;
 
   return (
     <View style={styles.c}>
@@ -209,8 +213,8 @@ export default function LeaderboardScreen() {
             {/* Podium (top 3) */}
             {(data?.entries?.length ?? 0) > 0 ? (
               <View style={styles.podium}>
-                {data!.entries.slice(0, 3).map((e) => (
-                  <PodiumSlot key={e.user_id} entry={e} you={isYou(e.user_id)} />
+                {data!.entries.slice(0, 3).map((e, i) => (
+                  <PodiumSlot key={entryKey(e, i)} entry={e} you={!!e.is_you} />
                 ))}
               </View>
             ) : null}
@@ -218,8 +222,8 @@ export default function LeaderboardScreen() {
             {/* Rank rows 4+ */}
             {(data?.entries?.length ?? 0) > 3 ? (
               <View style={styles.rankList}>
-                {data!.entries.slice(3).map((e) => (
-                  <RankRow key={e.user_id} entry={e} you={isYou(e.user_id)} />
+                {data!.entries.slice(3).map((e, i) => (
+                  <RankRow key={entryKey(e, i + 3)} entry={e} you={!!e.is_you} />
                 ))}
               </View>
             ) : null}

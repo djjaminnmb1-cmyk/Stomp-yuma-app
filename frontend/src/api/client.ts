@@ -30,7 +30,9 @@ export type User = {
 export type LeaderboardRange = "all" | "week" | "month";
 export type LeaderboardEntry = {
   rank: number;
-  user_id: string;
+  // NOTE: `user_id` is intentionally NOT returned by the public endpoint —
+  // only the caller's `is_you` flag exposes identity for highlighting.
+  is_you?: boolean;
   name: string;
   picture: string;
   count: number;

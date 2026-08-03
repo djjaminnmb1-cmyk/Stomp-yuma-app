@@ -314,7 +314,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Practice Mode: wood-block metronome with countdown + BPM slider"
+    - "Backend refactor: verify all API endpoints still work after modularization"
   stuck_tasks: []
   test_all: false
   test_priority: "sequential"
@@ -326,3 +326,22 @@ agent_communication:
       playback is confirmed via HTTP 200 for the bundled WAV; live sound cannot be perceived from
       a headless screenshot but plays via expo-audio on-device. Next feature (Enhanced search /
       filter) pending user go-ahead per confirmed roadmap.
+  - agent: "main"
+    message: |
+      Backend refactor complete. `server.py` reduced from 2,434 lines → 66 lines (thin entrypoint).
+      Code split into:
+        • core/     — config, database, security, rate_limit, email_service, push_service,
+                      reset_tokens, serialize, time_helpers
+        • models/   — schemas.py (all Pydantic models)
+        • routes/   — auth, dances, tracking, classes, suggestions, chat, leaderboard,
+                      dashboard, song_preview, push, misc  (each < 400 lines)
+        • services/ — scheduler (24h class reminders), startup (indexes + seed data + accounts)
+      Zero API surface changes — every URL, HTTP verb, request/response shape preserved.
+      Verified locally via curl:
+        • /api/, /api/venue, /api/dances, /api/classes, /api/leaderboard, /api/song-preview
+          all return 200 with correct payload.
+        • /api/auth/login → token → /api/auth/me, /api/instructor/dashboard,
+          /api/tracking/me, /api/chat/messages, /api/suggestions, /api/dances/removed,
+          /api/leaderboard (authed) all return 200 as expected.
+      Backend supervisor logs are clean with no import or runtime warnings.
+      Needs: comprehensive backend regression via testing_agent.

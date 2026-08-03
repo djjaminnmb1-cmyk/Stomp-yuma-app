@@ -1,0 +1,149 @@
+"""Pydantic request/response models used across routes.
+
+Grouped in one module because they're small and heavily cross-referenced;
+splitting them per-resource added imports with little payoff. If any group
+grows large we can promote it to its own file.
+"""
+from __future__ import annotations
+
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, Field
+
+
+# ---------------- Auth ----------------
+class UserOut(BaseModel):
+    user_id: str
+    email: str
+    name: str
+    picture: Optional[str] = None
+    is_admin: bool = False
+    is_instructor: bool = False
+    auth_provider: str = "email"
+
+
+class RegisterIn(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    # Self-serve instructor role at signup, if code matches server's INSTRUCTOR_CODE.
+    instructor_code: Optional[str] = None
+
+
+class SetInstructorIn(BaseModel):
+    instructor_code: str  # server checks against INSTRUCTOR_CODE env
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class GoogleSessionIn(BaseModel):
+    session_id: str
+
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
+# ---------------- Dance ----------------
+class DanceIn(BaseModel):
+    name: str
+    choreographer: str
+    choreographer_country: Optional[str] = ""
+    song: str
+    artist: Optional[str] = ""
+    difficulty: str  # Beginner / Improver / Intermediate / Advanced
+    bpm: Optional[int] = None
+    count: Optional[str] = None  # e.g. "32 count, 4 wall"
+    youtube_url: Optional[str] = ""
+    step_sheet: Optional[str] = ""
+    step_sheet_image: Optional[str] = ""  # base64 data URL
+    description: Optional[str] = ""
+    tags: Optional[List[str]] = []
+    is_published: Optional[bool] = None  # None = keep existing / creation default
+
+
+class DanceImportRow(BaseModel):
+    name: str
+    choreographer: Optional[str] = ""
+    song: Optional[str] = ""
+    artist: Optional[str] = ""
+    difficulty: Optional[str] = "Beginner"
+    bpm: Optional[int] = None
+    count: Optional[str] = ""
+    youtube_url: Optional[str] = ""
+    step_sheet: Optional[str] = ""
+
+
+class DanceImportBody(BaseModel):
+    dances: List[DanceImportRow]
+    publish_all: bool = False
+
+
+class DanceOut(DanceIn):
+    id: str
+    created_at: str
+
+
+# ---------------- Tracking ----------------
+class TrackingIn(BaseModel):
+    status: str  # completed | wishlist
+    rating: Optional[int] = 0  # 0..5
+    notes: Optional[str] = ""
+
+
+class TrackingOut(BaseModel):
+    dance_id: str
+    status: str
+    rating: int
+    notes: str
+    updated_at: str
+
+
+# ---------------- Classes ----------------
+class ClassSessionIn(BaseModel):
+    date: str  # YYYY-MM-DD
+    session_label: Optional[str] = ""  # e.g. "Friday Night", "Beginner Class"
+    dance_ids: List[str] = []
+    notes: Optional[str] = ""
+    flyer_image: Optional[str] = ""  # base64 data URL, senior instructors only
+
+
+# ---------------- Push ----------------
+class RegisterPushBody(BaseModel):
+    user_id: str
+    platform: str  # "android" | "ios"
+    device_token: str
+
+
+# ---------------- Chat ----------------
+class ChatMessageIn(BaseModel):
+    message: str
+
+
+# ---------------- Suggestions ----------------
+class SuggestionIn(BaseModel):
+    dance_name: str
+    song: Optional[str] = ""
+    artist: Optional[str] = ""
+    difficulty: Optional[str] = ""
+    youtube_url: Optional[str] = ""
+    # Direct URL to the choreographer's official step sheet (CopperKnob,
+    # BootStepper, choreographer's own site, etc.). We do not host copies.
+    step_sheet_url: Optional[str] = ""
+    # Optional user-uploaded photo of the step sheet, base64 data URL.
+    # The user must confirm it's the choreographer's official sheet.
+    step_sheet_image: Optional[str] = ""
+    notes: Optional[str] = ""
+
+
+# ---------------- Leaderboard ----------------
+class LeaderboardOptInBody(BaseModel):
+    show_on_leaderboard: bool
