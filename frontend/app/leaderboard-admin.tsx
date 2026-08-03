@@ -57,7 +57,7 @@ const TABS: { key: TabKey; label: string; icon: any }[] = [
 export default function LeaderboardAdmin() {
   const router = useRouter();
   const params = useLocalSearchParams<{ range?: string }>();
-  const { token, user } = useAuth();
+  const { token, user, loading: authLoading } = useAuth();
 
   const initialRange: LeaderboardRange =
     (params.range as LeaderboardRange) === "week" ||
@@ -142,6 +142,19 @@ export default function LeaderboardAdmin() {
   useEffect(() => {
     if (tab === "season") loadSeason();
   }, [tab, loadSeason]);
+
+  // While auth is still bootstrapping, show a spinner rather than the
+  // "Admin only" gate — otherwise a direct URL open flashes the gate then
+  // pops into the console once the token is restored from storage.
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.c}>
+        <View style={styles.notAdmin}>
+          <ActivityIndicator color={colors.brandPrimary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!user?.is_admin) {
     // Should never reach here (gear icon only shows for admins) but guard.

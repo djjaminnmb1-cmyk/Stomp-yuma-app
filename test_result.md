@@ -314,7 +314,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Backend refactor: verify all API endpoints still work after modularization"
+    - "New: Recently Practiced (backend + Home tab)"
+    - "New: Leaderboard Prizes (public list + admin CRUD)"
+    - "New: Admin Leaderboard controls (hide/unhide, reset user, season reset)"
+    - "New: Instructor trend endpoint + chart"
+    - "New: Share button on Celebrate screen"
+    - "P0 fix: undo-completion toggle on dance detail"
   stuck_tasks: []
   test_all: false
   test_priority: "sequential"

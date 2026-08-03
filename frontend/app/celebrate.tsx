@@ -1,11 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   ImageBackground,
   Platform,
   Dimensions,
   Pressable,
+  Share,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -39,7 +42,7 @@ const ORBIT_CENTER_Y = SCREEN_H * 0.62;
 const ORBIT_RADIUS = Math.min(SCREEN_W * 0.32, 130);
 const LOGO_SIZE = 110;
 const CIRCLE_MS = 2500;
-const AUTO_DISMISS_MS = 3600; // Give the user an extra beat to read the name.
+const AUTO_DISMISS_MS = 6000; // Extra time so users can hit Share before we bail out.
 
 export default function CelebrateScreen() {
   const router = useRouter();
@@ -50,6 +53,17 @@ export default function CelebrateScreen() {
 
   const t = useSharedValue(0);
   const orbit = useSharedValue(0);
+  // Auto-dismiss timer handle — kept in a ref so Share can cancel it.
+  const dismissTimerRef = useRef<any>(null);
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const cancelAutoDismiss = () => {
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+  };
 
   useEffect(() => {
     t.value = withDelay(
@@ -62,8 +76,8 @@ export default function CelebrateScreen() {
     });
 
     // Auto-dismiss back to the dance detail if the user doesn't tap Done.
-    const timer = setTimeout(() => goBack(), AUTO_DISMISS_MS);
-    return () => clearTimeout(timer);
+    dismissTimerRef.current = setTimeout(() => goBack(), AUTO_DISMISS_MS);
+    return () => cancelAutoDismiss();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -76,6 +90,65 @@ export default function CelebrateScreen() {
       }
     } catch {
       router.replace("/(tabs)");
+    }
+  };
+
+  /**
+   * Compose a short shareable message and hand it off to the platform.
+   *
+   * - Native (iOS/Android): the RN `Share` API opens the standard system
+   *   sheet (SMS / Messages / iMessage / Twitter / Instagram / etc.).
+   * - Web: prefer the browser's Web Share API when available (mobile
+   *   browsers + Safari); fall back to writing to clipboard with a small
+   *   inline "Copied!" state so users still get *something* useful on
+   *   desktop where system share dialogs don't exist.
+   */
+  const handleShare = async () => {
+    if (sharing) return;
+    cancelAutoDismiss(); // Never dismiss underneath the user while sharing.
+    setSharing(true);
+    try {
+      const label = danceName ? `"${danceName}"` : "a new dance";
+      const milestoneLine =
+        totalCount === 1
+          ? " That's my first one 🎉"
+          : totalCount && totalCount > 1
+            ? ` That makes ${totalCount} dances down!`
+            : "";
+      const message =
+        `I just learned ${label} at Stompin' Ground Yuma! 🤠${milestoneLine}\n` +
+        `— come line dance with us in Yuma, AZ.`;
+
+      if (Platform.OS === "web") {
+        const nav = (globalThis as any).navigator;
+        if (nav?.share) {
+          try {
+            await nav.share({ title: "Stompin' Ground Yuma", text: message });
+            return;
+          } catch (e: any) {
+            if (e?.name === "AbortError") return; // user cancelled
+            // Fall through to clipboard on any other error.
+          }
+        }
+        if (nav?.clipboard?.writeText) {
+          await nav.clipboard.writeText(message);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2500);
+          return;
+        }
+        Alert.alert("Shareable text", message);
+        return;
+      }
+
+      // Native path
+      await Share.share(
+        { message, title: "Stompin' Ground Yuma" },
+        { dialogTitle: "Share your dance" }
+      );
+    } catch {
+      /* Silently ignore — sharing is a nice-to-have, never a blocker. */
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -169,6 +242,27 @@ export default function CelebrateScreen() {
         />
 
         <View style={styles.doneWrap} pointerEvents="box-none">
+          <Pressable
+            onPress={handleShare}
+            onPressIn={cancelAutoDismiss}
+            disabled={sharing}
+            style={[styles.shareBtn, sharing && { opacity: 0.6 }]}
+            testID="celebrate-share"
+            accessibilityLabel="Share your win"
+          >
+            <Ionicons
+              name={copied ? "checkmark" : "share-social"}
+              size={18}
+              color="#fff"
+            />
+            <Text style={styles.shareBtnText}>
+              {copied
+                ? "Copied!"
+                : sharing
+                  ? "Opening…"
+                  : "Share your win"}
+            </Text>
+          </Pressable>
           <Pressable
             onPress={goBack}
             style={styles.doneBtn}
@@ -281,6 +375,31 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: spacing.lg,
     bottom: spacing.xl,
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+  },
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.55)",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  shareBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 13,
+    letterSpacing: 0.3,
   },
   doneBtn: {
     width: 52,

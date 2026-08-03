@@ -23,9 +23,11 @@ import {
   DashboardTopDance,
   DashboardRecentClass,
   InstructorDashboard,
+  InstructorTrend,
 } from "@/src/api/client";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
+import AttendanceTrendChart from "@/src/components/AttendanceTrendChart";
 
 /**
  * Instructor Dashboard
@@ -39,19 +41,29 @@ type SortKey = "completed" | "attendance" | "last_active" | "name";
 
 export default function InstructorDashboardScreen() {
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { token, user, loading: authLoading } = useAuth();
   const [data, setData] = useState<InstructorDashboard | null>(null);
+  const [trend, setTrend] = useState<InstructorTrend | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("completed");
   const [error, setError] = useState<string | null>(null);
+  const [showAtt, setShowAtt] = useState(true);
+  const [showCmp, setShowCmp] = useState(true);
+  // Chart width matches the parent card's inner width. We use screen width
+  // minus horizontal paddings for a stable, responsive layout.
+  const [chartWidth, setChartWidth] = useState(320);
 
   const load = useCallback(async () => {
     if (!token) return;
     try {
-      const d = await api.getInstructorDashboard(token);
+      const [d, t] = await Promise.all([
+        api.getInstructorDashboard(token),
+        api.getInstructorTrend(token, 8).catch(() => null),
+      ]);
       setData(d);
+      setTrend(t);
       setError(null);
     } catch (e: any) {
       setError(e?.message || "Could not load dashboard");
@@ -62,13 +74,21 @@ export default function InstructorDashboardScreen() {
   }, [token]);
 
   useEffect(() => {
+    // Wait for the auth context to resolve before deciding.
+    if (authLoading) return;
     if (!user || (!user.is_admin && !user.is_instructor)) {
       // Non-instructor bumped back — this route is admin/instructor only.
-      router.replace("/");
+      // Defer to next tick so the Root Layout has definitely mounted
+      // even on a cold direct navigation to this URL.
+      setTimeout(() => {
+        try {
+          router.replace("/");
+        } catch {}
+      }, 0);
       return;
     }
     load();
-  }, [load, router, user]);
+  }, [load, router, user, authLoading]);
 
   // Filter + sort roster.
   const filteredStudents = useMemo(() => {
@@ -268,6 +288,51 @@ export default function InstructorDashboardScreen() {
               tint={colors.brandPrimary}
             />
           </View>
+
+          {/* 8-week activity trend */}
+          <SectionCard
+            title="8-week activity trend"
+            subtitle="Attendance vs. completions per week."
+            icon="stats-chart"
+          >
+            {trend && trend.weeks.length > 0 ? (
+              <View
+                style={styles.trendWrap}
+                onLayout={(e) =>
+                  setChartWidth(Math.max(280, e.nativeEvent.layout.width))
+                }
+              >
+                <AttendanceTrendChart
+                  weeks={trend.weeks}
+                  width={chartWidth}
+                  height={170}
+                  showAttendance={showAtt}
+                  showCompletions={showCmp}
+                />
+                <View style={styles.legendRow}>
+                  <LegendChip
+                    on={showAtt}
+                    onPress={() => setShowAtt((v) => !v)}
+                    color={colors.brandSecondary}
+                    label={`Attendance · ${trend.totals.attendance}`}
+                  />
+                  <LegendChip
+                    on={showCmp}
+                    onPress={() => setShowCmp((v) => !v)}
+                    color={colors.brandPrimary}
+                    label={`Completions · ${trend.totals.completions}`}
+                  />
+                </View>
+                <Text style={styles.trendFoot}>
+                  Peak week: {trend.peaks.attendance} attendance ·{" "}
+                  {trend.peaks.completions} completions · {trend.totals.classes}{" "}
+                  class{trend.totals.classes === 1 ? "" : "es"} taught
+                </Text>
+              </View>
+            ) : (
+              <EmptyLine text="Not enough activity yet — check back once the community picks up." />
+            )}
+          </SectionCard>
 
           {/* Top completed dances */}
           <SectionCard
@@ -560,6 +625,30 @@ function EmptyLine({ text }: { text: string }) {
     <View style={styles.emptyLine}>
       <Text style={styles.emptyLineText}>{text}</Text>
     </View>
+  );
+}
+
+function LegendChip({
+  on,
+  onPress,
+  color,
+  label,
+}: {
+  on: boolean;
+  onPress: () => void;
+  color: string;
+  label: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.legendChip, !on && { opacity: 0.45 }]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+    >
+      <View style={[styles.legendSwatch, { backgroundColor: color }]} />
+      <Text style={styles.legendText}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -858,5 +947,42 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 12,
     fontStyle: "italic",
+  },
+
+  // ---- Trend chart ----
+  trendWrap: {
+    gap: spacing.sm,
+  },
+  legendRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    flexWrap: "wrap",
+  },
+  legendChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  legendSwatch: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 12,
+    color: colors.onSurface,
+    fontWeight: "700",
+  },
+  trendFoot: {
+    fontSize: 11,
+    color: colors.muted,
+    fontStyle: "italic",
+    marginTop: 2,
   },
 });

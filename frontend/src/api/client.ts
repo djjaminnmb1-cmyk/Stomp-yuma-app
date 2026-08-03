@@ -108,6 +108,18 @@ export type InstructorDashboard = {
   recent_classes: DashboardRecentClass[];
 };
 
+export type TrendWeek = {
+  week_start: string;
+  attendance: number;
+  completions: number;
+  classes: number;
+};
+export type InstructorTrend = {
+  weeks: TrendWeek[];
+  totals: { attendance: number; completions: number; classes: number };
+  peaks: { attendance: number; completions: number };
+};
+
 export type Dance = {
   id: string;
   name: string;
@@ -241,6 +253,8 @@ export const api = {
   // ---------------- Instructor Dashboard ----------------
   getInstructorDashboard: (token: string) =>
     req<InstructorDashboard>("/instructor/dashboard", {}, token),
+  getInstructorTrend: (token: string, weeks = 8) =>
+    req<InstructorTrend>(`/instructor/trend?weeks=${weeks}`, {}, token),
   forgotPassword: (email: string) =>
     req<{ ok: boolean; message: string }>("/auth/forgot-password", {
       method: "POST",

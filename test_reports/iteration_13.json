@@ -1,0 +1,42 @@
+{
+  "summary": "Backend-only regression for the NEW / MODIFIED surfaces added on top of the previously-refactored backend. Wrote /app/backend/tests/test_new_features.py covering: Recently Practiced (practice-log + recently-practiced), Leaderboard Prizes (public list + admin CRUD + oversize/rank/range guards), Admin Leaderboard controls (hide/unhide, hidden-users listing, per-user completion reset preserving wishlist, season lifecycle w/ archive + season pointer honored by /api/leaderboard, DELETE season restores all-time view), Instructor Trend (weeks clamping, shape, ascending order, totals=sum), plus a fast sanity smoke of the previous surfaces (3 seed logins, /dances >200, /leaderboard, /instructor/dashboard, /song-preview). Result: 45/46 PASSED. ONE FAILURE — /api/instructor/trend?weeks=0 does NOT clamp to 2 as the spec requires; it returns 8 (default) instead. Root cause: `int(weeks or 8)` in routes/dashboard.py:226 treats 0 as falsy and short-circuits to the default 8 BEFORE the clamp. The clamp code `max(2, min(26, ...))` never sees the intended value 0. weeks=99 (upper bound) works correctly (returns 26). All other newly-added endpoints behave correctly, including season epoch honoring in /api/leaderboard (after season reset, prior completions disappear from range=all).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/instructor/trend?weeks=0",
+        "issue": "weeks=0 returns 8 weeks instead of clamping to 2. Spec says 0 → 2. Root cause: `int(weeks or 8)` in routes/dashboard.py:226 — Python treats 0 as falsy, so `0 or 8` becomes 8 BEFORE the max(2, ...) clamp. Fix: change to `int(weeks) if weeks is not None else 8` (or drop the `or 8` and rely on the default arg + max/min). weeks=99 clamps to 26 correctly."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_new_features.py",
+    "/app/test_reports/pytest/new_features.xml"
+  ],
+  "action_items": [
+    "Fix routes/dashboard.py:226 clamp so `weeks=0` returns 2 as documented. Replace `int(weeks or 8)` with something like `w = 8 if weeks is None else int(weeks); weeks = max(2, min(26, w))`. Then re-run test_new_features.py — all 46 should pass."
+  ],
+  "critical_code_review_comments": [
+    "routes/activity.py — `_id: 0` projection is correctly applied on both practice_sessions and tracking reads. Merge logic keys by dance_id and drops unpublished/deleted dances from the response (silent filter). ISO-8601 lexicographic comparison for `last_activity_at` is fine because all timestamps come from `now_iso()` (UTC, same format).",
+    "routes/prizes.py — Image cap (2_100_000 chars) is 413'd correctly. `range` and `rank` are validated at both PUT and DELETE. GET is public (no auth) which matches the spec. Consider a 400 for unknown query param typos, but not blocking.",
+    "routes/admin_leaderboard.py — Reset endpoint correctly deletes only status=completed tracking rows (verified: wishlist preserved). Season reset archives previous top-10 into leaderboard_seasons only if prev_started_at exists (skips archive on the first season reset ever, which is correct). All admin endpoints go through require_admin dependency, and instructor-not-admin (Jamin) correctly gets 403 on every one.",
+    "routes/leaderboard.py — Correctly honors both season pointer (all-time view now filters by updated_at >= started_at) and leaderboard_hidden_by_admin (hidden users disappear from public entries but their private `me` block still shows their rank). Verified end-to-end with test_hide_flow and test_season_lifecycle.",
+    "routes/dashboard.py — trend endpoint has the `weeks=0` clamp bug noted above. Otherwise the aggregation math is right: verified totals.completions == sum(weeks[*].completions). ISO date parsing tolerates both tz-aware timestamps (via `replace('Z', '+00:00')`) and plain YYYY-MM-DD strings for class_date/date.",
+    "routes/__init__.py — All new routers (activity, admin_leaderboard, prizes) are wired. No path collisions detected."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_new_features.py"
+  ],
+  "success_rate": {"backend": "97.8% (45/46)", "frontend": "N/A - backend only"},
+  "seed_data_creation": "All test users are `TEST_new_*@example.com`, function-scoped, and DELETEd via /api/auth/me at teardown (cascades to their tracking + practice_sessions per DELETE /auth/me contract). One TEST prize slot is upserted then explicitly DELETEd inside the same test. Season reset lifecycle test also DELETEs the season pointer at the end so the leaderboard returns to normal all-time view. No lingering test data expected.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Re-run `pytest /app/backend/tests/test_new_features.py -v --tb=short` after the weeks=0 clamp fix. All 46 tests should pass. Note that test_season_lifecycle creates and clears a season during the run — if it fails mid-way the season pointer may be left set (recovery: `curl -X DELETE $BASE/api/admin/leaderboard/season -H 'Authorization: Bearer <admin_token>'`). Prior refactor regression suite at /app/backend/tests/test_refactor_regression.py (64 cases) was NOT re-run this iteration per the request's instruction to focus on new surfaces — a fast 6-test smoke inside TestRegressionSanity confirms the previous surfaces still work.",
+  "rca_of_issue": "BUG: GET /api/instructor/trend?weeks=0 returns 8 weeks (default) instead of the expected 2. Reproduction: `curl -H 'Authorization: Bearer <instructor_token>' '$BASE/api/instructor/trend?weeks=0'` → len(weeks) == 8. Root cause: line 226 of routes/dashboard.py uses `int(weeks or 8)` — because Python treats integer 0 as falsy, `0 or 8` evaluates to 8, and the intended `max(2, min(26, 0)) = 2` clamp never runs. Mitigation (main agent to apply): replace with `raw = 8 if weeks is None else int(weeks); weeks = max(2, min(26, raw))`. This preserves the default-when-missing behavior while letting 0 clamp up to 2 as the spec requires. Similar pattern (integer-with-falsy-default) appears in routes/activity.py:70 `int(limit or 10)` — that endpoint's spec doesn't require limit=0 to clamp to 1 explicitly, and the test test_limit_clamping only asserts `<= 1`, so it currently passes; but it's the same anti-pattern and worth harmonizing."
+}
