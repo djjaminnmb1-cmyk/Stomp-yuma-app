@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { colors, spacing, radius } from "@/src/theme";
-import { api, LeaderboardEntry, LeaderboardResponse, LeaderboardRange } from "@/src/api/client";
+import { api, LeaderboardEntry, LeaderboardPrize, LeaderboardResponse, LeaderboardRange } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 
 const RANGES: { key: LeaderboardRange; label: string; icon: any }[] = [
@@ -23,21 +23,40 @@ const RANGES: { key: LeaderboardRange; label: string; icon: any }[] = [
   { key: "all", label: "All Time", icon: "trophy" },
 ];
 
+function ordinal(n: number): string {
+  if (n === 1) return "1st";
+  if (n === 2) return "2nd";
+  if (n === 3) return "3rd";
+  return `${n}th`;
+}
+
+function prizeBadgeStyle(rank: number) {
+  if (rank === 1) return { backgroundColor: "#F2A628" };
+  if (rank === 2) return { backgroundColor: "#B0B0B0" };
+  return { backgroundColor: "#C08040" };
+}
+
 export default function LeaderboardScreen() {
   const router = useRouter();
   const { token, user, updateUser } = useAuth();
   const [range, setRange] = useState<LeaderboardRange>("all");
   const [data, setData] = useState<LeaderboardResponse | null>(null);
+  const [prizes, setPrizes] = useState<LeaderboardPrize[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [toggling, setToggling] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const d = await api.getLeaderboard(range, 20, token || undefined);
+      const [d, p] = await Promise.all([
+        api.getLeaderboard(range, 20, token || undefined),
+        api.listPrizes(range).catch(() => ({ range, prizes: [] as LeaderboardPrize[] })),
+      ]);
       setData(d);
+      setPrizes(p.prizes || []);
     } catch {
       setData(null);
+      setPrizes([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,7 +108,19 @@ export default function LeaderboardScreen() {
             <Text style={styles.eyebrow}>Boot Scoot Board</Text>
             <Text style={styles.headerTitle}>Leaderboard</Text>
           </View>
-          <Ionicons name="trophy" size={26} color="#fff" />
+          {user?.is_admin ? (
+            <Pressable
+              onPress={() => router.push({ pathname: "/leaderboard-admin", params: { range } })}
+              testID="lb-admin"
+              style={styles.iconBtn}
+              hitSlop={12}
+              accessibilityLabel="Manage leaderboard"
+            >
+              <Ionicons name="settings-sharp" size={22} color="#fff" />
+            </Pressable>
+          ) : (
+            <Ionicons name="trophy" size={26} color="#fff" />
+          )}
         </View>
 
         {/* Range picker */}
@@ -208,6 +239,61 @@ export default function LeaderboardScreen() {
                       : "Be the first to top the board! Mark a dance completed on any dance page."}
                 </Text>
               </View>
+            ) : null}
+
+            {/* Prizes for this range */}
+            {prizes.some((p) => p.title || p.description || p.image) ? (
+              <View style={styles.prizesCard}>
+                <View style={styles.prizesHeader}>
+                  <Ionicons name="gift" size={16} color={colors.brandPrimary} />
+                  <Text style={styles.prizesTitle}>
+                    Prizes {range === "week" ? "this week" : range === "month" ? "this month" : "up for grabs"}
+                  </Text>
+                </View>
+                <View style={styles.prizesRow}>
+                  {prizes
+                    .filter((p) => p.title || p.description || p.image)
+                    .map((p) => (
+                      <View key={`${p.range}-${p.rank}`} style={styles.prizeSlot}>
+                        <View style={[styles.prizeRankBadge, prizeBadgeStyle(p.rank)]}>
+                          <Text style={styles.prizeRankText}>{ordinal(p.rank)}</Text>
+                        </View>
+                        {p.image ? (
+                          <Image source={{ uri: p.image }} style={styles.prizeImage} />
+                        ) : (
+                          <View style={[styles.prizeImage, styles.prizeImagePh]}>
+                            <Ionicons
+                              name={p.rank === 1 ? "trophy" : p.rank === 2 ? "medal" : "ribbon"}
+                              size={30}
+                              color={colors.brandPrimary}
+                            />
+                          </View>
+                        )}
+                        {p.title ? (
+                          <Text style={styles.prizeSlotTitle} numberOfLines={2}>
+                            {p.title}
+                          </Text>
+                        ) : null}
+                        {p.description ? (
+                          <Text style={styles.prizeSlotDesc} numberOfLines={3}>
+                            {p.description}
+                          </Text>
+                        ) : null}
+                      </View>
+                    ))}
+                </View>
+              </View>
+            ) : user?.is_admin ? (
+              <Pressable
+                onPress={() => router.push({ pathname: "/leaderboard-admin", params: { range } })}
+                testID="lb-add-prizes"
+                style={styles.prizesEmpty}
+              >
+                <Ionicons name="gift-outline" size={20} color={colors.brandPrimary} />
+                <Text style={styles.prizesEmptyText}>
+                  Add prizes for the top 3 → tap to edit
+                </Text>
+              </Pressable>
             ) : null}
 
             {/* Podium (top 3) */}
@@ -654,5 +740,93 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: spacing.md,
     fontStyle: "italic",
+  },
+
+  // ---- Prizes card ----
+  prizesCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.brandTertiary + "66",
+    marginBottom: spacing.md,
+  },
+  prizesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: spacing.md,
+  },
+  prizesTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.onSurface,
+    letterSpacing: 0.3,
+  },
+  prizesRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    gap: spacing.sm,
+  },
+  prizeSlot: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+    maxWidth: 130,
+  },
+  prizeRankBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    marginBottom: 6,
+  },
+  prizeRankText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+  prizeImage: {
+    width: 60,
+    height: 60,
+    borderRadius: radius.md,
+    marginBottom: 4,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  prizeImagePh: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+  },
+  prizeSlotTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.onSurface,
+    textAlign: "center",
+  },
+  prizeSlotDesc: {
+    fontSize: 10,
+    color: colors.onSurfaceSecondary,
+    textAlign: "center",
+  },
+  prizesEmpty: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: colors.brandPrimary + "0F",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.brandPrimary + "55",
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+  },
+  prizesEmptyText: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    fontSize: 13,
   },
 });

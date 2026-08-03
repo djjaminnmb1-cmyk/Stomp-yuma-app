@@ -53,6 +53,15 @@ export type LeaderboardResponse = {
   } | null;
 };
 
+export type LeaderboardPrize = {
+  range: LeaderboardRange;
+  rank: 1 | 2 | 3;
+  title: string;
+  description: string;
+  image: string;
+  updated_at?: string;
+};
+
 // ---------------- Instructor Dashboard ----------------
 export type DashboardOverview = {
   total_students: number;
@@ -414,4 +423,75 @@ export const api = {
         practice_count: number;
       }[];
     }>(`/recently-practiced?limit=${limit}`, {}, token),
+
+  // ---------------- Leaderboard Prizes ----------------
+  listPrizes: (range: LeaderboardRange = "all") =>
+    req<{ range: LeaderboardRange; prizes: LeaderboardPrize[] }>(
+      `/leaderboard/prizes?range=${range}`
+    ),
+  upsertPrize: (
+    rank: 1 | 2 | 3,
+    range: LeaderboardRange,
+    body: { title: string; description: string; image?: string },
+    token: string
+  ) =>
+    req<LeaderboardPrize>(
+      `/admin/leaderboard/prizes/${rank}?range=${range}`,
+      { method: "PUT", body: JSON.stringify(body) },
+      token
+    ),
+  deletePrize: (rank: 1 | 2 | 3, range: LeaderboardRange, token: string) =>
+    req<{ ok: boolean }>(
+      `/admin/leaderboard/prizes/${rank}?range=${range}`,
+      { method: "DELETE" },
+      token
+    ),
+
+  // ---------------- Admin Leaderboard Management ----------------
+  adminListHiddenUsers: (token: string) =>
+    req<{
+      hidden_user_ids: string[];
+      users: { user_id: string; name: string; email?: string }[];
+    }>("/admin/leaderboard/hidden-users", {}, token),
+  adminHideFromLeaderboard: (user_id: string, token: string) =>
+    req<{ ok: boolean; user_id: string; hidden: boolean }>(
+      `/admin/leaderboard/users/${user_id}/hide`,
+      { method: "POST" },
+      token
+    ),
+  adminUnhideFromLeaderboard: (user_id: string, token: string) =>
+    req<{ ok: boolean; user_id: string; hidden: boolean }>(
+      `/admin/leaderboard/users/${user_id}/unhide`,
+      { method: "POST" },
+      token
+    ),
+  adminResetUserCount: (user_id: string, token: string) =>
+    req<{ ok: boolean; removed_completions: number }>(
+      `/admin/leaderboard/users/${user_id}/reset`,
+      { method: "POST" },
+      token
+    ),
+  adminGetSeason: (token: string) =>
+    req<{
+      current: { started_at?: string; label?: string; started_by?: string };
+      past: {
+        id: string;
+        label: string;
+        started_at: string;
+        ended_at: string;
+        top: { rank: number; name: string; count: number; picture: string }[];
+      }[];
+    }>("/admin/leaderboard/season", {}, token),
+  adminResetSeason: (label: string, token: string) =>
+    req<{ ok: boolean; started_at: string; label: string }>(
+      "/admin/leaderboard/season/reset",
+      { method: "POST", body: JSON.stringify({ label }) },
+      token
+    ),
+  adminClearSeason: (token: string) =>
+    req<{ ok: boolean }>(
+      "/admin/leaderboard/season",
+      { method: "DELETE" },
+      token
+    ),
 };

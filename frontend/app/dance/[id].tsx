@@ -697,6 +697,7 @@ export default function DanceDetail() {
         danceBpm={dance.bpm ?? null}
         song={dance.song}
         artist={dance.artist}
+        danceId={dance.id}
       />
     </View>
   );

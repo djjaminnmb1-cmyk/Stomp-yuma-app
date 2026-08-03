@@ -25,6 +25,8 @@ import * as Haptics from "expo-haptics";
 import { colors, radius, spacing } from "@/src/theme";
 import { useMetronome } from "@/src/hooks/useMetronome";
 import { fetchSongPreview, type SongPreview } from "@/src/lib/song-preview";
+import { api } from "@/src/api/client";
+import { useAuth } from "@/src/context/auth-context";
 
 /**
  * PracticeModePanel
@@ -59,6 +61,7 @@ type Props = {
   danceBpm?: number | null;
   song?: string | null;
   artist?: string | null;
+  danceId?: string | null;
 };
 
 export default function PracticeModePanel({
@@ -68,7 +71,9 @@ export default function PracticeModePanel({
   danceBpm,
   song,
   artist,
+  danceId,
 }: Props) {
+  const { token } = useAuth();
   const defaultBpm = clamp(danceBpm && danceBpm > 0 ? danceBpm : 96, 60, 200);
   const [bpm, setBpm] = useState<number>(defaultBpm);
   const [running, setRunning] = useState(false);
@@ -114,6 +119,14 @@ export default function PracticeModePanel({
       interruptionMode: "mixWithOthers",
     }).catch(() => {});
   }, []);
+
+  // Log the practice session (best-effort — never blocks the UI).
+  // Fires each time the modal is opened for a given dance so the "Recently
+  // Practiced" row on the Home tab reflects real usage.
+  useEffect(() => {
+    if (!visible || !danceId || !token) return;
+    api.logPractice(danceId, token).catch(() => {});
+  }, [visible, danceId, token]);
 
   // ---------- Song preview lookup ----------
   useEffect(() => {

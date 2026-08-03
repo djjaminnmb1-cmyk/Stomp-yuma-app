@@ -15,6 +15,9 @@ export default function Home() {
   const { user, token } = useAuth();
   const [recent, setRecent] = useState<Dance[]>([]);
   const [topDancers, setTopDancers] = useState<LeaderboardEntry[]>([]);
+  const [practiced, setPracticed] = useState<
+    { dance: { id: string; name: string; choreographer: string; difficulty: string; bpm: number | null }; status: string; last_activity_at: string }[]
+  >([]);
 
   useEffect(() => {
     api.listDances().then((all) => setRecent(all.slice(0, 4))).catch(() => {});
@@ -22,6 +25,14 @@ export default function Home() {
       .getLeaderboard("all", 3, token || undefined)
       .then((lb) => setTopDancers(lb.entries || []))
       .catch(() => {});
+    if (token) {
+      api
+        .recentlyPracticed(token, 8)
+        .then((r) => setPracticed(r.items || []))
+        .catch(() => {});
+    } else {
+      setPracticed([]);
+    }
   }, [token]);
 
   return (
@@ -123,6 +134,47 @@ export default function Home() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
+
+          {token && practiced.length > 0 && (
+            <View style={styles.practicedWrap}>
+              <View style={styles.practicedHeader}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="time" size={16} color={colors.brandPrimary} />
+                  <Text style={styles.practicedTitle}>Recently Practiced</Text>
+                </View>
+                <Text style={styles.practicedHint}>Pick up where you left off</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 10 }}
+              >
+                {practiced.map((p) => (
+                  <Pressable
+                    key={p.dance.id}
+                    testID={`home-practiced-${p.dance.id}`}
+                    onPress={() => router.push(`/dance/${p.dance.id}`)}
+                    style={styles.practicedCard}
+                  >
+                    <View style={styles.practicedIconBox}>
+                      <Ionicons
+                        name={p.status === "completed" ? "checkmark-done-circle" : "musical-notes"}
+                        size={20}
+                        color={p.status === "completed" ? colors.success : colors.brandPrimary}
+                      />
+                    </View>
+                    <Text style={styles.practicedCardTitle} numberOfLines={2}>
+                      {p.dance.name}
+                    </Text>
+                    <Text style={styles.practicedCardMeta} numberOfLines={1}>
+                      {p.dance.difficulty}
+                      {p.dance.bpm ? ` · ${p.dance.bpm} BPM` : ""}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
           {recent.map((d) => (
             <Pressable
               key={d.id}
@@ -323,4 +375,59 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   websiteBtnText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 15 },
+
+  // ---- Recently Practiced ----
+  practicedWrap: {
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.brandPrimary + "0F",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "33",
+  },
+  practicedHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  practicedTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
+  practicedHint: {
+    fontSize: 11,
+    color: colors.muted,
+    fontStyle: "italic",
+  },
+  practicedCard: {
+    width: 140,
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 6,
+  },
+  practicedIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.brandPrimary + "18",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  practicedCardTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.onSurface,
+    minHeight: 34,
+  },
+  practicedCardMeta: {
+    fontSize: 11,
+    color: colors.muted,
+  },
 });

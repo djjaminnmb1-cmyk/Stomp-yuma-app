@@ -71,6 +71,16 @@ async def leaderboard(
         since_iso = (now - timedelta(days=7)).isoformat()
     elif range == "month":
         since_iso = (now - timedelta(days=30)).isoformat()
+    else:
+        # All-time is scoped to the current season, if one was started by an
+        # admin. Falls back to "since the beginning of time" if no season
+        # pointer is set (default behavior).
+        season = await db.leaderboard_state.find_one(
+            {"key": "season"}, {"_id": 0, "started_at": 1}
+        )
+        started_at = (season or {}).get("started_at")
+        if started_at:
+            since_iso = started_at
 
     match: dict = {"status": "completed"}
     if since_iso:
@@ -116,6 +126,7 @@ async def leaderboard(
             "name": 1,
             "picture": 1,
             "show_on_leaderboard": 1,
+            "leaderboard_hidden_by_admin": 1,
             "is_instructor": 1,
             "is_admin": 1,
         },
@@ -142,10 +153,14 @@ async def leaderboard(
                 "last_completed_at": r.get("last_completed_at", ""),
                 "is_instructor": bool(u.get("is_instructor") or u.get("is_admin")),
                 "opted_in": bool(u.get("show_on_leaderboard")),
+                # Admin override — never shows on the public board even if
+                # the user opted in. The user themselves still sees their
+                # rank in the private ``me`` block.
+                "hidden_by_admin": bool(u.get("leaderboard_hidden_by_admin")),
             }
         )
 
-    visible = [row for row in ranked if row["opted_in"]][:limit]
+    visible = [row for row in ranked if row["opted_in"] and not row["hidden_by_admin"]][:limit]
 
     # Compute caller's personal block so they can see their rank even if
     # opted out (private to the caller). Rank is absolute among all completers.
