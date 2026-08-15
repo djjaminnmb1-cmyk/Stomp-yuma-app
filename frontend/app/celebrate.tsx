@@ -324,73 +324,76 @@ export default function CelebrateScreen() {
           testID="celebrate-dismiss"
         />
 
-        {/* Certificate theme picker — only when we have a downloadable cert.
-            Sits above the button row so users can pick before tapping. */}
-        {danceId && token ? (
-          <View style={styles.themeRow} pointerEvents="box-none">
-            <Text style={styles.themeLabel}>Certificate theme</Text>
-            <CertificateThemePicker
-              value={selectedTheme}
-              onChange={(k) => {
-                cancelAutoDismiss();
-                setSelectedTheme(k);
-              }}
-            />
-          </View>
-        ) : null}
-
-        <View style={styles.doneWrap} pointerEvents="box-none">
+        {/* Certificate theme picker + button row — stacked in a single
+            bottom panel so the button row can never overlap the pills, no
+            matter how many buttons wrap or how narrow the device is. */}
+        <View style={styles.bottomPanel} pointerEvents="box-none">
           {danceId && token ? (
+            <View style={styles.themeRow} pointerEvents="box-none">
+              <Text style={styles.themeLabel}>Certificate theme</Text>
+              <CertificateThemePicker
+                value={selectedTheme}
+                onChange={(k) => {
+                  cancelAutoDismiss();
+                  setSelectedTheme(k);
+                }}
+              />
+            </View>
+          ) : null}
+
+          <View style={styles.doneWrap} pointerEvents="box-none">
+            {danceId && token ? (
+              <Pressable
+                onPress={handleCertificate}
+                onPressIn={cancelAutoDismiss}
+                disabled={certLoading}
+                style={[styles.shareBtn, certLoading && { opacity: 0.6 }]}
+                testID="celebrate-certificate"
+                accessibilityLabel="Download certificate of completion"
+              >
+                <Ionicons
+                  name={certOk ? "checkmark-circle" : "document-text"}
+                  size={18}
+                  color="#fff"
+                />
+                <Text style={styles.shareBtnText}>
+                  {certOk
+                    ? "Downloaded!"
+                    : certLoading
+                      ? "Preparing…"
+                      : "Certificate"}
+                </Text>
+              </Pressable>
+            ) : null}
             <Pressable
-              onPress={handleCertificate}
+              onPress={handleShare}
               onPressIn={cancelAutoDismiss}
-              disabled={certLoading}
-              style={[styles.shareBtn, certLoading && { opacity: 0.6 }]}
-              testID="celebrate-certificate"
-              accessibilityLabel="Download certificate of completion"
+              disabled={sharing}
+              style={[styles.shareBtn, sharing && { opacity: 0.6 }]}
+              testID="celebrate-share"
+              accessibilityLabel="Share your win"
             >
               <Ionicons
-                name={certOk ? "checkmark-circle" : "document-text"}
+                name={copied ? "checkmark" : "share-social"}
                 size={18}
                 color="#fff"
               />
               <Text style={styles.shareBtnText}>
-                {certOk
-                  ? "Downloaded!"
-                  : certLoading
-                    ? "Preparing…"
-                    : "Certificate"}
+                {copied
+                  ? "Copied!"
+                  : sharing
+                    ? "Opening…"
+                    : "Share your win"}
               </Text>
             </Pressable>
-          ) : null}
-          <Pressable
-            onPress={handleShare}
-            onPressIn={cancelAutoDismiss}
-            disabled={sharing}
-            style={[styles.shareBtn, sharing && { opacity: 0.6 }]}
-            testID="celebrate-share"
-            accessibilityLabel="Share your win"
-          >
-            <Ionicons
-              name={copied ? "checkmark" : "share-social"}
-              size={18}
-              color="#fff"
-            />
-            <Text style={styles.shareBtnText}>
-              {copied
-                ? "Copied!"
-                : sharing
-                  ? "Opening…"
-                  : "Share your win"}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={goBack}
-            style={styles.doneBtn}
-            testID="celebrate-done"
-          >
-            <Ionicons name="checkmark" size={18} color="#fff" />
-          </Pressable>
+            <Pressable
+              onPress={goBack}
+              style={styles.doneBtn}
+              testID="celebrate-done"
+            >
+              <Ionicons name="checkmark" size={18} color="#fff" />
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
     </ImageBackground>
@@ -492,23 +495,21 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
     marginTop: 4,
   },
-  doneWrap: {
+  // ---- Bottom panel (theme picker + action buttons stacked) ----
+  // Absolutely-pinned to the bottom of the screen so the fireworks and
+  // "Nice work!" copy above always sit on top of the celebration art.
+  // Uses `flexDirection: column` with a small gap so the buttons row can
+  // never render on top of the theme picker regardless of button wrapping.
+  bottomPanel: {
     position: "absolute",
+    left: spacing.lg,
     right: spacing.lg,
     bottom: spacing.xl,
-    left: spacing.lg,
-    flexDirection: "row",
+    flexDirection: "column",
+    alignItems: "stretch",
     gap: spacing.sm,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    flexWrap: "wrap",
   },
   themeRow: {
-    position: "absolute",
-    left: spacing.lg,
-    right: spacing.lg,
-    // Sits just above the doneWrap button row.
-    bottom: 96,
     alignItems: "flex-start",
     gap: 4,
   },
@@ -521,6 +522,13 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.5)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  doneWrap: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    flexWrap: "wrap",
   },
   shareBtn: {
     flexDirection: "row",
