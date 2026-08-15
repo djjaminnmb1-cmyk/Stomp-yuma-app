@@ -308,14 +308,121 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 0
+  version: "1.1"
+  test_sequence: 16
   run_ui: false
+
+backend_new:
+  - task: "Phase 1 Gamification: Badges + Streaks endpoints and auto-award hooks"
+    implemented: true
+    working: "NA"
+    file: "backend/services/badges.py, backend/routes/badges.py, backend/routes/tracking.py, backend/routes/activity.py, backend/routes/classes.py, backend/routes/__init__.py, backend/services/startup.py, backend/core/serialize.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          NEW Phase 1 Gamification backend:
+            • services/badges.py — static badge catalog (12 badges across 5 categories:
+              milestone/streak/class/practice/variety), evaluate_badges() upserts newly
+              earned rows into db.user_badges (unique index on user_id+badge_id, safe
+              vs races), list_badges_for() returns full catalog with per-user progress,
+              bump_streak() maintains current/longest with UTC day boundary logic
+              (idempotent per-day), get_streak() auto-expires stale streaks on read.
+            • routes/badges.py — GET /api/badges (full catalog + progress + streak +
+              unseen count), POST /api/badges/mark-seen (optional ids list),
+              GET /api/streak (lightweight).
+            • Hooked award_and_streak() inline into:
+              - POST /api/tracking/{id}  (completion → streak + badges)
+              - POST /api/practice-log/{id}  (streak + badges)
+              - POST /api/classes/{id}/attend  (badges only, no streak bump)
+              → Response payload now includes newly_earned_badges + streak so the
+                client can render the celebration overlay without a second round-trip.
+            • core/serialize.user_to_out now returns current_streak / longest_streak /
+              last_streak_date fields.
+            • services/startup adds unique index on db.user_badges (user_id, badge_id)
+              + plain index on user_id.
+            • routes/auth delete_my_account now also purges user_badges rows.
+          Manually smoke-tested via curl:
+            • login → GET /badges returns 12 badges, progress derived from existing
+              tracking (Erin has 3 completed → progress:3 on milestone badges).
+            • POST /tracking/{id} (complete) → response includes
+              newly_earned_badges:[first_steps] and streak:{current:1, longest:1}.
+            • Bug found + fixed: bump_streak treated an empty projection dict as
+              "user not found" (Python empty dict is falsy). Switched to `if doc is None`.
+              Verified end-to-end: first-ever completion bumps streak from 0 → 1 and
+              writes to db.users. Second call same day is a no-op (idempotent).
+          Needs testing_agent regression: verify existing endpoints unchanged
+          (tracking/complete, tracking/wishlist, practice-log, attendance) and new
+          endpoints (badges, mark-seen, streak) work under auth + return sensible
+          shapes. Also verify streak doesn't double-count same-day activity.
+
+frontend_new:
+  - task: "Phase 1 Gamification: Achievements screen + Streak card + BadgeUnlockedOverlay"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/achievements.tsx, frontend/src/components/BadgeCard.tsx, frontend/src/components/BadgeUnlockedOverlay.tsx, frontend/src/components/StreakCard.tsx, frontend/app/(tabs)/index.tsx, frontend/app/(tabs)/profile.tsx, frontend/app/celebrate.tsx, frontend/app/dance/[id].tsx, frontend/src/api/client.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          NEW Phase 1 Gamification frontend:
+            • Types: added Badge, Streak, BadgesResponse; extended User with
+              current_streak / longest_streak / last_streak_date and Tracking with
+              newly_earned_badges + streak (from the write-response envelope).
+            • BadgeCard component (three sizes: sm/md/lg) — tinted-color-earned state
+              w/ small checkmark, greyed locked state with progress bar underneath
+              ("8 / 10 dances"), used across Achievements grid, Profile row, Home peek.
+            • StreakCard — flame icon + "N days in a row" + hint text; dormant state
+              never dance-shames a user w/ current=0.
+            • BadgeUnlockedOverlay — stacked animated cards that pop in from below
+              (spring easing, 500ms stagger between cards) then auto-fade. Uses
+              react-native-reanimated. Non-blocking (pointerEvents box-none) so
+              underlying Done button still tappable.
+            • /app/achievements.tsx — new full grid screen grouped by category with
+              hero counter ("1 / 12 BADGES UNLOCKED"), pull-to-refresh, marks unseen
+              as seen on open.
+            • Home tab — StreakCard beneath the Howdy greeting, plus an Achievements
+              row with a red-dot indicator counting unseen badges (uses useFocusEffect
+              so it refreshes every tab return).
+            • Profile tab — new "Achievements" section with StreakCard + a horizontal
+              scroll of 8 badges (earned first, sorted by earn date, then locked with
+              highest progress). Links to /achievements.
+            • Celebrate screen — receives newly_earned_badges as JSON param from
+              /dance/[id] on completion, renders BadgeUnlockedOverlay cascade; auto-
+              dismiss timer extended from 9s → 14s when badges are showing so users
+              can read every one.
+            • dance/[id] — forwards Tracking.newly_earned_badges into the celebrate
+              params.
+          Verified via screenshots:
+            • Home shows "PRACTICE STREAK 1 day in a row" + "Achievements — You
+              unlocked 1 new badge!" with red badge dot.
+            • Achievements screen renders hero counter, streak card, and badges
+              grouped by category with earned checkmarks + progress bars.
+            • Profile shows Achievements section with streak card + badge showcase.
+            • Celebrate screen after Mark-Completed shows the "BADGE UNLOCKED!
+              First Steps" card animated on top of the fireworks.
+          Ready for testing_agent regression on new UI + backwards-compat of
+          existing screens.
+
+test_plan_next:
+  current_focus:
+    - "Phase 1 Gamification backend: badges/streak endpoints + auto-award hooks"
+    - "Phase 1 Gamification frontend: Achievements screen + BadgeUnlockedOverlay"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+metadata_old:
 
 test_plan:
   current_focus:
-    - "New: PDF Certificate of Completion (backend generation + Celebrate button + My Dances icon)"
-    - "P0 fix: /api/instructor/trend weeks=0 now clamps to 2 (was returning 8)"
+    - "Phase 1: Gamification — Badges, achievements, and practice streaks"
   stuck_tasks: []
   test_all: false
   test_priority: "sequential"

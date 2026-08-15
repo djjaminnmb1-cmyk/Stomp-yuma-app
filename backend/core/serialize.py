@@ -22,6 +22,10 @@ def user_to_out(u: dict) -> dict:
         "is_instructor": bool(u.get("is_admin")) or bool(u.get("is_instructor")),
         "can_edit_step_sheets": user_can_edit_step_sheets(u),
         "show_on_leaderboard": bool(u.get("show_on_leaderboard", False)),
+        "certificate_theme": u.get("certificate_theme", "classic") or "classic",
+        "current_streak": int(u.get("current_streak") or 0),
+        "longest_streak": int(u.get("longest_streak") or 0),
+        "last_streak_date": u.get("last_streak_date", "") or "",
         "auth_provider": u.get("auth_provider", "email"),
     }
 

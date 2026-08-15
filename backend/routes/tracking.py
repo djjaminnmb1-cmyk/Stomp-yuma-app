@@ -7,6 +7,7 @@ from core.database import db
 from core.security import get_current_user
 from core.time_helpers import now_iso
 from models.schemas import TrackingIn
+from services.badges import award_and_streak, evaluate_badges, get_streak
 
 router = APIRouter()
 
@@ -50,12 +51,27 @@ async def upsert_tracking(
         {"$set": payload},
         upsert=True,
     )
+    # Streak + badge check on every completion (wishlist doesn't bump streak,
+    # only completed does, but wishlist_dreamer badge is still evaluated).
+    newly_earned: list[dict] = []
+    if inp.status == "completed":
+        award = await award_and_streak(user["user_id"])
+        newly_earned = award["newly_earned_badges"]
+        streak = award["streak"]
+    else:
+        # Non-completion (wishlist) — evaluate wishlist_dreamer et al without
+        # bumping the daily streak counter. Return the CURRENT streak (may be
+        # zero) instead of null so the client always sees the same shape.
+        newly_earned = await evaluate_badges(user["user_id"])
+        streak = await get_streak(user["user_id"])
     return {
         "dance_id": dance_id,
         "status": payload["status"],
         "rating": payload["rating"],
         "notes": payload["notes"],
         "updated_at": payload["updated_at"],
+        "newly_earned_badges": newly_earned,
+        "streak": streak,
     }
 
 

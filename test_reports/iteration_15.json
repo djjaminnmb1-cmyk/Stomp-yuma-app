@@ -1,0 +1,35 @@
+{
+  "summary": "Focused backend test on the new certificate theme feature. 21/21 tests passed (100%). GET /api/certificate-themes returns the expected shape (3 themes: classic, mardi_gras, desert_sunset — each with primary/secondary/accent/bg/ink #RRGGBB hex; default=classic), is publicly reachable without auth, and also works with an auth header. PATCH /api/users/me/certificate-theme correctly: 401 without token; 200 + {ok:true, theme:<x>} for all three valid themes; 400 with expected 'Unknown theme. Choose one of: classic, mardi_gras, desert_sunset' detail for 'bogus'; 400 for empty string; 400 for missing 'theme' field; PATCH is persisted and reflected in GET /api/auth/me under certificate_theme. GET /api/certificate/{id}?theme=mardi_gras and ?theme=desert_sunset both return 200 application/pdf with %PDF magic bytes and >1KB body; ?theme=bogus silently falls back to a valid PDF (no 400) as specified; no-?theme path reads the stored preference and still returns a valid PDF. Regression sanity confirmed: no-theme call returns valid PDF with Content-Disposition: attachment; filename=\"sgy_certificate_*.pdf\"; /api/certificate/nonexistent → 404; no auth → 401.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_certificate_theme.py",
+    "/app/test_reports/pytest/certificate_theme.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/certificate.py:330 — PATCH body uses raw dict; consider a Pydantic model (e.g. class ThemeIn(BaseModel): theme: str) for automatic 422 validation and OpenAPI docs. Current implementation still meets the spec because .get('theme','') defaults empty → hits the 'not in THEMES' branch → 400.",
+    "core/serialize.py:25 — Fallback chain u.get('certificate_theme', 'classic') or 'classic' correctly handles missing/None/empty. No issue.",
+    "routes/certificate.py:263 — theme_key normalization (strip + lower) is a nice touch and matches THEMES which are lowercase snake_case."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_certificate_theme.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "not tested (backend-only scope)"
+  },
+  "seed_data_creation": "Reused an existing dance and marked it completed for erinboroughs@gmail.com via POST /api/tracking/{dance_id} (idempotent). PATCH toggled certificate_theme between mardi_gras and classic during tests; final state restored to classic in the query-param test cleanup.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Certificate theme feature is fully green backend-side. Test file at /app/backend/tests/test_certificate_theme.py is safe to re-run — it self-heals stored preference back to classic. Three valid themes: classic, mardi_gras, desert_sunset (snake_case). Endpoints: GET /api/certificate-themes (public), PATCH /api/users/me/certificate-theme (auth, body {theme:<key>}), GET /api/certificate/{id}?theme=<key> (auth, silent fallback on unknown). user_to_out now emits certificate_theme (defaults to 'classic').",
+  "rca_of_issue": "N/A — no defects found."
+}

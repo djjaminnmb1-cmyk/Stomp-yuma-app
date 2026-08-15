@@ -1,0 +1,44 @@
+{
+  "summary": "Phase 1 Gamification backend verification — 20/20 pytest tests PASS (100%). All new endpoints (GET /api/badges, GET /api/streak, POST /api/badges/mark-seen), auto-award + streak bump on tracking/practice-log, no-streak-bump on attendance, regression on /api/tracking/me, /api/auth/me, /api/leaderboard, /api/dances, /api/classes, and user_badges cleanup on account deletion all verified live against EXPO_PUBLIC_BACKEND_URL. Also spot-checked live with Erin's account — badge catalog + progress values reflect her real completion data (4 completions → first_steps earned, progress 4/10 on getting_groovy, etc.).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/tracking/{id} (wishlist)",
+        "issue": "For status=wishlist, the response returns `streak: null` (Python None). The response shape/schema is consistent (key is present), but if any client expects the same {current,longest,last_streak_date} shape, they'd need to null-guard. Not a bug, worth noting."
+      },
+      {
+        "endpoint": "POST /api/badges/mark-seen",
+        "issue": "Empty body {} vs {ids: null} vs {ids: []} all behave the same (mark all). This matches the docstring but is not documented in an OpenAPI example — consider one integration example so clients don't send {ids: []} thinking it means 'nothing'."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_gamification.py",
+    "/app/test_reports/pytest/gamification.xml"
+  ],
+  "action_items": [
+    "No fixes required — all Phase 1 Gamification acceptance criteria are met.",
+    "Optional: consider returning the {current,longest,last_streak_date} shape (with current=0) instead of null for wishlist tracking POST responses to normalize client-side handling."
+  ],
+  "critical_code_review_comments": [
+    "services/badges.py:bump_streak uses UTC day boundary as documented — timezone drift for users in far-west timezones is a known/accepted trade-off.",
+    "evaluate_badges catches all exceptions on insert_one (unique-index race) with bare `except Exception` — swallowing other DB errors silently. Consider narrowing to DuplicateKeyError (pymongo.errors) for robustness. Non-blocking for MVP.",
+    "The 'streak' key is present but null for wishlist upserts (routes/tracking.py line 73). Client TS types should mark it Optional/nullable.",
+    "user_to_out echoes current_streak/longest_streak/last_streak_date on every /auth/me — consistent with request spec."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_gamification.py (new)"
+  ],
+  "success_rate": {"backend": "100% (20/20)", "frontend": "not tested (scope: backend only)"},
+  "seed_data_creation": "Each test creates a fresh TEST_gam_<uuid>@example.com user via /api/auth/register; delete-account test purges its own user; other test users remain but are prefixed TEST_gam_ for easy cleanup. A temporary class (session_label='TEST_gam class', date=2020-01-01) is created by fixture and cleaned up after the session.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Phase 1 gamification is green. Test file at /app/backend/tests/test_gamification.py can be re-run at any time — it's fully self-contained (registers fresh users per test) and uses EXPO_PUBLIC_BACKEND_URL from /app/frontend/.env. Idempotency of same-day streak bumps is covered. If tests are re-run and a specific user's badges leak between test cases, check that db.user_badges has its unique (user_id, badge_id) index (see backend/services/startup.py:53)."
+}

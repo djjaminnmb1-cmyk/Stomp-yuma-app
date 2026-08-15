@@ -23,7 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
 from reportlab.lib import colors as rl_colors
@@ -35,6 +35,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Image, Paragraph
 
+from pydantic import BaseModel
+
 from core.database import db
 from core.rate_limit import client_ip, throttle_check
 from core.security import get_current_user
@@ -42,12 +44,55 @@ from core.security import get_current_user
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Brand palette (matches /app/frontend/src/theme.ts warm palette).
-BRAND_PRIMARY = rl_colors.HexColor("#8B2E1E")     # burnt-orange primary
-BRAND_SECONDARY = rl_colors.HexColor("#1D3B87")   # deep blue
-BRAND_TERTIARY = rl_colors.HexColor("#F2A628")    # gold accent
-BG_CREAM = rl_colors.HexColor("#FBF3E4")          # cream page background
-INK_DARK = rl_colors.HexColor("#2A1F18")          # cocoa ink
+
+# ---------------- Themes ----------------
+# Each theme is a small immutable dict of ReportLab HexColor values. Adding
+# a new theme is a matter of dropping one more entry here — the renderer
+# reads every color from the ``theme`` dict passed in, so no other code has
+# to change.
+#
+# ``primary``   — main headline / dance-title color; also the inner border
+# ``secondary`` — recipient name + studio eyebrow color
+# ``accent``    — border outline + milestone strip + underline flourishes
+# ``bg``        — page background (subtle warm off-white per theme)
+# ``ink``       — body text color (dark, high-contrast)
+def _theme(primary: str, secondary: str, accent: str, bg: str, ink: str) -> dict:
+    return {
+        "primary": rl_colors.HexColor(primary),
+        "secondary": rl_colors.HexColor(secondary),
+        "accent": rl_colors.HexColor(accent),
+        "bg": rl_colors.HexColor(bg),
+        "ink": rl_colors.HexColor(ink),
+    }
+
+
+THEMES: dict[str, dict] = {
+    # Classic — the app's core warm palette (burnt-orange + gold on cream).
+    "classic": _theme(
+        primary="#8B2E1E",     # burnt-orange
+        secondary="#1D3B87",   # deep blue eyebrow / recipient script
+        accent="#F2A628",      # gold border + accents
+        bg="#FBF3E4",          # cream page
+        ink="#2A1F18",         # cocoa body ink
+    ),
+    # Mardi Gras — regal purple + gold + green celebratory palette.
+    "mardi_gras": _theme(
+        primary="#5D267D",     # rich royal purple
+        secondary="#0F7B5A",   # emerald green
+        accent="#F2C230",      # king-cake gold
+        bg="#FEF7E0",          # warm parchment
+        ink="#2C1637",         # deep aubergine
+    ),
+    # Desert Sunset — warm dusk gradient palette (coral, apricot, dusty rose).
+    "desert_sunset": _theme(
+        primary="#C34A2C",     # deep terracotta
+        secondary="#8B5E3C",   # dusty adobe brown
+        accent="#F49E4C",      # peach / apricot
+        bg="#FFF3E3",          # sun-bleached sand
+        ink="#3B1F14",         # sunset shadow
+    ),
+}
+DEFAULT_THEME = "classic"
 
 # ReportLab ships with Times & Helvetica by default — perfect for a warm
 # certificate. If a TTF is added later (e.g. Playfair), it'd be registered
@@ -60,13 +105,15 @@ SCRIPT_FONT = "Times-Italic"
 _LOGO_PATH = Path(__file__).parent.parent / "assets" / "logo.png"
 
 
-def _draw_ornamental_border(c: canvas.Canvas, width: float, height: float) -> None:
-    """Two nested rounded rectangles, gold outer + burnt-orange inner —
+def _draw_ornamental_border(
+    c: canvas.Canvas, width: float, height: float, theme: dict
+) -> None:
+    """Two nested rounded rectangles, accent outer + primary inner —
     reads as a proper certificate frame without being fussy."""
     outer_inset = 22
     inner_inset = 32
-    # Gold outer
-    c.setStrokeColor(BRAND_TERTIARY)
+    # Accent (usually gold-ish) outer
+    c.setStrokeColor(theme["accent"])
     c.setLineWidth(4)
     c.roundRect(
         outer_inset,
@@ -77,8 +124,8 @@ def _draw_ornamental_border(c: canvas.Canvas, width: float, height: float) -> No
         stroke=1,
         fill=0,
     )
-    # Burnt-orange inner
-    c.setStrokeColor(BRAND_PRIMARY)
+    # Primary color inner
+    c.setStrokeColor(theme["primary"])
     c.setLineWidth(1.2)
     c.roundRect(
         inner_inset,
@@ -89,9 +136,9 @@ def _draw_ornamental_border(c: canvas.Canvas, width: float, height: float) -> No
         stroke=1,
         fill=0,
     )
-    # Small corner ornaments (four tiny gold diamonds)
+    # Small corner ornaments (four tiny accent-colored diamonds)
     corner_offset = 44
-    c.setFillColor(BRAND_TERTIARY)
+    c.setFillColor(theme["accent"])
     for (cx, cy) in [
         (corner_offset, corner_offset),
         (width - corner_offset, corner_offset),
@@ -157,6 +204,11 @@ async def get_certificate(
     dance_id: str,
     request: Request,
     user: dict = Depends(get_current_user),
+    # Optional palette override. Falls back to the caller's stored
+    # preference (``users.certificate_theme``), then to ``classic``.
+    # Unknown values silently reset to ``classic`` so a stale client can't
+    # break the endpoint.
+    theme: Optional[str] = Query(default=None),
 ):
     """Return a downloadable PDF certificate for a dance the caller has
     marked completed. 404 if they haven't completed it (or the dance
@@ -207,6 +259,12 @@ async def get_certificate(
     signature_name = await _resolve_instructor_signature()
     completion_iso = tracking.get("updated_at", "") or ""
 
+    # Resolve final theme: explicit ?theme= wins, else user's stored pref,
+    # else the default. Unknown themes silently fall back so a stale client
+    # can't 400 out.
+    theme_key = (theme or user.get("certificate_theme") or DEFAULT_THEME).strip().lower()
+    theme_palette = THEMES.get(theme_key) or THEMES[DEFAULT_THEME]
+
     pdf_bytes = _render_certificate(
         recipient_name=user.get("name") or user.get("email", "").split("@")[0] or "A Line Dancer",
         dance_name=dance.get("name", "a line dance"),
@@ -215,6 +273,7 @@ async def get_certificate(
         completed_at=completion_iso,
         total_count=int(total_completed or 0),
         signature_name=signature_name,
+        theme=theme_palette,
     )
 
     filename = (
@@ -235,6 +294,51 @@ async def get_certificate(
     )
 
 
+@router.get("/certificate-themes")
+async def list_certificate_themes():
+    """Public: return the list of certificate themes for the client picker.
+    Each theme carries its palette so the client can render a live preview
+    without needing to hard-code the colors.
+    """
+    out = []
+    labels = {
+        "classic": "Classic",
+        "mardi_gras": "Mardi Gras",
+        "desert_sunset": "Desert Sunset",
+    }
+    for key, palette in THEMES.items():
+        # Convert ReportLab Color objects back to hex strings for the client
+        def _hex(color) -> str:
+            r, g, b = int(color.red * 255), int(color.green * 255), int(color.blue * 255)
+            return f"#{r:02X}{g:02X}{b:02X}"
+
+        out.append({
+            "key": key,
+            "label": labels.get(key, key.replace("_", " ").title()),
+            "colors": {name: _hex(palette[name]) for name in ("primary", "secondary", "accent", "bg", "ink")},
+        })
+    return {"themes": out, "default": DEFAULT_THEME}
+
+
+@router.patch("/users/me/certificate-theme")
+async def set_certificate_theme(
+    body: dict, user: dict = Depends(get_current_user)
+):
+    """Save the caller's preferred certificate theme to their profile.
+
+    Body: ``{ "theme": "classic" | "mardi_gras" | "desert_sunset" }``.
+    Invalid themes → 400. Silently no-ops if the value already matches.
+    """
+    key = str((body or {}).get("theme", "")).strip().lower()
+    if key not in THEMES:
+        raise HTTPException(400, f"Unknown theme. Choose one of: {', '.join(THEMES.keys())}")
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"certificate_theme": key}},
+    )
+    return {"ok": True, "theme": key}
+
+
 def _render_certificate(
     *,
     recipient_name: str,
@@ -244,20 +348,22 @@ def _render_certificate(
     completed_at: str,
     total_count: int,
     signature_name: str,
+    theme: dict,
 ) -> bytes:
     """Return the PDF payload as bytes. Pure function — trivial to unit-test
-    without hitting the DB."""
+    without hitting the DB. ``theme`` is one of the palette dicts from
+    ``THEMES`` (fall back to ``THEMES[DEFAULT_THEME]`` if unknown)."""
     buf = io.BytesIO()
     page_size = landscape(letter)
     width, height = page_size
     c = canvas.Canvas(buf, pagesize=page_size)
 
     # -------- Background --------
-    c.setFillColor(BG_CREAM)
+    c.setFillColor(theme["bg"])
     c.rect(0, 0, width, height, stroke=0, fill=1)
 
     # -------- Ornamental border --------
-    _draw_ornamental_border(c, width, height)
+    _draw_ornamental_border(c, width, height, theme)
 
     # -------- Studio logo (top-center) --------
     if _LOGO_PATH.exists():
@@ -277,17 +383,17 @@ def _render_certificate(
             logger.warning("certificate logo render failed: %s", e)
 
     # -------- Eyebrow (studio name) --------
-    c.setFillColor(BRAND_SECONDARY)
+    c.setFillColor(theme["secondary"])
     c.setFont(BODY_FONT_BOLD, 11)
     c.drawCentredString(width / 2, height - 118, "STOMPIN' GROUND YUMA")
 
     # -------- Main title --------
-    c.setFillColor(BRAND_PRIMARY)
+    c.setFillColor(theme["primary"])
     c.setFont(BODY_FONT_BOLD, 38)
     c.drawCentredString(width / 2, height - 168, "Certificate of Completion")
 
-    # Decorative divider (gold line)
-    c.setStrokeColor(BRAND_TERTIARY)
+    # Decorative divider (accent-colored line)
+    c.setStrokeColor(theme["accent"])
     c.setLineWidth(1.8)
     divider_w = 220
     c.line(
@@ -298,14 +404,14 @@ def _render_certificate(
     )
 
     # -------- Presentation preamble --------
-    c.setFillColor(INK_DARK)
+    c.setFillColor(theme["ink"])
     c.setFont(BODY_FONT, 14)
     c.drawCentredString(
         width / 2, height - 220, "This certifies that"
     )
 
     # -------- Recipient name (script-ish) --------
-    c.setFillColor(BRAND_SECONDARY)
+    c.setFillColor(theme["secondary"])
     c.setFont(SCRIPT_FONT, 34)
     # Auto-fit long names: shrink font if the drawn width would exceed
     # 80% of page width (so the name never overflows the frame).
@@ -322,7 +428,7 @@ def _render_certificate(
 
     # Underline for the recipient
     text_w = pdfmetrics.stringWidth(display_name, SCRIPT_FONT, font_size)
-    c.setStrokeColor(BRAND_TERTIARY)
+    c.setStrokeColor(theme["accent"])
     c.setLineWidth(0.8)
     c.line(
         (width - text_w) / 2 - 4,
@@ -332,14 +438,14 @@ def _render_certificate(
     )
 
     # -------- Middle paragraph --------
-    c.setFillColor(INK_DARK)
+    c.setFillColor(theme["ink"])
     c.setFont(BODY_FONT, 14)
     c.drawCentredString(
         width / 2, height - 302, "has successfully learned and completed the line dance"
     )
 
     # -------- Dance title --------
-    c.setFillColor(BRAND_PRIMARY)
+    c.setFillColor(theme["primary"])
     c.setFont(BODY_FONT_BOLD, 26)
     display_dance = f"\u201C{dance_name}\u201D"
     dance_font_size = 26
@@ -354,7 +460,7 @@ def _render_certificate(
 
     # Choreographer + difficulty line
     if choreographer or difficulty:
-        c.setFillColor(INK_DARK)
+        c.setFillColor(theme["ink"])
         c.setFont(BODY_FONT, 12)
         parts = []
         if choreographer:
@@ -364,7 +470,7 @@ def _render_certificate(
         c.drawCentredString(width / 2, height - 366, "  \u00b7  ".join(parts))
 
     # -------- Milestone strip --------
-    c.setFillColor(BRAND_TERTIARY)
+    c.setFillColor(theme["accent"])
     c.setFont(BODY_FONT_BOLD, 12)
     c.drawCentredString(
         width / 2, height - 400, _milestone_label(total_count).upper()
@@ -374,10 +480,10 @@ def _render_certificate(
     bottom_y = 78
     # Signature block (right)
     sig_x_center = width * 0.72
-    c.setStrokeColor(INK_DARK)
+    c.setStrokeColor(theme["ink"])
     c.setLineWidth(0.6)
     c.line(sig_x_center - 90, bottom_y + 22, sig_x_center + 90, bottom_y + 22)
-    c.setFillColor(INK_DARK)
+    c.setFillColor(theme["ink"])
     c.setFont(SCRIPT_FONT, 16)
     c.drawCentredString(sig_x_center, bottom_y + 26, signature_name)
     c.setFont(BODY_FONT, 10)
@@ -392,7 +498,7 @@ def _render_certificate(
     c.drawCentredString(date_x_center, bottom_y + 6, "Date of Completion")
 
     # -------- Footer eyebrow --------
-    c.setFillColor(BRAND_SECONDARY)
+    c.setFillColor(theme["secondary"])
     c.setFont(BODY_FONT, 9)
     c.drawCentredString(
         width / 2, 44,

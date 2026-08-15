@@ -20,6 +20,7 @@ from core.security import (
 )
 from core.time_helpers import now_iso
 from models.schemas import ClassSessionIn
+from services.badges import evaluate_badges
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -196,7 +197,11 @@ async def mark_attended(class_id: str, user: dict = Depends(get_current_user)):
         },
         upsert=True,
     )
-    return {"ok": True, "attended": True}
+    # Class-attendance badges (class_regular, class_devotee). Attending a
+    # class doesn't automatically imply the user has practiced today, so we
+    # DON'T bump the daily streak here — only evaluate the badges.
+    newly_earned = await evaluate_badges(user["user_id"])
+    return {"ok": True, "attended": True, "newly_earned_badges": newly_earned}
 
 
 @router.delete("/classes/{class_id}/attend")

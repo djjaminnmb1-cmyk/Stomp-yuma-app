@@ -386,6 +386,7 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
     # push_tokens is a subdoc list keyed by user_id in the users collection
     # (nothing to do — it disappears when the user doc is removed)
     await db.sent_reminders.delete_many({"user_id": uid})
+    await db.user_badges.delete_many({"user_id": uid})
 
     # 2) Shared content — anonymise so other users' tracking/attendance still works
     await db.dances.update_many(

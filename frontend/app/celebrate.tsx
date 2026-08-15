@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -21,9 +21,12 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { FireworksOverlay } from "@/src/components/FireworksOverlay";
+import { BadgeUnlockedOverlay } from "@/src/components/BadgeUnlockedOverlay";
 import { colors, spacing } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
 import { downloadCertificate } from "@/src/lib/certificate";
+import CertificateThemePicker from "@/src/components/CertificateThemePicker";
+import { api, Badge } from "@/src/api/client";
 
 /**
  * Celebration screen shown when a user marks a dance completed. Same visual
@@ -45,6 +48,7 @@ const ORBIT_RADIUS = Math.min(SCREEN_W * 0.32, 130);
 const LOGO_SIZE = 110;
 const CIRCLE_MS = 2500;
 const AUTO_DISMISS_MS = 9000; // Enough time for Certificate + Share + read the milestone.
+const AUTO_DISMISS_WITH_BADGES_MS = 14000; // Extra time so users can absorb each earned badge.
 
 export default function CelebrateScreen() {
   const router = useRouter();
@@ -52,12 +56,32 @@ export default function CelebrateScreen() {
     danceName?: string;
     count?: string;
     danceId?: string;
+    // JSON-encoded array of Badge objects for badges earned by this action.
+    badges?: string;
   }>();
   const danceName = ((params.danceName as string) || "").trim();
   const danceId = ((params.danceId as string) || "").trim();
   const rawCount = parseInt((params.count as string) || "", 10);
   const totalCount = Number.isFinite(rawCount) && rawCount > 0 ? rawCount : null;
-  const { token } = useAuth();
+  const { token, user, updateUser } = useAuth();
+  const [selectedTheme, setSelectedTheme] = useState<string>(
+    user?.certificate_theme || "classic"
+  );
+
+  // Parse earned-badges JSON param defensively. Empty array on any error.
+  const earnedBadges = useMemo<Badge[]>(() => {
+    const raw = (params.badges as string) || "";
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed as Badge[];
+    } catch {
+      /* ignore malformed */
+    }
+    return [];
+  }, [params.badges]);
+
+  const [showBadges, setShowBadges] = useState<boolean>(earnedBadges.length > 0);
 
   const t = useSharedValue(0);
   const orbit = useSharedValue(0);
@@ -86,7 +110,10 @@ export default function CelebrateScreen() {
     });
 
     // Auto-dismiss back to the dance detail if the user doesn't tap Done.
-    dismissTimerRef.current = setTimeout(() => goBack(), AUTO_DISMISS_MS);
+    // Extra time if we're playing the badge cascade animation.
+    const timeout =
+      earnedBadges.length > 0 ? AUTO_DISMISS_WITH_BADGES_MS : AUTO_DISMISS_MS;
+    dismissTimerRef.current = setTimeout(() => goBack(), timeout);
     return () => cancelAutoDismiss();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -177,11 +204,22 @@ export default function CelebrateScreen() {
       const r = await downloadCertificate(
         danceId,
         danceName || "dance",
-        token || ""
+        token || "",
+        selectedTheme
       );
       if (r.ok) {
         setCertOk(true);
         setTimeout(() => setCertOk(false), 2800);
+        // Persist the picked theme to the user's profile so future
+        // certificates default to it (fire-and-forget; UI already succeeded).
+        if (token && selectedTheme && selectedTheme !== user?.certificate_theme) {
+          api
+            .setCertificateTheme(selectedTheme, token)
+            .then(() => updateUser({ certificate_theme: selectedTheme }))
+            .catch(() => {
+              /* Non-fatal — the download already happened in the picked theme. */
+            });
+        }
       } else if (r.message) {
         Alert.alert("Couldn't download certificate", r.message);
       }
@@ -270,6 +308,13 @@ export default function CelebrateScreen() {
           }}
         />
 
+        {/* Newly-earned badges cascade in above the buttons */}
+        {showBadges && earnedBadges.length > 0 ? (
+          <BadgeUnlockedOverlay
+            badges={earnedBadges}
+            onAllDismissed={() => setShowBadges(false)}
+          />
+        ) : null}
         {/* Tap anywhere on the screen (outside the logo) to dismiss early.
             The fireworks overlay itself uses pointerEvents="box-none" so
             taps pass through to this Pressable underneath. */}
@@ -278,6 +323,21 @@ export default function CelebrateScreen() {
           onPress={goBack}
           testID="celebrate-dismiss"
         />
+
+        {/* Certificate theme picker — only when we have a downloadable cert.
+            Sits above the button row so users can pick before tapping. */}
+        {danceId && token ? (
+          <View style={styles.themeRow} pointerEvents="box-none">
+            <Text style={styles.themeLabel}>Certificate theme</Text>
+            <CertificateThemePicker
+              value={selectedTheme}
+              onChange={(k) => {
+                cancelAutoDismiss();
+                setSelectedTheme(k);
+              }}
+            />
+          </View>
+        ) : null}
 
         <View style={styles.doneWrap} pointerEvents="box-none">
           {danceId && token ? (
@@ -442,6 +502,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     flexWrap: "wrap",
+  },
+  themeRow: {
+    position: "absolute",
+    left: spacing.lg,
+    right: spacing.lg,
+    // Sits just above the doneWrap button row.
+    bottom: 96,
+    alignItems: "flex-start",
+    gap: 4,
+  },
+  themeLabel: {
+    color: "#FFF8E0",
+    fontWeight: "700",
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   shareBtn: {
     flexDirection: "row",

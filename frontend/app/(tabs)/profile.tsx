@@ -19,7 +19,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { colors, spacing, radius, images } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
-import { api, Tracking } from "@/src/api/client";
+import { api, Badge, Streak, Tracking } from "@/src/api/client";
+import CertificateThemePicker from "@/src/components/CertificateThemePicker";
+import { BadgeCard } from "@/src/components/BadgeCard";
+import { StreakCard } from "@/src/components/StreakCard";
 
 // ---------- Social links ----------
 // Each entry has:
@@ -145,6 +148,12 @@ export default function Profile() {
   const { user, token, signOut, updateUser } = useAuth();
   const [tracking, setTracking] = useState<Tracking[]>([]);
   const [attendanceCount, setAttendanceCount] = useState(0);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [badgeStats, setBadgeStats] = useState<{ earned: number; total: number }>({
+    earned: 0,
+    total: 0,
+  });
+  const [streak, setStreak] = useState<Streak | null>(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
   const [codeInput, setCodeInput] = useState("");
@@ -154,6 +163,7 @@ export default function Profile() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
+  const [savingCertTheme, setSavingCertTheme] = useState(false);
 
   const submitInstructorCode = async () => {
     setCodeErr(null);
@@ -183,6 +193,10 @@ export default function Profile() {
       setTracking(t);
       const a = await api.myAttendance(token);
       setAttendanceCount(a.class_ids.length);
+      const b = await api.getBadges(token);
+      setBadges(b.badges);
+      setBadgeStats({ earned: b.total_earned, total: b.total_badges });
+      setStreak(b.streak);
     } catch {}
   }, [token]);
 
@@ -284,6 +298,57 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* -------- Achievements + Streak -------- */}
+        <View style={styles.section}>
+          <View style={styles.achievementsHead}>
+            <Text style={styles.sectionTitle}>Achievements</Text>
+            <Pressable
+              onPress={() => router.push("/achievements")}
+              testID="profile-achievements-see-all"
+            >
+              <Text style={styles.link}>
+                {badgeStats.earned}/{badgeStats.total} · View all
+              </Text>
+            </Pressable>
+          </View>
+
+          <StreakCard streak={streak} />
+
+          {badges.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing.sm }}
+              testID="profile-badges-row"
+            >
+              {(() => {
+                // Show earned first (most recent), then next 3 locked-with-most-progress
+                const earned = badges
+                  .filter((b) => b.earned)
+                  .sort((a, b) =>
+                    (b.earned_at || "").localeCompare(a.earned_at || "")
+                  );
+                const locked = badges
+                  .filter((b) => !b.earned)
+                  .sort(
+                    (a, b) =>
+                      b.progress / Math.max(b.requirement, 1) -
+                      a.progress / Math.max(a.requirement, 1)
+                  );
+                const ordered = [...earned, ...locked].slice(0, 8);
+                return ordered.map((b) => (
+                  <Pressable
+                    key={b.id}
+                    onPress={() => router.push("/achievements")}
+                  >
+                    <BadgeCard badge={b} size="md" />
+                  </Pressable>
+                ));
+              })()}
+            </ScrollView>
+          ) : null}
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
 
@@ -365,6 +430,39 @@ export default function Profile() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
+
+          {/* Certificate theme — pick once, all future PDFs use it. */}
+          <View style={styles.themeCard} testID="profile-cert-theme-card">
+            <View style={styles.themeCardHead}>
+              <Ionicons name="ribbon" size={20} color={colors.brandPrimary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowText}>Certificate theme</Text>
+                <Text style={styles.deleteSub}>
+                  Sets the default look for the PDF certificates you download.
+                </Text>
+              </View>
+            </View>
+            <CertificateThemePicker
+              layout="grid"
+              value={user?.certificate_theme || "classic"}
+              disabled={savingCertTheme}
+              onChange={async (key) => {
+                if (!token || key === user?.certificate_theme) return;
+                setSavingCertTheme(true);
+                try {
+                  await api.setCertificateTheme(key, token);
+                  updateUser({ certificate_theme: key });
+                } catch (e: any) {
+                  Alert.alert(
+                    "Couldn't update theme",
+                    e?.message || "Please try again."
+                  );
+                } finally {
+                  setSavingCertTheme(false);
+                }
+              }}
+            />
+          </View>
 
           <Pressable
             testID="logout-btn"
@@ -742,6 +840,12 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, backgroundColor: colors.divider },
   section: { paddingHorizontal: spacing.lg, marginTop: spacing.xl, gap: spacing.sm },
   sectionTitle: { fontFamily: "serif", fontSize: 20, fontWeight: "700", color: colors.onSurface },
+  link: { color: colors.brandPrimary, fontWeight: "700", fontSize: 13 },
+  achievementsHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   connectSub: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: -2, marginBottom: spacing.xs },
   socialGrid: {
     flexDirection: "row",
@@ -876,6 +980,19 @@ const styles = StyleSheet.create({
   },
   rowLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   rowText: { fontSize: 15, color: colors.onSurface, fontWeight: "600" },
+  themeCard: {
+    padding: spacing.lg,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.md,
+  },
+  themeCardHead: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+  },
   aboutText: { color: colors.onSurfaceSecondary, lineHeight: 20, fontSize: 14 },
   modalHeader: {
     flexDirection: "row",

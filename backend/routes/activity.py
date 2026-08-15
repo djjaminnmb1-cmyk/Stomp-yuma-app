@@ -22,6 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from core.database import db
 from core.security import get_current_user
 from core.time_helpers import now_iso
+from services.badges import award_and_streak
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -53,7 +54,14 @@ async def log_practice(dance_id: str, user: dict = Depends(get_current_user)):
         },
         upsert=True,
     )
-    return {"ok": True, "last_opened_at": now}
+    # Bump the daily streak + check for practice / streak badges.
+    award = await award_and_streak(user["user_id"])
+    return {
+        "ok": True,
+        "last_opened_at": now,
+        "newly_earned_badges": award["newly_earned_badges"],
+        "streak": award["streak"],
+    }
 
 
 @router.get("/recently-practiced")

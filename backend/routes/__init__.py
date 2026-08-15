@@ -12,6 +12,7 @@ from . import (
     auth,
     activity,
     admin_leaderboard,
+    badges,
     certificate,
     chat,
     classes,
@@ -43,6 +44,7 @@ api_router.include_router(admin_leaderboard.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(activity.router)
 api_router.include_router(certificate.router)
+api_router.include_router(badges.router)
 api_router.include_router(song_preview.router)
 api_router.include_router(push.router)
 api_router.include_router(misc.router)

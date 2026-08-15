@@ -50,6 +50,10 @@ async def _ensure_indexes() -> None:
         await db.leaderboard_seasons.create_index("started_at")
         await db.sent_reminders.create_index("key", unique=True)
         await db.instructor_messages.create_index("created_at")
+        await db.user_badges.create_index(
+            [("user_id", 1), ("badge_id", 1)], unique=True
+        )
+        await db.user_badges.create_index("user_id")
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 

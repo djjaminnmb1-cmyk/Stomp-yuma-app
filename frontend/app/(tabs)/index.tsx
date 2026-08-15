@@ -3,12 +3,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { colors, spacing, radius, images } from "@/src/theme";
-import { api, Dance, LeaderboardEntry } from "@/src/api/client";
+import { api, Dance, LeaderboardEntry, Streak } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { BrandLogo } from "../../src/components/BrandLogo";
+import { StreakCard } from "@/src/components/StreakCard";
 
 export default function Home() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export default function Home() {
   const [practiced, setPracticed] = useState<
     { dance: { id: string; name: string; choreographer: string; difficulty: string; bpm: number | null }; status: string; last_activity_at: string }[]
   >([]);
+  const [streak, setStreak] = useState<Streak | null>(null);
+  const [unseenBadges, setUnseenBadges] = useState(0);
 
   useEffect(() => {
     api.listDances().then((all) => setRecent(all.slice(0, 4))).catch(() => {});
@@ -32,8 +35,22 @@ export default function Home() {
         .catch(() => {});
     } else {
       setPracticed([]);
+      setStreak(null);
+      setUnseenBadges(0);
     }
   }, [token]);
+
+  // Refresh streak + badge indicator on every Home focus so users see the
+  // effect of completing dances immediately when they navigate back.
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return;
+      api.getBadges(token).then((r) => {
+        setStreak(r.streak);
+        setUnseenBadges(r.unseen_count);
+      }).catch(() => {});
+    }, [token])
+  );
 
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
@@ -57,6 +74,39 @@ export default function Home() {
             Howdy{user?.name ? `, ${user.name.split(" ")[0]}` : ""}!
           </Text>
           <Text style={styles.subHello}>Ready to boot-scoot?</Text>
+
+          {token ? (
+            <>
+              <StreakCard streak={streak} />
+              <Pressable
+                testID="home-achievements-cta"
+                onPress={() => router.push("/achievements")}
+                style={styles.achievementsRow}
+              >
+                <View style={styles.achievementsIcon}>
+                  <Ionicons
+                    name="ribbon"
+                    size={22}
+                    color={colors.brandTertiary}
+                  />
+                  {unseenBadges > 0 && (
+                    <View style={styles.badgeDot}>
+                      <Text style={styles.badgeDotText}>{unseenBadges}</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.suggestTitle}>Achievements</Text>
+                  <Text style={styles.suggestSub}>
+                    {unseenBadges > 0
+                      ? `You unlocked ${unseenBadges} new badge${unseenBadges === 1 ? "" : "s"}!`
+                      : "Track your badges & practice streak."}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+              </Pressable>
+            </>
+          ) : null}
 
           <Pressable
             testID="home-browse-cta"
@@ -429,5 +479,47 @@ const styles = StyleSheet.create({
   practicedCardMeta: {
     fontSize: 11,
     color: colors.muted,
+  },
+
+  // ---- Achievements row ----
+  achievementsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.brandTertiary + "22",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandTertiary + "88",
+  },
+  achievementsIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.brandTertiary + "88",
+    position: "relative",
+  },
+  badgeDot: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.brand,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  badgeDotText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "800",
   },
 });

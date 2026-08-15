@@ -40,17 +40,19 @@ function safeFilename(name: string): string {
 export async function downloadCertificate(
   dance_id: string,
   dance_name: string,
-  token: string
+  token: string,
+  theme?: string
 ): Promise<CertResult> {
   if (!token) return { ok: false, message: "You need to sign in first." };
   if (!dance_id) return { ok: false, message: "Missing dance id." };
 
   const filename = safeFilename(dance_name);
+  const query = theme ? `?theme=${encodeURIComponent(theme)}` : "";
 
   try {
     if (Platform.OS === "web") {
       // Web: fetch → blob → object URL → programmatic click on <a download>.
-      const resp = await fetch(`${API_BASE}/certificate/${dance_id}`, {
+      const resp = await fetch(`${API_BASE}/certificate/${dance_id}${query}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!resp.ok) {
@@ -87,7 +89,7 @@ export async function downloadCertificate(
     // us needing to base64-shuffle megabytes of PDF through JS.
     const dest = `${FileSystem.cacheDirectory}${filename}`;
     const dl = await FileSystem.downloadAsync(
-      `${API_BASE}/certificate/${dance_id}`,
+      `${API_BASE}/certificate/${dance_id}${query}`,
       dest,
       { headers: { Authorization: `Bearer ${token}` } }
     );

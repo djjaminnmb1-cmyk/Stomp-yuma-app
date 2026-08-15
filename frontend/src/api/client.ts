@@ -13,6 +13,9 @@ export type Tracking = {
   rating: number;
   notes: string;
   updated_at: string;
+  // Present on write-side responses (POST /tracking/{id}). Empty otherwise.
+  newly_earned_badges?: Badge[];
+  streak?: Streak | null;
 };
 
 export type User = {
@@ -24,7 +27,53 @@ export type User = {
   is_instructor: boolean;
   can_edit_step_sheets?: boolean;
   show_on_leaderboard?: boolean;
+  certificate_theme?: string;
+  current_streak?: number;
+  longest_streak?: number;
+  last_streak_date?: string;
   auth_provider: string;
+};
+
+// ---------------- Badges / Achievements ----------------
+export type Badge = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;   // Ionicons name
+  color: string;  // hex
+  category: "milestone" | "streak" | "class" | "practice" | "variety";
+  requirement: number;
+  unit: string;
+  progress: number;
+  earned: boolean;
+  earned_at: string;
+  seen: boolean;
+};
+
+export type Streak = {
+  current: number;
+  longest: number;
+  last_streak_date: string;
+};
+
+export type BadgesResponse = {
+  badges: Badge[];
+  streak: Streak;
+  total_earned: number;
+  total_badges: number;
+  unseen_count: number;
+};
+
+export type CertificateTheme = {
+  key: string;
+  label: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    bg: string;
+    ink: string;
+  };
 };
 
 export type LeaderboardRange = "all" | "week" | "month";
@@ -249,6 +298,27 @@ export const api = {
       },
       token,
     ),
+
+  // ---------------- Certificate themes ----------------
+  listCertificateThemes: () =>
+    req<{ themes: CertificateTheme[]; default: string }>("/certificate-themes"),
+  setCertificateTheme: (theme: string, token: string) =>
+    req<{ ok: boolean; theme: string }>(
+      "/users/me/certificate-theme",
+      { method: "PATCH", body: JSON.stringify({ theme }) },
+      token,
+    ),
+
+  // ---------------- Badges & Streak ----------------
+  getBadges: (token: string) =>
+    req<BadgesResponse>("/badges", {}, token),
+  markBadgesSeen: (token: string, ids?: string[]) =>
+    req<{ ok: boolean; updated: number }>(
+      "/badges/mark-seen",
+      { method: "POST", body: JSON.stringify({ ids: ids || null }) },
+      token
+    ),
+  getStreak: (token: string) => req<Streak>("/streak", {}, token),
 
   // ---------------- Instructor Dashboard ----------------
   getInstructorDashboard: (token: string) =>

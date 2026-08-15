@@ -99,9 +99,19 @@ export default function DanceDetail() {
         } catch {
           /* Non-fatal — fall back to a generic celebration. */
         }
+        // Newly-earned badges piggy-back on the tracking POST response so
+        // we can render the cascade without a second API round-trip.
+        const badgesJson = (t.newly_earned_badges || []).length
+          ? JSON.stringify(t.newly_earned_badges)
+          : undefined;
         router.push({
           pathname: "/celebrate",
-          params: { danceName: dance.name, count: String(total), danceId: dance.id },
+          params: {
+            danceName: dance.name,
+            count: String(total),
+            danceId: dance.id,
+            ...(badgesJson ? { badges: badgesJson } : {}),
+          },
         });
       }
     } finally {
