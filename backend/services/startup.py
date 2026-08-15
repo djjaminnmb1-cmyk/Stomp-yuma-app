@@ -54,6 +54,10 @@ async def _ensure_indexes() -> None:
             [("user_id", 1), ("badge_id", 1)], unique=True
         )
         await db.user_badges.create_index("user_id")
+        await db.practice_daily.create_index(
+            [("user_id", 1), ("day", 1)], unique=True
+        )
+        await db.practice_daily.create_index([("user_id", 1), ("day", -1)])
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 

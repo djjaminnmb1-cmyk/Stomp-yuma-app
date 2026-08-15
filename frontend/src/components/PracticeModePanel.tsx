@@ -54,6 +54,25 @@ const woodBlock = require("../../assets/sounds/wood-block.wav");
 // Line-dance phrases are 8-count. Highlight beat 1 of each phrase.
 const PHRASE = 8;
 
+/**
+ * Tempo presets — fractions of the dance's stored BPM. The 75/90 slowdowns
+ * are the primary use case (learning new footwork); 100 is the reference;
+ * 110 is a light challenge without hitting the runaway 125+ zone where
+ * even iTunes previews start sounding chipmunk-y.
+ */
+const TEMPO_PRESETS = [0.75, 0.9, 1.0, 1.1] as const;
+
+/**
+ * iTunes 30-second preview cap — used to compute the loop-progress bar
+ * width. If a longer stream is ever swapped in we'll increase this.
+ */
+const PREVIEW_MAX = 30;
+
+/** Clamp a 0..1 ratio to a 0..100 % string suitable for RN's width prop. */
+function clampPct(n: number): number {
+  return Math.max(0, Math.min(100, n * 100));
+}
+
 type Props = {
   visible: boolean;
   onClose: () => void;
@@ -211,6 +230,80 @@ export default function PracticeModePanel({
     }, 250);
     return () => clearInterval(iv);
   }, [running]);
+
+  // ---------- Loop A/B section ----------
+  // A and B are absolute seconds within the 30-second iTunes preview.
+  // ``loopOn`` is user-controlled; when both markers are set and loop is
+  // on, we seek back to A the moment currentTime crosses B.
+  const [loopA, setLoopA] = useState<number | null>(null);
+  const [loopB, setLoopB] = useState<number | null>(null);
+  const [loopOn, setLoopOn] = useState(false);
+  const [songPos, setSongPos] = useState(0);
+
+  // Poll the audio player's currentTime so the loop UI reflects reality
+  // and we can seek back to A when B is reached. 100ms poll is a good
+  // balance between responsiveness and CPU (iTunes previews are 30s tops).
+  useEffect(() => {
+    if (!running || !preview) return;
+    let alive = true;
+    const iv = setInterval(() => {
+      if (!alive) return;
+      try {
+        const t = Number(songPlayer.currentTime) || 0;
+        setSongPos(t);
+        // Apply the loop when both markers are set and we've crossed B.
+        // Use a small epsilon so the seek doesn't fire on the exact frame
+        // playback resumes from A (which would land at ~loopA and re-fire).
+        if (loopOn && loopA !== null && loopB !== null && loopB > loopA + 0.3) {
+          if (t >= loopB - 0.02) {
+            try {
+              songPlayer.seekTo(loopA);
+            } catch {}
+          }
+        }
+      } catch {}
+    }, 100);
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
+  }, [running, preview, songPlayer, loopA, loopB, loopOn]);
+
+  // Clear A/B whenever the modal closes / preview changes, so a fresh
+  // Practice session doesn't inherit loop points from a different song.
+  useEffect(() => {
+    if (!visible) {
+      setLoopA(null);
+      setLoopB(null);
+      setLoopOn(false);
+      setSongPos(0);
+    }
+  }, [visible]);
+  useEffect(() => {
+    setLoopA(null);
+    setLoopB(null);
+    setLoopOn(false);
+  }, [preview?.previewUrl]);
+
+  const captureLoopA = useCallback(() => {
+    if (!preview) return;
+    setLoopA(round1(Number(songPlayer.currentTime) || 0));
+  }, [preview, songPlayer]);
+  const captureLoopB = useCallback(() => {
+    if (!preview) return;
+    const t = round1(Number(songPlayer.currentTime) || 0);
+    // Ensure B > A. If user taps B before A, we still record it but the
+    // UI will surface the "B must be after A" hint below.
+    setLoopB(t);
+  }, [preview, songPlayer]);
+  const clearLoop = useCallback(() => {
+    setLoopA(null);
+    setLoopB(null);
+    setLoopOn(false);
+  }, []);
+
+  const loopValid =
+    loopA !== null && loopB !== null && loopB > loopA + 0.5;
 
   const scale = useSharedValue(0.6);
   const glow = useSharedValue(0);
@@ -501,7 +594,143 @@ export default function PracticeModePanel({
             )}
           </Pressable>
 
-          {/* BPM Control */}
+          {/* ---- Loop A / B section (only when we have a playable preview) ---- */}
+          {preview && preview.previewUrl ? (
+            <View style={styles.card}>
+              <View style={styles.rowBetween}>
+                <Text style={styles.cardTitle}>Loop section</Text>
+                {(loopA !== null || loopB !== null) ? (
+                  <Pressable onPress={clearLoop} testID="loop-clear" style={styles.chip}>
+                    <Ionicons name="close" size={12} color={colors.brandPrimary} />
+                    <Text style={styles.chipText}>Clear</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
+              {/* Live position bar with A/B markers */}
+              <View style={styles.loopBar}>
+                {/* Filled progress up to current position */}
+                <View
+                  style={[
+                    styles.loopBarFill,
+                    { width: `${clampPct(songPos / PREVIEW_MAX)}%` },
+                  ]}
+                />
+                {/* A marker */}
+                {loopA !== null ? (
+                  <View
+                    style={[
+                      styles.loopBarMark,
+                      { left: `${clampPct(loopA / PREVIEW_MAX)}%`, backgroundColor: colors.brandSecondary },
+                    ]}
+                  >
+                    <Text style={styles.loopBarMarkText}>A</Text>
+                  </View>
+                ) : null}
+                {/* B marker */}
+                {loopB !== null ? (
+                  <View
+                    style={[
+                      styles.loopBarMark,
+                      { left: `${clampPct(loopB / PREVIEW_MAX)}%`, backgroundColor: colors.brandTertiary },
+                    ]}
+                  >
+                    <Text style={styles.loopBarMarkText}>B</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {/* Set A / Set B / Loop toggle */}
+              <View style={styles.loopBtnRow}>
+                <Pressable
+                  onPress={captureLoopA}
+                  disabled={!running}
+                  testID="loop-set-a"
+                  style={[
+                    styles.loopBtn,
+                    !running && { opacity: 0.4 },
+                    loopA !== null && styles.loopBtnActive,
+                  ]}
+                >
+                  <Ionicons
+                    name="flag"
+                    size={14}
+                    color={loopA !== null ? "#fff" : colors.brandSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.loopBtnText,
+                      loopA !== null && { color: "#fff" },
+                    ]}
+                  >
+                    {loopA !== null ? `A · ${fmtLoopTime(loopA)}` : "Set A"}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={captureLoopB}
+                  disabled={!running}
+                  testID="loop-set-b"
+                  style={[
+                    styles.loopBtn,
+                    !running && { opacity: 0.4 },
+                    loopB !== null && styles.loopBtnActiveB,
+                  ]}
+                >
+                  <Ionicons
+                    name="flag"
+                    size={14}
+                    color={loopB !== null ? "#fff" : colors.brandTertiary}
+                  />
+                  <Text
+                    style={[
+                      styles.loopBtnText,
+                      loopB !== null && { color: "#fff" },
+                    ]}
+                  >
+                    {loopB !== null ? `B · ${fmtLoopTime(loopB)}` : "Set B"}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setLoopOn((v) => !v)}
+                  disabled={!loopValid}
+                  testID="loop-toggle"
+                  style={[
+                    styles.loopBtn,
+                    !loopValid && { opacity: 0.4 },
+                    loopOn && loopValid && styles.loopBtnOn,
+                  ]}
+                >
+                  <Ionicons
+                    name={loopOn ? "repeat" : "repeat-outline"}
+                    size={16}
+                    color={loopOn && loopValid ? "#fff" : colors.brandPrimary}
+                  />
+                  <Text
+                    style={[
+                      styles.loopBtnText,
+                      loopOn && loopValid && { color: "#fff" },
+                    ]}
+                  >
+                    {loopOn ? "Loop on" : "Loop"}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <Text style={styles.hint}>
+                {!running
+                  ? "Press Start to record loop points."
+                  : loopA === null
+                    ? "Tap Set A at the start of the section you want to drill."
+                    : loopB === null
+                      ? "Tap Set B at the end of that section."
+                      : !loopValid
+                        ? "B must come after A — reset and try again."
+                        : loopOn
+                          ? `Looping ${(loopB! - loopA!).toFixed(1)}s section on repeat.`
+                          : `${(loopB! - loopA!).toFixed(1)}s ready — tap Loop to enable.`}
+              </Text>
+            </View>
+          ) : null}
           <View style={styles.card}>
             <View style={styles.rowBetween}>
               <Text style={styles.cardTitle}>Tempo</Text>
@@ -517,6 +746,42 @@ export default function PracticeModePanel({
               <Text style={styles.bpmBig}>{bpm}</Text>
               <Text style={styles.bpmUnit}>BPM</Text>
             </View>
+
+            {/* Tempo presets — one-tap snap to a % of the dance's BPM.
+                Only rendered when the dance has a stored BPM to reference. */}
+            {danceBpm && danceBpm > 0 ? (
+              <View style={styles.presetRow}>
+                {TEMPO_PRESETS.map((pct) => {
+                  const target = clamp(Math.round(danceBpm * pct), 60, 200);
+                  const active = bpm === target;
+                  return (
+                    <Pressable
+                      key={pct}
+                      onPress={() => setBpm(target)}
+                      testID={`tempo-preset-${Math.round(pct * 100)}`}
+                      style={[styles.preset, active && styles.presetActive]}
+                    >
+                      <Text
+                        style={[
+                          styles.presetPct,
+                          active && styles.presetPctActive,
+                        ]}
+                      >
+                        {Math.round(pct * 100)}%
+                      </Text>
+                      <Text
+                        style={[
+                          styles.presetBpm,
+                          active && styles.presetBpmActive,
+                        ]}
+                      >
+                        {target}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
 
             <Slider
               testID="bpm-slider"
@@ -621,6 +886,21 @@ function NudgeBtn({ onPress, label }: { onPress: () => void; label: string }) {
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v));
+}
+
+/** Round to one decimal place — keeps loop labels tidy at "0:05.3" precision. */
+function round1(v: number): number {
+  return Math.round(v * 10) / 10;
+}
+
+/** Format 6.3 → "0:06.3" for loop markers. */
+function fmtLoopTime(sec: number): string {
+  if (!Number.isFinite(sec) || sec < 0) return "0:00";
+  const m = Math.floor(sec / 60);
+  const s = sec - m * 60;
+  const whole = Math.floor(s);
+  const tenths = Math.round((s - whole) * 10);
+  return `${m}:${String(whole).padStart(2, "0")}.${tenths}`;
 }
 
 function formatTime(sec: number): string {
@@ -801,6 +1081,119 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   nudgeText: { color: colors.brandPrimary, fontWeight: "700", fontSize: 13 },
+
+  // ---- Tempo presets ----
+  presetRow: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+    marginTop: 2,
+  },
+  preset: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    gap: 0,
+  },
+  presetActive: {
+    borderColor: colors.brandPrimary,
+    backgroundColor: colors.brandPrimary,
+  },
+  presetPct: {
+    color: colors.brandPrimary,
+    fontWeight: "800",
+    fontSize: 13,
+    letterSpacing: 0.3,
+  },
+  presetPctActive: { color: "#fff" },
+  presetBpm: {
+    color: colors.muted,
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 1,
+  },
+  presetBpmActive: { color: "rgba(255,255,255,0.85)" },
+
+  // ---- Loop A/B section ----
+  loopBar: {
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.border,
+    overflow: "hidden",
+    position: "relative",
+  },
+  loopBarFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: colors.brandPrimary + "55",
+  },
+  loopBarMark: {
+    position: "absolute",
+    top: -2,
+    height: 28,
+    minWidth: 22,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    // Marker origin is its left edge — no translate so it aligns to the
+    // captured point exactly. (Minor 1px optical hint only.)
+    transform: [{ translateX: -11 }],
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  loopBarMarkText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 12,
+  },
+  loopBtnRow: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  loopBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  loopBtnActive: {
+    backgroundColor: colors.brandSecondary,
+    borderColor: colors.brandSecondary,
+  },
+  loopBtnActiveB: {
+    backgroundColor: colors.brandTertiary,
+    borderColor: colors.brandTertiary,
+  },
+  loopBtnOn: {
+    backgroundColor: colors.brandPrimary,
+    borderColor: colors.brandPrimary,
+  },
+  loopBtnText: {
+    color: colors.onSurface,
+    fontWeight: "800",
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
   hint: {
     color: colors.muted,
     fontSize: 12,

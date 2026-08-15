@@ -15,6 +15,7 @@ render a horizontal card row without an extra fetch.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -35,6 +36,11 @@ async def log_practice(dance_id: str, user: dict = Depends(get_current_user)):
     Upsert-keyed by (user_id, dance_id) so we track the *last* open per
     dance plus a running counter, not one row per session (keeps the
     collection tiny).
+
+    Also increments a per-day rollup in ``practice_daily`` (upsert keyed by
+    (user_id, day)) so the 30-day practice-history chart on Profile can
+    aggregate with a single ``find`` on an indexed field — no scanning
+    events.
     """
     # Confirm the dance exists so a bad client can't spam garbage IDs.
     dance = await db.dances.find_one({"id": dance_id}, {"_id": 0, "id": 1})
@@ -54,6 +60,20 @@ async def log_practice(dance_id: str, user: dict = Depends(get_current_user)):
         },
         upsert=True,
     )
+    # Daily rollup — one row per (user, UTC day). ~365 rows/user/year max.
+    today = datetime.now(timezone.utc).date().isoformat()
+    await db.practice_daily.update_one(
+        {"user_id": user["user_id"], "day": today},
+        {
+            "$set": {
+                "user_id": user["user_id"],
+                "day": today,
+                "last_opened_at": now,
+            },
+            "$inc": {"count": 1},
+        },
+        upsert=True,
+    )
     # Bump the daily streak + check for practice / streak badges.
     award = await award_and_streak(user["user_id"])
     return {
@@ -61,6 +81,62 @@ async def log_practice(dance_id: str, user: dict = Depends(get_current_user)):
         "last_opened_at": now,
         "newly_earned_badges": award["newly_earned_badges"],
         "streak": award["streak"],
+    }
+
+
+@router.get("/practice-history")
+async def practice_history(
+    user: dict = Depends(get_current_user),
+    days: Optional[str] = Query(default="30"),
+):
+    """Return the caller's daily practice-open counts for the last N days.
+
+    Response shape:
+        {
+          "days": [{"date": "2026-06-01", "count": 3}, ...],  # oldest → newest
+          "total": 42,
+          "days_active": 12,
+          "best_day": {"date": "2026-06-14", "count": 7}
+        }
+
+    The ``days`` array ALWAYS has exactly N entries — days with no activity
+    are returned with ``count: 0`` so the client can draw a continuous
+    sparkline without gap-handling logic.
+    """
+    try:
+        n = int(days) if days else 30
+    except (TypeError, ValueError):
+        n = 30
+    n = max(1, min(180, n))
+
+    today = datetime.now(timezone.utc).date()
+    start = today - timedelta(days=n - 1)
+
+    rows = await db.practice_daily.find(
+        {
+            "user_id": user["user_id"],
+            "day": {"$gte": start.isoformat(), "$lte": today.isoformat()},
+        },
+        {"_id": 0, "day": 1, "count": 1},
+    ).to_list(length=n)
+
+    by_day = {r["day"]: int(r.get("count") or 0) for r in rows}
+
+    # Fill in the full contiguous range so the chart has N points.
+    out: list[dict] = []
+    for i in range(n):
+        d = (start + timedelta(days=i)).isoformat()
+        out.append({"date": d, "count": by_day.get(d, 0)})
+
+    total = sum(x["count"] for x in out)
+    days_active = sum(1 for x in out if x["count"] > 0)
+    best_day = max(out, key=lambda x: x["count"]) if out else {"date": "", "count": 0}
+
+    return {
+        "days": out,
+        "total": total,
+        "days_active": days_active,
+        "best_day": best_day,
     }
 
 

@@ -1,0 +1,35 @@
+{
+  "summary": "Phase 2 Practice History backend verification — 16/16 pytest tests PASS (100%). New GET /api/practice-history endpoint verified for shape ({days,total,days_active,best_day}), 30-entry contiguity (oldest→newest, YYYY-MM-DD, today is last, today-29 is first), 401 without token, and clamping (days=0→1, days=999→180, days=abc/empty→30, days=-5→1). POST /api/practice-log/{id} daily rollup wiring verified: fresh user with 3 hits → count=3 for today, total=3, days_active=1, best_day={today,3}, older days still 0. Cross-user isolation verified: A(2) and B(5) on the same day stay independent. Regression: POST /api/practice-log/{id} still returns {ok,last_opened_at,newly_earned_badges,streak}; /api/recently-practiced, /api/badges, /api/streak, /api/tracking/me, /api/tracking/{id} all still work. DELETE /api/auth/me correctly purges practice_daily rows (verified via direct Mongo count_documents on user_id).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_practice_history.py",
+    "/app/test_reports/pytest/practice_history.xml"
+  ],
+  "action_items": [
+    "No fixes required — all Phase 2 practice-history acceptance criteria are met."
+  ],
+  "critical_code_review_comments": [
+    "routes/activity.py:practice_history uses UTC day boundary (datetime.now(timezone.utc).date()) consistent with practice-log rollup insertion — no drift between writer and reader.",
+    "routes/activity.py:practice_history clamp order is correct: parse-or-default first (int(days) with try/except → 30), then max(1, min(180, n)). Negative and 0 both clamp to 1; huge values to 180; non-numeric/empty fall back to 30.",
+    "practice_daily unique index on (user_id, day) in services/startup.py:57-59 correctly prevents duplicate day rows under $inc-upsert races.",
+    "auth.py delete_my_account correctly includes practice_daily.delete_many({user_id: uid}) alongside user_badges, practice_sessions, tracking, etc. — no orphan rows.",
+    "practice_history query projects out _id (`{_id: 0, day: 1, count: 1}`) — no serialization risk."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_practice_history.py (new)"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "not tested (scope: backend only)"},
+  "seed_data_creation": "Each test creates a fresh TEST_ph_<uuid>@example.com user via /api/auth/register. The deletion test purges its own user. Test users are prefixed TEST_ph_ / TEST_ph_iso_ / TEST_ph_del_ for easy identification. No admin or shared data is mutated.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Phase 2 practice-history is green (16/16). Test file at /app/backend/tests/test_practice_history.py is fully self-contained (registers fresh users per test) and uses EXPO_PUBLIC_BACKEND_URL from /app/frontend/.env. It also does one direct Mongo assertion via /app/backend/core/database.py to verify practice_daily orphan cleanup on account delete. If db.practice_daily starts accumulating stale rows in production, check the DELETE /api/auth/me handler in routes/auth.py:390. Phase 2 also includes client-side Tempo Presets + Loop A/B features (per request, no backend surface for those — verified none exists)."
+}

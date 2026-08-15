@@ -19,10 +19,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { colors, spacing, radius, images } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
-import { api, Badge, Streak, Tracking } from "@/src/api/client";
+import { api, Badge, PracticeHistoryDay, Streak, Tracking } from "@/src/api/client";
 import CertificateThemePicker from "@/src/components/CertificateThemePicker";
 import { BadgeCard } from "@/src/components/BadgeCard";
 import { StreakCard } from "@/src/components/StreakCard";
+import { PracticeHistoryChart } from "@/src/components/PracticeHistoryChart";
 
 // ---------- Social links ----------
 // Each entry has:
@@ -154,6 +155,12 @@ export default function Profile() {
     total: 0,
   });
   const [streak, setStreak] = useState<Streak | null>(null);
+  const [practiceHistory, setPracticeHistory] = useState<PracticeHistoryDay[]>([]);
+  const [practiceStats, setPracticeStats] = useState<{
+    total: number;
+    days_active: number;
+    best: number;
+  }>({ total: 0, days_active: 0, best: 0 });
   const [adminOpen, setAdminOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
   const [codeInput, setCodeInput] = useState("");
@@ -197,6 +204,18 @@ export default function Profile() {
       setBadges(b.badges);
       setBadgeStats({ earned: b.total_earned, total: b.total_badges });
       setStreak(b.streak);
+      // Practice history for the 30-day sparkline
+      try {
+        const ph = await api.getPracticeHistory(token, 30);
+        setPracticeHistory(ph.days);
+        setPracticeStats({
+          total: ph.total,
+          days_active: ph.days_active,
+          best: ph.best_day?.count || 0,
+        });
+      } catch {
+        // Non-fatal — chart just shows empty state.
+      }
     } catch {}
   }, [token]);
 
@@ -348,6 +367,41 @@ export default function Profile() {
             </ScrollView>
           ) : null}
         </View>
+
+        {/* -------- Practice History (30-day sparkline) -------- */}
+        {practiceStats.total > 0 || practiceHistory.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Practice History</Text>
+            <View style={styles.historyCard} testID="practice-history-card">
+              <View style={styles.historyStatsRow}>
+                <View style={styles.historyStat}>
+                  <Text style={styles.historyStatNum}>{practiceStats.total}</Text>
+                  <Text style={styles.historyStatLabel}>total sessions</Text>
+                </View>
+                <View style={styles.historyStatDivider} />
+                <View style={styles.historyStat}>
+                  <Text style={styles.historyStatNum}>{practiceStats.days_active}</Text>
+                  <Text style={styles.historyStatLabel}>days active</Text>
+                </View>
+                <View style={styles.historyStatDivider} />
+                <View style={styles.historyStat}>
+                  <Text style={styles.historyStatNum}>{practiceStats.best}</Text>
+                  <Text style={styles.historyStatLabel}>peak day</Text>
+                </View>
+              </View>
+              <View style={styles.historyChartWrap}>
+                <PracticeHistoryChart
+                  days={practiceHistory}
+                  width={320}
+                  height={110}
+                />
+              </View>
+              <Text style={styles.historyFoot}>
+                Last 30 days · Tap any dance and open Practice Mode to log a session.
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
@@ -845,6 +899,53 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+
+  // ---- Practice History ----
+  historyCard: {
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.sm,
+  },
+  historyStatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  historyStat: {
+    flex: 1,
+    alignItems: "center",
+  },
+  historyStatDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.divider,
+  },
+  historyStatNum: {
+    fontFamily: "serif",
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
+  historyStatLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.muted,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginTop: 2,
+  },
+  historyChartWrap: {
+    alignItems: "center",
+    marginTop: spacing.xs,
+  },
+  historyFoot: {
+    fontSize: 11,
+    color: colors.muted,
+    textAlign: "center",
+    fontStyle: "italic",
   },
   connectSub: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: -2, marginBottom: spacing.xs },
   socialGrid: {

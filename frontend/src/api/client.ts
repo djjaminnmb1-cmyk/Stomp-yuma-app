@@ -64,6 +64,15 @@ export type BadgesResponse = {
   unseen_count: number;
 };
 
+// ---------------- Practice history ----------------
+export type PracticeHistoryDay = { date: string; count: number };
+export type PracticeHistoryResponse = {
+  days: PracticeHistoryDay[];
+  total: number;
+  days_active: number;
+  best_day: PracticeHistoryDay;
+};
+
 export type CertificateTheme = {
   key: string;
   label: string;
@@ -319,6 +328,10 @@ export const api = {
       token
     ),
   getStreak: (token: string) => req<Streak>("/streak", {}, token),
+
+  // ---------------- Practice history ----------------
+  getPracticeHistory: (token: string, days = 30) =>
+    req<PracticeHistoryResponse>(`/practice-history?days=${days}`, {}, token),
 
   // ---------------- Instructor Dashboard ----------------
   getInstructorDashboard: (token: string) =>
