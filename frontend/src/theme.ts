@@ -55,6 +55,12 @@ export const images = {
     "https://images.unsplash.com/photo-1731848357705-d9883b01ef94?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxwZW9wbGUlMjBsaW5lJTIwZGFuY2luZyUyMGNvdW50cnklMjBiYXJ8ZW58MHx8fHwxNzg0MTYxNDQ1fDA&ixlib=rb-4.1.0&q=85",
   profile_cover:
     "https://images.unsplash.com/photo-1571829604981-ea159f94e5ad?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHxsZWF0aGVyJTIwdGV4dHVyZSUyMGJhY2tncm91bmQlMjBydXN0aWN8ZW58MHx8fHwxNzg0MTYxNDQ1fDA&ixlib=rb-4.1.0&q=85",
+  // Full designed poster used as the Home hero. Local asset (ships with the
+  // bundle) so it renders instantly with no network flash. The poster
+  // already bakes in the logo + "More Than Steps... It's Community"
+  // tagline + community-value icons, so the Home hero does NOT overlay any
+  // additional text/logo on top of it.
+  home_hero_local: require("../assets/images/home-community-bg.jpg"),
 };
 
 export const difficultyColor = (d: string): string => {

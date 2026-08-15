@@ -1,14 +1,12 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, Linking, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { colors, spacing, radius, images } from "@/src/theme";
 import { api, Dance, LeaderboardEntry, Streak } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
-import { BrandLogo } from "../../src/components/BrandLogo";
 import { StreakCard } from "@/src/components/StreakCard";
 
 export default function Home() {
@@ -55,18 +53,18 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Community poster hero — full designed piece with logo, tagline,
+            and community-values icons already baked in. We size the hero
+            to the image's ~2:3 portrait aspect ratio so nothing is
+            cropped and the entire poster is visible on first paint.
+            No overlay text is added here (the poster provides its own). */}
         <View style={styles.hero}>
-          <Image source={{ uri: images.venue_hero }} style={StyleSheet.absoluteFillObject as any} contentFit="cover" />
-          <LinearGradient
-            colors={["transparent", "rgba(43,29,22,0.55)", colors.surfaceInverse]}
+          <Image
+            source={images.home_hero_local}
             style={StyleSheet.absoluteFillObject as any}
+            contentFit="cover"
+            contentPosition="top"
           />
-          <View style={styles.heroContent}>
-            <BrandLogo variant="light" size="lg" />
-            <Text style={styles.tagline}>
-              Yuma, Arizona's home for country line dancing — all ages welcome.
-            </Text>
-          </View>
         </View>
 
         <View style={styles.section}>
@@ -295,12 +293,16 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   c: { flex: 1, backgroundColor: colors.surface },
-  hero: { height: 420, justifyContent: "flex-end" },
-  heroContent: { padding: spacing.xl, alignItems: "center", gap: spacing.md },
-  tag: { color: colors.onSurfaceInverse, opacity: 0.8, letterSpacing: 2, fontSize: 11, fontWeight: "700" },
-  brand: { color: colors.onSurfaceInverse, fontFamily: "serif", fontSize: 22, fontStyle: "italic", opacity: 0.95 },
-  brandBig: { color: colors.onSurfaceInverse, fontFamily: "serif", fontSize: 48, fontWeight: "700", letterSpacing: -1 },
-  tagline: { color: colors.onSurfaceInverse, marginTop: spacing.xs, fontSize: 13, opacity: 0.9, lineHeight: 18, textAlign: "center", paddingHorizontal: spacing.lg },
+  // Poster hero — sized to the source image's 1024×1536 (2:3) aspect ratio
+  // so the entire designed poster is visible on first paint without any
+  // cropping. Background matches the poster's cream so the top status-bar
+  // area feels intentional on notched devices.
+  hero: {
+    width: "100%",
+    aspectRatio: 1024 / 1536,
+    backgroundColor: "#F4E7CE",
+    overflow: "hidden",
+  },
   section: { padding: spacing.xl, gap: spacing.md },
   helloText: { fontFamily: "serif", fontSize: 28, color: colors.onSurface, fontWeight: "700" },
   subHello: { fontSize: 15, color: colors.muted, marginTop: -6 },
