@@ -383,6 +383,44 @@ export default function DanceDetail() {
             </Pressable>
           </View>
 
+          {/* Third-party attribution notice. Required legal boilerplate
+              stating we don't host or endorse third-party step-sheet
+              content — we only link out. Both site names are tappable
+              deep-links into the respective home pages so users can
+              investigate the source directly. */}
+          <View style={styles.disclaimer} testID="stepsheet-disclaimer">
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={colors.muted}
+              style={{ marginTop: 1 }}
+            />
+            <Text style={styles.disclaimerText}>
+              Step sheets are provided through links to independent third-party
+              websites. Stompin&apos; Ground Yuma is not affiliated with or
+              endorsed by{" "}
+              <Text
+                style={styles.disclaimerLink}
+                onPress={() =>
+                  RNLinking.openURL("https://www.copperknob.co.uk/").catch(() => {})
+                }
+              >
+                CopperKnob
+              </Text>{" "}
+              or{" "}
+              <Text
+                style={styles.disclaimerLink}
+                onPress={() =>
+                  RNLinking.openURL("https://www.bootstepper.com/").catch(() => {})
+                }
+              >
+                BootStepper
+              </Text>
+              . All content remains on and is governed by the respective
+              third-party website.
+            </Text>
+          </View>
+
           {/* Instructor-uploaded scan (only shown if a whitelisted editor
               attached one — otherwise we don't display the section at all
               since the primary source is the external links above). */}
@@ -914,6 +952,31 @@ const styles = StyleSheet.create({
   bootstepperBtn: { backgroundColor: "#1F2A44" },
   linkBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   linkBtnSub: { color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 2 },
+  disclaimer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.brandTertiary,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.onSurfaceSecondary,
+    fontStyle: "italic",
+  },
+  disclaimerLink: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    textDecorationLine: "underline",
+    fontStyle: "normal",
+  },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
