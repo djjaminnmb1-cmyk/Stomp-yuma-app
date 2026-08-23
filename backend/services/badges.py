@@ -86,7 +86,7 @@ BADGES: List[BadgeDef] = [
     # ---------------- Variety ----------------
     BadgeDef("well_rounded", "Well-Rounded",
              "Complete dances at every difficulty tier.",
-             "sparkles", "#7A3EA3", "variety", 4, "difficulty tiers"),
+             "sparkles", "#7A3EA3", "variety", 6, "difficulty tiers"),
     BadgeDef("wishlist_dreamer", "Wishlist Dreamer",
              "Add 10 dances to your wishlist.",
              "bookmark", "#A66F1F", "variety", 10, "wishlisted"),
@@ -145,7 +145,14 @@ async def _progress_for(user_id: str, badge: BadgeDef) -> int:
                 {"$group": {"_id": {"$toLower": "$d.difficulty"}}},
             ]
             rows = await db.tracking.aggregate(pipeline).to_list(20)
-            allowed = {"beginner", "improver", "intermediate", "advanced"}
+            allowed = {
+                "absolute beginner",
+                "beginner",
+                "improver",
+                "high improver",
+                "intermediate",
+                "advanced",
+            }
             distinct = {r["_id"] for r in rows if r["_id"] in allowed}
             return len(distinct)
         if badge.id == "wishlist_dreamer":
@@ -192,6 +199,13 @@ async def evaluate_badges(user_id: str) -> List[dict]:
                 # Parallel writer already awarded this badge — safe to skip.
                 continue
             newly.append(_serialize_badge(b, prog, row))
+            # Fire a social feed event. Deferred import breaks a
+            # circular between social.py and this module.
+            try:
+                from services.social import record_badge_event
+                await record_badge_event(user_id, b.id)
+            except Exception:
+                pass
     return newly
 
 
@@ -306,6 +320,14 @@ async def bump_streak(user_id: str) -> dict:
             "last_streak_date": today.isoformat(),
         }},
     )
+    # Fire a streak-milestone social event when the streak counter has
+    # just crossed into a milestone value. Deferred import breaks a
+    # potential circular between social.py and this module.
+    try:
+        from services.social import record_streak_milestone
+        await record_streak_milestone(user_id, current)
+    except Exception:
+        pass
     return {
         "current": current,
         "longest": longest,

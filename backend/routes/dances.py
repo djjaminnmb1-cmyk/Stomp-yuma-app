@@ -269,7 +269,24 @@ async def import_dances(inp: DanceImportBody, user: dict = Depends(require_instr
             skipped += 1
             continue
         difficulty = (row.difficulty or "Beginner").strip().title()
-        if difficulty not in ("Beginner", "Improver", "Intermediate", "Advanced"):
+        # Accept common shorthand for High Improver / Absolute Beginner so
+        # CSV imports don't silently downgrade rows written with hyphens
+        # or shortened labels.
+        _alias = difficulty.replace("-", " ").replace("_", " ").strip()
+        _alias = " ".join(_alias.split())  # collapse whitespace
+        if _alias.lower() in ("hi improver", "highimprover"):
+            _alias = "High Improver"
+        if _alias.lower() in ("ab beginner", "absbeginner", "abs beginner"):
+            _alias = "Absolute Beginner"
+        difficulty = _alias
+        if difficulty not in (
+            "Absolute Beginner",
+            "Beginner",
+            "Improver",
+            "High Improver",
+            "Intermediate",
+            "Advanced",
+        ):
             difficulty = "Beginner"
         chor = (row.choreographer or "").strip()
         song = (row.song or "").strip()

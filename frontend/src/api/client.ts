@@ -27,6 +27,7 @@ export type User = {
   is_instructor: boolean;
   can_edit_step_sheets?: boolean;
   show_on_leaderboard?: boolean;
+  show_in_activity_feed?: boolean;
   certificate_theme?: string;
   current_streak?: number;
   longest_streak?: number;
@@ -72,6 +73,77 @@ export type PracticeHistoryResponse = {
   days_active: number;
   best_day: PracticeHistoryDay;
 };
+
+// ---------------- Social ----------------
+export type PublicUser = {
+  user_id: string;
+  name: string;
+  picture: string;
+  current_streak: number;
+  is_instructor: boolean;
+  is_following?: boolean;
+};
+
+export type PublicProfile = {
+  user_id: string;
+  name: string;
+  picture: string;
+  is_admin: boolean;
+  is_instructor: boolean;
+  current_streak: number;
+  longest_streak: number;
+  show_in_activity_feed: boolean;
+  show_on_leaderboard: boolean;
+  counts: {
+    completed: number;
+    badges: number;
+    following: number;
+    followers: number;
+  };
+  is_following: boolean;
+  is_self: boolean;
+};
+
+export type FollowLists = {
+  following: PublicUser[];
+  followers: PublicUser[];
+  counts: { following: number; followers: number };
+};
+
+export type FeedEvent =
+  | {
+      id: string;
+      type: "completion";
+      user: { user_id: string; name: string; picture: string };
+      created_at: string;
+      dance: {
+        id: string;
+        name: string;
+        choreographer: string;
+        difficulty: string;
+        bpm?: number | null;
+      };
+    }
+  | {
+      id: string;
+      type: "badge";
+      user: { user_id: string; name: string; picture: string };
+      created_at: string;
+      badge: {
+        id: string;
+        title: string;
+        description: string;
+        icon: string;
+        color: string;
+      };
+    }
+  | {
+      id: string;
+      type: "streak_milestone";
+      user: { user_id: string; name: string; picture: string };
+      created_at: string;
+      days: number;
+    };
 
 export type CertificateTheme = {
   key: string;
@@ -332,6 +404,47 @@ export const api = {
   // ---------------- Practice history ----------------
   getPracticeHistory: (token: string, days = 30) =>
     req<PracticeHistoryResponse>(`/practice-history?days=${days}`, {}, token),
+
+  // ---------------- Social ----------------
+  getMyFollows: (token: string) =>
+    req<FollowLists>("/follows/me", {}, token),
+  followUser: (token: string, userId: string) =>
+    req<{
+      ok: boolean;
+      created: boolean;
+      is_following: boolean;
+      target_followers: number;
+    }>(`/follows/${userId}`, { method: "POST" }, token),
+  unfollowUser: (token: string, userId: string) =>
+    req<{
+      ok: boolean;
+      removed: boolean;
+      is_following: boolean;
+      target_followers: number;
+    }>(`/follows/${userId}`, { method: "DELETE" }, token),
+  searchUsers: (token: string, q: string, limit = 20) =>
+    req<{ users: PublicUser[] }>(
+      `/users/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+      {},
+      token
+    ),
+  getPublicProfile: (token: string, userId: string) =>
+    req<PublicProfile>(`/users/${userId}`, {}, token),
+  getFeed: (token: string, limit = 30, includeSelf = true) =>
+    req<{ events: FeedEvent[]; count: number }>(
+      `/feed?limit=${limit}&include_self=${includeSelf}`,
+      {},
+      token
+    ),
+  setActivityOptIn: (token: string, showInFeed: boolean) =>
+    req<{ ok: boolean; show_in_activity_feed: boolean }>(
+      "/auth/me/activity-opt-in",
+      {
+        method: "PATCH",
+        body: JSON.stringify({ show_in_activity_feed: showInFeed }),
+      },
+      token
+    ),
 
   // ---------------- Instructor Dashboard ----------------
   getInstructorDashboard: (token: string) =>

@@ -65,8 +65,14 @@ export const images = {
 
 export const difficultyColor = (d: string): string => {
   const k = (d || "").toLowerCase();
+  // Softer sage — reads as "even more welcoming than Beginner".
+  if (k === "absolute beginner") return "#A8CB92";
   if (k === "beginner") return colors.success;
   if (k === "improver") return colors.brandSecondary;
+  // "High Improver" sits between Improver (deep blue) and Intermediate
+  // (warm orange). A violet-blue reads distinctly from both while still
+  // feeling like a natural next-step-up on the difficulty spectrum.
+  if (k === "high improver") return "#5B4B9E";
   if (k === "intermediate") return colors.warning;
   if (k === "advanced") return colors.error;
   return colors.brandTertiary;

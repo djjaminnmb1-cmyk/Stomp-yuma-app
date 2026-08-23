@@ -617,7 +617,7 @@ export default function DanceDetail() {
             <View style={{ gap: 4 }}>
               <Text style={styles.miniLabel}>Difficulty</Text>
               <View style={styles.diffPickerRow}>
-                {["Beginner", "Improver", "Intermediate", "Advanced"].map((lvl) => {
+                {["Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"].map((lvl) => {
                   const on = fDiff === lvl;
                   return (
                     <Pressable

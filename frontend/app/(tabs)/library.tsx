@@ -27,7 +27,7 @@ import {
   countActiveFilters,
 } from "@/src/lib/dance-filter";
 
-const DIFFICULTIES = ["All", "Beginner", "Improver", "Intermediate", "Advanced"];
+const DIFFICULTIES = ["All", "Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"];
 
 export default function Library() {
   const router = useRouter();

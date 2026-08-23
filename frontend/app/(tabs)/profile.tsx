@@ -161,6 +161,11 @@ export default function Profile() {
     days_active: number;
     best: number;
   }>({ total: 0, days_active: 0, best: 0 });
+  const [followCounts, setFollowCounts] = useState<{
+    following: number;
+    followers: number;
+  }>({ following: 0, followers: 0 });
+  const [savingActivityOptIn, setSavingActivityOptIn] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
   const [codeInput, setCodeInput] = useState("");
@@ -216,6 +221,11 @@ export default function Profile() {
       } catch {
         // Non-fatal — chart just shows empty state.
       }
+      // Follow counts for the "Following & Followers" row
+      try {
+        const f = await api.getMyFollows(token);
+        setFollowCounts(f.counts);
+      } catch {}
     } catch {}
   }, [token]);
 
@@ -483,6 +493,81 @@ export default function Profile() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          {/* -------- Social: follow lists + activity opt-in -------- */}
+          <Pressable
+            testID="profile-follows-row"
+            style={styles.row}
+            onPress={() => router.push("/follows")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="people" size={22} color={colors.brandSecondary} />
+              <View>
+                <Text style={styles.rowText}>Following & Followers</Text>
+                <Text style={styles.deleteSub}>
+                  {followCounts.following} following · {followCounts.followers}{" "}
+                  follower{followCounts.followers === 1 ? "" : "s"}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
+            testID="profile-activity-feed-toggle"
+            style={styles.row}
+            onPress={async () => {
+              if (!token || savingActivityOptIn) return;
+              const next = !(user?.show_in_activity_feed ?? true);
+              setSavingActivityOptIn(true);
+              try {
+                await api.setActivityOptIn(token, next);
+                updateUser({ show_in_activity_feed: next });
+              } catch (e: any) {
+                Alert.alert(
+                  "Couldn't save",
+                  e?.message || "Please try again."
+                );
+              } finally {
+                setSavingActivityOptIn(false);
+              }
+            }}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name={
+                  (user?.show_in_activity_feed ?? true) ? "eye" : "eye-off"
+                }
+                size={22}
+                color={
+                  (user?.show_in_activity_feed ?? true)
+                    ? colors.success
+                    : colors.muted
+                }
+              />
+              <View>
+                <Text style={styles.rowText}>Show me in activity feed</Text>
+                <Text style={styles.deleteSub}>
+                  {(user?.show_in_activity_feed ?? true)
+                    ? "Followers see your completions & badges."
+                    : "Your activity is hidden from others."}
+                </Text>
+              </View>
+            </View>
+            <View
+              style={[
+                styles.switch,
+                (user?.show_in_activity_feed ?? true) && styles.switchOn,
+              ]}
+            >
+              <View
+                style={[
+                  styles.switchThumb,
+                  (user?.show_in_activity_feed ?? true) && styles.switchThumbOn,
+                ]}
+              />
+            </View>
           </Pressable>
 
           {/* Certificate theme — pick once, all future PDFs use it. */}
@@ -830,7 +915,7 @@ function AdminAddModal({
           <TextInput testID="admin-input-song" placeholder="Song *" placeholderTextColor={colors.muted} value={song} onChangeText={setSong} style={styles.input} />
           <TextInput placeholder="Artist" placeholderTextColor={colors.muted} value={artist} onChangeText={setArtist} style={styles.input} />
           <View style={styles.chipsRow}>
-            {["Beginner", "Improver", "Intermediate", "Advanced"].map((d) => (
+            {["Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"].map((d) => (
               <Pressable key={d} onPress={() => setDiff(d)} style={[styles.diffChip, difficulty === d && styles.diffChipActive]}>
                 <Text style={[styles.diffChipText, difficulty === d && { color: colors.onBrandPrimary }]}>{d}</Text>
               </Pressable>
@@ -947,6 +1032,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
   },
+  // ---- Switch (for activity-feed opt-in) ----
+  switch: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.border,
+    padding: 2,
+    justifyContent: "center",
+  },
+  switchOn: { backgroundColor: colors.brandPrimary },
+  switchThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  switchThumbOn: { transform: [{ translateX: 20 }] },
   connectSub: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: -2, marginBottom: spacing.xs },
   socialGrid: {
     flexDirection: "row",

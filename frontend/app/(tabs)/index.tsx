@@ -5,9 +5,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { colors, spacing, radius, images } from "@/src/theme";
-import { api, Dance, LeaderboardEntry, Streak } from "@/src/api/client";
+import { api, Dance, FeedEvent, LeaderboardEntry, Streak } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { StreakCard } from "@/src/components/StreakCard";
+import { FeedEventCard } from "@/src/components/FeedEventCard";
 
 export default function Home() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function Home() {
   >([]);
   const [streak, setStreak] = useState<Streak | null>(null);
   const [unseenBadges, setUnseenBadges] = useState(0);
+  const [feedPreview, setFeedPreview] = useState<FeedEvent[]>([]);
 
   useEffect(() => {
     api.listDances().then((all) => setRecent(all.slice(0, 4))).catch(() => {});
@@ -35,17 +37,21 @@ export default function Home() {
       setPracticed([]);
       setStreak(null);
       setUnseenBadges(0);
+      setFeedPreview([]);
     }
   }, [token]);
 
-  // Refresh streak + badge indicator on every Home focus so users see the
-  // effect of completing dances immediately when they navigate back.
+  // Refresh streak + badge + feed indicators on every Home focus so users
+  // see the effect of completing dances immediately when they navigate back.
   useFocusEffect(
     useCallback(() => {
       if (!token) return;
       api.getBadges(token).then((r) => {
         setStreak(r.streak);
         setUnseenBadges(r.unseen_count);
+      }).catch(() => {});
+      api.getFeed(token, 3).then((r) => {
+        setFeedPreview(r.events || []);
       }).catch(() => {});
     }, [token])
   );
@@ -115,6 +121,49 @@ export default function Home() {
             <Ionicons name="arrow-forward" size={18} color={colors.onBrandPrimary} />
           </Pressable>
         </View>
+
+        {/* -------- Activity Feed preview -------- */}
+        {token ? (
+          <View style={styles.section} testID="home-feed-section">
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Community Activity</Text>
+              <Pressable
+                onPress={() => router.push("/feed")}
+                testID="home-feed-see-all"
+              >
+                <Text style={styles.link}>See all</Text>
+              </Pressable>
+            </View>
+            {feedPreview.length === 0 ? (
+              <Pressable
+                onPress={() => router.push("/feed")}
+                style={styles.feedEmpty}
+                testID="home-feed-empty"
+              >
+                <Ionicons
+                  name="people"
+                  size={22}
+                  color={colors.brandTertiary}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.suggestTitle}>
+                    Follow other dancers
+                  </Text>
+                  <Text style={styles.suggestSub}>
+                    Their completions, badges, and streaks will show up here.
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.muted}
+                />
+              </Pressable>
+            ) : (
+              feedPreview.map((e) => <FeedEventCard key={e.id} event={e} />)
+            )}
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -255,16 +304,28 @@ export default function Home() {
           </View>
           <View style={styles.rowIcons}>
             <View style={styles.iconItem}>
-              <Ionicons name="people" size={22} color={colors.brandSecondary} />
-              <Text style={styles.iconLabel}>All ages</Text>
+              <View style={styles.iconOrb}>
+                <Ionicons name="people" size={22} color={colors.brandSecondary} />
+              </View>
+              <Text style={styles.iconLabel} numberOfLines={2}>
+                All ages
+              </Text>
             </View>
             <View style={styles.iconItem}>
-              <Ionicons name="sparkles" size={22} color={colors.warning} />
-              <Text style={styles.iconLabel}>Beginners welcome</Text>
+              <View style={[styles.iconOrb, { backgroundColor: "#FFF3D9" }]}>
+                <Ionicons name="sparkles" size={22} color={colors.warning} />
+              </View>
+              <Text style={styles.iconLabel} numberOfLines={2}>
+                Beginners{"\n"}welcome
+              </Text>
             </View>
             <View style={styles.iconItem}>
-              <Ionicons name="heart" size={22} color={colors.brandPrimary} />
-              <Text style={styles.iconLabel}>Family friendly</Text>
+              <View style={[styles.iconOrb, { backgroundColor: "#FCE6DF" }]}>
+                <Ionicons name="heart" size={22} color={colors.brandPrimary} />
+              </View>
+              <Text style={styles.iconLabel} numberOfLines={2}>
+                Family{"\n"}friendly
+              </Text>
             </View>
           </View>
 
@@ -348,9 +409,38 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   aboutText: { flex: 1, color: colors.onSurfaceSecondary, lineHeight: 20, fontSize: 14 },
-  rowIcons: { flexDirection: "row", justifyContent: "space-around", marginTop: spacing.md },
-  iconItem: { alignItems: "center", gap: 6 },
-  iconLabel: { fontSize: 12, color: colors.onSurface, fontWeight: "600" },
+  // Three "value" chips (All ages · Beginners welcome · Family friendly).
+  // Flex each item equally so labels center under their icons with plenty
+  // of breathing room — no crowding on narrow devices.
+  rowIcons: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+  },
+  iconItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  iconOrb: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#E6ECFA",
+  },
+  iconLabel: {
+    fontSize: 12,
+    color: colors.onSurface,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 16,
+    letterSpacing: 0.2,
+  },
   suggestCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -493,6 +583,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.brandTertiary + "88",
+  },
+  feedEmpty: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: "dashed",
   },
   achievementsIcon: {
     width: 44,

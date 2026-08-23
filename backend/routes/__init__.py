@@ -22,6 +22,7 @@ from . import (
     misc,
     prizes,
     push,
+    social,
     song_preview,
     suggestions,
     tracking,
@@ -45,6 +46,7 @@ api_router.include_router(dashboard.router)
 api_router.include_router(activity.router)
 api_router.include_router(certificate.router)
 api_router.include_router(badges.router)
+api_router.include_router(social.router)
 api_router.include_router(song_preview.router)
 api_router.include_router(push.router)
 api_router.include_router(misc.router)

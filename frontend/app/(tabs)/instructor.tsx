@@ -27,7 +27,7 @@ import { useAuth } from "@/src/context/auth-context";
 import { useDraftCount } from "@/src/context/draft-count-context";
 import { parseCsv } from "@/src/lib/csv";
 
-const DIFFICULTIES = ["Beginner", "Improver", "Intermediate", "Advanced"];
+const DIFFICULTIES = ["Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"];
 
 export default function InstructorTab() {
   const router = useRouter();

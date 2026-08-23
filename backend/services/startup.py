@@ -58,6 +58,14 @@ async def _ensure_indexes() -> None:
             [("user_id", 1), ("day", 1)], unique=True
         )
         await db.practice_daily.create_index([("user_id", 1), ("day", -1)])
+        # Social graph
+        await db.follows.create_index(
+            [("follower_id", 1), ("followee_id", 1)], unique=True
+        )
+        await db.follows.create_index("followee_id")
+        # Activity feed events
+        await db.activity_events.create_index([("user_id", 1), ("created_at", -1)])
+        await db.activity_events.create_index("created_at")
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 

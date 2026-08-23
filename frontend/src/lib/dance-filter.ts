@@ -2,10 +2,12 @@ import type { Dance } from "@/src/api/client";
 import { BPM_BANDS, type BpmBand, type SortKey } from "@/src/components/DanceFilterModal";
 
 const DIFFICULTY_ORDER: Record<string, number> = {
-  beginner: 0,
-  improver: 1,
-  intermediate: 2,
-  advanced: 3,
+  "absolute beginner": 0,
+  beginner: 1,
+  improver: 2,
+  "high improver": 3,
+  intermediate: 4,
+  advanced: 5,
 };
 
 /**

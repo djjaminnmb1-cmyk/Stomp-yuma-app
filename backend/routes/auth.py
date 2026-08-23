@@ -388,6 +388,9 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
     await db.sent_reminders.delete_many({"user_id": uid})
     await db.user_badges.delete_many({"user_id": uid})
     await db.practice_daily.delete_many({"user_id": uid})
+    # Social graph + activity feed events (both incoming + outgoing)
+    from services.social import purge_user as purge_social
+    await purge_social(uid)
 
     # 2) Shared content — anonymise so other users' tracking/attendance still works
     await db.dances.update_many(

@@ -24,7 +24,7 @@ import { colors, spacing, radius } from "../src/theme";
 import { api, Suggestion } from "../src/api/client";
 import { useAuth } from "../src/context/auth-context";
 
-const DIFFICULTIES = ["Beginner", "Improver", "Intermediate", "Advanced"];
+const DIFFICULTIES = ["Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"];
 const STATUSES = ["pending", "reviewed", "queued", "declined"];
 
 const statusColor = (s: string) => {

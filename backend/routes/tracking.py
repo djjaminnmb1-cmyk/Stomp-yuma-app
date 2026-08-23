@@ -8,6 +8,7 @@ from core.security import get_current_user
 from core.time_helpers import now_iso
 from models.schemas import TrackingIn
 from services.badges import award_and_streak, evaluate_badges, get_streak
+from services.social import record_completion_event
 
 router = APIRouter()
 
@@ -38,6 +39,14 @@ async def upsert_tracking(
     dance = await db.dances.find_one({"id": dance_id}, {"_id": 0})
     if not dance:
         raise HTTPException(404, "Dance not found")
+    # Look up prior state so we only fire a feed event when the user is
+    # transitioning INTO the completed state (not toggling completed →
+    # completed on a save-notes call).
+    prior = await db.tracking.find_one(
+        {"user_id": user["user_id"], "dance_id": dance_id},
+        {"_id": 0, "status": 1},
+    )
+    was_completed = bool(prior and prior.get("status") == "completed")
     payload = {
         "user_id": user["user_id"],
         "dance_id": dance_id,
@@ -58,6 +67,10 @@ async def upsert_tracking(
         award = await award_and_streak(user["user_id"])
         newly_earned = award["newly_earned_badges"]
         streak = award["streak"]
+        # Feed event on first-time completion. Idempotent inside the
+        # helper so a re-save of the same completed row is a no-op.
+        if not was_completed:
+            await record_completion_event(user["user_id"], dance_id)
     else:
         # Non-completion (wishlist) — evaluate wishlist_dreamer et al without
         # bumping the daily streak counter. Return the CURRENT streak (may be
