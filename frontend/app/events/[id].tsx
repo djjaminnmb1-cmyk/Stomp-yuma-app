@@ -311,6 +311,22 @@ export default function EventDetail() {
             <Ionicons name="open-outline" size={16} color="#fff" />
           </Pressable>
         ) : null}
+
+        {!canEdit ? (
+          <View style={styles.disclaimer} testID="event-detail-disclaimer">
+            <Ionicons
+              name="information-circle"
+              size={14}
+              color={colors.muted}
+              style={{ marginTop: 2 }}
+            />
+            <Text style={styles.disclaimerText}>
+              Hosted by a third-party instructor. Stompin&apos; Ground Yuma
+              doesn&apos;t organize this event — verify details directly
+              with the host before you travel or pay.
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -527,4 +543,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandPrimary,
   },
   registerBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  disclaimer: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.md,
+  },
+  disclaimerText: {
+    flex: 1,
+    color: colors.muted,
+    fontSize: 11,
+    lineHeight: 15,
+    fontStyle: "italic",
+  },
 });

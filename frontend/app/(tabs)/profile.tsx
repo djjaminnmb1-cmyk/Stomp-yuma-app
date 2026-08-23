@@ -691,6 +691,30 @@ export default function Profile() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
+
+          <Pressable
+            testID="profile-terms-cta"
+            onPress={() => router.push("/terms")}
+            style={styles.websiteRow}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="document-text-outline" size={22} color={colors.brandPrimary} />
+              <Text style={styles.rowText}>Terms of Service</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
+            testID="profile-community-cta"
+            onPress={() => router.push("/community-guidelines")}
+            style={styles.websiteRow}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="people-outline" size={22} color={colors.brandPrimary} />
+              <Text style={styles.rowText}>Community Guidelines</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
         </View>
 
         <View style={styles.section}>

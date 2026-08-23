@@ -58,11 +58,24 @@ export default function PrivacyPolicy() {
           <Bullet>
             <B>App activity</B> — dances you mark as completed or wishlist,
             classes you attend, dances you suggest, chat messages you post
-            in the instructor chat.
+            in the instructor chat, activity-feed events and reactions,
+            follow/unfollow actions.
           </Bullet>
           <Bullet>
             <B>Device push token</B> — if you allow notifications, we store a
             device push token so we can send reminders and class updates.
+          </Bullet>
+          <Bullet>
+            <B>Approximate location (opt-in)</B> — only when you tap
+            &quot;Near me&quot; on the <B>Find Events</B> screen. We use it
+            once to compute distances and never store the coordinates on our
+            servers.
+          </Bullet>
+          <Bullet>
+            <B>Event addresses</B> — if you&apos;re an instructor and post an
+            event, the address you type is stored and geocoded to display
+            events on a map/list. Please only post addresses you have the
+            right to publish.
           </Bullet>
         </Section>
 
@@ -77,6 +90,11 @@ export default function PrivacyPolicy() {
             chat.
           </Bullet>
           <Bullet>
+            To power social features — activity feed, reactions, follows,
+            and dancer discovery — so you can cheer on other dancers in the
+            community.
+          </Bullet>
+          <Bullet>
             To send you class reminders and event updates (only if you opted
             in to notifications).
           </Bullet>
@@ -84,17 +102,30 @@ export default function PrivacyPolicy() {
 
         <Section title="3. Who we share it with">
           <Text style={styles.body}>
-            We do <B>not</B> sell your data. Your data is only shared with:
+            We do <B>not</B> sell your data. Your data is only shared with the
+            service providers we rely on to run the app:
           </Text>
           <Bullet>
-            Google (only if you sign in with Google) — for authentication.
+            <B>Google</B> — only if you sign in with Google, for
+            authentication.
           </Bullet>
           <Bullet>
-            Our push-notification provider — only your device push token, used
-            solely to deliver reminders.
+            <B>Push-notification provider</B> — only your device push token,
+            used solely to deliver reminders.
           </Bullet>
           <Bullet>
-            Our email provider — only when you request a password reset.
+            <B>Email provider</B> — only when you request a password reset.
+          </Bullet>
+          <Bullet>
+            <B>OpenStreetMap Nominatim</B> — event addresses are sent to
+            Nominatim to obtain map coordinates. We do <B>not</B> send your
+            personal identifiers along with the address.
+          </Bullet>
+          <Bullet>
+            <B>AI providers (OpenAI / Anthropic / Google Gemini)</B> — a
+            limited set of features (such as future AI-assisted suggestions,
+            when we roll them out) may forward your prompt text to one of
+            these providers. Your account identifiers are never included.
           </Bullet>
         </Section>
 
@@ -127,11 +158,37 @@ export default function PrivacyPolicy() {
             The app is intended for line dancers of all ages, but children
             under 13 should only use it with a parent or guardian&apos;s
             supervision. We do not knowingly collect data from children under
-            13 without parental involvement.
+            13 without parental involvement. If you believe a child under 13
+            created an account without permission,{" "}
+            <Link onPress={() => Linking.openURL(`mailto:${contact}?subject=COPPA%20request`)}>
+              contact us
+            </Link>{" "}
+            and we&apos;ll remove the account.
           </Text>
         </Section>
 
-        <Section title="7. Security">
+        <Section title="7. California residents (CCPA)">
+          <Text style={styles.body}>
+            If you live in California you have the right to know what
+            personal information we collect, request a copy, request that
+            we delete it, and not be discriminated against for exercising
+            your rights. We do not sell your personal information. To make
+            a request, email us using the contact link below.
+          </Text>
+        </Section>
+
+        <Section title="8. EU / UK residents (GDPR)">
+          <Text style={styles.body}>
+            If you live in the EU, UK, or European Economic Area, you have
+            the right to access, correct, port, or erase your personal data,
+            and to object to or restrict its processing. Our legal basis for
+            processing is either your consent (e.g. notifications, location)
+            or the performance of our service agreement (your account and
+            tracking data). Email us to exercise any of these rights.
+          </Text>
+        </Section>
+
+        <Section title="9. Security">
           <Text style={styles.body}>
             Passwords are hashed with bcrypt. All traffic between the app and
             our servers is encrypted over HTTPS. Reset tokens expire after
@@ -139,7 +196,33 @@ export default function PrivacyPolicy() {
           </Text>
         </Section>
 
-        <Section title="8. Contact us">
+        <Section title="10. DMCA / Copyright takedown">
+          <Text style={styles.body}>
+            The Stompin&apos; Ground Yuma dance directory links to
+            third-party step sheets hosted on services such as CopperKnob and
+            BootStepper. If you own a step sheet or other content that
+            appears in the app without permission, email us with a
+            description of the work, where it appears, and your contact
+            details. We&apos;ll remove valid takedown requests within a
+            reasonable time.
+          </Text>
+          <Pressable
+            testID="privacy-dmca"
+            onPress={() =>
+              Linking.openURL(`mailto:${contact}?subject=DMCA%20takedown`)
+            }
+            style={styles.contactBtn}
+          >
+            <Ionicons
+              name="document-lock-outline"
+              size={18}
+              color={colors.brandPrimary}
+            />
+            <Text style={styles.contactBtnText}>DMCA takedown request</Text>
+          </Pressable>
+        </Section>
+
+        <Section title="11. Contact us">
           <Text style={styles.body}>
             Questions or requests? Email us and we&apos;ll get back to you.
           </Text>
@@ -152,6 +235,24 @@ export default function PrivacyPolicy() {
             <Text style={styles.contactBtnText}>{contact}</Text>
           </Pressable>
         </Section>
+
+        <View style={styles.footerLinks}>
+          <Pressable
+            testID="privacy-goto-terms"
+            onPress={() => router.push("/terms")}
+            hitSlop={6}
+          >
+            <Text style={styles.footerLinkText}>Terms of Service</Text>
+          </Pressable>
+          <Text style={styles.footerDot}>·</Text>
+          <Pressable
+            testID="privacy-goto-community"
+            onPress={() => router.push("/community-guidelines")}
+            hitSlop={6}
+          >
+            <Text style={styles.footerLinkText}>Community Guidelines</Text>
+          </Pressable>
+        </View>
 
         <Text style={[styles.body, { marginTop: spacing.xl, textAlign: "center", color: colors.muted }]}>
           Stompin&apos; Ground Yuma · Yuma, Arizona
@@ -181,6 +282,23 @@ function Bullet({ children }: { children: React.ReactNode }) {
 
 function B({ children }: { children: React.ReactNode }) {
   return <Text style={{ fontWeight: "700", color: colors.onSurface }}>{children}</Text>;
+}
+
+function Link({
+  onPress,
+  children,
+}: {
+  onPress: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Text
+      onPress={onPress}
+      style={{ color: colors.brandPrimary, fontWeight: "700" }}
+    >
+      {children}
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -233,4 +351,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   contactBtnText: { color: colors.brandPrimary, fontWeight: "700", fontSize: 13 },
+  footerLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: spacing.lg,
+  },
+  footerLinkText: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  footerDot: { color: colors.muted, fontSize: 13 },
 });

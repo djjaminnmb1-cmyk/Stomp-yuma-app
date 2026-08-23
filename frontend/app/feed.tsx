@@ -145,6 +145,17 @@ export default function FeedScreen() {
           {events.map((e) => (
             <FeedEventCard key={e.id} event={e} />
           ))}
+          <Pressable
+            testID="feed-community-guidelines-cta"
+            onPress={() => router.push("/community-guidelines")}
+            style={styles.beKindRow}
+            hitSlop={6}
+          >
+            <Ionicons name="heart" size={14} color={colors.brandPrimary} />
+            <Text style={styles.beKindText}>
+              Be kind — <Text style={styles.beKindLink}>Community Guidelines</Text>
+            </Text>
+          </Pressable>
           <Text style={styles.foot}>
             Showing the last 30 days · Pull down to refresh
           </Text>
@@ -342,6 +353,23 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     marginTop: spacing.md,
+  },
+  beKindRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: spacing.md,
+  },
+  beKindText: {
+    color: colors.onSurfaceSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  beKindLink: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    textDecorationLine: "underline",
   },
   emptyWrap: {
     padding: spacing.xl,

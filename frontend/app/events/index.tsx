@@ -497,6 +497,19 @@ export default function EventsSearch() {
           {includeClasses
             ? classes.map((c) => <EventCard key={`c-${c.id}`} event={c} />)
             : null}
+          <View style={styles.disclaimer} testID="events-disclaimer">
+            <Ionicons
+              name="information-circle"
+              size={14}
+              color={colors.muted}
+              style={{ marginTop: 2 }}
+            />
+            <Text style={styles.disclaimerText}>
+              Events are posted by third-party instructors. Stompin&apos;
+              Ground Yuma doesn&apos;t endorse or vouch for them — verify
+              details directly with the host before you travel.
+            </Text>
+          </View>
         </ScrollView>
       )}
 
@@ -876,6 +889,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandPrimary,
   },
   emptyCtaText: { color: "#fff", fontWeight: "800" },
+  disclaimer: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  disclaimerText: {
+    flex: 1,
+    color: colors.muted,
+    fontSize: 11,
+    lineHeight: 15,
+    fontStyle: "italic",
+  },
 });
 
 const sheet = StyleSheet.create({

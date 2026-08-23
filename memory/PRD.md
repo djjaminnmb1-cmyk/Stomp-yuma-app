@@ -60,3 +60,15 @@ Add an "Upcoming Classes" section on Home so the venue can drive attendance to r
 - **UI**: New `/events` route with search bar, location strip, radius pill row, filters bottom sheet. Home tab now has a "Find Events Near You" CTA (`home-events-cta`). Instructors see a + button on `/events` to create; owner + admin get edit/delete on detail. Non-authenticated users get a friendly sign-in gate.
 - **Permissions**: `expo-location` plugin added to `app.json` with iOS `NSLocationWhenInUseUsageDescription` and Android `ACCESS_COARSE_LOCATION` + `ACCESS_FINE_LOCATION`. Follows the app-wide permissions contract (check → prompt → openSettings fallback).
 - **Endpoints**: `GET /api/events/search`, `GET /api/events/types`, `GET /api/events/mine`, `GET /api/events/{id}`, `POST /api/events`, `PATCH /api/events/{id}`, `DELETE /api/events/{id}`, `POST /api/events/geocode`.
+
+## Phase 5 Social Reactions + Legal Groundwork (v2.0 — DONE)
+- **Feed Reactions**: New `feed_reactions` collection (unique on user_id+event_id+kind). Endpoints `GET /api/feed/reaction-kinds`, `POST/DELETE /api/feed/{id}/reactions/{kind}`. Kinds = high_five 🙌, clap 👏, yeehaw 🤠, heart ❤️. `_hydrate_events` now returns `reactions:{counts, mine}` per event.
+- **UI**: `FeedReactionsBar.tsx` — optimistic-update chips + "+" picker with 4 emoji. Feed cards restructured so tapping a reaction chip does NOT navigate into the dance/user.
+- **Legal / Compliance package**:
+  - Expanded `/privacy` — added location, event addresses, LLM providers, CCPA, GDPR, DMCA takedown sections.
+  - New `/terms` — full ToS (dance activity risk, UGC, third-party events, DMCA, governing law).
+  - New `/community-guidelines` — house rules for feed / reactions / chat.
+  - `/auth` register screen now shows real Terms + Privacy + dance-activity acknowledgement (was just filler text).
+  - `/feed` shows a "Be kind — Community Guidelines" link before the pull-to-refresh footer.
+  - `/events` list + `/events/[id]` (non-owner view) show a third-party host disclaimer.
+  - Profile Legal section — Terms, Privacy, Community Guidelines rows.

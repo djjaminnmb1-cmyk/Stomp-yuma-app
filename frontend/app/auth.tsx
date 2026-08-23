@@ -341,7 +341,48 @@ export default function AuthScreen() {
             </Pressable>
 
             <Text style={styles.legal}>
-              By continuing you agree to enjoy line dancing responsibly.
+              {mode === "register" ? (
+                <>
+                  By creating an account you agree to our{" "}
+                  <Text
+                    testID="auth-terms-link"
+                    style={styles.legalLink}
+                    onPress={() => router.push("/terms")}
+                  >
+                    Terms of Service
+                  </Text>{" "}
+                  and{" "}
+                  <Text
+                    testID="auth-privacy-link"
+                    style={styles.legalLink}
+                    onPress={() => router.push("/privacy")}
+                  >
+                    Privacy Policy
+                  </Text>
+                  , and acknowledge that line dancing is a physical activity
+                  you take part in at your own risk.
+                </>
+              ) : (
+                <>
+                  By continuing you agree to our{" "}
+                  <Text
+                    testID="auth-terms-link"
+                    style={styles.legalLink}
+                    onPress={() => router.push("/terms")}
+                  >
+                    Terms
+                  </Text>{" "}
+                  and{" "}
+                  <Text
+                    testID="auth-privacy-link"
+                    style={styles.legalLink}
+                    onPress={() => router.push("/privacy")}
+                  >
+                    Privacy Policy
+                  </Text>
+                  .
+                </>
+              )}
             </Text>
           </View>
         </ScrollView>
@@ -459,6 +500,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.muted,
     fontSize: 12,
+    lineHeight: 17,
     marginTop: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+  legalLink: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    textDecorationLine: "underline",
   },
 });
