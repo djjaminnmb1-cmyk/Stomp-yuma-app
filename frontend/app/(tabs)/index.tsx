@@ -324,7 +324,12 @@ export default function Home() {
               <View style={styles.iconOrb}>
                 <Ionicons name="people" size={22} color={colors.brandSecondary} />
               </View>
-              <Text style={styles.iconLabel} numberOfLines={2}>
+              <Text
+                style={styles.iconLabel}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
                 All ages
               </Text>
             </View>
@@ -332,16 +337,26 @@ export default function Home() {
               <View style={[styles.iconOrb, { backgroundColor: "#FFF3D9" }]}>
                 <Ionicons name="sparkles" size={22} color={colors.warning} />
               </View>
-              <Text style={styles.iconLabel} numberOfLines={2}>
-                Beginners{"\n"}welcome
+              <Text
+                style={styles.iconLabel}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                Beginners welcome
               </Text>
             </View>
             <View style={styles.iconItem}>
               <View style={[styles.iconOrb, { backgroundColor: "#FCE6DF" }]}>
                 <Ionicons name="heart" size={22} color={colors.brandPrimary} />
               </View>
-              <Text style={styles.iconLabel} numberOfLines={2}>
-                Family{"\n"}friendly
+              <Text
+                style={styles.iconLabel}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                Family friendly
               </Text>
             </View>
           </View>
@@ -432,7 +447,7 @@ const styles = StyleSheet.create({
   rowIcons: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: spacing.sm,
+    gap: spacing.xs,
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
   },
@@ -440,7 +455,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     gap: 8,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
+    minWidth: 0,
   },
   iconOrb: {
     width: 44,
@@ -451,12 +467,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#E6ECFA",
   },
   iconLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.onSurface,
     fontWeight: "700",
     textAlign: "center",
-    lineHeight: 16,
-    letterSpacing: 0.2,
+    lineHeight: 15,
+    letterSpacing: 0.1,
+    alignSelf: "stretch",
   },
   suggestCard: {
     flexDirection: "row",

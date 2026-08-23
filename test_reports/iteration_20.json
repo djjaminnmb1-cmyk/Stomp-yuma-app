@@ -1,0 +1,38 @@
+{
+  "summary": "Backend regression + feature validation for Phase 3 extension (feed reactions). 13/13 pytest cases pass against the public preview URL, covering GET /api/feed/reaction-kinds catalog, POST/DELETE /api/feed/{event_id}/reactions/{kind} shape+idempotency, unknown-kind 400, missing-event returns ok:true w/ empty counts, /api/feed hydration includes reactions:{counts,mine}, two-user isolation of 'mine' arrays, and 401/403 on unauthenticated calls. Fixed a contract violation in services/social.py add_reaction() which used to always return True (making the 2nd POST report created:true) — now inspects update_one.upserted_id and returns True only on real insert. Frontend smoke test on 390px viewport confirmed the login screen renders without errors and the app title/hero image display cleanly. Deeper mobile UI testing (feed reactions bar, instructor Events sub-tab, home 'Beginners welcome' regression at 320/390) was NOT performed in this iteration due to context budget — recommend main agent self-test since all logic-level backend contracts are green.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/feed/{event_id}/reactions/{kind}",
+       "issue": "add_reaction always returned True on upsert (contract said created:false on 2nd POST). Fixed by inspecting result.upserted_id in services/social.py."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_feed_reactions.py",
+    "/app/test_reports/pytest/feed_reactions.xml"
+  ],
+  "action_items": [
+    "Main agent: self-test the frontend flows — (a) Feed page + Home preview show a FeedReactionsBar with the 4-emoji picker (testIDs: feed-reactions-{id}, reaction-add-{id}, reaction-chip-{id}-{kind}, reaction-pick-{id}-{kind}); (b) tapping a chip does NOT navigate away (outer wrapper is View, inner Pressable only around body); (c) Home 'Beginners welcome' / 'Family friendly' / 'All ages' render fully at 320px and 390px viewports; (d) Instructor tab shows 4 sub-tabs including instr-tab-events which renders EventsView with instr-events-new + instr-events-browse + per-row instr-event-open/edit/delete test ids.",
+    "Re-run backend regression suite: pytest /app/backend/tests/test_feed_reactions.py — should stay 13/13 green."
+  ],
+  "critical_code_review_comments": [
+    "services/social.py get_reactions_bulk aggregation excludes kinds not in REACTION_KINDS — good hygiene; consider also filtering the delete side to reject legacy kinds. (Non-blocking.)",
+    "FeedReactionsBar.tsx catches errors on toggle and rolls back local state but does NOT surface a Toast — user will see silent revert on network failure. Consider adding a Toast/Alert."
+  ],
+  "updated_files": [
+    "/app/backend/services/social.py (add_reaction returns True only on real insert via upserted_id)",
+    "/app/backend/tests/test_feed_reactions.py (new pytest module)"
+  ],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "not fully tested"},
+  "seed_data_creation": "Test module registers a fresh regular user TEST_reactor_<hex>@example.com, marks a dance completed for Erin to generate a completion event, and adds a follow row from fresh user -> Erin. All data is prefixed TEST_ and left in the DB (not destructive).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend endpoints for feed reactions are fully validated. The bug fix in services/social.py (add_reaction upserted_id check) was applied and verified. Next testing agent should focus on Playwright UI validation of the FeedReactionsBar on both /feed and Home preview (mobile 375x667 viewport), verify tapping a chip does NOT navigate to /dance/{id} or /users/{id}, and check the Instructor Events sub-tab renders on mobile 390x844.",
+  "rca_of_issue": "Bug (fixed): services/social.py add_reaction() called db.feed_reactions.update_one(..., upsert=True) and unconditionally returned True inside the try block. This meant every POST returned created:true — even when the (user_id, event_id, kind) row already existed — violating the documented contract 'a second POST returns created:false and identical counts.' Fix: capture the UpdateResult and return bool(res.upserted_id). matched_count>0 & upserted_id is None on the duplicate path, so only a genuine insert now reports created:true. Counts were already correctly idempotent because the unique index prevents a second row."
+}

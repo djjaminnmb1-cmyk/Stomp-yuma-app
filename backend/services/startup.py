@@ -66,6 +66,12 @@ async def _ensure_indexes() -> None:
         # Activity feed events
         await db.activity_events.create_index([("user_id", 1), ("created_at", -1)])
         await db.activity_events.create_index("created_at")
+        await db.activity_events.create_index("event_id")
+        # Feed reactions (one per user per event per kind)
+        await db.feed_reactions.create_index(
+            [("user_id", 1), ("event_id", 1), ("kind", 1)], unique=True
+        )
+        await db.feed_reactions.create_index("event_id")
         # Events + geocoding
         await db.events.create_index([("date", 1)])
         await db.events.create_index([("instructor_id", 1)])

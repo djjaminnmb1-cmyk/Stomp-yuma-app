@@ -25,13 +25,19 @@ from pydantic import BaseModel
 from core.database import db
 from core.security import get_current_user
 from services.social import (
+    REACTION_EMOJI,
+    REACTION_KINDS,
+    REACTION_LABEL,
+    add_reaction,
     follow,
     follow_counts,
     following_ids,
     follower_ids,
     get_feed,
     get_public_user,
+    get_reactions_bulk,
     is_following,
+    remove_reaction,
     search_users,
     unfollow,
 )
@@ -188,4 +194,62 @@ async def set_activity_opt_in(
     return {
         "ok": True,
         "show_in_activity_feed": bool(body.show_in_activity_feed),
+    }
+
+
+# ---------------- Feed reactions ----------------
+@router.get("/feed/reaction-kinds")
+async def list_reaction_kinds(user: dict = Depends(get_current_user)):
+    """Public catalog of reaction kinds for the client picker.
+
+    Kept as a server-side source of truth so we can add / retire kinds
+    without shipping a new client build.
+    """
+    return {
+        "kinds": [
+            {
+                "kind": k,
+                "emoji": REACTION_EMOJI[k],
+                "label": REACTION_LABEL[k],
+            }
+            for k in REACTION_KINDS
+        ]
+    }
+
+
+@router.post("/feed/{event_id}/reactions/{kind}")
+async def post_feed_reaction(
+    event_id: str,
+    kind: str,
+    user: dict = Depends(get_current_user),
+):
+    """Toggle-add a reaction. Idempotent — reposting the same kind is a
+    no-op and always returns the current counts + the caller's own set.
+    """
+    if kind not in REACTION_KINDS:
+        raise HTTPException(400, "Unknown reaction kind.")
+    created = await add_reaction(user["user_id"], event_id, kind)
+    bulk = await get_reactions_bulk([event_id], viewer_id=user["user_id"])
+    return {
+        "ok": True,
+        "created": created,
+        "reactions": bulk.get(event_id, {"counts": {}, "mine": []}),
+    }
+
+
+@router.delete("/feed/{event_id}/reactions/{kind}")
+async def delete_feed_reaction(
+    event_id: str,
+    kind: str,
+    user: dict = Depends(get_current_user),
+):
+    """Toggle-remove a reaction. Idempotent."""
+    if kind not in REACTION_KINDS:
+        raise HTTPException(400, "Unknown reaction kind.")
+    removed = await remove_reaction(user["user_id"], event_id, kind)
+    bulk = await get_reactions_bulk([event_id], viewer_id=user["user_id"])
+    return {
+        "ok": True,
+        "removed": removed,
+        "reactions": bulk.get(event_id, {"counts": {}, "mine": []}),
     }

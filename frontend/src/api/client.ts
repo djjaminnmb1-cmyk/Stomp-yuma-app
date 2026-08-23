@@ -110,12 +110,26 @@ export type FollowLists = {
   counts: { following: number; followers: number };
 };
 
+export type FeedReactionKind = "high_five" | "clap" | "yeehaw" | "heart";
+
+export type FeedReactionMeta = {
+  kind: FeedReactionKind;
+  emoji: string;
+  label: string;
+};
+
+export type FeedReactions = {
+  counts: Partial<Record<FeedReactionKind, number>>;
+  mine: FeedReactionKind[];
+};
+
 export type FeedEvent =
   | {
       id: string;
       type: "completion";
       user: { user_id: string; name: string; picture: string };
       created_at: string;
+      reactions?: FeedReactions;
       dance: {
         id: string;
         name: string;
@@ -129,6 +143,7 @@ export type FeedEvent =
       type: "badge";
       user: { user_id: string; name: string; picture: string };
       created_at: string;
+      reactions?: FeedReactions;
       badge: {
         id: string;
         title: string;
@@ -142,6 +157,7 @@ export type FeedEvent =
       type: "streak_milestone";
       user: { user_id: string; name: string; picture: string };
       created_at: string;
+      reactions?: FeedReactions;
       days: number;
     };
 
@@ -522,6 +538,28 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ show_in_activity_feed: showInFeed }),
       },
+      token
+    ),
+  getReactionKinds: (token: string) =>
+    req<{ kinds: FeedReactionMeta[] }>("/feed/reaction-kinds", {}, token),
+  addFeedReaction: (
+    token: string,
+    eventId: string,
+    kind: FeedReactionKind
+  ) =>
+    req<{ ok: boolean; created: boolean; reactions: FeedReactions }>(
+      `/feed/${encodeURIComponent(eventId)}/reactions/${kind}`,
+      { method: "POST" },
+      token
+    ),
+  removeFeedReaction: (
+    token: string,
+    eventId: string,
+    kind: FeedReactionKind
+  ) =>
+    req<{ ok: boolean; removed: boolean; reactions: FeedReactions }>(
+      `/feed/${encodeURIComponent(eventId)}/reactions/${kind}`,
+      { method: "DELETE" },
       token
     ),
 

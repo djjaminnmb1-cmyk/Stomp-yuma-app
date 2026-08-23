@@ -38,6 +38,106 @@ FEED_WINDOW_DAYS = 30
 # in-between motivators.
 STREAK_MILESTONES = {3, 7, 14, 30, 60, 100, 365}
 
+# ---------------- Reactions ----------------
+# Which reaction kinds are valid. Kept intentionally small so the picker
+# stays a single-row bottom sheet. Emoji is cosmetic — the backend only
+# stores the ``kind`` slug.
+REACTION_KINDS: tuple[str, ...] = ("high_five", "clap", "yeehaw", "heart")
+REACTION_EMOJI: dict[str, str] = {
+    "high_five": "🙌",
+    "clap": "👏",
+    "yeehaw": "🤠",
+    "heart": "❤️",
+}
+REACTION_LABEL: dict[str, str] = {
+    "high_five": "High five",
+    "clap": "Applause",
+    "yeehaw": "Yeehaw",
+    "heart": "Love it",
+}
+
+
+async def add_reaction(user_id: str, event_id: str, kind: str) -> bool:
+    """Idempotent: insert a reaction row. Returns True when a new row was
+    written. Silently no-ops on duplicate-key or invalid ``kind``.
+    """
+    if kind not in REACTION_KINDS:
+        return False
+    exists = await db.activity_events.find_one(
+        {"event_id": event_id}, {"_id": 1}
+    )
+    if not exists:
+        return False
+    try:
+        res = await db.feed_reactions.update_one(
+            {"user_id": user_id, "event_id": event_id, "kind": kind},
+            {
+                "$setOnInsert": {
+                    "user_id": user_id,
+                    "event_id": event_id,
+                    "kind": kind,
+                    "created_at": now_iso(),
+                }
+            },
+            upsert=True,
+        )
+        # A new row was written only if MongoDB actually performed the
+        # upsert (upserted_id is set) or inserted (matched_count == 0).
+        return bool(getattr(res, "upserted_id", None))
+    except Exception:
+        return False
+
+
+async def remove_reaction(user_id: str, event_id: str, kind: str) -> bool:
+    """Delete a specific reaction. Returns True when a row was removed."""
+    if kind not in REACTION_KINDS:
+        return False
+    res = await db.feed_reactions.delete_one(
+        {"user_id": user_id, "event_id": event_id, "kind": kind}
+    )
+    return int(res.deleted_count or 0) > 0
+
+
+async def get_reactions_bulk(
+    event_ids: list[str], viewer_id: Optional[str] = None
+) -> dict[str, dict]:
+    """For a list of event ids, return
+    ``{event_id: {"counts": {kind: n}, "mine": [kind, ...]}}``.
+
+    A single aggregate pass over ``feed_reactions`` — cheap on the small
+    per-user counts we expect.
+    """
+    if not event_ids:
+        return {}
+    out: dict[str, dict] = {
+        eid: {"counts": {}, "mine": []} for eid in event_ids
+    }
+    # Aggregate counts per (event_id, kind)
+    pipeline = [
+        {"$match": {"event_id": {"$in": event_ids}}},
+        {
+            "$group": {
+                "_id": {"event_id": "$event_id", "kind": "$kind"},
+                "n": {"$sum": 1},
+            }
+        },
+    ]
+    async for row in db.feed_reactions.aggregate(pipeline):
+        eid = row["_id"]["event_id"]
+        kind = row["_id"]["kind"]
+        out.setdefault(eid, {"counts": {}, "mine": []})
+        out[eid]["counts"][kind] = int(row.get("n") or 0)
+    # Fetch the viewer's own reactions in a single find
+    if viewer_id:
+        async for r in db.feed_reactions.find(
+            {"event_id": {"$in": event_ids}, "user_id": viewer_id},
+            {"_id": 0, "event_id": 1, "kind": 1},
+        ):
+            eid = r["event_id"]
+            out.setdefault(eid, {"counts": {}, "mine": []})
+            out[eid]["mine"].append(r["kind"])
+    return out
+
 
 # ---------------- Follow-graph helpers ----------------
 async def is_following(follower_id: str, followee_id: str) -> bool:
@@ -241,7 +341,9 @@ async def search_users(
 
 # ---------------- Feed assembly ----------------
 async def _hydrate_events(
-    raw_events: list[dict], include_self: bool = True
+    raw_events: list[dict],
+    include_self: bool = True,
+    viewer_id: Optional[str] = None,
 ) -> list[dict]:
     """Enrich a list of raw activity_events rows with user / dance /
     badge metadata so the client renders in one pass."""
@@ -274,6 +376,12 @@ async def _hydrate_events(
             dances[d["id"]] = d
 
     from services.badges import BADGE_BY_ID
+
+    # Bulk-fetch reaction counts + viewer's own reactions in one pass so
+    # every card renders its reaction bar without an extra request.
+    event_ids = [e.get("event_id") for e in raw_events if e.get("event_id")]
+    reactions_by_event = await get_reactions_bulk(event_ids, viewer_id)
+
     out: list[dict] = []
     for e in raw_events:
         u = users.get(e["user_id"])
@@ -284,6 +392,9 @@ async def _hydrate_events(
             "type": e["type"],
             "user": u,
             "created_at": e.get("created_at", ""),
+            "reactions": reactions_by_event.get(
+                e.get("event_id") or "", {"counts": {}, "mine": []}
+            ),
         }
         if e["type"] == "completion":
             d = dances.get(e["ref"])
@@ -352,7 +463,7 @@ async def get_feed(
         {"_id": 0},
     ).sort("created_at", -1).limit(int(limit)).to_list(int(limit))
 
-    return await _hydrate_events(raw)
+    return await _hydrate_events(raw, viewer_id=viewer_id)
 
 
 async def purge_user(user_id: str) -> None:
@@ -361,3 +472,4 @@ async def purge_user(user_id: str) -> None:
     await db.follows.delete_many({"follower_id": user_id})
     await db.follows.delete_many({"followee_id": user_id})
     await db.activity_events.delete_many({"user_id": user_id})
+    await db.feed_reactions.delete_many({"user_id": user_id})

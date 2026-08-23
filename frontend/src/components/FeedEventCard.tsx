@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type { FeedEvent } from "@/src/api/client";
 import { colors, radius, spacing, difficultyColor } from "@/src/theme";
+import { FeedReactionsBar } from "@/src/components/FeedReactionsBar";
 
 export function FeedEventCard({ event }: { event: FeedEvent }) {
   const router = useRouter();
@@ -33,86 +34,93 @@ export function FeedEventCard({ event }: { event: FeedEvent }) {
   };
 
   return (
-    <Pressable
-      onPress={onCardPress}
-      style={styles.card}
-      testID={`feed-event-${event.id}`}
-    >
+    <View style={styles.card} testID={`feed-event-${event.id}`}>
       <Pressable onPress={openUser} hitSlop={4}>
         <Avatar name={event.user.name} picture={event.user.picture} />
       </Pressable>
 
       <View style={{ flex: 1 }}>
-        <View style={styles.line1}>
-          <Text style={styles.userName} numberOfLines={1}>
-            {event.user.name || "Anonymous"}
-          </Text>
-          <Text style={styles.time}>{relTime(event.created_at)}</Text>
-        </View>
-
-        {event.type === "completion" ? (
-          <View>
-            <Text style={styles.actionText}>completed a dance</Text>
-            <View style={styles.detailRow}>
-              <View
-                style={[
-                  styles.diffPip,
-                  { backgroundColor: difficultyColor(event.dance.difficulty) },
-                ]}
-              />
-              <Text style={styles.detailTitle} numberOfLines={1}>
-                {event.dance.name}
-              </Text>
-            </View>
-            <Text style={styles.detailMeta} numberOfLines={1}>
-              {event.dance.choreographer}
-              {event.dance.bpm ? ` · ${event.dance.bpm} BPM` : ""}
+        <Pressable
+          onPress={onCardPress}
+          testID={`feed-event-body-${event.id}`}
+        >
+          <View style={styles.line1}>
+            <Text style={styles.userName} numberOfLines={1}>
+              {event.user.name || "Anonymous"}
             </Text>
+            <Text style={styles.time}>{relTime(event.created_at)}</Text>
           </View>
-        ) : null}
 
-        {event.type === "badge" ? (
-          <View>
-            <Text style={styles.actionText}>earned a new badge</Text>
-            <View style={styles.badgeChip}>
-              <View
-                style={[
-                  styles.badgeIconOrb,
-                  { backgroundColor: event.badge.color },
-                ]}
-              >
-                <Ionicons
-                  name={event.badge.icon as any}
-                  size={16}
-                  color="#fff"
+          {event.type === "completion" ? (
+            <View>
+              <Text style={styles.actionText}>completed a dance</Text>
+              <View style={styles.detailRow}>
+                <View
+                  style={[
+                    styles.diffPip,
+                    { backgroundColor: difficultyColor(event.dance.difficulty) },
+                  ]}
                 />
-              </View>
-              <View style={{ flex: 1 }}>
                 <Text style={styles.detailTitle} numberOfLines={1}>
-                  {event.badge.title}
-                </Text>
-                <Text style={styles.detailMeta} numberOfLines={1}>
-                  {event.badge.description}
+                  {event.dance.name}
                 </Text>
               </View>
-            </View>
-          </View>
-        ) : null}
-
-        {event.type === "streak_milestone" ? (
-          <View>
-            <Text style={styles.actionText}>hit a streak milestone</Text>
-            <View style={styles.streakRow}>
-              <Ionicons name="flame" size={20} color="#D9502A" />
-              <Text style={styles.streakText}>
-                <Text style={styles.streakBig}>{event.days}</Text>
-                <Text> day{event.days === 1 ? "" : "s"} in a row!</Text>
+              <Text style={styles.detailMeta} numberOfLines={1}>
+                {event.dance.choreographer}
+                {event.dance.bpm ? ` · ${event.dance.bpm} BPM` : ""}
               </Text>
             </View>
-          </View>
-        ) : null}
+          ) : null}
+
+          {event.type === "badge" ? (
+            <View>
+              <Text style={styles.actionText}>earned a new badge</Text>
+              <View style={styles.badgeChip}>
+                <View
+                  style={[
+                    styles.badgeIconOrb,
+                    { backgroundColor: event.badge.color },
+                  ]}
+                >
+                  <Ionicons
+                    name={event.badge.icon as any}
+                    size={16}
+                    color="#fff"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailTitle} numberOfLines={1}>
+                    {event.badge.title}
+                  </Text>
+                  <Text style={styles.detailMeta} numberOfLines={1}>
+                    {event.badge.description}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : null}
+
+          {event.type === "streak_milestone" ? (
+            <View>
+              <Text style={styles.actionText}>hit a streak milestone</Text>
+              <View style={styles.streakRow}>
+                <Ionicons name="flame" size={20} color="#D9502A" />
+                <Text style={styles.streakText}>
+                  <Text style={styles.streakBig}>{event.days}</Text>
+                  <Text> day{event.days === 1 ? "" : "s"} in a row!</Text>
+                </Text>
+              </View>
+            </View>
+          ) : null}
+        </Pressable>
+
+        <FeedReactionsBar
+          eventId={event.id}
+          reactions={event.reactions}
+          testID={`feed-reactions-${event.id}`}
+        />
       </View>
-    </Pressable>
+    </View>
   );
 }
 

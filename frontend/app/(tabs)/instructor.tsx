@@ -22,7 +22,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
-import { api, ClassSession, Dance, ChatMessage } from "@/src/api/client";
+import { api, ClassSession, Dance, ChatMessage, EventItem } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { useDraftCount } from "@/src/context/draft-count-context";
 import { parseCsv } from "@/src/lib/csv";
@@ -33,7 +33,7 @@ export default function InstructorTab() {
   const router = useRouter();
   const { user, token } = useAuth();
   const { refresh: refreshDrafts } = useDraftCount();
-  const [tab, setTab] = useState<"dances" | "classes" | "chat">("dances");
+  const [tab, setTab] = useState<"dances" | "classes" | "events" | "chat">("dances");
   const [myClasses, setMyClasses] = useState<ClassSession[]>([]);
   const [myDances, setMyDances] = useState<Dance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +108,7 @@ export default function InstructorTab() {
       <View style={styles.headerBar}>
         <View style={styles.titleWrap}>
           <Text style={styles.title} numberOfLines={1}>Instructor</Text>
-          <Text style={styles.subtitle} numberOfLines={1}>Dances · Classes · Chat</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>Dances · Classes · Events · Chat</Text>
         </View>
         <Pressable
           testID="open-dashboard"
@@ -164,6 +164,13 @@ export default function InstructorTab() {
           active={tab === "classes"}
           onPress={() => setTab("classes")}
           testID="instr-tab-classes"
+        />
+        <TabBtn
+          label="Events"
+          icon="compass"
+          active={tab === "events"}
+          onPress={() => setTab("events")}
+          testID="instr-tab-events"
         />
         <TabBtn
           label="Chat"
@@ -373,6 +380,10 @@ export default function InstructorTab() {
         )
       )}
 
+      {tab === "events" && (
+        <EventsView token={token || ""} currentUserId={user.user_id} />
+      )}
+
       {tab === "chat" && <ChatView token={token || ""} currentUserId={user.user_id} isAdmin={!!user.is_admin} />}
 
       <StepSheetModal
@@ -444,6 +455,458 @@ function TabBtn({
     </Pressable>
   );
 }
+
+// ---------------- Events (instructor management) ----------------
+function EventsView({
+  token,
+  currentUserId,
+}: {
+  token: string;
+  currentUserId: string;
+}) {
+  const router = useRouter();
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const r = await api.getMyEvents(token);
+      setEvents(r.events || []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
+
+  const doDelete = (ev: EventItem) => {
+    Alert.alert(
+      "Delete this event?",
+      `"${ev.name}" — this can't be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setBusyId(ev.id);
+            try {
+              await api.deleteEvent(token, ev.id);
+              setEvents((prev) => prev.filter((x) => x.id !== ev.id));
+            } catch (e: any) {
+              Alert.alert(
+                "Couldn't delete",
+                e?.message || "Please try again."
+              );
+            } finally {
+              setBusyId(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const upcoming = events.filter(
+    (e) => (e.date || "") >= new Date().toISOString().slice(0, 10)
+  );
+  const past = events.filter(
+    (e) => (e.date || "") < new Date().toISOString().slice(0, 10)
+  );
+
+  if (loading) {
+    return (
+      <View style={eventStyles.loading}>
+        <ActivityIndicator color={colors.brandPrimary} />
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      contentContainerStyle={{
+        padding: spacing.lg,
+        paddingBottom: 40,
+        gap: spacing.md,
+      }}
+    >
+      <View style={eventStyles.hero}>
+        <View style={eventStyles.heroIcon}>
+          <Ionicons name="compass" size={22} color={colors.brandPrimary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={eventStyles.heroTitle}>Your events</Text>
+          <Text style={eventStyles.heroSub}>
+            Workshops, socials, and pop-up nights you&apos;re hosting.
+          </Text>
+        </View>
+      </View>
+
+      <View style={eventStyles.ctaRow}>
+        <Pressable
+          testID="instr-events-new"
+          onPress={() => router.push("/events/new")}
+          style={eventStyles.newBtn}
+        >
+          <Ionicons name="add" size={18} color="#fff" />
+          <Text style={eventStyles.newBtnText}>Add a new event</Text>
+        </Pressable>
+        <Pressable
+          testID="instr-events-browse"
+          onPress={() => router.push("/events")}
+          style={eventStyles.browseBtn}
+          hitSlop={6}
+        >
+          <Ionicons name="search" size={16} color={colors.brandPrimary} />
+          <Text style={eventStyles.browseBtnText}>Browse all</Text>
+        </Pressable>
+      </View>
+
+      {events.length === 0 ? (
+        <View style={eventStyles.empty}>
+          <Ionicons
+            name="calendar-outline"
+            size={44}
+            color={colors.muted}
+          />
+          <Text style={eventStyles.emptyTitle}>No events yet</Text>
+          <Text style={eventStyles.emptySub}>
+            Post your next workshop, social, or private party so dancers can
+            find it in the app.
+          </Text>
+        </View>
+      ) : (
+        <>
+          {upcoming.length > 0 ? (
+            <View style={{ gap: spacing.sm }}>
+              <Text style={eventStyles.sectionLabel}>Upcoming</Text>
+              {upcoming.map((ev) => (
+                <InstructorEventCard
+                  key={ev.id}
+                  event={ev}
+                  busy={busyId === ev.id}
+                  onOpen={() => router.push(`/events/${ev.id}`)}
+                  onEdit={() => router.push(`/events/${ev.id}/edit`)}
+                  onDelete={() => doDelete(ev)}
+                />
+              ))}
+            </View>
+          ) : null}
+          {past.length > 0 ? (
+            <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+              <Text style={eventStyles.sectionLabel}>Past</Text>
+              {past.map((ev) => (
+                <InstructorEventCard
+                  key={ev.id}
+                  event={ev}
+                  busy={busyId === ev.id}
+                  faded
+                  onOpen={() => router.push(`/events/${ev.id}`)}
+                  onEdit={() => router.push(`/events/${ev.id}/edit`)}
+                  onDelete={() => doDelete(ev)}
+                />
+              ))}
+            </View>
+          ) : null}
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+function InstructorEventCard({
+  event,
+  busy,
+  faded,
+  onOpen,
+  onEdit,
+  onDelete,
+}: {
+  event: EventItem;
+  busy: boolean;
+  faded?: boolean;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const dateStr = formatEventDate(event.date, event.start_time);
+  const locStr =
+    [event.venue_name, event.city, event.state].filter(Boolean).join(" · ") ||
+    "Location TBA";
+  return (
+    <View style={[eventStyles.card, faded && { opacity: 0.7 }]}>
+      <Pressable
+        onPress={onOpen}
+        style={{ flex: 1 }}
+        testID={`instr-event-open-${event.id}`}
+      >
+        <View style={eventStyles.cardPills}>
+          <View style={eventStyles.typePill}>
+            <Text style={eventStyles.typePillText}>
+              {prettyEventType(event.event_type)}
+            </Text>
+          </View>
+          {!event.is_published ? (
+            <View style={eventStyles.draftPill}>
+              <Text style={eventStyles.draftPillText}>Draft</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={eventStyles.cardName} numberOfLines={2}>
+          {event.name}
+        </Text>
+        <View style={eventStyles.cardMetaRow}>
+          <Ionicons name="calendar" size={12} color={colors.muted} />
+          <Text style={eventStyles.cardMeta}>{dateStr}</Text>
+        </View>
+        <View style={eventStyles.cardMetaRow}>
+          <Ionicons name="location" size={12} color={colors.muted} />
+          <Text style={eventStyles.cardMeta} numberOfLines={1}>
+            {locStr}
+          </Text>
+        </View>
+      </Pressable>
+      <View style={eventStyles.cardActions}>
+        <Pressable
+          testID={`instr-event-edit-${event.id}`}
+          onPress={onEdit}
+          style={eventStyles.actionBtn}
+          hitSlop={8}
+        >
+          <Ionicons name="pencil" size={16} color={colors.brandPrimary} />
+        </Pressable>
+        <Pressable
+          testID={`instr-event-delete-${event.id}`}
+          onPress={onDelete}
+          style={eventStyles.actionBtn}
+          disabled={busy}
+          hitSlop={8}
+        >
+          {busy ? (
+            <ActivityIndicator size="small" color={colors.error} />
+          ) : (
+            <Ionicons name="trash" size={16} color={colors.error} />
+          )}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function prettyEventType(t: string): string {
+  if (t === "private_party") return "Private party";
+  return (t || "event").charAt(0).toUpperCase() + (t || "event").slice(1);
+}
+
+function formatEventDate(iso: string, time?: string): string {
+  if (!iso) return "Date TBA";
+  try {
+    const d = new Date(iso + "T00:00:00");
+    const s = d.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    if (!time) return s;
+    const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+    if (!m) return s;
+    const h24 = parseInt(m[1]!, 10);
+    const h12 = ((h24 + 11) % 12) + 1;
+    const ampm = h24 >= 12 ? "PM" : "AM";
+    return `${s} · ${h12}:${m[2]} ${ampm}`;
+  } catch {
+    return iso;
+  }
+}
+
+const eventStyles = StyleSheet.create({
+  loading: { flex: 1, alignItems: "center", justifyContent: "center" },
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.brandPrimary + "14",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "55",
+  },
+  heroIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "55",
+  },
+  heroTitle: {
+    fontFamily: "serif",
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.onSurface,
+  },
+  heroSub: {
+    fontSize: 12,
+    color: colors.onSurfaceSecondary,
+    marginTop: 2,
+  },
+  ctaRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  newBtn: {
+    flex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandPrimary,
+  },
+  newBtnText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 14,
+    letterSpacing: 0.2,
+  },
+  browseBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 12,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary,
+    backgroundColor: colors.surface,
+  },
+  browseBtnText: {
+    color: colors.brandPrimary,
+    fontWeight: "800",
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
+  empty: {
+    alignItems: "center",
+    padding: spacing.xl,
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: "dashed",
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  emptyTitle: {
+    fontFamily: "serif",
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.onSurface,
+    marginTop: 4,
+  },
+  emptySub: {
+    fontSize: 12,
+    color: colors.onSurfaceSecondary,
+    textAlign: "center",
+    lineHeight: 17,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.muted,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  card: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  cardPills: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 4,
+    flexWrap: "wrap",
+  },
+  typePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSecondary + "22",
+  },
+  typePillText: {
+    color: colors.brandSecondary,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  draftPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.warning + "22",
+    borderWidth: 1,
+    borderColor: colors.warning + "88",
+  },
+  draftPillText: {
+    color: colors.warning,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  cardName: {
+    fontFamily: "serif",
+    fontSize: 15,
+    fontWeight: "800",
+    color: colors.onSurface,
+    marginBottom: 4,
+  },
+  cardMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 2,
+  },
+  cardMeta: {
+    fontSize: 12,
+    color: colors.muted,
+    fontWeight: "600",
+    flex: 1,
+  },
+  cardActions: {
+    flexDirection: "column",
+    gap: 6,
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+  },
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surfaceSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
 
 // ---------------- Chat ----------------
 function ChatView({
@@ -1266,12 +1729,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 4,
     paddingVertical: 10,
+    paddingHorizontal: 4,
     borderRadius: radius.pill,
   },
   tabBtnActive: { backgroundColor: colors.brandPrimary },
-  tabText: { color: colors.onSurface, fontWeight: "700", fontSize: 12 },
+  tabText: { color: colors.onSurface, fontWeight: "700", fontSize: 11 },
   tabTextActive: { color: colors.onBrandPrimary },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
   legend: {
