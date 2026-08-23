@@ -188,7 +188,10 @@ function ChipCard({
       ]}
     >
       <View style={[styles.cardBar, { backgroundColor: theme.colors.accent }]} />
-      <Text style={[styles.cardLabel, { color: theme.colors.primary }]}>
+      <Text
+        style={[styles.cardLabel, { color: theme.colors.primary }]}
+        numberOfLines={1}
+      >
         {theme.label}
       </Text>
       <View style={styles.cardSwatches}>
@@ -266,9 +269,10 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   cardLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
     textAlign: "center",
+    letterSpacing: -0.2,
   },
   cardSwatches: {
     flexDirection: "row",

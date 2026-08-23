@@ -66,7 +66,7 @@ export function BadgeCard({
           size === "sm" && styles.titleSm,
           !earned && { color: colors.onSurfaceSecondary },
         ]}
-        numberOfLines={1}
+        numberOfLines={2}
       >
         {badge.title}
       </Text>
@@ -131,11 +131,21 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     gap: 6,
-    minWidth: 132,
+    // Default (md) variant used inside Profile's horizontal-scroll strip
+    // — fixed width so the ScrollView doesn't clip long descriptions.
+    width: 148,
     minHeight: 130,
   },
-  cardLg: { minWidth: 156, minHeight: 168, padding: spacing.lg },
-  cardSm: { minWidth: 108, minHeight: 84, padding: spacing.sm },
+  // Large variant lives inside the Achievements 2-column grid where the
+  // parent ``flexBasis: 48%`` handles width. We unset the fixed width so
+  // the card fills its column, and only tune padding + minHeight.
+  cardLg: {
+    width: undefined,
+    alignSelf: "stretch",
+    minHeight: 168,
+    padding: spacing.lg,
+  },
+  cardSm: { width: 108, minHeight: 84, padding: spacing.sm },
   cardLocked: { opacity: 0.92 },
   iconWrap: {
     width: 44,
