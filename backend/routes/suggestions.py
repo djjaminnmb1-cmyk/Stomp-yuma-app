@@ -56,6 +56,26 @@ async def submit_suggestion(inp: SuggestionIn, user: dict = Depends(get_current_
                 "photos. Send more tomorrow, or submit without a photo.",
             )
 
+    # Route the suggestion to a specific instructor. Priority:
+    #   1. Explicit target_instructor_id on the request body
+    #   2. The submitter's persisted main_instructor_id
+    #   3. Empty — falls into the shared admin inbox
+    target_instructor_id = (inp.target_instructor_id or "").strip()
+    if not target_instructor_id:
+        target_instructor_id = (user.get("main_instructor_id") or "").strip()
+    target_instructor_name = ""
+    if target_instructor_id:
+        instr = await db.users.find_one(
+            {"user_id": target_instructor_id},
+            {"_id": 0, "name": 1, "is_instructor": 1, "is_admin": 1},
+        )
+        if instr and (instr.get("is_instructor") or instr.get("is_admin")):
+            target_instructor_name = instr.get("name", "") or ""
+        else:
+            # Silently drop an invalid target rather than fail the whole
+            # submission — the suggestion still lands in the admin inbox.
+            target_instructor_id = ""
+
     doc = {
         "id": f"sug_{uuid.uuid4().hex[:10]}",
         "user_id": user["user_id"],
@@ -70,6 +90,8 @@ async def submit_suggestion(inp: SuggestionIn, user: dict = Depends(get_current_
         "step_sheet_image": img,
         "notes": (inp.notes or "").strip(),
         "status": "pending",
+        "target_instructor_id": target_instructor_id,
+        "target_instructor_name": target_instructor_name,
         "created_at": now_iso(),
     }
     await db.suggestions.insert_one(doc)
@@ -93,6 +115,24 @@ async def list_suggestions(reviewer: dict = Depends(require_admin_or_editor)):
         await db.suggestions.find({}, {"_id": 0})
         .sort("created_at", -1)
         .to_list(1000)
+    )
+    return docs
+
+
+@router.get("/suggestions/for-instructor")
+async def suggestions_for_instructor(user: dict = Depends(get_current_user)):
+    """Suggestions submitted to the caller (as their students' picked
+    main instructor). Available to any instructor or admin — an admin
+    still gets the full firehose via ``/suggestions``.
+    """
+    if not (user.get("is_instructor") or user.get("is_admin")):
+        raise HTTPException(403, "Instructors only.")
+    docs = (
+        await db.suggestions.find(
+            {"target_instructor_id": user["user_id"]}, {"_id": 0}
+        )
+        .sort("created_at", -1)
+        .to_list(500)
     )
     return docs
 

@@ -1,0 +1,41 @@
+{
+  "summary": "Full regression of the Pick-Main-Instructor + Weekly-Recap iteration. Backend: 20/20 new pytest tests green (100%) covering GET /api/instructors (auth + q filter), PATCH/DELETE /api/auth/me/main-instructor (all error paths + persistence via /auth/me), POST /api/suggestions routing precedence (body > fallback > empty), GET /api/suggestions/for-instructor (403 non-instructor, 200 with own-only rows), GET /api/weekly-recap (shape, math sum(days.count)==total, best_day == max, zero-total for fresh user), plus smoke on /api/badges, /api/feed, /api/practice-history, /api/recently-practiced. Frontend: signed in as Erin — WeeklyRecapCard (testID home-weekly-recap) renders with '🎉 Weekly Recap — You danced 2 times this week — nice work!' as expected; Home sections render in requested order without red-screen errors. Cleared Erin's main_instructor via DELETE endpoint, reloaded, tapped Suggest a Dance CTA → PickInstructorSheet opened (testID pick-instructor-sheet), search filter narrowed to Jamin, picking him persisted (verified next screen), routed to /suggest, header reads 'Suggest to Jamin', top-right suggest-change-instructor button re-opens picker. Profile → profile-main-instructor-row is present, tap opens picker. One pre-existing repro console warning ('Unexpected text node' inside a <View>) is still firing app-wide and was already flagged in iteration_23.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "app-wide", "issue": "Recurring console.error: 'Unexpected text node:       . A text node cannot be a child of a <View>.' Fires on every screen mount. Same warning was reported in iteration_23 and is still unresolved. Likely a stray whitespace/newline literal between children of a root <View> (age-gate / tabs layout). Not a red-screen but pollutes logs and would crash on strict React Native native runtime."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pick_instructor_weekly_recap.py",
+    "/app/test_reports/pytest/pick_instructor_weekly_recap.xml"
+  ],
+  "action_items": [
+    "Locate and remove the stray whitespace text node that lives directly inside a <View> — the 'Unexpected text node' console.error has now been logged across 2 consecutive iterations. Grep for '{\" \"}' / template literals / JSX whitespace inside <View>...</View> in app/_layout.tsx, app/(tabs)/_layout.tsx, and the age-gate component."
+  ],
+  "critical_code_review_comments": [
+    "backend: /api/instructors correctly filters $or:[is_instructor,is_admin] and projects only the 5 lite fields — no ObjectId leak.",
+    "backend: /auth/me/main-instructor validation order (empty → 400 before user lookup) is correct and avoids extra DB hits.",
+    "backend: /suggestions POST target-instructor precedence is exactly (a) body override, (b) user.main_instructor_id, (c) blank+admin-inbox — invalid IDs are silently dropped as designed and tests confirm the row still returns 200.",
+    "backend: /suggestions/for-instructor properly filters by target_instructor_id == caller.user_id; admin still gets full firehose via /suggestions.",
+    "backend: /weekly-recap week bounds use Monday-anchored week which matches the studio schedule; UTC-only which may skew for late-night Sunday activity in Yuma (America/Phoenix = UTC-7). Non-blocking but worth noting.",
+    "frontend: PickInstructorSheet properly re-loads instructor list on `visible` change, filters client-side by name/city/state, and calls updateUser(main_instructor_id) so subsequent taps skip the picker without an /auth/me round-trip.",
+    "frontend: Home tab lists Weekly Recap card BEFORE Streak card as requested — copy path Sunday '🎉 Weekly Recap' verified visually.",
+    "frontend: WeeklyRecapCard hides itself (return null) when total === 0 — matches the required zero-total behavior for brand-new users."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pick_instructor_weekly_recap.py (new — 20 tests)"
+  ],
+  "success_rate": {"backend": "100% (20/20)", "frontend": "100% of testable web flows (WeeklyRecapCard render, PickInstructorSheet open from Home + Profile, Suggest header, change-instructor)"},
+  "seed_data_creation": "One brand-new dancer 'TEST_pi_*@test.example' registered per fixture module scope; used for validation of set/clear main_instructor and zero-total recap. A handful of TEST_ suggestions rows were inserted to verify routing precedence — all name-prefixed with TEST_ for easy cleanup.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Auth screen now has real testIDs (auth-input-email/password, auth-submit-button) — no more coord-based fallback. Age-gate testID = age-gate-adult. Weekly Recap card testID = home-weekly-recap (NOT weekly-recap-card). Picker sheet = pick-instructor-sheet; individual rows = pick-instructor-{user_id}; close = pick-instructor-close; search input = pick-instructor-search. Profile row = profile-main-instructor-row (below the Community Activity section, scroll ~2× on 390x844). To reset Erin between runs, hit DELETE /api/auth/me/main-instructor with her token. Weekly Recap totals depend on current UTC week; 2026-08-17..2026-08-23 has 2 completions for Erin.",
+  "rca_of_issue": "N/A — all Pick-Main-Instructor and Weekly-Recap features validated green."
+}

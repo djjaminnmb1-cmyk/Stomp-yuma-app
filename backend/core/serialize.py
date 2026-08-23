@@ -34,6 +34,14 @@ def user_to_out(u: dict) -> dict:
         # to know linked-or-not.
         "apple_sub": "apple" if u.get("apple_sub") else "",
         "email_is_synthetic": bool(u.get("email_is_synthetic")),
+        # The dancer's chosen "main instructor" — used to route Suggest
+        # a Dance submissions. Empty string when they haven't picked one
+        # (client shows the picker on first tap).
+        "main_instructor_id": u.get("main_instructor_id", "") or "",
+        # Full list of instructors the dancer has "adopted" (attends
+        # classes with, wants to follow). ``main_instructor_id`` is
+        # always a member of this list when set. Order is preserved.
+        "instructor_ids": list(u.get("instructor_ids") or []),
     }
 
 

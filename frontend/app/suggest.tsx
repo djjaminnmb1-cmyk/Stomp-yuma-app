@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import * as WebBrowser from "expo-web-browser";
 import { colors, spacing, radius } from "../src/theme";
 import { api, Suggestion } from "../src/api/client";
 import { useAuth } from "../src/context/auth-context";
+import { PickInstructorSheet } from "../src/components/PickInstructorSheet";
 
 const DIFFICULTIES = ["Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"];
 const STATUSES = ["pending", "reviewed", "queued", "declined"];
@@ -52,8 +53,33 @@ export default function SuggestScreen() {
   const [mine, setMine] = useState<Suggestion[]>([]);
   const [all, setAll] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [instructorName, setInstructorName] = useState<string>("");
+  const [showPickInstructor, setShowPickInstructor] = useState(false);
 
   const isReviewer = !!(user?.is_admin || user?.can_edit_step_sheets);
+
+  // Resolve the caller's main instructor name so the header + button
+  // read personally: "Suggest to Erin" / "Send to Erin".
+  useEffect(() => {
+    if (!token || !user?.main_instructor_id) {
+      setInstructorName("");
+      return;
+    }
+    let alive = true;
+    api
+      .getPublicProfile(token, user.main_instructor_id)
+      .then((p) => {
+        if (alive) setInstructorName(p?.name || "");
+      })
+      .catch(() => {
+        if (alive) setInstructorName("");
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token, user?.main_instructor_id]);
+
+  const firstName = instructorName ? instructorName.split(" ")[0] : "";
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -162,7 +188,12 @@ export default function SuggestScreen() {
       setName(""); setSong(""); setArtist(""); setDifficulty(""); setYt("");
       setStepSheetUrl(""); setStepSheetImage(""); setNotes("");
       setConfirmedOfficial(false);
-      Alert.alert("Suggestion sent!", "Erin will review your idea soon. Thank you!");
+      Alert.alert(
+        "Suggestion sent!",
+        firstName
+          ? `${firstName} will review your idea soon. Thank you!`
+          : "Erin will review your idea soon. Thank you!"
+      );
       setTab("mine");
       load();
     } catch (e: any) {
@@ -275,9 +306,27 @@ export default function SuggestScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Suggest to Erin</Text>
-          <Text style={styles.subtitle}>Got a dance idea? Erin &amp; Jamin will review it.</Text>
+          <Text style={styles.title}>
+            {firstName ? `Suggest to ${firstName}` : "Suggest a Dance"}
+          </Text>
+          <Text style={styles.subtitle}>
+            {firstName
+              ? `Got a dance idea? ${firstName} will review it.`
+              : "Got a dance idea? Pick your main instructor to send it to."}
+          </Text>
         </View>
+        <Pressable
+          testID="suggest-change-instructor"
+          onPress={() => setShowPickInstructor(true)}
+          style={styles.changeInstructorBtn}
+          hitSlop={8}
+        >
+          <Ionicons
+            name={firstName ? "swap-horizontal" : "person-add"}
+            size={16}
+            color={colors.brandPrimary}
+          />
+        </Pressable>
       </View>
 
       <View style={styles.tabs}>
@@ -310,7 +359,9 @@ export default function SuggestScreen() {
             <View style={styles.hint}>
               <Ionicons name="information-circle" size={18} color={colors.brandSecondary} />
               <Text style={styles.hintText}>
-                Suggest a line dance you&apos;d love Erin to teach. She reviews these regularly to plan class lessons.
+                {firstName
+                  ? `Suggest a line dance you'd love ${firstName} to teach. They'll review these to plan class lessons.`
+                  : "Suggest a line dance you'd love to see taught. Pick a main instructor first so it lands in the right inbox."}
               </Text>
             </View>
 
@@ -487,7 +538,9 @@ export default function SuggestScreen() {
               ) : (
                 <>
                   <Ionicons name="send" size={16} color={colors.onBrandPrimary} />
-                  <Text style={styles.submitText}>Send to Erin</Text>
+                  <Text style={styles.submitText}>
+                    {firstName ? `Send to ${firstName}` : "Send suggestion"}
+                  </Text>
                 </>
               )}
             </Pressable>
@@ -515,6 +568,15 @@ export default function SuggestScreen() {
           renderItem={({ item }) => renderItem(item, tab === "all")}
         />
       )}
+      <PickInstructorSheet
+        visible={showPickInstructor}
+        onClose={() => setShowPickInstructor(false)}
+        title={firstName ? "My instructors" : "Choose your instructors"}
+        onSaved={({ primary }) => {
+          setShowPickInstructor(false);
+          setInstructorName(primary?.name || "");
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -563,6 +625,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surfaceSecondary,
+  },
+  changeInstructorBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.brandPrimary + "18",
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "55",
   },
   title: { fontFamily: "serif", fontSize: 24, fontWeight: "700", color: colors.onSurface },
   subtitle: { color: colors.muted, marginTop: 2, fontSize: 12 },

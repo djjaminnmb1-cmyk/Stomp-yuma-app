@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import { BadgeCard } from "@/src/components/BadgeCard";
 import { StreakCard } from "@/src/components/StreakCard";
 import { PracticeHistoryChart } from "@/src/components/PracticeHistoryChart";
 import { SignInMethodsSection } from "@/src/components/SignInMethodsSection";
+import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
 
 // ---------- Social links ----------
 // Each entry has:
@@ -177,6 +178,30 @@ export default function Profile() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const [savingCertTheme, setSavingCertTheme] = useState(false);
+  const [mainInstructorName, setMainInstructorName] = useState("");
+  const [showPickInstructor, setShowPickInstructor] = useState(false);
+
+  // Resolve the main instructor's display name so the profile row reads
+  // "Main instructor · Erin B." — critical UX: the user picked them,
+  // seeing the name confirms the choice stuck.
+  useEffect(() => {
+    if (!token || !user?.main_instructor_id) {
+      setMainInstructorName("");
+      return;
+    }
+    let alive = true;
+    api
+      .getPublicProfile(token, user.main_instructor_id)
+      .then((p) => {
+        if (alive) setMainInstructorName(p?.name || "");
+      })
+      .catch(() => {
+        if (alive) setMainInstructorName("");
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token, user?.main_instructor_id]);
 
   const submitInstructorCode = async () => {
     setCodeErr(null);
@@ -471,8 +496,48 @@ export default function Profile() {
             <View style={styles.rowLeft}>
               <Ionicons name="bulb" size={22} color={colors.brandTertiary} />
               <Text style={styles.rowText}>
-                {user?.is_admin ? "Review Suggestions" : "Suggest a Dance to Erin"}
+                {user?.is_admin
+                  ? "Review Suggestions"
+                  : mainInstructorName
+                    ? `Suggest a Dance to ${mainInstructorName.split(" ")[0]}`
+                    : "Suggest a Dance"}
               </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          {/* My instructors picker — dedicated row so dancers can
+              manage who they follow and who receives their
+              Suggest-a-Dance inbox at any time. */}
+          <Pressable
+            testID="profile-main-instructor-row"
+            style={styles.row}
+            onPress={() => setShowPickInstructor(true)}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="people-circle"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>My instructors</Text>
+                <Text style={styles.deleteSub}>
+                  {(() => {
+                    const count = user?.instructor_ids?.length || 0;
+                    if (count === 0)
+                      return "Tap to pick who receives your suggestions";
+                    const others = Math.max(0, count - 1);
+                    if (mainInstructorName && others > 0) {
+                      return `Primary: ${mainInstructorName} · +${others} more`;
+                    }
+                    if (mainInstructorName) {
+                      return `Primary: ${mainInstructorName}`;
+                    }
+                    return `${count} picked — tap to set primary`;
+                  })()}
+                </Text>
+              </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
@@ -896,6 +961,17 @@ export default function Profile() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <PickInstructorSheet
+        visible={showPickInstructor}
+        onClose={() => setShowPickInstructor(false)}
+        title={mainInstructorName ? "My instructors" : "Choose your instructors"}
+        onSaved={({ primary }) => {
+          setShowPickInstructor(false);
+          if (primary) setMainInstructorName(primary.name);
+          else setMainInstructorName("");
+        }}
+      />
     </SafeAreaView>
   );
 }

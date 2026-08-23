@@ -83,6 +83,10 @@ async def _ensure_indexes() -> None:
             [("reporter_id", 1), ("event_id", 1)], unique=True
         )
         await db.feed_reports.create_index([("status", 1), ("created_at", -1)])
+        # Suggestions targeted at a specific instructor
+        await db.suggestions.create_index(
+            [("target_instructor_id", 1), ("created_at", -1)]
+        )
         # Events + geocoding
         await db.events.create_index([("date", 1)])
         await db.events.create_index([("instructor_id", 1)])

@@ -17,7 +17,11 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
+  Alert,
+  Linking,
 } from "react-native";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacing } from "@/src/theme";
 import type { EventInput, EventItem } from "@/src/api/client";
@@ -63,7 +67,51 @@ export function EventForm({
   const [isPublished, setIsPublished] = useState(
     initial?.is_published !== false
   );
+  const [coverImage, setCoverImage] = useState(initial?.cover_image || "");
+  const [uploadingFlyer, setUploadingFlyer] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Opens the OS gallery, resizes to a reasonable preview quality, and
+  // stores the result as a base64 data-URL. Matches the pattern the app
+  // already uses for step-sheet uploads (see instructor.tsx) so we don't
+  // introduce a second storage flow just for flyers.
+  const pickFlyer = async () => {
+    setUploadingFlyer(true);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          "Photo access needed",
+          "Allow SGY to read your photos so you can upload a flyer for this event.",
+          [
+            { text: "Cancel", style: "cancel" },
+            perm.canAskAgain
+              ? { text: "Try again", onPress: pickFlyer }
+              : { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        // Flyers are usually poster-shaped; allow anything but keep the
+        // final base64 lean so we don't bloat the Mongo doc.
+        quality: 0.6,
+        base64: true,
+      });
+      if (result.canceled || !result.assets?.[0]?.base64) return;
+      const asset = result.assets[0];
+      const mime = asset.mimeType || "image/jpeg";
+      setCoverImage(`data:${mime};base64,${asset.base64}`);
+    } catch (e: any) {
+      Alert.alert(
+        "Couldn't upload",
+        e?.message || "Please try again in a moment."
+      );
+    } finally {
+      setUploadingFlyer(false);
+    }
+  };
 
   const types = catalog.types.length
     ? catalog.types
@@ -121,6 +169,7 @@ export function EventForm({
       state: state.trim(),
       zip_code: zipCode.trim(),
       country: (country || "US").trim() || "US",
+      cover_image: coverImage,
       price: price.trim(),
       registration_url: registrationUrl.trim(),
       is_published: isPublished,
@@ -162,6 +211,76 @@ export function EventForm({
           style={styles.input}
           testID="event-form-name"
         />
+      </Field>
+
+      <Field label="Event flyer (optional)">
+        {coverImage ? (
+          <View style={styles.flyerPreviewWrap}>
+            <Image
+              source={{ uri: coverImage }}
+              style={styles.flyerPreview}
+              contentFit="cover"
+              testID="event-form-flyer-preview"
+            />
+            <View style={styles.flyerBtnRow}>
+              <Pressable
+                onPress={pickFlyer}
+                style={styles.flyerBtnGhost}
+                disabled={uploadingFlyer}
+                testID="event-form-flyer-replace"
+              >
+                <Ionicons
+                  name="image"
+                  size={16}
+                  color={colors.brandPrimary}
+                />
+                <Text style={styles.flyerBtnGhostText}>Replace</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setCoverImage("")}
+                style={styles.flyerBtnGhost}
+                disabled={uploadingFlyer}
+                testID="event-form-flyer-remove"
+              >
+                <Ionicons name="trash" size={16} color={colors.error} />
+                <Text
+                  style={[
+                    styles.flyerBtnGhostText,
+                    { color: colors.error },
+                  ]}
+                >
+                  Remove
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <Pressable
+            onPress={pickFlyer}
+            style={styles.flyerDrop}
+            disabled={uploadingFlyer}
+            testID="event-form-flyer-upload"
+          >
+            {uploadingFlyer ? (
+              <ActivityIndicator color={colors.brandPrimary} />
+            ) : (
+              <>
+                <Ionicons
+                  name="cloud-upload-outline"
+                  size={28}
+                  color={colors.brandPrimary}
+                />
+                <Text style={styles.flyerDropTitle}>
+                  Upload event flyer
+                </Text>
+                <Text style={styles.flyerDropSub}>
+                  A poster helps dancers spot it in the list. JPG or PNG
+                  works best.
+                </Text>
+              </>
+            )}
+          </Pressable>
+        )}
       </Field>
 
       <Field label="Type" required>
@@ -571,6 +690,69 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   footSaveText: { color: "#fff", fontWeight: "800" },
+  flyerDrop: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1.5,
+    borderColor: colors.brandPrimary + "77",
+    borderStyle: "dashed",
+    borderRadius: radius.md,
+    backgroundColor: colors.brandPrimary + "0F",
+    minHeight: 130,
+  },
+  flyerDropTitle: {
+    color: colors.brandPrimary,
+    fontWeight: "800",
+    fontSize: 14,
+    marginTop: 4,
+  },
+  flyerDropSub: {
+    color: colors.muted,
+    fontSize: 11,
+    textAlign: "center",
+    lineHeight: 15,
+    maxWidth: 260,
+  },
+  flyerPreviewWrap: {
+    borderRadius: radius.md,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  flyerPreview: {
+    width: "100%",
+    aspectRatio: 3 / 4,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  flyerBtnRow: {
+    flexDirection: "row",
+    gap: 6,
+    padding: 8,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+  },
+  flyerBtnGhost: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  flyerBtnGhostText: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    fontSize: 12,
+  },
 });
 
 export default EventForm;

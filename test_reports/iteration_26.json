@@ -1,0 +1,25 @@
+{
+  "summary": "Re-run of iteration_25's failing tests after the _upsert_follows field-name fix. All 16/16 backend tests in /app/backend/tests/test_multi_instructor_pick.py now PASS (was 14/16, +100%). The two previously-CRITICAL failures (PUT /api/auth/me/instructors with follow=true + 2 instructors returning 500 due to E11000 dup key on {follower_id, followee_id:null}) are resolved by delegating to services.social.follow(follower_id, followee_id) which writes the correct field name expected by the unique index and by following_ids()/follower_ids() queries. Verified end-to-end via a fresh dancer: PUT with [Erin, Jamin] + follow=true → 200, new_follows=2 (matches the target count exactly); second identical PUT → new_follows=0 (idempotent); GET /api/follows/me lists both Erin + Jamin under 'following'; GET /api/feed returns completion events authored by both instructors, confirming the follow rows are indexed on the same 'followee_id' field the feed pipeline queries. All regression endpoints from iteration_25 (list_instructors, suggestions fallback, suggestions/for-instructor, weekly-recap, PATCH main-instructor $addToSet + idempotency, /auth/me exposes instructor_ids) remain green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": [], "react_native_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_multi_instructor_pick.py",
+    "/app/test_reports/pytest/multi_instructor_pick.xml"
+  ],
+  "action_items": [
+    "None on the Multi-Instructor Pick backend — feature is deploy-ready. Frontend save flow (PickInstructorSheet → PUT /api/auth/me/instructors with follow toggle ON) is now unblocked; main agent may proceed with UX polish / release.",
+    "Stale carry-over from iteration_25 (still open, unrelated to this fix): stray whitespace text node inside a <View> triggers 'Unexpected text node' console.error on every mount — flagged in iterations 23, 24, 25. Grep app/_layout.tsx + app/(tabs)/_layout.tsx for '{\" \"}' or JSX whitespace between <View> children."
+  ],
+  "critical_code_review_comments": [
+    "instructors.py:_upsert_follows now correctly delegates to services.social.follow — DRY, single source of truth for the follows write path, uses the canonical 'followee_id' field name enforced by the unique index in services/startup.py, and inherits any future improvements (notifications, counters) social.follow gains. Cleanly returns the number of newly-created rows for the 'new_follows' response counter.",
+    "Idempotency proof: services.social.follow catches the duplicate-key exception and returns False, so re-submitting the same instructor list produces new_follows=0 without any 500 or race — verified via two consecutive PUT calls with identical body.",
+    "Cleanup note (from main agent context): the 3 orphaned {followee_id:null} rows left by the previous buggy code path were purged. Verified by re-registering a fresh dancer and confirming a clean create → GET flow with no dup-key errors."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "not re-tested per request"},
+  "seed_data_creation": "Function-scoped fresh TEST_mip_*@test.example dancers created per pytest test (already existed from iteration_25). One additional TEST_regression_*@test.example dancer created for the manual /follows/me + /feed end-to-end verification.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Multi-Instructor Pick v2.6 backend is fully green. Erin=user_31b307e4ccc8, Jamin=user_e705a4f01833. To reproduce a clean run: pytest /app/backend/tests/test_multi_instructor_pick.py -v (expect 16/16 in ~3s). Frontend testIDs from iteration_25 remain valid: pick-instructor-sheet, pick-instructor-search, pick-instructor-clear, pick-instructor-follow-toggle, pick-instructor-save, pick-instructor-cancel, pick-instructor-close, pick-instructor-{userId}, pick-instructor-star-{userId}, profile-main-instructor-row.",
+  "rca_of_issue": "Iteration_25 CRITICAL bug ('following_id' vs 'followee_id' mismatch causing E11000 on the second follow insert) — root cause was a bespoke _upsert_follows helper that wrote {follower_id, following_id, created_at} instead of the canonical {follower_id, followee_id, created_at} enforced by the unique index. Fix applied by main agent: rewrote _upsert_follows to iterate targets and call services.social.follow(follower_id, tid), counting True returns for new_follows. Verified: (1) PUT with [Erin, Jamin] + follow=true → 200 + new_follows=2, (2) repeat call → new_follows=0, (3) /follows/me lists both instructors under 'following', (4) /feed returns their completion events. Full pytest suite 16/16 green."
+}

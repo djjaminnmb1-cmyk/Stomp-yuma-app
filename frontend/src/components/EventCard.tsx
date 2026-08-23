@@ -62,92 +62,100 @@ export function EventCard({ event }: { event: EventItem }) {
       testID={`event-card-${event.id}`}
     >
       {event.cover_image ? (
+        // Full-width poster strip — flyers tend to be tall (3:4-ish)
+        // and cropping them into a tiny 76×76 thumb loses too much
+        // information. When a host uploaded a real flyer we give it
+        // proper billing at the top of the card.
         <Image
           source={{ uri: event.cover_image }}
-          style={styles.cover}
+          style={styles.coverWide}
           contentFit="cover"
         />
-      ) : (
-        <View
-          style={[
-            styles.coverFallback,
-            { backgroundColor: TYPE_COLOR[typeKey] || colors.brandTertiary },
-          ]}
-        >
-          <Ionicons
-            name={
-              typeKey === "workshop"
-                ? "school"
-                : typeKey === "social"
-                  ? "wine"
-                  : typeKey === "private_party"
-                    ? "gift"
-                    : "calendar"
-            }
-            size={28}
-            color="#fff"
-          />
-        </View>
-      )}
+      ) : null}
 
-      <View style={{ flex: 1 }}>
-        <View style={styles.row1}>
+      <View style={styles.body}>
+        {!event.cover_image ? (
           <View
             style={[
-              styles.typePill,
+              styles.coverFallback,
               { backgroundColor: TYPE_COLOR[typeKey] || colors.brandTertiary },
             ]}
           >
-            <Text style={styles.typePillText}>
-              {TYPE_LABEL[typeKey] || "Event"}
-            </Text>
+            <Ionicons
+              name={
+                typeKey === "workshop"
+                  ? "school"
+                  : typeKey === "social"
+                    ? "wine"
+                    : typeKey === "private_party"
+                      ? "gift"
+                      : "calendar"
+              }
+              size={28}
+              color="#fff"
+            />
           </View>
-          {event.skill_level && event.skill_level !== "All levels" ? (
+        ) : null}
+
+        <View style={{ flex: 1 }}>
+          <View style={styles.row1}>
             <View
               style={[
-                styles.levelPill,
-                { borderColor: difficultyColor(event.skill_level) },
+                styles.typePill,
+                { backgroundColor: TYPE_COLOR[typeKey] || colors.brandTertiary },
               ]}
             >
+              <Text style={styles.typePillText}>
+                {TYPE_LABEL[typeKey] || "Event"}
+              </Text>
+            </View>
+            {event.skill_level && event.skill_level !== "All levels" ? (
               <View
                 style={[
-                  styles.levelDot,
-                  { backgroundColor: difficultyColor(event.skill_level) },
+                  styles.levelPill,
+                  { borderColor: difficultyColor(event.skill_level) },
                 ]}
-              />
-              <Text style={styles.levelPillText}>{event.skill_level}</Text>
+              >
+                <View
+                  style={[
+                    styles.levelDot,
+                    { backgroundColor: difficultyColor(event.skill_level) },
+                  ]}
+                />
+                <Text style={styles.levelPillText}>{event.skill_level}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <Text style={styles.name} numberOfLines={2}>
+            {event.name}
+          </Text>
+
+          <View style={styles.metaRow}>
+            <Ionicons name="calendar" size={12} color={colors.muted} />
+            <Text style={styles.metaText}>{dateLabel}</Text>
+          </View>
+
+          {locLabel ? (
+            <View style={styles.metaRow}>
+              <Ionicons name="location" size={12} color={colors.muted} />
+              <Text style={styles.metaText} numberOfLines={1}>
+                {locLabel}
+              </Text>
+            </View>
+          ) : null}
+
+          {distLabel || event.price ? (
+            <View style={styles.footRow}>
+              {distLabel ? (
+                <Text style={styles.distText}>{distLabel}</Text>
+              ) : null}
+              {event.price ? (
+                <Text style={styles.priceText}>{event.price}</Text>
+              ) : null}
             </View>
           ) : null}
         </View>
-
-        <Text style={styles.name} numberOfLines={2}>
-          {event.name}
-        </Text>
-
-        <View style={styles.metaRow}>
-          <Ionicons name="calendar" size={12} color={colors.muted} />
-          <Text style={styles.metaText}>{dateLabel}</Text>
-        </View>
-
-        {locLabel ? (
-          <View style={styles.metaRow}>
-            <Ionicons name="location" size={12} color={colors.muted} />
-            <Text style={styles.metaText} numberOfLines={1}>
-              {locLabel}
-            </Text>
-          </View>
-        ) : null}
-
-        {distLabel || event.price ? (
-          <View style={styles.footRow}>
-            {distLabel ? (
-              <Text style={styles.distText}>{distLabel}</Text>
-            ) : null}
-            {event.price ? (
-              <Text style={styles.priceText}>{event.price}</Text>
-            ) : null}
-          </View>
-        ) : null}
       </View>
     </Pressable>
   );
@@ -201,18 +209,22 @@ function prettyTime(t: string): string {
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    gap: spacing.md,
-    padding: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: "hidden",
   },
-  cover: {
-    width: 76,
-    height: 76,
-    borderRadius: radius.sm,
+  body: {
+    flexDirection: "row",
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  coverWide: {
+    width: "100%",
+    // Flyer-friendly aspect. Not so tall it dominates the list; not so
+    // short that portrait posters get squished.
+    aspectRatio: 16 / 10,
     backgroundColor: colors.surfaceSecondary,
   },
   coverFallback: {

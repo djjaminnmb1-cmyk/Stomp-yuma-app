@@ -19,6 +19,7 @@ from . import (
     dances,
     dashboard,
     events,
+    instructors,
     leaderboard,
     misc,
     prizes,
@@ -27,6 +28,7 @@ from . import (
     song_preview,
     suggestions,
     tracking,
+    weekly_recap,
 )
 
 api_router = APIRouter(prefix="/api")
@@ -49,8 +51,10 @@ api_router.include_router(certificate.router)
 api_router.include_router(badges.router)
 api_router.include_router(social.router)
 api_router.include_router(events.router)
+api_router.include_router(instructors.router)
 api_router.include_router(song_preview.router)
 api_router.include_router(push.router)
+api_router.include_router(weekly_recap.router)
 api_router.include_router(misc.router)
 
 __all__ = ["api_router"]

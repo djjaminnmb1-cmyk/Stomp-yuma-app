@@ -1,0 +1,57 @@
+{
+  "summary": "Multi-Instructor Pick (v2.6) validation. Backend: 14/16 pytest tests PASS (87.5%). Two CRITICAL failures on PUT /api/auth/me/instructors with follow=true because /app/backend/routes/instructors.py:_upsert_follows() writes documents with field name 'following_id' while the rest of the codebase (services/social.py, services/startup.py) uses 'followee_id' as the second element of the (follower_id, followee_id) unique index. Result: the first upsert inserts {followee_id: null}, the second (or any later) upsert for the same caller hits E11000 duplicate key and returns 500. This blocks the flagship v2.6 use case (dancer picks Erin + Jamin with follow toggle ON — server returns 500 the moment the loop tries to insert the second follow row). Even in the single-target case where the insert succeeds, the row is invisible to the follow-graph code because following_ids()/follower_ids() query on 'followee_id', so auto-follow is effectively a no-op for the rest of the app. All other backend rules validated green: main_instructor_id resolution precedence (explicit → existing-if-still-selected → first-in-list → cleared), invalid instructor_ids silently dropped, empty list clears main, PATCH /main-instructor $addToSet's into instructor_ids (idempotent — no dupes), /auth/me now includes instructor_ids array, regression endpoints (/instructors, /suggestions fallback, /suggestions/for-instructor, /weekly-recap) all still 200. Frontend smoke on 390x844: PickInstructorSheet opens from Profile → 'My instructors' row, all required testIDs render (pick-instructor-sheet, -search, -clear, -follow-toggle, -save, -cancel, -close, -{userId}, -star-{userId}), multi-select checkboxes work, star icon marks 'PRIMARY', sticky footer shows dynamic 'Save N picks' (screenshot verified with N=2), Profile row subtitle correctly shows 'Primary: Jamin Brown · +1 more' format for multi-pick state. Recurring warning: 'Unexpected text node' still fires on every mount — third iteration in a row (see iteration_23, _24).",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "PUT /api/auth/me/instructors",
+        "issue": "500 Internal Server Error whenever the caller picks ≥2 instructors with follow=true. Root cause: /app/backend/routes/instructors.py:_upsert_follows() writes {follower_id, following_id, created_at} but the follows collection has a unique index on (follower_id, followee_id) (see services/startup.py:69 and services/social.py). New docs get followee_id=null by omission, so the first insert succeeds with (follower_id, null) and the second insert for the same follower fails with pymongo.errors.DuplicateKeyError: E11000 duplicate key. Additionally, even single-target inserts are invisible to the rest of the app because following_ids() queries 'followee_id', not 'following_id' — auto-follow does not actually make the user 'follow' anyone from the app's POV. Fix: rename the field to 'followee_id' in both the filter and $setOnInsert, OR (preferred) delegate to services.social.follow() which already handles idempotency, updated_at, counters, and notifications.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "PickInstructorSheet → PUT /api/auth/me/instructors with follow toggle ON (default) and ≥2 picks",
+        "issue": "Save button will trigger backend 500. UI likely shows a generic error alert because the follow toggle is default-ON and the multi-select is the whole point of v2.6. Deploy blocker until backend field name is fixed.",
+        "affected_testIDs": ["pick-instructor-save", "pick-instructor-follow-toggle"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "app-wide (root <View> containing whitespace text node)",
+        "issue": "Recurring console.error 'Unexpected text node:       . A text node cannot be a child of a <View>.' fires on every screen mount. Now flagged in 3 consecutive iterations (23, 24, 25). Not a red-screen on web but would crash on strict native React runtime. Grep for '{\" \"}' / stray JSX whitespace between <View> children in app/_layout.tsx, app/(tabs)/_layout.tsx, and age-gate."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_multi_instructor_pick.py",
+    "/app/test_reports/pytest/multi_instructor_pick.xml"
+  ],
+  "action_items": [
+    "FIX (CRITICAL): /app/backend/routes/instructors.py:_upsert_follows — change 'following_id' → 'followee_id' in both the filter dict AND the $setOnInsert dict so the write hits the same unique index the rest of the app uses. Alternatively (preferred) replace the whole helper with `for tid in target_ids: if tid and tid != follower_id: await services.social.follow(follower_id, tid)` and count return values for new_follows.",
+    "After fixing, re-run: pytest /app/backend/tests/test_multi_instructor_pick.py -v — expect 16/16 green.",
+    "Locate and remove the stray whitespace text node that lives directly inside a <View> — 'Unexpected text node' console.error now flagged 3 iterations in a row."
+  ],
+  "critical_code_review_comments": [
+    "instructors.py:_upsert_follows uses inconsistent field naming ('following_id') vs the canonical 'followee_id' used by services/social.py and enforced by the unique index in services/startup.py. Recommend delegating to services.social.follow() instead of hand-rolling a second follow-writer path — DRY + guarantees notifications, counters, and idempotency stay in sync.",
+    "instructors.py main_instructor_id resolution is correct and cleanly ordered (explicit → existing-if-still-selected → first-in-list → clear). Verified via chained calls.",
+    "instructors.py: invalid ids (unknown user OR real user who isn't an instructor/admin) are correctly filtered out of the persisted list by _load_and_validate_instructors; response still 200. Silent-drop is documented and tested.",
+    "instructors.py: $unset of main_instructor_id when the picked list becomes empty correctly reopens the picker on next Suggest tap.",
+    "PATCH /auth/me/main-instructor's $addToSet is idempotent — verified two consecutive PATCH calls do not duplicate the id.",
+    "core/serialize.py:user_to_out now correctly surfaces both main_instructor_id and instructor_ids (list) on the wire — /auth/me is now client-usable for AuthContext hydration.",
+    "PickInstructorSheet UI verified via mobile web preview (390x844): checkboxes toggle, star promotes to Primary, follow toggle default-on, sticky footer 'Save N picks' with dynamic N, all required testIDs present including per-user pick-instructor-{userId} and pick-instructor-star-{userId}. Profile subtitle format 'Primary: {Name} · +1 more' matches spec."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_multi_instructor_pick.py (new — 16 tests, 2 currently failing due to backend bug)"
+  ],
+  "success_rate": {"backend": "87.5% (14/16)", "frontend": "100% of visual smoke — save flow blocked by backend bug"},
+  "seed_data_creation": "Function-scoped fresh dancer accounts (TEST_mip_*@test.example) created per test — no persistent seed data.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "After main agent fixes _upsert_follows field name (following_id → followee_id) or delegates to services.social.follow, re-run pytest /app/backend/tests/test_multi_instructor_pick.py — should be 16/16. Frontend save flow will then work end-to-end. testIDs verified live on preview: pick-instructor-sheet, pick-instructor-search, pick-instructor-clear, pick-instructor-follow-toggle, pick-instructor-save (label = 'Save N picks'), pick-instructor-cancel, pick-instructor-close, pick-instructor-{userId}, pick-instructor-star-{userId}, profile-main-instructor-row. Erin's current DB state: instructor_ids=[Erin, Jamin], main_instructor_id=Jamin. Reset via PUT /api/auth/me/instructors {instructor_ids:[], follow:false} if fresh state needed.",
+  "rca_of_issue": "PUT /api/auth/me/instructors with follow=true returns 500 for ≥2 picks. RCA: field name mismatch between new code and existing schema. Reproduction: (1) register a fresh user, (2) obtain user_ids for Erin + Jamin from GET /api/instructors, (3) PUT /api/auth/me/instructors {instructor_ids:[erin_id, jamin_id], main_instructor_id: jamin_id, follow: true} → 500. Backend log: pymongo.errors.DuplicateKeyError: E11000 duplicate key error collection: test_database.follows index: follower_id_1_followee_id_1 dup key: { follower_id: 'user_...', followee_id: null }. Mitigation: change field name in _upsert_follows from 'following_id' to 'followee_id' (2-line diff) OR delegate to existing services.social.follow() function which already handles idempotency + counters + notifications."
+}

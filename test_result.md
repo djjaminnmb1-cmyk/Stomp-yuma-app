@@ -485,3 +485,92 @@ agent_communication:
           same fix applied to /recently-practiced `limit` param.
       All new endpoints verified via testing_agent — 19/21 first pass, both
       remaining flakes fixed and re-verified locally (all pass now).
+
+
+  - agent: "main"
+    message: |
+      New iteration (v2.5 — Home Reorder, Pick Main Instructor & Weekly Recap):
+
+        • Home tab reordering (per user request):
+          - Home hero now flows: Streak → Weekly Recap (new) → Achievements → Browse
+            Dances → Community Activity → Recently Practiced → Boot Scoot Board →
+            Find Events → Class Recap → Suggest a Dance → About the Venue.
+          - Removed the redundant "example dances" strip from the hero — the poster
+            already carries the community values.
+
+        • Pick Main Instructor (backend + frontend):
+          - New router `routes/instructors.py` — `GET /api/instructors` returns every
+            account flagged `is_instructor` or `is_admin` (name/city/state/picture).
+            `PATCH /api/auth/me/main-instructor` sets the caller's preferred
+            instructor, and `DELETE` clears it.
+          - `users` collection gained an optional `main_instructor_id` field.
+          - `SuggestionIn` extended with an optional `target_instructor_id`; the
+            suggestions route now falls back to the caller's stored
+            `main_instructor_id` when the request body omits one, else lands in the
+            admin firehose. `target_instructor_name` is denormalised at insert time.
+          - New `GET /api/suggestions/for-instructor` returns the suggestions routed
+            to the calling instructor (any instructor or admin).
+          - Frontend: `PickInstructorSheet.tsx` — bottom-sheet directory with live
+            search by name / city, blue verification checkmarks and a saving spinner.
+            Wired from Home (first tap on "Suggest a Dance" if not picked yet),
+            Suggest screen header (swap icon → change), and a new Profile row
+            "Main instructor · {Name} — tap to change".
+          - Suggest header + hint + success alert + submit button now personalise
+            to the picked instructor's first name.
+
+        • Weekly Recap Card:
+          - New backend endpoint `GET /api/weekly-recap`. Merges Practice Mode opens
+            (`practice_daily`) and completions (`tracking.updated_at` where
+            `status="completed"`) across the current Monday→Sunday window. Returns
+            `{days[], practices, completions, total, days_active, best_day}`.
+          - Frontend `WeeklyRecapCard.tsx` renders on Home directly under the streak
+            card. Sunday shows a "🎉 Weekly Recap" celebration tone, Mon-Sat shows
+            "This week so far". Includes a 3-stat row (Practices · Completed · Best
+            day) and Mon-Sun activity dots with today highlighted. Card is hidden
+            when the user has 0 activity — no zero-shame states.
+
+      Local verification:
+        • `curl /api/weekly-recap` → 200 with the full summary object.
+        • `curl /api/instructors` → 200 with the 11-member instructor directory.
+        • Frontend smoke: Home renders correctly, Weekly Recap card shows Erin's
+          2 completions this week (Sunday tone), Suggest-a-Dance opens the picker
+          when no instructor is set, personalises when picked, and profile shows
+          the "Main instructor" row with the current pick.
+
+      Needs: `testing_agent` — comprehensive regression on the new endpoints plus
+      the Suggest → PickInstructorSheet → Suggest personalisation flow.
+
+
+  - agent: "main"
+    message: |
+      Follow-up (v2.6 — Multi-Instructor Pick + Auto-Follow):
+
+        • Backend: `users.instructor_ids` array added. New atomic endpoint
+          `PUT /api/auth/me/instructors` accepts `{instructor_ids, main_instructor_id?, follow?}`.
+          - Validates each id against the instructors directory (silently drops
+            unknown / non-instructor ids).
+          - Resolves Primary via explicit → existing → first → cleared.
+          - When `follow=true`, upserts follow rows for each selected instructor
+            using the shared `services.social.follow(follower, followee)` helper
+            (idempotent, uses the canonical `followee_id` field + unique index).
+          - Returns `{ok, user (hydrated), new_follows}`.
+          - Existing `PATCH /api/auth/me/main-instructor` now also
+            `$addToSet`'s the id into `instructor_ids` so single-pick and
+            multi-pick paths stay in sync.
+
+        • Frontend: `PickInstructorSheet.tsx` rewritten as multi-select bottom
+          sheet with checkboxes, "Follow when I save" toggle, star-to-promote
+          Primary, sticky Cancel / "Save N picks" footer. Selected → brand red;
+          Primary → brand tertiary + "⭐ PRIMARY" pill.
+        • Profile row renamed to "My instructors" with dynamic subtitle:
+          "Primary: {Name} · +N more".
+        • Home + Suggest continue to personalise off the Primary pick.
+
+      Testing:
+        • 16/16 pytest cases in `test_multi_instructor_pick.py`. Iteration 25 caught
+          a critical `followee_id` field-name bug in the initial follow upsert;
+          fixed by delegating to `services.social.follow`. Iteration 26 verified
+          the fix end-to-end (follow rows visible via /follows/me + /feed).
+        • Frontend smoke: multi-select opens from Profile → "My instructors" and
+          Home → Suggest a Dance; picks + Primary + follow-toggle all persist; the
+          "Save N picks" flow closes the sheet and toasts new follows.

@@ -35,6 +35,8 @@ export type User = {
   auth_provider: string;
   apple_sub?: string;  // present iff Apple is linked
   email_is_synthetic?: boolean;
+  main_instructor_id?: string;
+  instructor_ids?: string[];
 };
 
 // ---------------- Badges / Achievements ----------------
@@ -74,6 +76,25 @@ export type PracticeHistoryResponse = {
   total: number;
   days_active: number;
   best_day: PracticeHistoryDay;
+};
+
+// ---------------- Weekly Recap ----------------
+export type WeeklyRecapDay = {
+  date: string;
+  practices: number;
+  completions: number;
+  count: number;
+};
+export type WeeklyRecap = {
+  week_start: string;
+  week_end: string;
+  today: string;
+  days: WeeklyRecapDay[];
+  practices: number;
+  completions: number;
+  total: number;
+  days_active: number;
+  best_day: WeeklyRecapDay | null;
 };
 
 // ---------------- Social ----------------
@@ -440,6 +461,8 @@ export type Suggestion = {
   step_sheet_image?: string;
   notes: string;
   status: string;
+  target_instructor_id?: string;
+  target_instructor_name?: string;
   created_at: string;
 };
 
@@ -516,6 +539,62 @@ export const api = {
       { method: "POST" },
       token,
     ),
+
+  // ---------------- Instructors picker ----------------
+  listInstructors: (
+    token: string,
+    opts?: { q?: string; city?: string }
+  ) => {
+    const params = new URLSearchParams();
+    if (opts?.q) params.set("q", opts.q);
+    if (opts?.city) params.set("city", opts.city);
+    const qs = params.toString();
+    return req<{
+      instructors: {
+        user_id: string;
+        name: string;
+        picture: string;
+        city: string;
+        state: string;
+      }[];
+    }>(`/instructors${qs ? `?${qs}` : ""}`, {}, token);
+  },
+  setMainInstructor: (token: string, instructor_id: string) =>
+    req<{
+      ok: boolean;
+      main_instructor_id: string;
+      main_instructor_name: string;
+    }>(
+      "/auth/me/main-instructor",
+      { method: "PATCH", body: JSON.stringify({ instructor_id }) },
+      token,
+    ),
+  clearMainInstructor: (token: string) =>
+    req<{ ok: boolean }>(
+      "/auth/me/main-instructor",
+      { method: "DELETE" },
+      token,
+    ),
+  saveInstructors: (
+    token: string,
+    body: {
+      instructor_ids: string[];
+      main_instructor_id?: string;
+      follow?: boolean;
+    }
+  ) =>
+    req<{ ok: boolean; user: User; new_follows: number }>(
+      "/auth/me/instructors",
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          instructor_ids: body.instructor_ids,
+          main_instructor_id: body.main_instructor_id,
+          follow: body.follow ?? true,
+        }),
+      },
+      token,
+    ),
   me: (token: string) => req<User>("/auth/me", {}, token),
   setInstructor: (instructor_code: string, token: string) =>
     req<{ ok: boolean; user: User }>(
@@ -569,6 +648,10 @@ export const api = {
   // ---------------- Practice history ----------------
   getPracticeHistory: (token: string, days = 30) =>
     req<PracticeHistoryResponse>(`/practice-history?days=${days}`, {}, token),
+
+  // ---------------- Weekly Recap ----------------
+  getWeeklyRecap: (token: string) =>
+    req<WeeklyRecap>("/weekly-recap", {}, token),
 
   // ---------------- Social ----------------
   getMyFollows: (token: string) =>
@@ -839,12 +922,15 @@ export const api = {
       step_sheet_url?: string;
       step_sheet_image?: string;
       notes?: string;
+      target_instructor_id?: string;
     },
     token: string
   ) =>
     req<Suggestion>("/suggestions", { method: "POST", body: JSON.stringify(body) }, token),
   mySuggestions: (token: string) => req<Suggestion[]>("/suggestions/mine", {}, token),
   allSuggestions: (token: string) => req<Suggestion[]>("/suggestions", {}, token),
+  suggestionsForInstructor: (token: string) =>
+    req<Suggestion[]>("/suggestions/for-instructor", {}, token),
   updateSuggestionStatus: (id: string, status: string, token: string) =>
     req<Suggestion>(
       `/suggestions/${id}/status?status=${encodeURIComponent(status)}`,

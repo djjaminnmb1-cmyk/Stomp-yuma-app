@@ -5,15 +5,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { colors, spacing, radius, images } from "@/src/theme";
-import { api, Dance, FeedEvent, LeaderboardEntry, Streak } from "@/src/api/client";
+import { api, FeedEvent, LeaderboardEntry, Streak } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { StreakCard } from "@/src/components/StreakCard";
 import { FeedEventCard } from "@/src/components/FeedEventCard";
+import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
+import { WeeklyRecapCard } from "@/src/components/WeeklyRecapCard";
 
 export default function Home() {
   const router = useRouter();
   const { user, token } = useAuth();
-  const [recent, setRecent] = useState<Dance[]>([]);
   const [topDancers, setTopDancers] = useState<LeaderboardEntry[]>([]);
   const [practiced, setPracticed] = useState<
     { dance: { id: string; name: string; choreographer: string; difficulty: string; bpm: number | null }; status: string; last_activity_at: string }[]
@@ -21,9 +22,10 @@ export default function Home() {
   const [streak, setStreak] = useState<Streak | null>(null);
   const [unseenBadges, setUnseenBadges] = useState(0);
   const [feedPreview, setFeedPreview] = useState<FeedEvent[]>([]);
+  const [mainInstructorName, setMainInstructorName] = useState<string>("");
+  const [showPickInstructor, setShowPickInstructor] = useState(false);
 
   useEffect(() => {
-    api.listDances().then((all) => setRecent(all.slice(0, 4))).catch(() => {});
     api
       .getLeaderboard("all", 3, token || undefined)
       .then((lb) => setTopDancers(lb.entries || []))
@@ -56,6 +58,38 @@ export default function Home() {
     }, [token])
   );
 
+  // Resolve the main instructor's display name whenever the caller's
+  // ``main_instructor_id`` changes so the Suggest a Dance card can
+  // read "Suggest a Dance for [Name]".
+  useEffect(() => {
+    if (!token || !user?.main_instructor_id) {
+      setMainInstructorName("");
+      return;
+    }
+    let alive = true;
+    api
+      .getPublicProfile(token, user.main_instructor_id)
+      .then((p) => {
+        if (alive) setMainInstructorName(p?.name || "");
+      })
+      .catch(() => {
+        if (alive) setMainInstructorName("");
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token, user?.main_instructor_id]);
+
+  const handleSuggestPress = useCallback(() => {
+    // If they haven't picked an instructor yet, show the picker first —
+    // then route into /suggest so their first idea lands correctly.
+    if (!user?.main_instructor_id) {
+      setShowPickInstructor(true);
+      return;
+    }
+    router.push("/suggest");
+  }, [user?.main_instructor_id, router]);
+
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
@@ -81,6 +115,7 @@ export default function Home() {
 
           {token ? (
             <>
+              <WeeklyRecapCard />
               <StreakCard streak={streak} />
               <Pressable
                 testID="home-achievements-cta"
@@ -173,82 +208,6 @@ export default function Home() {
             </Pressable>
           </View>
 
-          <Pressable
-            testID="home-classes-cta"
-            onPress={() => router.push("/classes")}
-            style={styles.classesCard}
-          >
-            <View style={styles.classesIcon}>
-              <Ionicons name="calendar" size={22} color={colors.brandSecondary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.suggestTitle}>Recent Class Recap</Text>
-              <Text style={styles.suggestSub}>
-                See which dances were taught in recent classes.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </Pressable>
-
-          <Pressable
-            testID="home-events-cta"
-            onPress={() => router.push("/events")}
-            style={styles.eventsCard}
-          >
-            <View style={styles.eventsIcon}>
-              <Ionicons name="compass" size={22} color={colors.brandPrimary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.suggestTitle}>Find Events Near You</Text>
-              <Text style={styles.suggestSub}>
-                Workshops, socials, and classes wherever your boots land.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </Pressable>
-
-          <Pressable
-            testID="home-leaderboard-cta"
-            onPress={() => router.push("/leaderboard")}
-            style={styles.leaderboardCard}
-          >
-            <View style={styles.leaderboardIcon}>
-              <Ionicons name="trophy" size={22} color={colors.brandTertiary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.suggestTitle}>Boot Scoot Board</Text>
-              {topDancers.length > 0 ? (
-                <Text style={styles.suggestSub} numberOfLines={1}>
-                  {topDancers
-                    .map((d, i) => `${i + 1}. ${d.name.split(" ")[0]} (${d.count})`)
-                    .join("  ·  ")}
-                </Text>
-              ) : (
-                <Text style={styles.suggestSub}>
-                  See who&apos;s topping the floor — join in.
-                </Text>
-              )}
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </Pressable>
-
-          <Pressable
-            testID="home-suggest-cta"
-            onPress={() => router.push("/suggest")}
-            style={styles.suggestCard}
-          >
-            <View style={styles.suggestIcon}>
-              <Ionicons name="bulb" size={22} color={colors.brandPrimary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.suggestTitle}>Suggest a Dance for Erin</Text>
-              <Text style={styles.suggestSub}>
-                Got an idea? Send it to instructor Erin Brown.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-          </Pressable>
-
           {token && practiced.length > 0 && (
             <View style={styles.practicedWrap}>
               <View style={styles.practicedHeader}>
@@ -289,24 +248,88 @@ export default function Home() {
               </ScrollView>
             </View>
           )}
-          {recent.map((d) => (
-            <Pressable
-              key={d.id}
-              testID={`home-dance-${d.id}`}
-              onPress={() => router.push(`/dance/${d.id}`)}
-              style={styles.miniCard}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.miniTitle} numberOfLines={1}>{d.name}</Text>
-                <Text style={styles.miniMeta} numberOfLines={1}>
-                  {d.song} • {d.choreographer || "Unknown"}
+
+          <Pressable
+            testID="home-leaderboard-cta"
+            onPress={() => router.push("/leaderboard")}
+            style={styles.leaderboardCard}
+          >
+            <View style={styles.leaderboardIcon}>
+              <Ionicons name="trophy" size={22} color={colors.brandTertiary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.suggestTitle}>Boot Scoot Board</Text>
+              {topDancers.length > 0 ? (
+                <Text style={styles.suggestSub} numberOfLines={1}>
+                  {topDancers
+                    .map((d, i) => `${i + 1}. ${d.name.split(" ")[0]} (${d.count})`)
+                    .join("  ·  ")}
                 </Text>
-              </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{d.difficulty}</Text>
-              </View>
-            </Pressable>
-          ))}
+              ) : (
+                <Text style={styles.suggestSub}>
+                  See who&apos;s topping the floor — join in.
+                </Text>
+              )}
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
+            testID="home-events-cta"
+            onPress={() => router.push("/events")}
+            style={styles.eventsCard}
+          >
+            <View style={styles.eventsIcon}>
+              <Ionicons name="compass" size={22} color={colors.brandPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.suggestTitle}>Find Events Near You</Text>
+              <Text style={styles.suggestSub}>
+                Workshops, socials, and classes wherever your boots land.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
+            testID="home-classes-cta"
+            onPress={() => router.push("/classes")}
+            style={styles.classesCard}
+          >
+            <View style={styles.classesIcon}>
+              <Ionicons name="calendar" size={22} color={colors.brandSecondary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.suggestTitle}>Recent Class Recap</Text>
+              <Text style={styles.suggestSub}>
+                See which dances were taught in recent classes.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
+            testID="home-suggest-cta"
+            onPress={handleSuggestPress}
+            style={styles.suggestCard}
+          >
+            <View style={styles.suggestIcon}>
+              <Ionicons name="bulb" size={22} color={colors.brandPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.suggestTitle}>
+                {mainInstructorName
+                  ? `Suggest a Dance for ${mainInstructorName.split(" ")[0]}`
+                  : "Suggest a Dance"}
+              </Text>
+              <Text style={styles.suggestSub}>
+                {mainInstructorName
+                  ? `Got an idea? Send it to ${mainInstructorName}.`
+                  : "Pick your main instructor and send them your ideas."}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
         </View>
 
         <View style={styles.section}>
@@ -314,9 +337,9 @@ export default function Home() {
           <View style={styles.aboutCard}>
             <Ionicons name="location" size={18} color={colors.brandPrimary} />
             <Text style={styles.aboutText}>
-              Stompin' Ground Yuma is a friendly community where dancers of every age and
+              Stompin&apos; Ground Yuma is a friendly community where dancers of every age and
               skill level come together to learn, laugh, and boot-scoot the night away.
-              Grab your boots and let's dance.
+              Grab your boots and let&apos;s dance.
             </Text>
           </View>
           <View style={styles.rowIcons}>
@@ -380,6 +403,19 @@ export default function Home() {
           </Pressable>
         </View>
       </ScrollView>
+      <PickInstructorSheet
+        visible={showPickInstructor}
+        onClose={() => setShowPickInstructor(false)}
+        onSaved={({ user: fresh }) => {
+          setShowPickInstructor(false);
+          // Only route into Suggest when they actually saved a
+          // primary — otherwise leave them on Home to admire their
+          // new picks.
+          if (fresh.main_instructor_id) {
+            router.push("/suggest");
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }

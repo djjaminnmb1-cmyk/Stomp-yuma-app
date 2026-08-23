@@ -119,3 +119,60 @@ Add an "Upcoming Classes" section on Home so the venue can drive attendance to r
 ### Tests
 - New `test_backlog_features.py` (21 tests) + regression suites (`test_events.py`, `test_feed_reports.py`, `test_apple_auth.py`) → 63/63 backend tests pass.
 - Playwright pass: admin flow works for Erin, Jamin gets redirected, fresh user gets 403 on admin endpoints.
+
+## Phase 10 Home Reorder, Pick Main Instructor & Weekly Recap (v2.5 — DONE)
+
+### Home Tab Reorder
+- **Home CTAs** now flow: Streak + Weekly Recap → Achievements → Browse Dances → Community Activity → Recently Practiced → Boot Scoot Board → Find Events → Recent Class Recap → Suggest a Dance → About the Venue.
+- **Redundant "example dances"** removed from the home hero — the poster carries the community values now.
+
+### Pick Main Instructor
+- **DB**: New `users.main_instructor_id` field. Every dancer chooses one instructor whose inbox receives their Suggest-a-Dance submissions.
+- **Backend**: New router `routes/instructors.py` with `GET /api/instructors` (directory of `is_instructor` OR `is_admin` users), `PATCH /api/auth/me/main-instructor` (sets the caller's main instructor), and `DELETE /api/auth/me/main-instructor` (clears it). Instructor identity is enforced server-side.
+- **Suggestions router**: `SuggestionIn.target_instructor_id` optional. Server falls back to caller's persisted `main_instructor_id`, or empty string (admin firehose) as a last resort. Persists `target_instructor_name` too for audit.
+- **New endpoint**: `GET /api/suggestions/for-instructor` returns the suggestions routed to the calling instructor (any instructor or admin can call it).
+- **Frontend**: `PickInstructorSheet.tsx` — bottom sheet with live search by name/city, visible verification checkmarks, tap-to-pick with confirm + saving spinner. Reused from Home (first-tap on Suggest a Dance if not picked yet) and Profile (dedicated "Main instructor · {Name} — tap to change" row).
+- **Suggest screen**: header now reads "Suggest to {FirstName}" with a swap-icon at top-right to change instructors mid-session. Empty state prompts users to pick one before submitting. Success alert also personalises: "{FirstName} will review your idea soon."
+- **Home CTA**: "Suggest a Dance" card also personalises to "Suggest a Dance for {FirstName}" once picked; before picking it reads "Pick your main instructor and send them your ideas."
+
+### Weekly Recap Card
+- **Backend**: New `GET /api/weekly-recap` — merges Practice-Mode opens (`practice_daily`) and completions (`tracking.updated_at`, `status="completed"`) across the current Monday→Sunday window. Returns `{days[], practices, completions, total, days_active, best_day}`.
+- **Frontend**: `WeeklyRecapCard.tsx` on Home renders directly under the Streak card. Sunday shows a "🎉 Weekly Recap" celebration tone; Mon–Sat shows "This week so far". Includes 3-stat row (Practices · Completed · Best day) and Mon–Sun activity dots highlighting today. Card is hidden entirely when the user has 0 activity this week — no zero-shame states.
+
+## Phase 11 Multi-Instructor Pick + Auto-Follow (v2.6 — DONE)
+
+### Multi-Instructor Selection
+- **DB**: `users.instructor_ids: string[]` — full list of instructors the dancer has "adopted". `main_instructor_id` remains as the Primary (drives Suggest-a-Dance routing) and is always included in the list when set.
+- **Backend**: New `PUT /api/auth/me/instructors` — atomic body `{instructor_ids, main_instructor_id?, follow?}`. Validates each id is a real instructor/admin (silently drops bad ids), resolves Primary via explicit → existing → first-picked → cleared, upserts follow rows when `follow=true`, and returns `{ok, user (hydrated), new_follows}`.
+- **Legacy `PATCH /api/auth/me/main-instructor`** now also `$addToSet` the target into `instructor_ids` so the single-pick and multi-pick paths stay in sync.
+
+### Auto-Follow on Save
+- Save operation optionally upserts a row in `db.follows` for every selected instructor (idempotent — never removes existing follows). Toast surfaces the net-new follow count.
+
+### Frontend
+- **`PickInstructorSheet.tsx`** rewritten as a multi-select bottom sheet:
+  - Each row has a checkbox for selection and a star icon for setting Primary. Selected rows highlight brand-red; the Primary row highlights brand-tertiary + shows a "⭐ PRIMARY" pill.
+  - Header shows "N picked · Primary set" + a "Follow when I save" toggle (default on).
+  - Sticky footer with Cancel + "Save N picks" primary CTA.
+  - Draft state resets from the freshly-loaded user every time the sheet re-opens — no stale selections leak between sessions.
+- **Profile row**: renamed "Main instructor" → "My instructors" with dynamic subtitle "Primary: {Name} · +N more" (falls back to "Tap to pick who receives your suggestions").
+- **Home / Suggest**: unchanged copy — the Primary pick is what personalises the CTA and header.
+
+
+### Home Tab Reorder
+- **Home CTAs** now flow: Streak + Weekly Recap → Achievements → Browse Dances → Community Activity → Recently Practiced → Boot Scoot Board → Find Events → Recent Class Recap → Suggest a Dance → About the Venue.
+- **Redundant "example dances"** removed from the home hero — the poster carries the community values now.
+
+### Pick Main Instructor
+- **DB**: New `users.main_instructor_id` field. Every dancer chooses one instructor whose inbox receives their Suggest-a-Dance submissions.
+- **Backend**: New router `routes/instructors.py` with `GET /api/instructors` (directory of `is_instructor` OR `is_admin` users), `PATCH /api/auth/me/main-instructor` (sets the caller's main instructor), and `DELETE /api/auth/me/main-instructor` (clears it). Instructor identity is enforced server-side.
+- **Suggestions router**: `SuggestionIn.target_instructor_id` optional. Server falls back to caller's persisted `main_instructor_id`, or empty string (admin firehose) as a last resort. Persists `target_instructor_name` too for audit.
+- **New endpoint**: `GET /api/suggestions/for-instructor` returns the suggestions routed to the calling instructor (any instructor or admin can call it).
+- **Frontend**: `PickInstructorSheet.tsx` — bottom sheet with live search by name/city, visible verification checkmarks, tap-to-pick with confirm + saving spinner. Reused from Home (first-tap on Suggest a Dance if not picked yet) and Profile (dedicated "Main instructor · {Name} — tap to change" row).
+- **Suggest screen**: header now reads "Suggest to {FirstName}" with a swap-icon at top-right to change instructors mid-session. Empty state prompts users to pick one before submitting. Success alert also personalises: "{FirstName} will review your idea soon."
+- **Home CTA**: "Suggest a Dance" card also personalises to "Suggest a Dance for {FirstName}" once picked; before picking it reads "Pick your main instructor and send them your ideas."
+
+### Weekly Recap Card
+- **Backend**: New `GET /api/weekly-recap` — merges Practice-Mode opens (`practice_daily`) and completions (`tracking.updated_at`, `status="completed"`) across the current Mon→Sun window. Returns `{days[], practices, completions, total, days_active, best_day}`.
+- **Frontend**: `WeeklyRecapCard.tsx` on Home renders directly under the Streak card. Sunday shows a "🎉 Weekly Recap" celebration tone; Mon–Sat shows "This week so far". Includes 3-stat row (Practices · Completed · Best day) and Mon–Sun activity dots highlighting today. Hidden entirely when the user has 0 activity this week — no zero-shame states.
+

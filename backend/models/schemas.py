@@ -211,6 +211,32 @@ class SuggestionIn(BaseModel):
     # The user must confirm it's the choreographer's official sheet.
     step_sheet_image: Optional[str] = ""
     notes: Optional[str] = ""
+    # Optional — route this suggestion to a specific instructor. When
+    # omitted the server falls back to the user's ``main_instructor_id``
+    # (chosen once in the picker) or, as a last resort, the SGY admin
+    # inbox so nothing gets lost.
+    target_instructor_id: Optional[str] = ""
+
+
+class MainInstructorBody(BaseModel):
+    instructor_id: str
+
+
+class InstructorSelectionBody(BaseModel):
+    """Atomic update of the caller's picked instructors.
+
+    - ``instructor_ids`` — full set of instructors the dancer has
+      selected. Empty list clears everything.
+    - ``main_instructor_id`` — optional. Must be a member of
+      ``instructor_ids`` (or empty). When omitted, the server keeps the
+      existing main if still valid, else auto-promotes the first item.
+    - ``follow`` — when true, the server upserts follow rows for every
+      selected instructor (never removes existing follows on save).
+    """
+
+    instructor_ids: List[str] = []
+    main_instructor_id: Optional[str] = None
+    follow: bool = True
 
 
 # ---------------- Leaderboard ----------------
