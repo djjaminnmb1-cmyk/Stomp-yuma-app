@@ -76,7 +76,9 @@ export default function EventDetail() {
   const shareEvent = useCallback(async () => {
     if (!event) return;
     const dateStr = event.date;
-    const timeStr = event.start_time ? ` @ ${event.start_time}` : "";
+    const timeStr = event.start_time
+      ? ` @ ${prettyTime(event.start_time)}`
+      : "";
     const locStr = [event.venue_name, event.city, event.state]
       .filter(Boolean)
       .join(", ");

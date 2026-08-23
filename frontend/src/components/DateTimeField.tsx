@@ -203,6 +203,7 @@ export function DateTimeField({
             mode={mode}
             display="spinner"
             themeVariant="light"
+            is24Hour={false}
             minimumDate={mode === "date" ? minDate : undefined}
             maximumDate={mode === "date" ? maxDate : undefined}
             onChange={(_evt: DateTimePickerEvent, d?: Date) => {
