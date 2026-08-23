@@ -127,7 +127,12 @@ export type FeedEvent =
   | {
       id: string;
       type: "completion";
-      user: { user_id: string; name: string; picture: string };
+      user: {
+        user_id: string;
+        name: string;
+        picture: string;
+        is_instructor?: boolean;
+      };
       created_at: string;
       reactions?: FeedReactions;
       dance: {
@@ -141,7 +146,12 @@ export type FeedEvent =
   | {
       id: string;
       type: "badge";
-      user: { user_id: string; name: string; picture: string };
+      user: {
+        user_id: string;
+        name: string;
+        picture: string;
+        is_instructor?: boolean;
+      };
       created_at: string;
       reactions?: FeedReactions;
       badge: {
@@ -155,7 +165,12 @@ export type FeedEvent =
   | {
       id: string;
       type: "streak_milestone";
-      user: { user_id: string; name: string; picture: string };
+      user: {
+        user_id: string;
+        name: string;
+        picture: string;
+        is_instructor?: boolean;
+      };
       created_at: string;
       reactions?: FeedReactions;
       days: number;
@@ -560,6 +575,26 @@ export const api = {
     req<{ ok: boolean; removed: boolean; reactions: FeedReactions }>(
       `/feed/${encodeURIComponent(eventId)}/reactions/${kind}`,
       { method: "DELETE" },
+      token
+    ),
+  getReportReasons: (token: string) =>
+    req<{ reasons: { reason: string; label: string }[] }>(
+      "/feed/report-reasons",
+      {},
+      token
+    ),
+  reportFeedEvent: (
+    token: string,
+    eventId: string,
+    reason: string,
+    note?: string
+  ) =>
+    req<{ ok: boolean; created: boolean }>(
+      `/feed/${encodeURIComponent(eventId)}/report`,
+      {
+        method: "POST",
+        body: JSON.stringify({ reason, note: note || "" }),
+      },
       token
     ),
 

@@ -56,6 +56,70 @@ REACTION_LABEL: dict[str, str] = {
     "heart": "Love it",
 }
 
+# ---------------- Feed reports ----------------
+# Reasons the client may pick when flagging a feed item. Kept
+# intentionally short so the sheet fits without scrolling.
+REPORT_REASONS: tuple[str, ...] = (
+    "harassment",
+    "hate_speech",
+    "spam",
+    "impersonation",
+    "sexual_content",
+    "other",
+)
+REPORT_LABEL: dict[str, str] = {
+    "harassment": "Harassment / bullying",
+    "hate_speech": "Hate speech or slurs",
+    "spam": "Spam or scam",
+    "impersonation": "Impersonation",
+    "sexual_content": "Sexual or explicit content",
+    "other": "Something else",
+}
+
+
+async def report_event(
+    reporter_id: str,
+    event_id: str,
+    reason: str,
+    note: str = "",
+) -> dict:
+    """Persist a moderation report against a feed event.
+
+    * Enforces one report per (reporter, event) — a second report from the
+      same user just updates the reason/note instead of stacking.
+    * Returns ``{"ok": True, "created": bool}``.
+    * Silently no-ops on invalid ``reason`` — caller is expected to
+      validate first, but we double-check here so a rogue client can't
+      pollute the collection.
+    """
+    if reason not in REPORT_REASONS:
+        return {"ok": False, "error": "invalid_reason"}
+    ev = await db.activity_events.find_one(
+        {"event_id": event_id}, {"_id": 0, "event_id": 1, "user_id": 1}
+    )
+    if not ev:
+        return {"ok": False, "error": "event_not_found"}
+    if ev.get("user_id") == reporter_id:
+        return {"ok": False, "error": "self_report"}
+    trimmed_note = (note or "").strip()[:600]
+    now = now_iso()
+    result = await db.feed_reports.update_one(
+        {"reporter_id": reporter_id, "event_id": event_id},
+        {
+            "$set": {
+                "reporter_id": reporter_id,
+                "event_id": event_id,
+                "reason": reason,
+                "note": trimmed_note,
+                "reported_user_id": ev.get("user_id", ""),
+                "updated_at": now,
+            },
+            "$setOnInsert": {"created_at": now, "status": "open"},
+        },
+        upsert=True,
+    )
+    return {"ok": True, "created": result.upserted_id is not None}
+
 
 async def add_reaction(user_id: str, event_id: str, kind: str) -> bool:
     """Idempotent: insert a reaction row. Returns True when a new row was
@@ -358,12 +422,15 @@ async def _hydrate_events(
     users = {}
     async for u in db.users.find(
         {"user_id": {"$in": list(user_ids)}},
-        {"_id": 0, "user_id": 1, "name": 1, "picture": 1},
+        {"_id": 0, "user_id": 1, "name": 1, "picture": 1,
+         "is_admin": 1, "is_instructor": 1},
     ):
         users[u["user_id"]] = {
             "user_id": u["user_id"],
             "name": u.get("name", ""),
             "picture": u.get("picture", ""),
+            "is_instructor": bool(u.get("is_admin"))
+            or bool(u.get("is_instructor")),
         }
 
     dances = {}
@@ -473,3 +540,7 @@ async def purge_user(user_id: str) -> None:
     await db.follows.delete_many({"followee_id": user_id})
     await db.activity_events.delete_many({"user_id": user_id})
     await db.feed_reactions.delete_many({"user_id": user_id})
+    # Reports authored BY the deleted user, plus reports ABOUT the
+    # deleted user — the latter avoids orphaned moderation-queue rows.
+    await db.feed_reports.delete_many({"reporter_id": user_id})
+    await db.feed_reports.delete_many({"reported_user_id": user_id})

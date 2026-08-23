@@ -1,0 +1,39 @@
+{
+  "summary": "Tested three new features on Stompin' Ground Yuma: (1) Age Gate modal at app root, (2) Instructor Verification Badge across feed/profile/event, (3) Report Reaction Abuse via long-press sheet + admin queue. Backend: 14/14 new tests in /app/backend/tests/test_feed_reports.py pass (report-reasons catalog, upsert-idempotent report POST, 400 bogus reason, 404 missing event, 400 self_report, admin-only queue with reporter/reported name hydration, feed hydrates user.is_instructor for Erin=true and a fresh user=false, and account-deletion purge_user now sweeps feed_reports). Existing reactions suite still green (13/13). Frontend: Age Gate flow fully verified (renders on first launch with all four testIDs, under-13 step shows back button, adult button persists an ISO timestamp under key `age_gate_ack_at` via storage and does NOT reappear after reload). Instructor badge renders on Erin's feed cards (`feed-instructor-{event_id}`) and on her /users/{id} public profile (`profile-instructor-badge`). Report sheet: long-press (900ms) on a feed card body opens the sheet with all 6 reason radios, note input, cancel, and submit; submit is aria-disabled=true before a reason is picked and becomes enabled once selected; successful submit hides the card from the reporter's feed. All feature acceptance criteria met.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Global (likely feed or age-gate legal copy)",
+        "issue": "Persistent web console error: 'Unexpected text node: . A text node cannot be a child of a <View>.' Fires on /auth, /feed, /users/{id}. Likely a stray whitespace/JSX interpolation inside a <View> (common cause: inline conditional like `{cond && ' '}` or `{'  '}` between children). Not blocking, but pollutes DevTools and can crash on native. Please grep the recently-touched files (AgeGateModal.tsx, FeedEventCard.tsx, ReportFeedSheet.tsx) for bare whitespace between JSX tags inside <View>."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_feed_reports.py",
+    "/app/test_reports/pytest/feed_reports.xml",
+    "/app/test_reports/pytest/feed_reactions.xml"
+  ],
+  "action_items": [
+    "Investigate the 'Unexpected text node' console error (see react_native_issues) — check for stray whitespace inside a <View> in the AgeGate/Feed/Report components."
+  ],
+  "critical_code_review_comments": [
+    "services/social.py report_event correctly enforces self_report + upsert idempotency; upserted_id detection is correct.",
+    "routes/social.py maps service errors to 404/400 as documented; admin queue excludes _id and hydrates names in one round-trip.",
+    "purge_user now deletes feed_reports on reporter_id, which matches the account-deletion flow expectation; consider also deleting rows keyed on `reported_user_id` so the admin queue doesn't retain reports about a user who no longer exists.",
+    "AgeGateModal uses `storage.setItem` (JSON-stringified) — matches the read side. Reload after ack correctly suppresses the modal.",
+    "FeedEventCard onCardLongPress client-side self-report guard mirrors the backend 400; delayLongPress=450ms as specified."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Created fresh TEST_reporter_* and TEST_purge_* users via /api/auth/register at runtime; created TEST_uifr_* user via browser fetch for the UI long-press flow. Also generated Erin completion events via /api/tracking/{dance_id} to guarantee a reportable feed row.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend tests require EXPO_PUBLIC_BACKEND_URL exported before running (frontend/.env holds it). Run: `EXPO_PUBLIC_BACKEND_URL=$(grep EXPO_PUBLIC_BACKEND_URL /app/frontend/.env | cut -d= -f2) python -m pytest /app/backend/tests/test_feed_reports.py -v`. Frontend UI needs to inject `age_gate_ack_at` (JSON.stringify) and `sgy_token` (raw string) into localStorage to bypass the age gate and auth for automated flows; long-press was simulated via mouse.down/up with 900ms hold (works with delayLongPress=450 on RN-Web)."
+}

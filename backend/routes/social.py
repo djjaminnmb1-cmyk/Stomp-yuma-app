@@ -28,6 +28,8 @@ from services.social import (
     REACTION_EMOJI,
     REACTION_KINDS,
     REACTION_LABEL,
+    REPORT_LABEL,
+    REPORT_REASONS,
     add_reaction,
     follow,
     follow_counts,
@@ -38,6 +40,7 @@ from services.social import (
     get_reactions_bulk,
     is_following,
     remove_reaction,
+    report_event,
     search_users,
     unfollow,
 )
@@ -253,3 +256,90 @@ async def delete_feed_reaction(
         "removed": removed,
         "reactions": bulk.get(event_id, {"counts": {}, "mine": []}),
     }
+
+
+# ---------------- Feed reports (moderation) ----------------
+class FeedReportBody(BaseModel):
+    reason: str
+    note: str = ""
+
+
+@router.get("/feed/report-reasons")
+async def list_report_reasons(user: dict = Depends(get_current_user)):
+    """Public list of reason slugs the client can use in the picker."""
+    return {
+        "reasons": [
+            {"reason": r, "label": REPORT_LABEL[r]} for r in REPORT_REASONS
+        ]
+    }
+
+
+@router.post("/feed/{event_id}/report")
+async def post_feed_report(
+    event_id: str,
+    body: FeedReportBody,
+    user: dict = Depends(get_current_user),
+):
+    """Flag a feed event for moderation review.
+
+    * One report per (reporter, event) — re-submitting updates the
+      reason/note. Prevents runaway rows from misclicks.
+    * Users cannot report their own posts (400).
+    """
+    if body.reason not in REPORT_REASONS:
+        raise HTTPException(400, "Unknown reason.")
+    result = await report_event(
+        reporter_id=user["user_id"],
+        event_id=event_id,
+        reason=body.reason,
+        note=body.note or "",
+    )
+    if not result.get("ok"):
+        if result.get("error") == "event_not_found":
+            raise HTTPException(404, "That post no longer exists.")
+        if result.get("error") == "self_report":
+            raise HTTPException(400, "You can't report your own post.")
+        raise HTTPException(400, "Couldn't submit report.")
+    return {"ok": True, "created": bool(result.get("created"))}
+
+
+@router.get("/admin/feed/reports")
+async def list_feed_reports(
+    limit: Optional[int] = Query(default=50),
+    status: Optional[str] = Query(default="open"),
+    user: dict = Depends(get_current_user),
+):
+    """Admin-only moderation queue.
+
+    Returns the newest reports first, hydrated with the reporter's name
+    and the target event's owner name so admins have context without
+    another round-trip.
+    """
+    if not user.get("is_admin"):
+        raise HTTPException(403, "Admin only.")
+    lim = max(1, min(200, int(limit or 50)))
+    filt: dict = {}
+    if status:
+        filt["status"] = status
+    rows = await db.feed_reports.find(
+        filt, {"_id": 0}
+    ).sort("created_at", -1).limit(lim).to_list(lim)
+    if not rows:
+        return {"reports": []}
+    user_ids: set[str] = set()
+    for r in rows:
+        if r.get("reporter_id"):
+            user_ids.add(r["reporter_id"])
+        if r.get("reported_user_id"):
+            user_ids.add(r["reported_user_id"])
+    names: dict[str, str] = {}
+    if user_ids:
+        async for u in db.users.find(
+            {"user_id": {"$in": list(user_ids)}},
+            {"_id": 0, "user_id": 1, "name": 1},
+        ):
+            names[u["user_id"]] = u.get("name", "") or ""
+    for r in rows:
+        r["reporter_name"] = names.get(r.get("reporter_id", ""), "")
+        r["reported_user_name"] = names.get(r.get("reported_user_id", ""), "")
+    return {"reports": rows}

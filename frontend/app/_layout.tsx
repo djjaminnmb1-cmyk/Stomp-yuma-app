@@ -10,6 +10,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { AuthProvider } from "@/src/context/auth-context";
 import { DraftCountProvider } from "@/src/context/draft-count-context";
+import { AgeGateModal } from "@/src/components/AgeGateModal";
 
 LogBox.ignoreAllLogs(true);
 SplashScreen.preventAutoHideAsync();
@@ -82,6 +83,7 @@ export default function RootLayout() {
           <DraftCountProvider>
             <StatusBar barStyle="dark-content" />
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#FDFBF7" } }} />
+            <AgeGateModal />
           </DraftCountProvider>
         </AuthProvider>
       </SafeAreaProvider>

@@ -72,6 +72,11 @@ async def _ensure_indexes() -> None:
             [("user_id", 1), ("event_id", 1), ("kind", 1)], unique=True
         )
         await db.feed_reactions.create_index("event_id")
+        # Feed reports (moderation queue)
+        await db.feed_reports.create_index(
+            [("reporter_id", 1), ("event_id", 1)], unique=True
+        )
+        await db.feed_reports.create_index([("status", 1), ("created_at", -1)])
         # Events + geocoding
         await db.events.create_index([("date", 1)])
         await db.events.create_index([("instructor_id", 1)])

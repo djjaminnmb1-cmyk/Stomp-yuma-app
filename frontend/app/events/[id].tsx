@@ -25,6 +25,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { colors, radius, spacing, difficultyColor } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
 import { api, EventItem } from "@/src/api/client";
+import { InstructorBadge } from "@/src/components/InstructorBadge";
 
 const TYPE_LABEL: Record<string, string> = {
   class: "Class",
@@ -286,9 +287,12 @@ export default function EventDetail() {
                 {initials(event.instructor_name)}
               </Text>
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.instrLabel}>Hosted by</Text>
-              <Text style={styles.instrName}>{event.instructor_name}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={styles.instrName}>{event.instructor_name}</Text>
+                <InstructorBadge size="sm" testID="event-instructor-badge" />
+              </View>
             </View>
           </View>
         ) : null}

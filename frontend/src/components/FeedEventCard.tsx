@@ -13,7 +13,7 @@
  * to the user's public profile. Users' avatars are always tappable to
  * jump to their profile.
  */
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,9 +21,15 @@ import { useRouter } from "expo-router";
 import type { FeedEvent } from "@/src/api/client";
 import { colors, radius, spacing, difficultyColor } from "@/src/theme";
 import { FeedReactionsBar } from "@/src/components/FeedReactionsBar";
+import { InstructorBadge } from "@/src/components/InstructorBadge";
+import { ReportFeedSheet } from "@/src/components/ReportFeedSheet";
+import { useAuth } from "@/src/context/auth-context";
 
 export function FeedEventCard({ event }: { event: FeedEvent }) {
   const router = useRouter();
+  const { user: me } = useAuth();
+  const [reportOpen, setReportOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const openUser = () => router.push(`/users/${event.user.user_id}`);
   const onCardPress = () => {
     if (event.type === "completion") {
@@ -32,6 +38,16 @@ export function FeedEventCard({ event }: { event: FeedEvent }) {
       openUser();
     }
   };
+  const isMine = me?.user_id === event.user.user_id;
+  // Users can flag anyone's post except their own — the backend
+  // enforces the same rule but we also skip the long-press affordance
+  // client-side so it doesn't feel broken.
+  const onCardLongPress = () => {
+    if (isMine) return;
+    setReportOpen(true);
+  };
+
+  if (hidden) return null;
 
   return (
     <View style={styles.card} testID={`feed-event-${event.id}`}>
@@ -42,12 +58,22 @@ export function FeedEventCard({ event }: { event: FeedEvent }) {
       <View style={{ flex: 1 }}>
         <Pressable
           onPress={onCardPress}
+          onLongPress={onCardLongPress}
+          delayLongPress={450}
           testID={`feed-event-body-${event.id}`}
         >
           <View style={styles.line1}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {event.user.name || "Anonymous"}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {event.user.name || "Anonymous"}
+              </Text>
+              {event.user.is_instructor ? (
+                <InstructorBadge
+                  size="xs"
+                  testID={`feed-instructor-${event.id}`}
+                />
+              ) : null}
+            </View>
             <Text style={styles.time}>{relTime(event.created_at)}</Text>
           </View>
 
@@ -120,6 +146,17 @@ export function FeedEventCard({ event }: { event: FeedEvent }) {
           testID={`feed-reactions-${event.id}`}
         />
       </View>
+
+      <ReportFeedSheet
+        visible={reportOpen}
+        eventId={event.id}
+        onClose={() => setReportOpen(false)}
+        onReported={() => {
+          // Hide the flagged card from the reporter's own feed so it
+          // doesn't sit there awkwardly after they've spoken up.
+          setHidden(true);
+        }}
+      />
     </View>
   );
 }
@@ -199,15 +236,22 @@ const styles = StyleSheet.create({
   line1: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "baseline",
+    alignItems: "center",
     gap: 8,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flex: 1,
+    minWidth: 0,
   },
   userName: {
     fontFamily: "serif",
     fontSize: 15,
     fontWeight: "700",
     color: colors.onSurface,
-    flex: 1,
+    flexShrink: 1,
   },
   time: {
     color: colors.muted,

@@ -25,6 +25,7 @@ import { colors, radius, spacing } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
 import { api, PublicProfile } from "@/src/api/client";
 import { FollowButton } from "@/src/components/FollowButton";
+import { InstructorBadge } from "@/src/components/InstructorBadge";
 
 export default function PublicProfileScreen() {
   const router = useRouter();
@@ -113,7 +114,12 @@ export default function PublicProfileScreen() {
                 </View>
               )}
             </View>
-            <Text style={styles.name}>{profile.name || "Anonymous"}</Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{profile.name || "Anonymous"}</Text>
+              {profile.is_instructor ? (
+                <InstructorBadge size="md" testID="profile-instructor-badge" />
+              ) : null}
+            </View>
             <View style={styles.rolesRow}>
               {profile.is_admin ? (
                 <View style={styles.rolePill}>
@@ -298,6 +304,12 @@ const styles = StyleSheet.create({
     fontFamily: "serif",
     fontSize: 24,
     fontWeight: "800",
+    flexShrink: 1,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   rolesRow: {
     flexDirection: "row",
