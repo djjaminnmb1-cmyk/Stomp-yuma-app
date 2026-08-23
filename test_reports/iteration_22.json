@@ -1,0 +1,40 @@
+{
+  "summary": "Backend-only audit of Sign in with Apple (POST /api/auth/apple). 14/14 pytest cases pass in-process (httpx.ASGITransport) with a locally-minted RS256 JWT signed by a keypair injected into services.apple_auth._JWKS_CACHE. Covers: malformed token, happy-path new user, idempotent second call keyed on apple_sub, wrong audience, wrong issuer, expired token, missing sub, legacy email/password->Apple linking, private-relay (no email) synthetic user, APPLE_AUDIENCES-missing env, sparse-unique apple_sub index presence, register+login+/me regression, google-session endpoint reachable, and new Apple user is_instructor=false. Public preview URL smoke-tested for the malformed path (returns 401 'Malformed token' as expected). Frontend not tested per request scope (native-only Apple button).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_apple_auth.py",
+    "/app/backend/tests/conftest.py",
+    "/app/backend/tests/pytest.ini",
+    "/app/test_reports/pytest/apple_auth.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/apple_auth.py: verify_identity_token correctly enforces iss/aud/exp/iat/sub/aud/iss required claims and fails closed if APPLE_AUDIENCES is not set — good security posture.",
+    "routes/auth.py apple_sign_in: three-tier lookup (apple_sub -> email -> new) is correct; apple_sub is stamped on the linked user immediately so subsequent sign-ins hit the fast path.",
+    "Legacy linking preserves password_hash (verified by test_legacy_linking_by_email) — an existing email/password user can add Apple without losing password login.",
+    "Private-relay path uses `apple:<sub>` synthetic email + email_is_synthetic=true flag — correct and does not collide with a real address because ':' is invalid in real emails.",
+    "startup._ensure_indexes creates users.apple_sub as unique+sparse — verified via test_apple_sub_index_exists.",
+    "Nit (out of scope): server.py still uses @app.on_event('startup'/'shutdown'), which FastAPI deprecates in favour of lifespan handlers — non-blocking but shows up as warnings in every test run.",
+    "Nit (out of scope): AppleTokenError message for bogus tokens leaks the underlying jwt exception detail ('Invalid header string: ...utf-8 codec...'). Not a security issue but consider clamping to just 'Malformed token' in production for cleaner client UX."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_apple_auth.py (created)",
+    "/app/backend/tests/conftest.py (created)",
+    "/app/backend/tests/pytest.ini (created)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "n/a"},
+  "seed_data_creation": "All test users are created with TEST_ prefix and hard-deleted in per-test finally blocks. No residual data in db.users, db.follows, or db.activity_events.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "pytest.ini (asyncio_default_*_loop_scope=session) is required because Motor's client is bound to a single event loop. If you add more async DB-touching tests, run them under this same config (`pytest -c /app/backend/tests/pytest.ini`). Apple JWKS is mocked by writing directly into services.apple_auth._JWKS_CACHE — never hits the real Apple URL during tests. Real Apple sign-in can only be exercised on an iOS device build; the frontend button is Platform.OS==='ios' gated.",
+  "rca_of_issue": "n/a — no bugs found."
+}

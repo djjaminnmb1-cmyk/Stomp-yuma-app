@@ -461,6 +461,22 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ session_id }),
     }),
+  appleSignIn: (
+    identity_token: string,
+    full_name?: string,
+    email?: string,
+  ) =>
+    req<{ token: string; user: User; is_new_user?: boolean }>(
+      "/auth/apple",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          identity_token,
+          full_name: full_name || null,
+          email: email || null,
+        }),
+      },
+    ),
   me: (token: string) => req<User>("/auth/me", {}, token),
   setInstructor: (instructor_code: string, token: string) =>
     req<{ ok: boolean; user: User }>(

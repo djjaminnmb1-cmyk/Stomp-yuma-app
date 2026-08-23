@@ -29,6 +29,12 @@ async def _ensure_indexes() -> None:
     try:
         await db.users.create_index("email", unique=True)
         await db.users.create_index("user_id", unique=True)
+        # Sign in with Apple stores the stable subject on the user doc.
+        # Sparse so email/password + Google users (which have no
+        # ``apple_sub``) don't collide on the unique constraint.
+        await db.users.create_index(
+            "apple_sub", unique=True, sparse=True
+        )
         await db.user_sessions.create_index("session_token", unique=True)
         await db.user_sessions.create_index("expires_at", expireAfterSeconds=0)
         await db.dances.create_index("name")

@@ -34,6 +34,7 @@ from core.security import (
 )
 from core.serialize import user_to_out
 from models.schemas import (
+    AppleSignInIn,
     ForgotPasswordIn,
     GoogleSessionIn,
     LoginIn,
@@ -41,6 +42,7 @@ from models.schemas import (
     ResetPasswordIn,
     SetInstructorIn,
 )
+from services.apple_auth import AppleTokenError, verify_identity_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -190,6 +192,101 @@ async def google_session(inp: GoogleSessionIn):
 @router.get("/auth/me")
 async def me(user: dict = Depends(get_current_user)):
     return user_to_out(user)
+
+
+# ---------------- Sign in with Apple ----------------
+@router.post("/auth/apple")
+async def apple_sign_in(inp: AppleSignInIn):
+    """Native Apple Sign-in.
+
+    Flow
+    ----
+    1. Verify ``identity_token`` against Apple's public JWKS.
+    2. Look up the user by ``apple_sub`` first (stable across name/email
+       changes). Fall back to ``email`` for legacy users who signed up
+       with email/password and are now linking Apple.
+    3. If no user exists, create one with a synthesized name from
+       ``full_name`` (only present on the very first sign-in) or the
+       email local part.
+    4. Return the same ``{token, user}`` shape as email/password login
+       so the mobile client just re-uses its existing session logic.
+    """
+    try:
+        claims = await verify_identity_token(inp.identity_token)
+    except AppleTokenError as e:
+        raise HTTPException(401, str(e))
+
+    apple_sub: str = claims.get("sub", "")
+    # Apple only includes the email on the very first sign-in AND only if
+    # the user hasn't hidden it. Prefer the token's email over the body
+    # payload — the token is authoritative.
+    token_email = (claims.get("email") or "").lower().strip()
+    body_email = (inp.email or "").lower().strip() if inp.email else ""
+    email = token_email or body_email  # may still be ""
+    email_verified = bool(claims.get("email_verified", True))
+    if isinstance(email_verified, str):
+        # Apple sometimes stringifies booleans in the token — handle
+        # both "true"/"false" and the literal bool.
+        email_verified = email_verified.lower() == "true"
+
+    # 1) Existing account keyed on Apple sub — the happy path.
+    user = await db.users.find_one({"apple_sub": apple_sub}, {"_id": 0})
+
+    # 2) Legacy linking — user signed up with the same email using
+    #    email/password or Google previously. We attach ``apple_sub``
+    #    so subsequent Apple sign-ins hit the fast path above.
+    if user is None and email:
+        user = await db.users.find_one({"email": email}, {"_id": 0})
+        if user is not None:
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {"apple_sub": apple_sub}},
+            )
+            user["apple_sub"] = apple_sub
+
+    is_new_user = False
+    if user is None:
+        # 3) Brand-new user. Store the private-relay email as-is so
+        #    password-reset + notification flows keep working; the user
+        #    can always change it later.
+        name = (inp.full_name or "").strip()
+        if not name and email:
+            name = email.split("@")[0]
+        if not name:
+            name = "Dancer"
+        # ``upsert_user`` centralises the email→admin/instructor
+        # allowlist logic, so re-use it for consistency. Apple accounts
+        # without an email fall through to a synthetic one so unique
+        # indexes don't collide.
+        synthetic_email = email or f"apple:{apple_sub}"
+        user = await upsert_user(
+            synthetic_email,
+            name,
+            picture="",
+            provider="apple",
+        )
+        # Stamp the Apple-specific fields the shared helper doesn't
+        # know about.
+        updates: dict = {"apple_sub": apple_sub}
+        if not email:
+            # Mark the synthetic email so we can hide password-reset UI
+            # for these users later.
+            updates["email_is_synthetic"] = True
+        if email and not email_verified:
+            updates["email_verified"] = False
+        await db.users.update_one(
+            {"user_id": user["user_id"]}, {"$set": updates}
+        )
+        user.update(updates)
+        is_new_user = True
+
+    return {
+        "token": make_jwt(
+            user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0)
+        ),
+        "user": user_to_out(user),
+        "is_new_user": is_new_user,
+    }
 
 
 # ---------------- Password Reset ----------------

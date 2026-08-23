@@ -21,6 +21,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/src/context/auth-context";
+import { AppleSignInButton } from "@/src/components/AppleSignInButton";
 import { api } from "@/src/api/client";
 import { colors, spacing, radius, images } from "@/src/theme";
 import { BrandLogo } from "../src/components/BrandLogo";
@@ -330,6 +331,10 @@ export default function AuthScreen() {
               <View style={styles.line} />
             </View>
 
+            <View style={styles.appleWrap}>
+              <AppleSignInButton onError={setErr} />
+            </View>
+
             <Pressable
               testID="auth-google-button"
               onPress={handleGoogle}
@@ -494,8 +499,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
+    marginTop: spacing.sm,
   },
   googleBtnText: { fontSize: 15, fontWeight: "600", color: colors.onSurface },
+  appleWrap: {
+    marginBottom: 0,
+  },
   legal: {
     textAlign: "center",
     color: colors.muted,

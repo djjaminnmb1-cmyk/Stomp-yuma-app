@@ -43,6 +43,20 @@ class GoogleSessionIn(BaseModel):
     session_id: str
 
 
+class AppleSignInIn(BaseModel):
+    """Body sent by the mobile client after a native Apple sign-in.
+
+    ``identity_token`` is the Apple-signed JWT — always required.
+    ``full_name`` and ``email`` are ONLY populated on the very first
+    sign-in (Apple's docs are explicit about this). We persist them
+    only when the token is otherwise valid.
+    """
+
+    identity_token: str
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
 class ForgotPasswordIn(BaseModel):
     email: EmailStr
 

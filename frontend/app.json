@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.emergent.stompinyumaapp.uyr5zg",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Upload step-sheet images for dances",
         "NSPhotoLibraryAddUsageDescription": "Save step-sheet images to your device",
