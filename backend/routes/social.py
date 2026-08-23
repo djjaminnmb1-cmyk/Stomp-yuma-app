@@ -24,6 +24,7 @@ from pydantic import BaseModel
 
 from core.database import db
 from core.security import get_current_user
+from core.time_helpers import now_iso
 from services.social import (
     REACTION_EMOJI,
     REACTION_KINDS,
@@ -319,7 +320,7 @@ async def list_feed_reports(
         raise HTTPException(403, "Admin only.")
     lim = max(1, min(200, int(limit or 50)))
     filt: dict = {}
-    if status:
+    if status and status != "all":
         filt["status"] = status
     rows = await db.feed_reports.find(
         filt, {"_id": 0}
@@ -327,11 +328,14 @@ async def list_feed_reports(
     if not rows:
         return {"reports": []}
     user_ids: set[str] = set()
+    event_ids: set[str] = set()
     for r in rows:
         if r.get("reporter_id"):
             user_ids.add(r["reporter_id"])
         if r.get("reported_user_id"):
             user_ids.add(r["reported_user_id"])
+        if r.get("event_id"):
+            event_ids.add(r["event_id"])
     names: dict[str, str] = {}
     if user_ids:
         async for u in db.users.find(
@@ -339,7 +343,103 @@ async def list_feed_reports(
             {"_id": 0, "user_id": 1, "name": 1},
         ):
             names[u["user_id"]] = u.get("name", "") or ""
+    # Hydrate each report with a small snippet of the target activity
+    # event so admins can decide without opening the app.
+    events_by_id: dict[str, dict] = {}
+    if event_ids:
+        async for e in db.activity_events.find(
+            {"event_id": {"$in": list(event_ids)}},
+            {"_id": 0},
+        ):
+            events_by_id[e["event_id"]] = e
     for r in rows:
         r["reporter_name"] = names.get(r.get("reporter_id", ""), "")
         r["reported_user_name"] = names.get(r.get("reported_user_id", ""), "")
+        r["report_id"] = (
+            f"{r.get('reporter_id', '')}:{r.get('event_id', '')}"
+        )
+        ev = events_by_id.get(r.get("event_id", ""))
+        r["event_exists"] = ev is not None
+        if ev:
+            r["event_snippet"] = _event_snippet(ev)
     return {"reports": rows}
+
+
+def _event_snippet(ev: dict) -> str:
+    """One-line human summary of a flagged activity_event so the
+    moderation card can read at a glance."""
+    t = ev.get("type", "")
+    ref = ev.get("ref", "")
+    if t == "completion":
+        return f"Completed a dance ({ref[:6]}…)" if ref else "Completed a dance"
+    if t == "badge":
+        return f"Earned a badge ({ref})" if ref else "Earned a badge"
+    if t == "streak_milestone":
+        days = (ev.get("extra") or {}).get("days") or ""
+        return f"Hit a {days}-day streak" if days else "Streak milestone"
+    return t or "activity"
+
+
+class UpdateFeedReportBody(BaseModel):
+    status: str  # "open" | "resolved" | "actioned" | "dismissed"
+    resolution_note: str = ""
+
+
+REPORT_STATUSES = {"open", "resolved", "actioned", "dismissed"}
+
+
+@router.patch("/admin/feed/reports/{report_id}")
+async def update_feed_report(
+    report_id: str,
+    body: UpdateFeedReportBody,
+    user: dict = Depends(get_current_user),
+):
+    """Set the status of a report (admin-only).
+
+    ``report_id`` here is the unique tuple key stored as
+    ``{reporter_id, event_id}`` joined with a colon, since the collection
+    has a composite unique index rather than a synthetic id. This keeps
+    the URL stable across restarts.
+    """
+    if not user.get("is_admin"):
+        raise HTTPException(403, "Admin only.")
+    if body.status not in REPORT_STATUSES:
+        raise HTTPException(400, "Unknown status.")
+    try:
+        reporter_id, event_id = report_id.split(":", 1)
+    except ValueError:
+        raise HTTPException(400, "Malformed report id.")
+    res = await db.feed_reports.update_one(
+        {"reporter_id": reporter_id, "event_id": event_id},
+        {
+            "$set": {
+                "status": body.status,
+                "resolution_note": (body.resolution_note or "").strip()[:600],
+                "resolved_by": user["user_id"],
+                "resolved_at": now_iso(),
+            }
+        },
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Report not found.")
+    return {"ok": True}
+
+
+@router.delete("/admin/feed/events/{event_id}")
+async def admin_delete_feed_event(
+    event_id: str, user: dict = Depends(get_current_user)
+):
+    """Moderator delete of a flagged activity_event.
+
+    Removes the underlying event AND its reactions so the post
+    disappears from every dancer's feed. Any pending reports about it
+    stay in the queue with ``event_exists=false`` so the audit trail
+    survives — admins can then flip them to ``actioned`` from the UI.
+    """
+    if not user.get("is_admin"):
+        raise HTTPException(403, "Admin only.")
+    del_res = await db.activity_events.delete_one({"event_id": event_id})
+    await db.feed_reactions.delete_many({"event_id": event_id})
+    if del_res.deleted_count == 0:
+        raise HTTPException(404, "Post already gone.")
+    return {"ok": True}

@@ -41,7 +41,11 @@ export function EventCard({ event }: { event: EventItem }) {
     }
   };
 
-  const dateLabel = formatDate(event.date, event.start_time);
+  const dateLabel = formatDate(
+    event.date,
+    event.start_time,
+    event.end_date,
+  );
   const locLabel = [event.venue_name, event.city, event.state]
     .filter(Boolean)
     .join(" · ");
@@ -149,7 +153,7 @@ export function EventCard({ event }: { event: EventItem }) {
   );
 }
 
-function formatDate(iso: string, time?: string): string {
+function formatDate(iso: string, time?: string, endIso?: string): string {
   if (!iso) return "Date TBA";
   try {
     const d = new Date(iso + "T00:00:00");
@@ -158,6 +162,26 @@ function formatDate(iso: string, time?: string): string {
       month: "short",
       day: "numeric",
     });
+    // Multi-day event: collapse to "Sep 14–15" when same month, else
+    // "Sep 14–Oct 2". Time is only shown for single-day events since a
+    // "start time" doesn't make sense across a range.
+    if (endIso && endIso !== iso) {
+      try {
+        const e = new Date(endIso + "T00:00:00");
+        const sameMonth =
+          e.getMonth() === d.getMonth() && e.getFullYear() === d.getFullYear();
+        if (sameMonth) {
+          return `${dateStr} – ${e.getDate()}`;
+        }
+        const endStr = e.toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        });
+        return `${dateStr} – ${endStr}`;
+      } catch {
+        // fall through to single-day formatting on parse failure
+      }
+    }
     return time ? `${dateStr} · ${prettyTime(time)}` : dateStr;
   } catch {
     return iso;

@@ -289,6 +289,63 @@ async def apple_sign_in(inp: AppleSignInIn):
     }
 
 
+@router.post("/auth/apple/link")
+async def apple_link(
+    inp: AppleSignInIn, user: dict = Depends(get_current_user)
+):
+    """Link the caller's account to an Apple ID.
+
+    Verifies the token the same way as ``/auth/apple`` — this is where
+    we prove the caller actually controls the Apple account. If another
+    user already has this ``apple_sub`` we refuse (409) rather than
+    silently steal the association.
+    """
+    try:
+        claims = await verify_identity_token(inp.identity_token)
+    except AppleTokenError as e:
+        raise HTTPException(401, str(e))
+    apple_sub: str = claims.get("sub", "")
+    existing = await db.users.find_one(
+        {"apple_sub": apple_sub}, {"_id": 0, "user_id": 1}
+    )
+    if existing and existing.get("user_id") != user["user_id"]:
+        raise HTTPException(
+            409,
+            "This Apple ID is already linked to a different SGY account.",
+        )
+    await db.users.update_one(
+        {"user_id": user["user_id"]}, {"$set": {"apple_sub": apple_sub}}
+    )
+    fresh = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    return {"ok": True, "user": user_to_out(fresh)}
+
+
+@router.post("/auth/apple/unlink")
+async def apple_unlink(user: dict = Depends(get_current_user)):
+    """Remove the Apple association from the caller's account.
+
+    Refuses if the caller has no password AND no linked email — losing
+    the Apple link there would lock them out. Google-only users are OK
+    to unlink since they can still get in via Google.
+    """
+    has_password = bool(user.get("password_hash"))
+    has_google_or_email = (
+        user.get("auth_provider") in {"google"}
+        or bool(user.get("email"))
+        and not user.get("email_is_synthetic")
+    )
+    if not has_password and not has_google_or_email:
+        raise HTTPException(
+            400,
+            "Set a password first — otherwise you won't be able to sign back in.",
+        )
+    await db.users.update_one(
+        {"user_id": user["user_id"]}, {"$unset": {"apple_sub": ""}}
+    )
+    fresh = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    return {"ok": True, "user": user_to_out(fresh)}
+
+
 # ---------------- Password Reset ----------------
 @router.post("/auth/forgot-password")
 async def forgot_password(inp: ForgotPasswordIn, request: Request):

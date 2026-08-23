@@ -24,6 +24,7 @@ import CertificateThemePicker from "@/src/components/CertificateThemePicker";
 import { BadgeCard } from "@/src/components/BadgeCard";
 import { StreakCard } from "@/src/components/StreakCard";
 import { PracticeHistoryChart } from "@/src/components/PracticeHistoryChart";
+import { SignInMethodsSection } from "@/src/components/SignInMethodsSection";
 
 // ---------- Social links ----------
 // Each entry has:
@@ -716,6 +717,29 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
         </View>
+
+        <SignInMethodsSection />
+
+        {user?.is_admin ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>SGY Admin</Text>
+            <Pressable
+              testID="profile-moderation-cta"
+              onPress={() => router.push("/admin/reports")}
+              style={styles.websiteRow}
+            >
+              <View style={styles.rowLeft}>
+                <Ionicons
+                  name="shield-half-outline"
+                  size={22}
+                  color={colors.brandPrimary}
+                />
+                <Text style={styles.rowText}>Feed Moderation Queue</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About Stompin&apos; Ground Yuma</Text>

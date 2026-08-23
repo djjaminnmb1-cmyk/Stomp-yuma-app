@@ -166,7 +166,8 @@ class EventIn(BaseModel):
     description: Optional[str] = ""
     event_type: str = "workshop"  # one of EVENT_TYPES
     skill_level: Optional[str] = "All levels"  # one of EVENT_SKILL_LEVELS
-    date: str  # YYYY-MM-DD
+    date: str  # YYYY-MM-DD — start / single-day
+    end_date: Optional[str] = ""  # YYYY-MM-DD; when set, must be >= date
     start_time: Optional[str] = ""  # "19:30"
     end_time: Optional[str] = ""    # "21:30"
     # --- Location (required for creating a searchable event) ---

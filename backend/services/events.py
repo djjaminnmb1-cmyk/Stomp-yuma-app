@@ -99,6 +99,7 @@ async def create_event(inp: EventIn, instructor: dict) -> dict:
         "event_type": _norm_type(inp.event_type),
         "skill_level": _norm_level(inp.skill_level),
         "date": (inp.date or "").strip(),
+        "end_date": (inp.end_date or "").strip(),
         "start_time": (inp.start_time or "").strip(),
         "end_time": (inp.end_time or "").strip(),
         "venue_name": (inp.venue_name or "").strip(),
@@ -148,6 +149,7 @@ async def update_event(event_id: str, inp: EventIn, instructor: dict) -> Optiona
         "event_type": _norm_type(inp.event_type),
         "skill_level": _norm_level(inp.skill_level),
         "date": (inp.date or "").strip(),
+        "end_date": (inp.end_date or "").strip(),
         "start_time": (inp.start_time or "").strip(),
         "end_time": (inp.end_time or "").strip(),
         "venue_name": (inp.venue_name or "").strip(),
@@ -235,12 +237,30 @@ async def search(
         if norm:
             filt["skill_level"] = {"$in": norm}
     if date_from or date_to:
-        date_filter = {}
+        # A multi-day event effectively spans ``[date, end_date OR date]``.
+        # We want to surface an event if that span OVERLAPS the query
+        # range, not just when its start-date is inside the range.
+        exprs = []
         if date_from:
-            date_filter["$gte"] = date_from
+            # effective end >= date_from
+            exprs.append({
+                "$gte": [
+                    {"$cond": [
+                        {"$and": [
+                            {"$ne": [{"$type": "$end_date"}, "missing"]},
+                            {"$ne": ["$end_date", ""]},
+                            {"$ne": ["$end_date", None]},
+                        ]},
+                        "$end_date",
+                        "$date",
+                    ]},
+                    date_from,
+                ]
+            })
         if date_to:
-            date_filter["$lte"] = date_to
-        filt["date"] = date_filter
+            # starts on or before the range end
+            exprs.append({"$lte": ["$date", date_to]})
+        filt["$expr"] = {"$and": exprs} if len(exprs) > 1 else exprs[0]
     if city:
         import re
         filt["city"] = {"$regex": re.escape(city), "$options": "i"}

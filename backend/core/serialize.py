@@ -28,6 +28,12 @@ def user_to_out(u: dict) -> dict:
         "longest_streak": int(u.get("longest_streak") or 0),
         "last_streak_date": u.get("last_streak_date", "") or "",
         "auth_provider": u.get("auth_provider", "email"),
+        # Presence of ``apple_sub`` is what tells the client that Apple
+        # is linked. We echo it as a boolean flag string ("apple") so we
+        # don't leak the raw sub value on-wire — the client only needs
+        # to know linked-or-not.
+        "apple_sub": "apple" if u.get("apple_sub") else "",
+        "email_is_synthetic": bool(u.get("email_is_synthetic")),
     }
 
 

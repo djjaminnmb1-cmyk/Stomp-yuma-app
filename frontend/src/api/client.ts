@@ -33,6 +33,8 @@ export type User = {
   longest_streak?: number;
   last_streak_date?: string;
   auth_provider: string;
+  apple_sub?: string;  // present iff Apple is linked
+  email_is_synthetic?: boolean;
 };
 
 // ---------------- Badges / Achievements ----------------
@@ -186,7 +188,8 @@ export type EventItem = {
   description?: string;
   event_type: EventType | string;
   skill_level?: string;
-  date: string;             // YYYY-MM-DD
+  date: string;             // YYYY-MM-DD (start / single-day)
+  end_date?: string;        // YYYY-MM-DD (multi-day workshops)
   start_time?: string;
   end_time?: string;
   venue_name?: string;
@@ -219,12 +222,33 @@ export type EventTypesCatalog = {
   skill_levels: string[];
 };
 
+// ---------------- Admin: Feed Moderation ----------------
+export type AdminFeedReport = {
+  report_id: string;      // "reporter_id:event_id"
+  reporter_id: string;
+  reporter_name: string;
+  event_id: string;
+  reported_user_id: string;
+  reported_user_name: string;
+  reason: string;
+  note: string;
+  status: "open" | "resolved" | "actioned" | "dismissed";
+  event_exists: boolean;
+  event_snippet?: string;
+  created_at: string;
+  updated_at?: string;
+  resolution_note?: string;
+  resolved_by?: string;
+  resolved_at?: string;
+};
+
 export type EventInput = {
   name: string;
   description?: string;
   event_type: EventType | string;
   skill_level?: string;
   date: string;
+  end_date?: string;
   start_time?: string;
   end_time?: string;
   venue_name?: string;
@@ -477,6 +501,21 @@ export const api = {
         }),
       },
     ),
+  linkApple: (token: string, identity_token: string) =>
+    req<{ ok: boolean; user: User }>(
+      "/auth/apple/link",
+      {
+        method: "POST",
+        body: JSON.stringify({ identity_token }),
+      },
+      token,
+    ),
+  unlinkApple: (token: string) =>
+    req<{ ok: boolean; user: User }>(
+      "/auth/apple/unlink",
+      { method: "POST" },
+      token,
+    ),
   me: (token: string) => req<User>("/auth/me", {}, token),
   setInstructor: (instructor_code: string, token: string) =>
     req<{ ok: boolean; user: User }>(
@@ -667,6 +706,40 @@ export const api = {
     req<{ lat: number; lng: number; display_name: string }>(
       "/events/geocode",
       { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
+
+  // ---------------- Admin: Feed Moderation ----------------
+  getAdminFeedReports: (
+    token: string,
+    opts?: { status?: string; limit?: number }
+  ) => {
+    const status = opts?.status || "open";
+    const limit = opts?.limit || 50;
+    return req<{ reports: AdminFeedReport[] }>(
+      `/admin/feed/reports?status=${encodeURIComponent(status)}&limit=${limit}`,
+      {},
+      token
+    );
+  },
+  updateAdminFeedReport: (
+    token: string,
+    reportId: string,
+    status: "open" | "resolved" | "actioned" | "dismissed",
+    resolution_note: string = ""
+  ) =>
+    req<{ ok: boolean }>(
+      `/admin/feed/reports/${encodeURIComponent(reportId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status, resolution_note }),
+      },
+      token
+    ),
+  adminDeleteFeedEvent: (token: string, eventId: string) =>
+    req<{ ok: boolean }>(
+      `/admin/feed/events/${encodeURIComponent(eventId)}`,
+      { method: "DELETE" },
       token
     ),
 

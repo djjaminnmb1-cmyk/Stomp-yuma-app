@@ -240,7 +240,9 @@ export default function EventDetail() {
         <View style={styles.metaCard}>
           <Ionicons name="calendar" size={22} color={colors.brandPrimary} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.metaHead}>{formatDateLong(event.date)}</Text>
+            <Text style={styles.metaHead}>
+              {formatDateRangeLong(event.date, event.end_date)}
+            </Text>
             {event.start_time || event.end_time ? (
               <Text style={styles.metaSub}>
                 {[event.start_time, event.end_time]
@@ -348,6 +350,41 @@ function formatDateLong(iso: string): string {
     });
   } catch {
     return iso;
+  }
+}
+
+function formatDateRangeLong(startIso: string, endIso?: string): string {
+  if (!startIso) return "Date TBA";
+  if (!endIso || endIso === startIso) return formatDateLong(startIso);
+  try {
+    const s = new Date(startIso + "T00:00:00");
+    const e = new Date(endIso + "T00:00:00");
+    const sameYear = s.getFullYear() === e.getFullYear();
+    const sameMonth = sameYear && s.getMonth() === e.getMonth();
+    if (sameMonth) {
+      const monthYear = s.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      });
+      return `${s.toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+      })} – ${e.getDate()}, ${s.getFullYear()}`
+        .replace(", " + s.getFullYear(), ", " + monthYear.split(" ")[1]);
+    }
+    const sStr = s.toLocaleDateString(undefined, {
+      month: "long",
+      day: "numeric",
+      year: sameYear ? undefined : "numeric",
+    });
+    const eStr = e.toLocaleDateString(undefined, {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    return `${sStr} – ${eStr}`;
+  } catch {
+    return formatDateLong(startIso);
   }
 }
 

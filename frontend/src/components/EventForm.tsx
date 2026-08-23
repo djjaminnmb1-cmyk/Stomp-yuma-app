@@ -47,6 +47,7 @@ export function EventForm({
     initial?.skill_level || "All levels"
   );
   const [date, setDate] = useState(initial?.date || "");
+  const [endDate, setEndDate] = useState(initial?.end_date || "");
   const [startTime, setStartTime] = useState(initial?.start_time || "");
   const [endTime, setEndTime] = useState(initial?.end_time || "");
   const [venueName, setVenueName] = useState(initial?.venue_name || "");
@@ -83,6 +84,12 @@ export function EventForm({
     if (!name.trim()) return "Event name is required.";
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim()))
       return "Date must be in YYYY-MM-DD format.";
+    if (endDate.trim()) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate.trim()))
+        return "End date must be in YYYY-MM-DD format.";
+      if (endDate.trim() < date.trim())
+        return "End date can't be before the start date.";
+    }
     if (!address.trim()) return "Address is required.";
     if (!city.trim()) return "City is required.";
     if (startTime && !/^\d{1,2}:\d{2}$/.test(startTime.trim()))
@@ -105,6 +112,7 @@ export function EventForm({
       event_type: eventType,
       skill_level: skillLevel,
       date: date.trim(),
+      end_date: endDate.trim(),
       start_time: startTime.trim(),
       end_time: endTime.trim(),
       venue_name: venueName.trim(),
@@ -207,6 +215,16 @@ export function EventForm({
           onChange={setDate}
           placeholder="Pick a date"
           testID="event-form-date"
+        />
+      </Field>
+
+      <Field label="End date (optional — for multi-day events)">
+        <DateTimeField
+          mode="date"
+          value={endDate}
+          onChange={setEndDate}
+          placeholder="Same as start date"
+          testID="event-form-end-date"
         />
       </Field>
 
