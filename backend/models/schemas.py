@@ -114,6 +114,60 @@ class ClassSessionIn(BaseModel):
     dance_ids: List[str] = []
     notes: Optional[str] = ""
     flyer_image: Optional[str] = ""  # base64 data URL, senior instructors only
+    # NEW — optional address so classes can appear in the geo-events search.
+    # Instructor can leave every field blank on existing classes; new saves
+    # geocode via services.geocoding into a GeoJSON Point on write.
+    venue_name: Optional[str] = ""
+    address: Optional[str] = ""
+    city: Optional[str] = ""
+    state: Optional[str] = ""
+    zip_code: Optional[str] = ""
+    country: Optional[str] = "US"
+
+
+# ---------------- Events ----------------
+# Events are one-off (or scheduled-out) happenings that instructors post
+# for the community to discover: workshops, socials, guest-teacher nights,
+# out-of-town line-dance gatherings. Different from ``classes`` which are
+# the recurring studio-attendance rows the app was originally built on.
+EVENT_TYPES = (
+    "class",
+    "workshop",
+    "social",
+    "private_party",
+)
+EVENT_SKILL_LEVELS = (
+    "All levels",
+    "Absolute Beginner",
+    "Beginner",
+    "Improver",
+    "High Improver",
+    "Intermediate",
+    "Advanced",
+)
+
+
+class EventIn(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    event_type: str = "workshop"  # one of EVENT_TYPES
+    skill_level: Optional[str] = "All levels"  # one of EVENT_SKILL_LEVELS
+    date: str  # YYYY-MM-DD
+    start_time: Optional[str] = ""  # "19:30"
+    end_time: Optional[str] = ""    # "21:30"
+    # --- Location (required for creating a searchable event) ---
+    venue_name: Optional[str] = ""
+    address: str
+    city: str
+    state: Optional[str] = ""
+    zip_code: Optional[str] = ""
+    country: Optional[str] = "US"
+    # --- Extra optional details ---
+    cover_image: Optional[str] = ""      # base64 data URL or public URL
+    price: Optional[str] = ""            # free-form ("$15", "$20 at door")
+    registration_url: Optional[str] = ""  # external RSVP link
+    max_attendees: Optional[int] = None
+    is_published: Optional[bool] = True
 
 
 # ---------------- Push ----------------

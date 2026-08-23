@@ -66,6 +66,15 @@ async def _ensure_indexes() -> None:
         # Activity feed events
         await db.activity_events.create_index([("user_id", 1), ("created_at", -1)])
         await db.activity_events.create_index("created_at")
+        # Events + geocoding
+        await db.events.create_index([("date", 1)])
+        await db.events.create_index([("instructor_id", 1)])
+        # 2dsphere index enables ``$near`` queries. Sparse so events with
+        # no coordinates (geocoding failed) don't break the index.
+        await db.events.create_index(
+            [("location", "2dsphere")], sparse=True
+        )
+        await db.geocode_cache.create_index("key", unique=True)
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 

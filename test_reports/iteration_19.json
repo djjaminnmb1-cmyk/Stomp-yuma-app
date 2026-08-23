@@ -1,0 +1,36 @@
+{
+  "summary": "End-to-end verified the Instructor Event Search feature. Backend: 14/14 pytest cases pass covering /api/events/search (filters, near-me, include_classes), /api/events/types auth gating, full CRUD lifecycle with role checks (regular user cannot create, non-owner instructor cannot edit, admin can edit any, owner can update+delete), and Nominatim geocoding both for real (lat/lng populated) and garbled (event saves with null lat/lng) addresses. Frontend: home-events-cta navigates to /events; /events page renders search input, GPS + city location chips, filters bottom sheet with all requested testIDs (type/level/date/include-classes/close/reset/apply); events-create (+) button visible only for instructors and opens /events/new; form validation blocks empty save; filling required fields and saving creates an event and redirects to /events/{id}; detail page shows share/edit/delete/open-maps testIDs for the owner; event-edit routes to /events/{id}/edit with pre-filled form; PATCH via event-form-save works. Login-gate on /events was verified from code (also functionally implied — the search endpoint requires auth). App boot regression: Home tab still loads streak, achievements CTA, feed preview, classes CTA, leaderboard, and Fresh-on-the-Floor sections without crash after the expo-location plugin was added.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "auth (login)", "issues": ["Console emits 'Unexpected text node: A text node cannot be a child of a <View>' repeatedly on the /auth screen. Likely a stray whitespace/newline between sibling JSX elements inside a View. Pre-existing (not caused by the events feature) but worth cleaning up."]}
+    ],
+    "react_native_issues": [
+      {"component": "Global StyleSheets", "issue": "React Native Web logs deprecation warnings: 'shadow* style props are deprecated. Use boxShadow.' and 'textShadow* style props are deprecated. Use textShadow.' Multiple pre-existing occurrences, e.g. /app/frontend/src/components/PracticeModePanel.tsx lines 997-1000, 1149-1152, 1266+. Not blocking, but should migrate to the RN 0.76+ boxShadow / textShadow APIs to future-proof."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_events.py",
+    "/app/test_reports/pytest/events.xml"
+  ],
+  "action_items": [
+    "Optional: track down the whitespace text-node warning on the /auth screen (search for stray '{\" \"}' or newlines between sibling elements inside a <View>).",
+    "Optional: migrate shadow*/textShadow* StyleSheet props to the new boxShadow/textShadow syntax across the codebase to silence RN Web deprecation warnings."
+  ],
+  "critical_code_review_comments": [
+    "events.py backend: create_event / update_event correctly serialize + strip Mongo _id via _to_out and expose convenience lat/lng fields.",
+    "geocoding.py caches misses via not_found flag — good touch, avoids repeated Nominatim calls.",
+    "events/index.tsx: debounced (250ms) re-search on every filter change is reasonable; useFocusEffect also re-runs on tab focus — no duplicate fetch bug observed."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_events.py (new)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Created + deleted test events during pytest lifecycle and one UI-created event (evt_28a3f2832ed3) which was cleaned up via API after the run. No lingering TEST_ data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend regression suite for events lives in /app/backend/tests/test_events.py — run with `pytest backend/tests/test_events.py -v` from /app after exporting EXPO_PUBLIC_BACKEND_URL. Auth uses erinboroughs@gmail.com/Stompin2026! (admin+instructor) and luvtowork247@yahoo.com/BootsDance49! (instructor-only). Regular users are minted per-run via /api/auth/register.",
+  "rca_of_issue": "No functional bug surfaced. Two pre-existing non-blocking React Native Web warnings (whitespace text-node on /auth; shadow*/textShadow* deprecation) noted for future cleanup."
+}

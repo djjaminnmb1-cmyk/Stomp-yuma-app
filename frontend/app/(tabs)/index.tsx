@@ -191,6 +191,23 @@ export default function Home() {
           </Pressable>
 
           <Pressable
+            testID="home-events-cta"
+            onPress={() => router.push("/events")}
+            style={styles.eventsCard}
+          >
+            <View style={styles.eventsIcon}>
+              <Ionicons name="compass" size={22} color={colors.brandPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.suggestTitle}>Find Events Near You</Text>
+              <Text style={styles.suggestSub}>
+                Workshops, socials, and classes wherever your boots land.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
             testID="home-leaderboard-cta"
             onPress={() => router.push("/leaderboard")}
             style={styles.leaderboardCard}
@@ -483,6 +500,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.brandSecondary + "55",
+  },
+  eventsCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    backgroundColor: colors.brandPrimary + "14",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "55",
+    marginBottom: spacing.sm,
+  },
+  eventsIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "55",
   },
   leaderboardCard: {
     flexDirection: "row",

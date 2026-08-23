@@ -18,6 +18,7 @@ from . import (
     classes,
     dances,
     dashboard,
+    events,
     leaderboard,
     misc,
     prizes,
@@ -47,6 +48,7 @@ api_router.include_router(activity.router)
 api_router.include_router(certificate.router)
 api_router.include_router(badges.router)
 api_router.include_router(social.router)
+api_router.include_router(events.router)
 api_router.include_router(song_preview.router)
 api_router.include_router(push.router)
 api_router.include_router(misc.router)

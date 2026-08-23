@@ -145,6 +145,85 @@ export type FeedEvent =
       days: number;
     };
 
+// ---------------- Events (workshops / socials / classes discovery) ----------------
+export type EventType = "class" | "workshop" | "social" | "private_party";
+
+export type EventItem = {
+  id: string;
+  kind: "event" | "class";
+  name: string;
+  description?: string;
+  event_type: EventType | string;
+  skill_level?: string;
+  date: string;             // YYYY-MM-DD
+  start_time?: string;
+  end_time?: string;
+  venue_name?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  lat?: number | null;
+  lng?: number | null;
+  display_name?: string;
+  cover_image?: string;
+  price?: string;
+  registration_url?: string;
+  max_attendees?: number | null;
+  is_published?: boolean;
+  instructor_id?: string;
+  instructor_name?: string;
+  distance_miles?: number;  // populated only when the search was geo
+};
+
+export type EventSearchResult = {
+  events: EventItem[];
+  classes: EventItem[];
+  count: number;
+};
+
+export type EventTypesCatalog = {
+  types: string[];
+  skill_levels: string[];
+};
+
+export type EventInput = {
+  name: string;
+  description?: string;
+  event_type: EventType | string;
+  skill_level?: string;
+  date: string;
+  start_time?: string;
+  end_time?: string;
+  venue_name?: string;
+  address: string;
+  city: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  cover_image?: string;
+  price?: string;
+  registration_url?: string;
+  max_attendees?: number | null;
+  is_published?: boolean;
+};
+
+export type EventSearchQuery = {
+  q?: string;
+  types?: string[];        // ["workshop","social"]
+  levels?: string[];       // ["Improver","Intermediate"]
+  date_from?: string;
+  date_to?: string;
+  city?: string;
+  near_lat?: number;
+  near_lng?: number;
+  radius_miles?: number;
+  instructor?: string;
+  include_classes?: boolean;
+  limit?: number;
+};
+
 export type CertificateTheme = {
   key: string;
   label: string;
@@ -443,6 +522,62 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ show_in_activity_feed: showInFeed }),
       },
+      token
+    ),
+
+  // ---------------- Events (workshops / socials / classes discovery) ----------------
+  getEventTypesCatalog: (token: string) =>
+    req<EventTypesCatalog>("/events/types", {}, token),
+  searchEvents: (token: string, q: EventSearchQuery) => {
+    const params = new URLSearchParams();
+    if (q.q) params.set("q", q.q);
+    if (q.types?.length) params.set("type", q.types.join(","));
+    if (q.levels?.length) params.set("level", q.levels.join(","));
+    if (q.date_from) params.set("date_from", q.date_from);
+    if (q.date_to) params.set("date_to", q.date_to);
+    if (q.city) params.set("city", q.city);
+    if (typeof q.near_lat === "number" && typeof q.near_lng === "number") {
+      params.set("near_lat", String(q.near_lat));
+      params.set("near_lng", String(q.near_lng));
+    }
+    if (typeof q.radius_miles === "number") params.set("radius_miles", String(q.radius_miles));
+    if (q.instructor) params.set("instructor", q.instructor);
+    if (typeof q.include_classes === "boolean")
+      params.set("include_classes", String(q.include_classes));
+    if (typeof q.limit === "number") params.set("limit", String(q.limit));
+    return req<EventSearchResult>(`/events/search?${params.toString()}`, {}, token);
+  },
+  getEvent: (token: string, eventId: string) =>
+    req<EventItem>(`/events/${eventId}`, {}, token),
+  getMyEvents: (token: string) =>
+    req<{ events: EventItem[] }>("/events/mine", {}, token),
+  createEvent: (token: string, body: EventInput) =>
+    req<EventItem>(
+      "/events",
+      { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
+  updateEvent: (token: string, eventId: string, body: EventInput) =>
+    req<EventItem>(
+      `/events/${eventId}`,
+      { method: "PATCH", body: JSON.stringify(body) },
+      token
+    ),
+  deleteEvent: (token: string, eventId: string) =>
+    req<{ ok: boolean }>(`/events/${eventId}`, { method: "DELETE" }, token),
+  geocodeEventAddress: (
+    token: string,
+    body: {
+      address: string;
+      city: string;
+      state?: string;
+      zip_code?: string;
+      country?: string;
+    }
+  ) =>
+    req<{ lat: number; lng: number; display_name: string }>(
+      "/events/geocode",
+      { method: "POST", body: JSON.stringify(body) },
       token
     ),
 
