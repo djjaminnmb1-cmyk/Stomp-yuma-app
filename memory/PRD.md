@@ -147,6 +147,34 @@ Add an "Upcoming Classes" section on Home so the venue can drive attendance to r
 - **Legacy `PATCH /api/auth/me/main-instructor`** now also `$addToSet` the target into `instructor_ids` so the single-pick and multi-pick paths stay in sync.
 
 ### Auto-Follow on Save
+- Save operation optionally upserts a row in `db.follows` for every selected instructor (delegates to `services.social.follow` so it uses the canonical `followee_id` field and unique index — idempotent). Toast surfaces the net-new follow count.
+
+### Frontend
+- **`PickInstructorSheet.tsx`** rewritten as a multi-select bottom sheet with checkboxes, star-to-promote-Primary, sticky Cancel / "Save N picks" footer, and a "Follow when I save" toggle (default on).
+- **Profile row**: renamed "Main instructor" → "My instructors" with dynamic subtitle "Primary: {Name} · +N more".
+
+## Phase 12 Reactions v2 — Sound + Reactor Names + Pack Refresh (v2.7 — DONE)
+
+### Reaction Pack Refresh
+- **Swap**: 👏 (`clap`) → 🕺 (`dancer`) to lean into the line-dance vibe. Current pack is now `high_five` (🙌), `dancer` (🕺), `yeehaw` (🤠), `heart` (❤️).
+- **Legacy**: `clap` kept as read/remove-only for any historical rows so nothing disappears mid-session. `POST /api/feed/{id}/reactions/clap` now returns 400 (can't add new claps); `DELETE` still works so a user can retire an old chip.
+
+### Reactor Names (long-press)
+- **Backend**: New `GET /api/feed/{event_id}/reactors?kind=&limit=` returns `{event_id, kind, reactors:[{user_id, name, picture, is_instructor, kind, emoji, created_at}], count}`.
+- **Frontend**: Long-press (350 ms) on ANY chip opens `ReactorsSheet.tsx` filtered to that kind; long-press on the "+" button shows every reactor across kinds. Sheet header renders "🕺 Dance! · Erin, Jamin and 3 others reacted." Instructor badges show inline.
+
+### Click Sound (silent-mode friendly)
+- New `useTapSound()` hook wraps `expo-audio`'s `useAudioPlayer` with a bundled 50 ms WAV click (`/assets/sounds/reaction-tap.wav`, 4.3 KB) + `expo-haptics.selectionAsync()` on non-web.
+- `setAudioModeAsync({ playsInSilentMode: true, interruptionMode: "mixWithOthers" })` runs on hook mount so the ping plays over Practice Mode audio without ducking it, and still fires when the ringer switch is off.
+- Wired into every reaction toggle in `FeedReactionsBar`.
+
+
+### Multi-Instructor Selection
+- **DB**: `users.instructor_ids: string[]` — full list of instructors the dancer has "adopted". `main_instructor_id` remains as the Primary (drives Suggest-a-Dance routing) and is always included in the list when set.
+- **Backend**: New `PUT /api/auth/me/instructors` — atomic body `{instructor_ids, main_instructor_id?, follow?}`. Validates each id is a real instructor/admin (silently drops bad ids), resolves Primary via explicit → existing → first-picked → cleared, upserts follow rows when `follow=true`, and returns `{ok, user (hydrated), new_follows}`.
+- **Legacy `PATCH /api/auth/me/main-instructor`** now also `$addToSet` the target into `instructor_ids` so the single-pick and multi-pick paths stay in sync.
+
+### Auto-Follow on Save
 - Save operation optionally upserts a row in `db.follows` for every selected instructor (idempotent — never removes existing follows). Toast surfaces the net-new follow count.
 
 ### Frontend

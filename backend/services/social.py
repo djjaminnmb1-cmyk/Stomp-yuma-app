@@ -42,18 +42,26 @@ STREAK_MILESTONES = {3, 7, 14, 30, 60, 100, 365}
 # Which reaction kinds are valid. Kept intentionally small so the picker
 # stays a single-row bottom sheet. Emoji is cosmetic — the backend only
 # stores the ``kind`` slug.
-REACTION_KINDS: tuple[str, ...] = ("high_five", "clap", "yeehaw", "heart")
+#
+# NOTE (v2.7 pack refresh): the ``clap`` kind was replaced by ``dancer``
+# to lean into the line-dance vibe. ``clap`` is still accepted for
+# backward compat on any historical rows in ``feed_reactions``, but the
+# picker no longer offers it.
+REACTION_KINDS: tuple[str, ...] = ("high_five", "dancer", "yeehaw", "heart")
+LEGACY_REACTION_KINDS: tuple[str, ...] = ("clap",)
 REACTION_EMOJI: dict[str, str] = {
     "high_five": "🙌",
-    "clap": "👏",
+    "dancer": "🕺",
     "yeehaw": "🤠",
     "heart": "❤️",
+    "clap": "👏",
 }
 REACTION_LABEL: dict[str, str] = {
     "high_five": "High five",
-    "clap": "Applause",
+    "dancer": "Dance!",
     "yeehaw": "Yeehaw",
     "heart": "Love it",
+    "clap": "Applause",
 }
 
 # ---------------- Feed reports ----------------
@@ -124,6 +132,9 @@ async def report_event(
 async def add_reaction(user_id: str, event_id: str, kind: str) -> bool:
     """Idempotent: insert a reaction row. Returns True when a new row was
     written. Silently no-ops on duplicate-key or invalid ``kind``.
+
+    Only accepts *current* ``REACTION_KINDS`` — legacy kinds (e.g.
+    ``clap``) can still be read/removed but no new rows are created.
     """
     if kind not in REACTION_KINDS:
         return False
@@ -153,13 +164,60 @@ async def add_reaction(user_id: str, event_id: str, kind: str) -> bool:
 
 
 async def remove_reaction(user_id: str, event_id: str, kind: str) -> bool:
-    """Delete a specific reaction. Returns True when a row was removed."""
-    if kind not in REACTION_KINDS:
+    """Delete a specific reaction. Returns True when a row was removed.
+
+    Accepts both current and legacy kinds so users can retire an old
+    ``clap`` reaction from the picker chip row even after the pack was
+    refreshed.
+    """
+    if kind not in REACTION_KINDS and kind not in LEGACY_REACTION_KINDS:
         return False
     res = await db.feed_reactions.delete_one(
         {"user_id": user_id, "event_id": event_id, "kind": kind}
     )
     return int(res.deleted_count or 0) > 0
+
+
+async def list_reactors(
+    event_id: str, kind: Optional[str] = None, limit: int = 50
+) -> list[dict]:
+    """Return the users who reacted to ``event_id`` (optionally filtered
+    to a single ``kind``). Hydrates ``user_id``, ``name``, ``picture``,
+    ``is_instructor``, and the ``kind`` they reacted with, ordered by
+    most-recent first. Cap prevents ballooning if the same post gets
+    thousands of reactions.
+    """
+    q: dict = {"event_id": event_id}
+    if kind:
+        q["kind"] = kind
+    rows = (
+        await db.feed_reactions.find(q, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(length=max(1, min(limit, 200)))
+    )
+    if not rows:
+        return []
+    uids = [r["user_id"] for r in rows]
+    users = await db.users.find(
+        {"user_id": {"$in": uids}},
+        {"_id": 0, "user_id": 1, "name": 1, "picture": 1, "is_instructor": 1, "is_admin": 1},
+    ).to_list(length=len(uids))
+    by_id = {u["user_id"]: u for u in users}
+    out: list[dict] = []
+    for r in rows:
+        u = by_id.get(r["user_id"]) or {}
+        out.append(
+            {
+                "user_id": r["user_id"],
+                "name": u.get("name", "") or "Someone",
+                "picture": u.get("picture", "") or "",
+                "is_instructor": bool(u.get("is_instructor") or u.get("is_admin")),
+                "kind": r.get("kind", ""),
+                "emoji": REACTION_EMOJI.get(r.get("kind", ""), ""),
+                "created_at": r.get("created_at", ""),
+            }
+        )
+    return out
 
 
 async def get_reactions_bulk(

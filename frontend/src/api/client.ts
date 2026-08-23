@@ -133,12 +133,22 @@ export type FollowLists = {
   counts: { following: number; followers: number };
 };
 
-export type FeedReactionKind = "high_five" | "clap" | "yeehaw" | "heart";
+export type FeedReactionKind = "high_five" | "clap" | "dancer" | "yeehaw" | "heart";
 
 export type FeedReactionMeta = {
   kind: FeedReactionKind;
   emoji: string;
   label: string;
+};
+
+export type FeedReactor = {
+  user_id: string;
+  name: string;
+  picture: string;
+  is_instructor: boolean;
+  kind: FeedReactionKind;
+  emoji: string;
+  created_at: string;
 };
 
 export type FeedReactions = {
@@ -715,6 +725,26 @@ export const api = {
       { method: "DELETE" },
       token
     ),
+  getFeedReactors: (
+    token: string,
+    eventId: string,
+    opts?: { kind?: FeedReactionKind; limit?: number }
+  ) => {
+    const params = new URLSearchParams();
+    if (opts?.kind) params.set("kind", opts.kind);
+    if (typeof opts?.limit === "number") params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return req<{
+      event_id: string;
+      kind: FeedReactionKind | null;
+      reactors: FeedReactor[];
+      count: number;
+    }>(
+      `/feed/${encodeURIComponent(eventId)}/reactors${qs ? `?${qs}` : ""}`,
+      {},
+      token
+    );
+  },
   getReportReasons: (token: string) =>
     req<{ reasons: { reason: string; label: string }[] }>(
       "/feed/report-reasons",

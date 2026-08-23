@@ -6,17 +6,21 @@
  * Behavior
  *   - Displays already-added reaction chips (emoji + count). Tapping an
  *     existing chip toggles the caller's own reaction on/off with an
- *     optimistic update.
- *   - The trailing "+" button opens a small picker with the full set of
- *     reaction kinds so users can add any kind (not just the ones that
- *     already have counts).
+ *     optimistic update and plays a soft click sound (silent-mode
+ *     friendly).
+ *   - Long-press ANY chip (or the "+" button) opens the ReactorsSheet
+ *     so dancers can see exactly who cheered them on.
+ *   - The trailing "+" button opens a compact inline picker with the
+ *     full set of reaction kinds so users can add any kind (not just
+ *     the ones that already have counts).
  *   - Reactions the caller has added themselves are highlighted with a
  *     brand-primary outline.
  *   - Optimistic-first UX: local state flips immediately, then we call
  *     the API and reconcile on success or roll back on failure.
  *
- * The picker is a compact inline pop-over anchored to the "+" button so
- * it never blocks the timeline — the whole feed stays visible.
+ * The picker renders INLINE below the chips row (not as an absolute
+ * popover) so its emojis never run off the screen no matter where the
+ * "+" button sits within the row.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Animated } from "react-native";
@@ -28,26 +32,45 @@ import type {
 } from "@/src/api/client";
 import { api } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
+import { useTapSound } from "@/src/hooks/useTapSound";
+import { ReactorsSheet } from "@/src/components/ReactorsSheet";
 import { colors, radius, spacing } from "@/src/theme";
 
 // Emoji fallback used if the server catalog hasn't loaded yet.
+// NOTE: v2.7 pack — 👏 clap was swapped for 🕺 dancer to lean into the
+// line-dance vibe. ``clap`` is still rendered for legacy rows in the
+// DB but is no longer offered in the picker.
 const EMOJI_FALLBACK: Record<FeedReactionKind, string> = {
   high_five: "🙌",
-  clap: "👏",
+  dancer: "🕺",
   yeehaw: "🤠",
   heart: "❤️",
+  clap: "👏",
 };
 const LABEL_FALLBACK: Record<FeedReactionKind, string> = {
   high_five: "High five",
-  clap: "Applause",
+  dancer: "Dance!",
   yeehaw: "Yeehaw",
   heart: "Love it",
+  clap: "Applause",
 };
+// Order the CURRENT reaction pack shows up in — legacy ``clap`` is
+// intentionally omitted so the picker matches the fresh line-dance
+// feel. Legacy chips still render if a historical row exists.
 const KIND_ORDER: FeedReactionKind[] = [
   "high_five",
-  "clap",
+  "dancer",
   "yeehaw",
   "heart",
+];
+// Superset used by ``visibleKinds`` so a legacy ``clap`` chip still
+// shows up if the event happens to have one.
+const ALL_KNOWN_KINDS: FeedReactionKind[] = [
+  "high_five",
+  "dancer",
+  "yeehaw",
+  "heart",
+  "clap",
 ];
 
 // Module-level cache — the reaction catalog rarely changes so we fetch
@@ -79,11 +102,17 @@ export function FeedReactionsBar({
   testID?: string;
 }) {
   const { token } = useAuth();
+  const playTap = useTapSound();
   const [state, setState] = useState<FeedReactions>({
     counts: reactions?.counts || {},
     mine: reactions?.mine || [],
   });
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [reactorsSheet, setReactorsSheet] = useState<{
+    kind?: FeedReactionKind;
+    emoji?: string;
+    label?: string;
+  } | null>(null);
   const [catalog, setCatalog] = useState<FeedReactionMeta[]>(
     () =>
       KIND_ORDER.map((k) => ({
@@ -129,6 +158,9 @@ export function FeedReactionsBar({
       const nextCounts = { ...state.counts, [kind]: nextCount };
       setState({ counts: nextCounts, mine: nextMine });
       setPickerOpen(false);
+      // Play the click sound + haptic ping right after the optimistic
+      // flip so it feels instant, even on slow networks.
+      playTap();
       try {
         const res = mine
           ? await api.removeFeedReaction(token, eventId, kind)
@@ -142,14 +174,24 @@ export function FeedReactionsBar({
         setState({ counts: state.counts, mine: state.mine });
       }
     },
-    [state, token, eventId]
+    [state, token, eventId, playTap]
   );
 
   // Which reaction chips to actually render inline (count > 0 OR user
-  // added them). Everything else is one tap away in the picker.
-  const visibleKinds = KIND_ORDER.filter(
+  // added them). ``ALL_KNOWN_KINDS`` includes the legacy ``clap`` so
+  // any historical row still surfaces as a chip.
+  const visibleKinds = ALL_KNOWN_KINDS.filter(
     (k) => (state.counts[k] || 0) > 0 || state.mine.includes(k)
   );
+
+  const openReactors = useCallback((k?: FeedReactionKind) => {
+    const meta = catalog.find((m) => m.kind === k);
+    setReactorsSheet({
+      kind: k,
+      emoji: meta?.emoji || (k ? EMOJI_FALLBACK[k] : undefined),
+      label: meta?.label || (k ? LABEL_FALLBACK[k] : "Reactions"),
+    });
+  }, [catalog]);
 
   return (
     <View style={styles.container} testID={testID}>
@@ -163,6 +205,8 @@ export function FeedReactionsBar({
             <Pressable
               key={k}
               onPress={() => toggle(k)}
+              onLongPress={() => openReactors(k)}
+              delayLongPress={350}
               style={[styles.chip, mine && styles.chipMine]}
               testID={`reaction-chip-${eventId}-${k}`}
               hitSlop={4}
@@ -176,6 +220,8 @@ export function FeedReactionsBar({
         })}
         <Pressable
           onPress={() => setPickerOpen((v) => !v)}
+          onLongPress={() => openReactors(undefined)}
+          delayLongPress={350}
           style={styles.addBtn}
           hitSlop={6}
           testID={`reaction-add-${eventId}`}
@@ -189,13 +235,22 @@ export function FeedReactionsBar({
       </View>
       {pickerOpen ? (
         <ReactionPicker
-          catalog={catalog}
+          catalog={catalog.filter((c) => KIND_ORDER.includes(c.kind))}
           mine={state.mine}
           onPick={toggle}
           onClose={() => setPickerOpen(false)}
           eventId={eventId}
         />
       ) : null}
+
+      <ReactorsSheet
+        visible={!!reactorsSheet}
+        onClose={() => setReactorsSheet(null)}
+        eventId={eventId}
+        kind={reactorsSheet?.kind}
+        headerEmoji={reactorsSheet?.emoji}
+        headerLabel={reactorsSheet?.label}
+      />
     </View>
   );
 }

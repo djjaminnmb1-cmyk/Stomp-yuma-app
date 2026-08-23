@@ -28,6 +28,7 @@ from core.time_helpers import now_iso
 from services.social import (
     REACTION_EMOJI,
     REACTION_KINDS,
+    LEGACY_REACTION_KINDS,
     REACTION_LABEL,
     REPORT_LABEL,
     REPORT_REASONS,
@@ -40,6 +41,7 @@ from services.social import (
     get_public_user,
     get_reactions_bulk,
     is_following,
+    list_reactors,
     remove_reaction,
     report_event,
     search_users,
@@ -247,8 +249,9 @@ async def delete_feed_reaction(
     kind: str,
     user: dict = Depends(get_current_user),
 ):
-    """Toggle-remove a reaction. Idempotent."""
-    if kind not in REACTION_KINDS:
+    """Toggle-remove a reaction. Idempotent. Accepts legacy kinds too so
+    users can still retire an old ``clap`` chip after the pack refresh."""
+    if kind not in REACTION_KINDS and kind not in LEGACY_REACTION_KINDS:
         raise HTTPException(400, "Unknown reaction kind.")
     removed = await remove_reaction(user["user_id"], event_id, kind)
     bulk = await get_reactions_bulk([event_id], viewer_id=user["user_id"])
@@ -256,6 +259,28 @@ async def delete_feed_reaction(
         "ok": True,
         "removed": removed,
         "reactions": bulk.get(event_id, {"counts": {}, "mine": []}),
+    }
+
+
+@router.get("/feed/{event_id}/reactors")
+async def get_feed_reactors(
+    event_id: str,
+    kind: Optional[str] = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    user: dict = Depends(get_current_user),
+):
+    """Return the users who reacted to a feed event (optionally filtered
+    to a single ``kind``). Powers the long-press "who reacted?" sheet.
+    """
+    if kind is not None:
+        if kind not in REACTION_KINDS and kind not in LEGACY_REACTION_KINDS:
+            raise HTTPException(400, "Unknown reaction kind.")
+    reactors = await list_reactors(event_id, kind=kind, limit=limit)
+    return {
+        "event_id": event_id,
+        "kind": kind,
+        "reactors": reactors,
+        "count": len(reactors),
     }
 
 

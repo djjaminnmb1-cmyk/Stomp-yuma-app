@@ -1,0 +1,35 @@
+{
+  "summary": "Reactions v2.7 (Sound + Reactor Names + Pack Refresh) — FULLY GREEN. Backend: 15/15 pytest passed. Frontend: mobile web preview at 390x844 verified with Erin login → Feed. Picker shows exactly [🙌 high_five, 🕺 dancer, 🤠 yeehaw, ❤️ heart] with clap fully retired from POST and picker; DELETE clap still 200 for legacy cleanup. POST/DELETE dancer works and toggles mine[]/counts correctly. GET /api/feed/{id}/reactors returns {event_id, kind, reactors:[user_id,name,picture,is_instructor,kind,emoji,created_at], count}; kind filter works, invalid kind → 400, unauth → 401/403, limit is capped. Long-press on a reaction chip opens ReactorsSheet with '🕺 Dance!' header + 'Erin and Jamin reacted.' summary and instructor badges. Long-press on '+' opens the all-kinds sheet (header 'Reactions', full reactor list across kinds). Tapping a reaction produced zero expo-audio/player console errors (sound wiring smoke check clean). Feed regression for /feed hydration and add/remove for high_five/yeehaw/heart all green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "Whitespace text node warning", "issue": "Console shows 'Unexpected text node: A text node cannot be a child of a <View>' — pre-existing warning, unrelated to v2.7 changes but should be traced (likely stray whitespace between JSX children in a View). Non-blocking."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_reactions_v27.py",
+    "/app/test_reports/pytest/reactions_v27.xml"
+  ],
+  "action_items": [
+    "Optional: track down the stray whitespace text node inside a <View> that logs 'Unexpected text node' on every render. Not a v2.7 regression but worth a quick sweep next time you're in Feed screens.",
+    "Consider updating the older /app/backend/tests/test_feed_reactions.py — its REACTION_KINDS constant still lists 'clap' as a current kind (line 24) and its TestFeedHydration.test_different_users_see_different_mine assumes POST clap succeeds. Those tests may fail post-v2.7 if re-run; the new test_reactions_v27.py supersedes them."
+  ],
+  "critical_code_review_comments": [
+    "services/social.py:161 – add_reaction returns True only when upserted_id is set; that correctly matches 'created' semantics for the toggle contract.",
+    "routes/social.py:265-284 – /feed/{id}/reactors correctly validates kind against both current + legacy sets so long-press on a legacy clap chip still resolves. Good.",
+    "useTapSound.ts – uses useAudioPlayer per-component; each FeedReactionsBar creates its own player. For a long feed that could be dozens of players. Not a bug, but consider hoisting to a shared module-level player for memory. Non-blocking.",
+    "FeedReactionsBar.tsx:183-185 – visibleKinds correctly filters against ALL_KNOWN_KINDS (superset incl. clap) so legacy chips still render; picker (line 238) filters to KIND_ORDER (no clap). Good separation."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_reactions_v27.py (new)"
+  ],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100% (all v2.7 flows verified)"},
+  "seed_data_creation": "Test seeds a completion event via /api/tracking/{dance_id} as Erin, then reacts as Erin + Jamin to that event. No manual DB seeding.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Frontend Feed lives at /feed (not /(tabs)/feed). Auth screen has TWO 'Sign In' elements — a tab pill AND the submit button; use .nth(count-1) to grab the submit. testIDs on the reactions row: reaction-add-{event_id}, reaction-chip-{event_id}-{kind}, reaction-pick-{event_id}-{kind}. ReactorsSheet uses testID 'reactors-sheet' + 'reactors-close'. Long-press = mouse.down → wait 700ms → mouse.up (delayLongPress=350).",
+  "rca_of_issue": "N/A — no bugs found in v2.7 scope."
+}

@@ -21,7 +21,7 @@ BASE = os.environ["EXPO_PUBLIC_BACKEND_URL"].rstrip("/")
 ERIN = ("erinboroughs@gmail.com", "Stompin2026!")
 JAMIN = ("luvtowork247@yahoo.com", "BootsDance49!")
 
-REACTION_KINDS = {"high_five", "clap", "yeehaw", "heart"}
+REACTION_KINDS = {"high_five", "dancer", "yeehaw", "heart"}
 
 
 # ---------- fixtures ----------
@@ -155,24 +155,24 @@ class TestReactionToggle:
 
     def test_delete_removes(self, s, erin_token, event_id):
         # ensure it's present
-        s.post(f"{BASE}/api/feed/{event_id}/reactions/clap",
+        s.post(f"{BASE}/api/feed/{event_id}/reactions/dancer",
                headers=_hdr(erin_token))
-        d1 = s.delete(f"{BASE}/api/feed/{event_id}/reactions/clap",
+        d1 = s.delete(f"{BASE}/api/feed/{event_id}/reactions/dancer",
                       headers=_hdr(erin_token))
         assert d1.status_code == 200, d1.text
         b1 = d1.json()
         assert b1["ok"] is True
         assert b1["removed"] is True
-        assert "clap" not in b1["reactions"]["mine"]
+        assert "dancer" not in b1["reactions"]["mine"]
 
     def test_delete_is_idempotent(self, s, erin_token, event_id):
-        d2 = s.delete(f"{BASE}/api/feed/{event_id}/reactions/clap",
+        d2 = s.delete(f"{BASE}/api/feed/{event_id}/reactions/dancer",
                       headers=_hdr(erin_token))
         assert d2.status_code == 200
         body = d2.json()
         assert body["ok"] is True
         assert body["removed"] is False
-        assert "clap" not in body["reactions"]["mine"]
+        assert "dancer" not in body["reactions"]["mine"]
         assert isinstance(body["reactions"]["counts"], dict)
 
 
@@ -228,7 +228,7 @@ class TestFeedHydration:
 
     def test_different_users_see_different_mine(
             self, s, erin_token, fresh_user, event_id):
-        # Erin reacts with heart, fresh user follows Erin, reacts with clap.
+        # Erin reacts with heart, fresh user follows Erin, reacts with dancer.
         s.post(f"{BASE}/api/feed/{event_id}/reactions/heart",
                headers=_hdr(erin_token))
         # fresh user follows erin so event shows in their feed
@@ -238,8 +238,8 @@ class TestFeedHydration:
         f = s.post(f"{BASE}/api/follows/{erin_uid}",
                    headers=_hdr(fresh_user["token"]))
         assert f.status_code == 200, f.text
-        # fresh reacts with clap on same event
-        cr = s.post(f"{BASE}/api/feed/{event_id}/reactions/clap",
+        # fresh reacts with dancer on same event
+        cr = s.post(f"{BASE}/api/feed/{event_id}/reactions/dancer",
                     headers=_hdr(fresh_user["token"]))
         assert cr.status_code == 200
         # Now fetch feed for both viewers
@@ -250,12 +250,12 @@ class TestFeedHydration:
         e_evt = next((e for e in e_feed if e["id"] == event_id), None)
         n_evt = next((e for e in n_feed if e["id"] == event_id), None)
         assert e_evt and n_evt, "event missing in a viewer's feed"
-        # Erin should see heart in her 'mine'; fresh should see clap in his 'mine'
+        # Erin should see heart in her 'mine'; fresh should see dancer in his 'mine'
         assert "heart" in e_evt["reactions"]["mine"]
-        assert "clap" in n_evt["reactions"]["mine"]
+        assert "dancer" in n_evt["reactions"]["mine"]
         # Their 'mine' arrays should differ
         assert set(e_evt["reactions"]["mine"]) != set(n_evt["reactions"]["mine"])
         # counts should include both users' reactions
         counts = e_evt["reactions"]["counts"]
         assert counts.get("heart", 0) >= 1
-        assert counts.get("clap", 0) >= 1
+        assert counts.get("dancer", 0) >= 1
