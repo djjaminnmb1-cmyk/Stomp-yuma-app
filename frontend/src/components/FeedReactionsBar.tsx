@@ -152,28 +152,28 @@ export function FeedReactionsBar({
   );
 
   return (
-    <View style={styles.wrap} testID={testID}>
-      {visibleKinds.map((k) => {
-        const mine = state.mine.includes(k);
-        const meta = catalog.find((m) => m.kind === k);
-        const emoji = meta?.emoji || EMOJI_FALLBACK[k];
-        const count = state.counts[k] || 0;
-        return (
-          <Pressable
-            key={k}
-            onPress={() => toggle(k)}
-            style={[styles.chip, mine && styles.chipMine]}
-            testID={`reaction-chip-${eventId}-${k}`}
-            hitSlop={4}
-          >
-            <Text style={styles.chipEmoji}>{emoji}</Text>
-            <Text style={[styles.chipCount, mine && styles.chipCountMine]}>
-              {count}
-            </Text>
-          </Pressable>
-        );
-      })}
-      <View>
+    <View style={styles.container} testID={testID}>
+      <View style={styles.wrap}>
+        {visibleKinds.map((k) => {
+          const mine = state.mine.includes(k);
+          const meta = catalog.find((m) => m.kind === k);
+          const emoji = meta?.emoji || EMOJI_FALLBACK[k];
+          const count = state.counts[k] || 0;
+          return (
+            <Pressable
+              key={k}
+              onPress={() => toggle(k)}
+              style={[styles.chip, mine && styles.chipMine]}
+              testID={`reaction-chip-${eventId}-${k}`}
+              hitSlop={4}
+            >
+              <Text style={styles.chipEmoji}>{emoji}</Text>
+              <Text style={[styles.chipCount, mine && styles.chipCountMine]}>
+                {count}
+              </Text>
+            </Pressable>
+          );
+        })}
         <Pressable
           onPress={() => setPickerOpen((v) => !v)}
           style={styles.addBtn}
@@ -186,16 +186,16 @@ export function FeedReactionsBar({
             color={colors.brandPrimary}
           />
         </Pressable>
-        {pickerOpen ? (
-          <ReactionPicker
-            catalog={catalog}
-            mine={state.mine}
-            onPick={toggle}
-            onClose={() => setPickerOpen(false)}
-            eventId={eventId}
-          />
-        ) : null}
       </View>
+      {pickerOpen ? (
+        <ReactionPicker
+          catalog={catalog}
+          mine={state.mine}
+          onPick={toggle}
+          onClose={() => setPickerOpen(false)}
+          eventId={eventId}
+        />
+      ) : null}
     </View>
   );
 }
@@ -234,47 +234,46 @@ function ReactionPicker({
   }, [opacity, scale]);
 
   return (
-    <>
-      {/* Invisible tap-catcher so tapping outside closes the picker. */}
-      <Pressable
-        style={styles.pickerBackdrop}
-        onPress={onClose}
-        testID={`reaction-picker-backdrop-${eventId}`}
-      />
-      <Animated.View
-        style={[
-          styles.picker,
-          {
-            transform: [{ scale }],
-            opacity,
-          },
-        ]}
-      >
-        {catalog.map((c) => {
-          const isMine = mine.includes(c.kind);
-          return (
-            <Pressable
-              key={c.kind}
-              onPress={() => onPick(c.kind)}
-              style={[styles.pickerItem, isMine && styles.pickerItemMine]}
-              hitSlop={4}
-              testID={`reaction-pick-${eventId}-${c.kind}`}
-            >
-              <Text style={styles.pickerEmoji}>{c.emoji}</Text>
-            </Pressable>
-          );
-        })}
-      </Animated.View>
-    </>
+    <Animated.View
+      style={[
+        styles.picker,
+        {
+          transform: [{ scale }],
+          opacity,
+        },
+      ]}
+      testID={`reaction-picker-${eventId}`}
+    >
+      {catalog.map((c) => {
+        const isMine = mine.includes(c.kind);
+        return (
+          <Pressable
+            key={c.kind}
+            onPress={() => {
+              onPick(c.kind);
+              onClose();
+            }}
+            style={[styles.pickerItem, isMine && styles.pickerItemMine]}
+            hitSlop={4}
+            testID={`reaction-pick-${eventId}-${c.kind}`}
+          >
+            <Text style={styles.pickerEmoji}>{c.emoji}</Text>
+          </Pressable>
+        );
+      })}
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    marginTop: spacing.sm,
+    gap: 6,
+  },
   wrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: spacing.sm,
     flexWrap: "wrap",
   },
   chip: {
@@ -311,38 +310,32 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     backgroundColor: colors.surface,
   },
-  pickerBackdrop: {
-    position: "absolute",
-    left: -400,
-    right: -400,
-    top: -400,
-    bottom: -400,
-    zIndex: 5,
-  },
+  // Inline picker — a wrap-friendly row rendered directly below the
+  // reactions chips inside the card body. This is deliberately inline
+  // (not absolute-positioned) so it can never run off the screen edge
+  // regardless of where the "+" button sits within the row.
   picker: {
-    position: "absolute",
-    top: 30,
-    right: 0,
+    alignSelf: "flex-start",
     flexDirection: "row",
-    gap: 4,
+    flexWrap: "wrap",
+    gap: 6,
     padding: 6,
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    zIndex: 10,
     // Subtle drop shadow — noticeable enough to lift the picker off the
     // card without stealing focus from the timeline.
     shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2,
   },
   pickerItem: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surfaceSecondary,
@@ -352,7 +345,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.brandPrimary,
   },
-  pickerEmoji: { fontSize: 18 },
+  pickerEmoji: { fontSize: 20 },
 });
 
 export default FeedReactionsBar;
