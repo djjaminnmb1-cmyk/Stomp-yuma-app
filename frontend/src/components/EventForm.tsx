@@ -9,7 +9,7 @@
  * On submit we call ``onSubmit(payload)`` which is expected to throw
  * on API failure. The form surfaces the error inline.
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -17,11 +17,11 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacing } from "@/src/theme";
 import type { EventInput, EventItem } from "@/src/api/client";
+import { DateTimeField } from "@/src/components/DateTimeField";
 
 type Props = {
   mode: "create" | "edit";
@@ -200,41 +200,35 @@ export function EventForm({
         </View>
       </Field>
 
-      <Field label="Date (YYYY-MM-DD)" required>
-        <TextInput
+      <Field label="Date" required>
+        <DateTimeField
+          mode="date"
           value={date}
-          onChangeText={setDate}
-          placeholder="2026-09-14"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
+          onChange={setDate}
+          placeholder="Pick a date"
           testID="event-form-date"
         />
       </Field>
 
       <View style={styles.rowTwo}>
         <View style={{ flex: 1 }}>
-          <Field label="Start (HH:MM)">
-            <TextInput
+          <Field label="Starts at">
+            <DateTimeField
+              mode="time"
               value={startTime}
-              onChangeText={setStartTime}
-              placeholder="19:30"
-              placeholderTextColor={colors.muted}
-              style={styles.input}
-              keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
+              onChange={setStartTime}
+              placeholder="Pick a time"
               testID="event-form-start"
             />
           </Field>
         </View>
         <View style={{ flex: 1 }}>
-          <Field label="End (HH:MM)">
-            <TextInput
+          <Field label="Ends at">
+            <DateTimeField
+              mode="time"
               value={endTime}
-              onChangeText={setEndTime}
-              placeholder="21:30"
-              placeholderTextColor={colors.muted}
-              style={styles.input}
-              keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
+              onChange={setEndTime}
+              placeholder="Pick a time"
               testID="event-form-end"
             />
           </Field>

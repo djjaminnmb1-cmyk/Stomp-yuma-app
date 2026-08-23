@@ -88,3 +88,11 @@ Add an "Upcoming Classes" section on Home so the venue can drive attendance to r
 - **iOS config**: `app.json` sets `expo.ios.usesAppleSignIn = true`; `expo-apple-authentication@8.0.8` added to package.json.
 - **Testing**: 14/14 pytest cases pass (`/app/backend/tests/test_apple_auth.py`) — JWKS mocked in-process so the real Apple endpoint is never hit. Playbook + manual test matrix at `/app/auth_testing.md`.
 - **User action required before iOS testing**: Enable "Sign in with Apple" capability for App ID `com.emergent.stompinyumaapp.uyr5zg` in the Apple Developer portal, then trigger a fresh iOS build via the Emergent deploy panel.
+
+## Phase 8 Calendar & Time Pickers on Event Form (v2.3 — DONE)
+- **Frontend**: New reusable `DateTimeField.tsx` (`mode="date"|"time"`) replaces the plain YYYY-MM-DD / HH:MM text inputs on the New/Edit Event form.
+  - iOS: opens the picker inside a bottom-sheet Modal with Cancel/Done buttons; draft state only commits on Done.
+  - Android: fires the native dialog on tap; commits on `set`.
+  - Web preview: falls back to browser `<input type="date|time">` with an icon overlay so it still feels native.
+- Icons + display formatting (e.g. "Sat, Sep 14, 2026" and "7:30 PM") make the tap targets feel human, but the persisted value stays in the strict `YYYY-MM-DD` / `HH:MM` format the backend already validates, so no server changes required.
+- Package: `@react-native-community/datetimepicker@8.4.4` installed via `yarn expo install`.
