@@ -11,6 +11,7 @@ from fastapi import APIRouter
 from . import (
     auth,
     activity,
+    admin_bulk_import,
     admin_leaderboard,
     badges,
     certificate,
@@ -45,6 +46,7 @@ api_router.include_router(chat.router)
 api_router.include_router(leaderboard.router)
 api_router.include_router(prizes.router)
 api_router.include_router(admin_leaderboard.router)
+api_router.include_router(admin_bulk_import.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(activity.router)
 api_router.include_router(certificate.router)
