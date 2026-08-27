@@ -43,6 +43,12 @@ export function UpdateBanner() {
   }, [ota.status, ota.channel, ota.runtimeVersion]);
 
   if (Platform.OS === "web") return null;
+  // OTA disabled until Emergent hands us a managed EAS project ID
+  // (see /app/memory/emergent_support_email_ota.md). The hook already
+  // short-circuits to "up-to-date" but we belt-and-suspenders here so a
+  // future ``OTA_ENABLED = true`` flip doesn't accidentally render this
+  // banner without the feature actually working end-to-end.
+  if (!ota.otaEnabled) return null;
   if (ota.status !== "ready" && ota.status !== "downloading") return null;
 
   const downloading = ota.status === "downloading";

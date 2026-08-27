@@ -167,28 +167,24 @@ Add an "Upcoming Classes" section on Home so the venue can drive attendance to r
 - `setAudioModeAsync({ playsInSilentMode: true, interruptionMode: "mixWithOthers" })` so the ping plays over the silent switch without ducking Practice Mode audio.
 
 
-## Phase 13 OTA Updates via expo-updates (v2.8 — DONE, needs EAS setup)
+## Phase 13 OTA Updates via expo-updates (v2.8 — SCAFFOLD ONLY, gated behind Emergent support)
 
 ### Why
-User hit the "installed native build doesn't pick up new code" problem after Republishing. OTA lets any JavaScript / assets / config change roll out to already-installed compatible builds without waiting for App Store review.
+User hit the "installed native build doesn't pick up new code" problem after Republishing. OTA would let any JavaScript / assets / config change roll out to already-installed compatible builds without waiting for App Store review.
 
-### Frontend changes
-- `expo-updates@29.0.20` installed via `yarn expo install`.
-- **`app.json`**:
-  - Top-level `expo.runtimeVersion.policy = "appVersion"` so OTA bundles are pinned to the installed native version.
-  - `expo.updates.{enabled, url, checkAutomatically: "NEVER", fallbackToCacheTimeout: 0, useEmbeddedUpdate: true}` — we drive checks manually so we can show a friendly banner.
-  - `expo.extra.eas.projectId` placeholder (`REPLACE_WITH_EAS_PROJECT_ID`).
-- **`eas.json`** created with `development`, `preview`, and `production` build profiles; each pins its own `channel` so binaries route to the correct EAS Update branch.
-- **`src/hooks/useOTAUpdates.ts`**: wrapper around `expo-updates` guarded on `Platform.OS !== 'web'` + `Updates.isEnabled`. Exposes `checkNow()` / `applyReady()` / `status`.
-- **`src/components/UpdateBanner.tsx`**: sticky brand-red banner with a "Reload" CTA. Non-blocking.
-- **`app/_layout.tsx`**: mounts `UpdateBanner` at the root.
-- **`app/(tabs)/profile.tsx`**: `CheckForUpdatesRow` beneath Community Guidelines — dancers can force a check any time.
+### Current reality (2026-06)
+Emergent Support confirmed via `support_agent`: **managed OTA / EAS Update is not a documented self-serve feature** on the platform today. The `REPLACE_WITH_EAS_PROJECT_ID` placeholders were never substituted at Publish time, so every OTA check was silently failing.
 
-### Follow-up user actions required
-1. `npm i -g eas-cli && eas login` on their laptop.
-2. `eas update:configure` — replaces the `REPLACE_WITH_EAS_PROJECT_ID` placeholders with the real UUID.
-3. Generate a new native build via Emergent so the binary knows its channel.
-4. Publish updates via `eas update --branch preview --message "..."` for QA, then `eas update --branch production --message "..."` for release.
+### What ships today
+- `updates.enabled = false` in `app.json` (no more silent errors); `updates.url` and `extra.eas.projectId` placeholders removed.
+- `useOTAUpdates` gated on `OTA_ENABLED = false` — every call short-circuits to `"up-to-date"` and every effect is a no-op.
+- `UpdateBanner` renders `null` when the feature flag is off.
+- Profile → old `CheckForUpdatesRow` replaced with `CurrentVersionRow` that shows the running app version + copy "Updates arrive with new App Store / Play Store releases."
+- `expo-updates` package + `useOTAUpdates` hook kept in the tree so re-enabling is a 3-line flip once Emergent gives us managed OTA.
+
+### Follow-up
+- Email drafted at `/app/memory/emergent_support_email_ota.md` — user to send to `support@emergent.sh` requesting managed OTA + real `updates.url` + `extra.eas.projectId`.
+- Once Emergent replies: flip `OTA_ENABLED = true` in the hook, plug the real IDs into `app.json`, restore `CheckForUpdatesRow` on Profile, redeploy.
 
 
 ## Phase 14 Version-Pin on Bug Reports + Silent OTA (v2.9 — DONE)

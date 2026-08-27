@@ -26,7 +26,8 @@ import { StreakCard } from "@/src/components/StreakCard";
 import { PracticeHistoryChart } from "@/src/components/PracticeHistoryChart";
 import { SignInMethodsSection } from "@/src/components/SignInMethodsSection";
 import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
-import { useOTAUpdates } from "@/src/hooks/useOTAUpdates";
+import Constants from "expo-constants";
+import * as Application from "expo-application";
 
 // ---------- Social links ----------
 // Each entry has:
@@ -800,7 +801,7 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
 
-          <CheckForUpdatesRow />
+          <CurrentVersionRow />
         </View>
 
         <SignInMethodsSection />
@@ -1012,81 +1013,47 @@ export default function Profile() {
 }
 
 /**
- * CheckForUpdatesRow
- * ------------------
- * Manual "did I miss an OTA update?" affordance under Legal &
- * Community. Runs a check-and-download against the EAS Update service
- * and, when a bundle is ready, offers a "Reload" pressable that flips
- * the app onto the new bundle. Silent on web (OTA is native-only).
+ * CurrentVersionRow
+ * -----------------
+ * Honest "which build am I on?" affordance. OTA (self-serve JS updates)
+ * is disabled today because Emergent's platform doesn't yet hand us a
+ * managed EAS project ID. Showing the current app version + a one-liner
+ * explaining how updates arrive keeps users informed without the
+ * misleading "Check for updates" button that used to sit here and
+ * always errored.
  */
-function CheckForUpdatesRow() {
-  const ota = useOTAUpdates({ checkOnMount: false, checkOnForeground: false });
-  const [pressed, setPressed] = useState(false);
-
+function CurrentVersionRow() {
   if (Platform.OS === "web") return null;
 
-  const onPress = async () => {
-    setPressed(true);
-    const result = await ota.checkNow();
-    if (result === "ready") {
-      // The banner will offer Reload — but also nudge here so a user
-      // who tapped explicitly gets an immediate CTA.
-      Alert.alert(
-        "Update ready",
-        "A new version has been downloaded. Reload now to install it.",
-        [
-          { text: "Later", style: "cancel" },
-          { text: "Reload", onPress: ota.applyReady },
-        ]
-      );
-    } else if (result === "up-to-date") {
-      Alert.alert("You're up to date", "No new version was found.");
-    } else {
-      Alert.alert(
-        "Couldn't check",
-        ota.errorMsg || "Please try again in a moment."
-      );
-    }
-    setPressed(false);
-  };
-
-  const label =
-    ota.status === "downloading"
-      ? "Downloading update…"
-      : ota.status === "checking"
-        ? "Checking for updates…"
-        : ota.status === "ready"
-          ? "Update downloaded — tap to reload"
-          : "Check for updates";
+  const version =
+    (Constants.expoConfig?.version as string) ||
+    (Constants as any)?.manifest?.version ||
+    (Application as any)?.nativeApplicationVersion ||
+    "—";
+  const build =
+    Platform.OS === "ios"
+      ? ((Application as any)?.nativeBuildVersion || "")
+      : String((Application as any)?.nativeBuildVersion || "");
 
   return (
-    <Pressable
-      testID="profile-check-updates"
-      onPress={ota.status === "ready" ? ota.applyReady : onPress}
-      style={styles.websiteRow}
-      disabled={pressed || ota.isChecking}
-    >
+    <View style={styles.websiteRow}>
       <View style={styles.rowLeft}>
-        {ota.isChecking ? (
-          <ActivityIndicator size="small" color={colors.brandPrimary} />
-        ) : (
-          <Ionicons
-            name={ota.status === "ready" ? "rocket-outline" : "cloud-download-outline"}
-            size={22}
-            color={colors.brandPrimary}
-          />
-        )}
-        <View>
-          <Text style={styles.rowText}>{label}</Text>
-          {ota.channel ? (
-            <Text style={styles.deleteSub}>
-              Channel: {ota.channel} · Runtime: {ota.runtimeVersion || "auto"}
-            </Text>
-          ) : null}
+        <Ionicons
+          name="information-circle-outline"
+          size={22}
+          color={colors.brandPrimary}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.rowText}>
+            App version {version}
+            {build ? ` (${build})` : ""}
+          </Text>
+          <Text style={styles.deleteSub}>
+            Updates arrive with new App Store / Play Store releases.
+          </Text>
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-    </Pressable>
+    </View>
   );
 }
 

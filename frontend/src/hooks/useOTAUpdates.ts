@@ -1,23 +1,26 @@
 /**
  * useOTAUpdates
  * -------------
- * Runtime helper that checks Expo's EAS Update service for a new
- * JavaScript bundle any time the app becomes active, downloads it in
- * the background, and — depending on the caller's ``strategy`` —
- * either shows a friendly banner ("A new version is ready — reload
- * to update") or silently reloads.
+ * Runtime helper that WOULD check Expo's EAS Update service for a new
+ * JavaScript bundle and prompt the user to reload. Kept in the codebase
+ * as a scaffold so we can flip OTA back on when Emergent's platform
+ * exposes managed EAS Update for this project (see
+ * ``/app/memory/emergent_support_email_ota.md``).
  *
- * Guards:
- *   • Skips entirely on web (OTA is a native-only feature)
- *   • Skips in dev (Expo Go / dev-client) where updates aren't real
- *   • Never blocks the UI: every await is wrapped and errors are
- *     swallowed with a console.warn
+ * Today this hook is a no-op:
+ *   • ``updates.enabled = false`` in app.json means expo-updates is not
+ *     initialised in the native runtime — every call would throw or
+ *     silently fail with the placeholder URL we used to have.
+ *   • Rather than pretending to work and confusing users with "Couldn't
+ *     check for updates" alerts, we short-circuit to "up-to-date" and
+ *     let the Publish → new build flow handle updates for now.
  *
- * Consumers:
- *   • ``UpdateChecker`` (mounted at root) — runs the passive
- *     foreground check + Alert prompt on install
- *   • Profile → "Check for updates" row — calls ``checkNow`` directly
- *     so the user can force a refresh
+ * When Emergent enables managed OTA:
+ *   1. Set ``updates.enabled = true`` + real ``updates.url`` +
+ *      ``extra.eas.projectId`` in app.json.
+ *   2. Flip ``OTA_ENABLED`` below to ``true``.
+ *   3. The banner + Profile row auto-light up — no other code changes
+ *      needed.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
@@ -33,18 +36,13 @@ export type OTAStatus =
   | "error";
 
 /**
- * Read the ``silent`` flag from the JUST-DOWNLOADED manifest. Admins
- * mark a hotfix as silent by editing ``app.json.extra.otaUpdate = {
- *   silent: true, reason: "..." }`` before running ``eas update``.
- * Each OTA bundle contains its own app.json so the flag travels with
- * the specific update it was applied to — nothing "sticks" after the
- * next release.
+ * Master switch. Kept false until Emergent hands us a real EAS project
+ * ID + updates URL. See app.json ``updates`` block.
  */
+const OTA_ENABLED = false;
+
 function readSilentFlag(manifest: any): boolean {
   try {
-    // ``manifest.extra`` is the flattened extra config in newer
-    // expo-updates versions. Older shapes nest it under
-    // ``metadata.branchName`` or ``expoClient.extra`` — we probe both.
     const paths = [
       manifest?.extra?.otaUpdate?.silent,
       manifest?.extra?.expoClient?.extra?.otaUpdate?.silent,
@@ -57,9 +55,7 @@ function readSilentFlag(manifest: any): boolean {
 }
 
 export function useOTAUpdates(options?: {
-  /** If true, run a check as soon as the hook mounts. Default true. */
   checkOnMount?: boolean;
-  /** If true, re-check every time the app returns to foreground. Default true. */
   checkOnForeground?: boolean;
 }) {
   const { checkOnMount = true, checkOnForeground = true } = options || {};
@@ -67,12 +63,19 @@ export function useOTAUpdates(options?: {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const inflight = useRef(false);
 
-  const isNativeRuntime = Platform.OS !== "web" && Updates.isEnabled;
+  // Guard: native-only AND OTA feature flag AND Updates.isEnabled at runtime.
+  const isNativeRuntime =
+    OTA_ENABLED && Platform.OS !== "web" && (Updates as any).isEnabled;
 
   const checkNow = useCallback(async (): Promise<
     "ready" | "silent-ready" | "up-to-date" | "error"
   > => {
-    if (!isNativeRuntime) return "up-to-date";
+    if (!isNativeRuntime) {
+      // Feature disabled — pretend we checked and everything's fine.
+      // The Profile row & banner won't render an "error" state.
+      setStatus("up-to-date");
+      return "up-to-date";
+    }
     if (inflight.current)
       return (status === "ready" || status === "silent-ready"
         ? status
@@ -90,8 +93,6 @@ export function useOTAUpdates(options?: {
       const fetched = await Updates.fetchUpdateAsync();
       const silent = readSilentFlag((fetched as any).manifest || res.manifest);
       if (silent) {
-        // Silent hotfix — install on natural cold-start. Don't show
-        // the banner, don't force-reload. Log for audit only.
         console.log(
           "[useOTAUpdates] Silent OTA downloaded — banner suppressed."
         );
@@ -102,8 +103,6 @@ export function useOTAUpdates(options?: {
       return "ready";
     } catch (e: any) {
       const msg = e?.message || String(e);
-      // Common benign paths — running in Expo Go, no network, etc. —
-      // we surface as "up-to-date" so the UI never scares people.
       if (/development|expo go|not enabled/i.test(msg)) {
         setStatus("up-to-date");
         return "up-to-date";
@@ -145,9 +144,10 @@ export function useOTAUpdates(options?: {
     isChecking: status === "checking" || status === "downloading",
     checkNow,
     applyReady,
-    // Expose current channel/runtimeVersion for debugging in the UI.
     channel: (Updates as any).channel ?? null,
     runtimeVersion: (Updates as any).runtimeVersion ?? null,
     updateId: (Updates as any).updateId ?? null,
+    /** Exposed so UI can render an honest state instead of pretending. */
+    otaEnabled: OTA_ENABLED,
   };
 }

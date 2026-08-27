@@ -12,11 +12,10 @@
       "policy": "appVersion"
     },
     "updates": {
-      "enabled": true,
+      "enabled": false,
       "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0,
-      "useEmbeddedUpdate": true,
-      "url": "https://u.expo.dev/REPLACE_WITH_EAS_PROJECT_ID"
+      "useEmbeddedUpdate": true
     },
     "ios": {
       "supportsTablet": true,
@@ -85,10 +84,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "privacyPolicyUrl": "https://stompin-yuma-app.preview.emergentagent.com/privacy",
-      "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
-      }
+      "privacyPolicyUrl": "https://stompin-yuma-app.preview.emergentagent.com/privacy"
     }
   }
 }
