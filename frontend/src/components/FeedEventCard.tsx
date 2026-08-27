@@ -14,7 +14,7 @@
  * jump to their profile.
  */
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -24,12 +24,14 @@ import { FeedReactionsBar } from "@/src/components/FeedReactionsBar";
 import { InstructorBadge } from "@/src/components/InstructorBadge";
 import { ReportFeedSheet } from "@/src/components/ReportFeedSheet";
 import { useAuth } from "@/src/context/auth-context";
+import { useBlockUser } from "@/src/hooks/useBlockUser";
 
 export function FeedEventCard({ event }: { event: FeedEvent }) {
   const router = useRouter();
   const { user: me } = useAuth();
   const [reportOpen, setReportOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const { confirmBlock } = useBlockUser();
   const openUser = () => router.push(`/users/${event.user.user_id}`);
   const onCardPress = () => {
     if (event.type === "completion") {
@@ -39,12 +41,33 @@ export function FeedEventCard({ event }: { event: FeedEvent }) {
     }
   };
   const isMine = me?.user_id === event.user.user_id;
-  // Users can flag anyone's post except their own — the backend
-  // enforces the same rule but we also skip the long-press affordance
-  // client-side so it doesn't feel broken.
+  // Long-press on someone else's post pops a menu: Report this post
+  // (opens the existing report sheet with reason picker) OR Block user
+  // (mutual invisibility). Own posts get no menu — nothing useful to
+  // do here.
   const onCardLongPress = () => {
     if (isMine) return;
-    setReportOpen(true);
+    Alert.alert(
+      event.user.name || "Anonymous",
+      "What would you like to do?",
+      [
+        {
+          text: "Report this post",
+          onPress: () => setReportOpen(true),
+        },
+        {
+          text: "Block user",
+          style: "destructive",
+          onPress: () =>
+            confirmBlock({
+              user_id: event.user.user_id,
+              name: event.user.name,
+              onBlocked: () => setHidden(true),
+            }),
+        },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
   };
 
   if (hidden) return null;

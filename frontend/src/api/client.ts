@@ -1072,6 +1072,46 @@ export const api = {
   deleteChat: (id: string, token: string) =>
     req<{ ok: boolean }>(`/chat/messages/${id}`, { method: "DELETE" }, token),
 
+  // ---------------- User blocks ----------------
+  /**
+   * Block a user by their user_id (preferred — never ambiguous). Mutual
+   * invisibility: after this call, neither user sees the other's chat
+   * messages, feed events, or reactor entries. Silently unfollows both
+   * directions server-side. Idempotent.
+   */
+  blockUser: (
+    args: { user_id?: string; email?: string },
+    token: string
+  ) =>
+    req<{
+      ok: boolean;
+      blocked_id: string;
+      blocked_email: string;
+      blocked_name: string;
+    }>(
+      "/blocks",
+      { method: "POST", body: JSON.stringify(args) },
+      token
+    ),
+  listBlocks: (token: string) =>
+    req<{
+      blocks: {
+        blocker_id: string;
+        blocked_id: string;
+        blocked_email: string;
+        blocked_name: string;
+        blocked_picture?: string;
+        created_at: string;
+      }[];
+      count: number;
+    }>("/blocks", {}, token),
+  unblockUser: (blocked_user_id: string, token: string) =>
+    req<{ ok: boolean; unblocked_id?: string; already?: boolean }>(
+      `/blocks/${encodeURIComponent(blocked_user_id)}`,
+      { method: "DELETE" },
+      token
+    ),
+
   // ---------------- Activity / Recently Practiced ----------------
   logPractice: (dance_id: string, token: string) =>
     req<{ ok: boolean; last_opened_at: string }>(

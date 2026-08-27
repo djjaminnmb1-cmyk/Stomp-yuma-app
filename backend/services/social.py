@@ -191,13 +191,20 @@ async def remove_reaction(user_id: str, event_id: str, kind: str) -> bool:
 
 
 async def list_reactors(
-    event_id: str, kind: Optional[str] = None, limit: int = 50
+    event_id: str,
+    kind: Optional[str] = None,
+    limit: int = 50,
+    viewer_id: Optional[str] = None,
 ) -> list[dict]:
     """Return the users who reacted to ``event_id`` (optionally filtered
     to a single ``kind``). Hydrates ``user_id``, ``name``, ``picture``,
     ``is_instructor``, and the ``kind`` they reacted with, ordered by
     most-recent first. Cap prevents ballooning if the same post gets
     thousands of reactions.
+
+    When ``viewer_id`` is passed, reactors mutually blocked from the
+    viewer are dropped so the "who reacted" sheet stays consistent with
+    the rest of the app.
     """
     q: dict = {"event_id": event_id}
     if kind:
@@ -209,6 +216,16 @@ async def list_reactors(
     )
     if not rows:
         return []
+
+    # Filter out mutually-blocked users from the reactor list.
+    if viewer_id:
+        from services.blocks import hidden_user_ids
+        hidden = await hidden_user_ids(viewer_id)
+        if hidden:
+            rows = [r for r in rows if r["user_id"] not in hidden]
+            if not rows:
+                return []
+
     uids = [r["user_id"] for r in rows]
     users = await db.users.find(
         {"user_id": {"$in": uids}},
@@ -563,8 +580,13 @@ async def get_feed(
     """Return the caller's activity feed — events from users they follow
     (and optionally themselves), most-recent first, capped to
     ``FEED_WINDOW_DAYS``.
+
+    Blocks are enforced here too: even if the viewer previously
+    followed a now-blocked user, that user's events are hidden until
+    they unblock.
     """
     from datetime import datetime, timedelta, timezone as _tz
+    from services.blocks import hidden_user_ids
     followees = await following_ids(viewer_id)
     if include_self:
         followees.append(viewer_id)
@@ -588,6 +610,12 @@ async def get_feed(
     if include_self and viewer_id in opted_out:
         visible.append(viewer_id)
 
+    # Mutual block filter — drop anyone the viewer has blocked or who
+    # has blocked the viewer. Never applies to the viewer themselves.
+    hidden = await hidden_user_ids(viewer_id)
+    if hidden:
+        visible = [uid for uid in visible if uid == viewer_id or uid not in hidden]
+
     if not visible:
         return []
 
@@ -606,6 +634,7 @@ async def get_feed(
 async def purge_user(user_id: str) -> None:
     """Called from account-deletion. Cleans up every social row keyed on
     this user in either direction."""
+    from services.blocks import purge_user as purge_blocks
     await db.follows.delete_many({"follower_id": user_id})
     await db.follows.delete_many({"followee_id": user_id})
     await db.activity_events.delete_many({"user_id": user_id})
@@ -614,3 +643,6 @@ async def purge_user(user_id: str) -> None:
     # deleted user — the latter avoids orphaned moderation-queue rows.
     await db.feed_reports.delete_many({"reporter_id": user_id})
     await db.feed_reports.delete_many({"reported_user_id": user_id})
+    # Blocks in either direction — deleting a user should never leave
+    # them appearing in someone else's "blocked users" list forever.
+    await purge_blocks(user_id)

@@ -24,6 +24,7 @@ import * as FileSystem from "expo-file-system";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { api, ClassSession, Dance, ChatMessage, EventItem } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
+import { useBlockUser } from "@/src/hooks/useBlockUser";
 import { useDraftCount } from "@/src/context/draft-count-context";
 import { parseCsv } from "@/src/lib/csv";
 
@@ -923,6 +924,7 @@ function ChatView({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const { confirmBlock } = useBlockUser();
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -993,6 +995,23 @@ function ChatView({
           }
           renderItem={({ item }) => {
             const mine = item.user_id === currentUserId;
+            // Long-press on someone else's bubble → offer Block user.
+            // Wrapped in a Pressable so the hit target matches the
+            // bubble bounds — matches iMessage/WhatsApp conventions.
+            const onBubbleLongPress = () => {
+              if (mine) return;
+              confirmBlock({
+                user_id: item.user_id,
+                name: item.user_name,
+                onBlocked: () => {
+                  // Optimistically hide their messages while the next
+                  // 6s poll refreshes the list from the server.
+                  setMessages((m) =>
+                    m.filter((x) => x.user_id !== item.user_id)
+                  );
+                },
+              });
+            };
             return (
               <View
                 style={[
@@ -1003,7 +1022,10 @@ function ChatView({
                 {!mine ? (
                   <Text style={styles.msgAuthor}>{item.user_name || "Instructor"}</Text>
                 ) : null}
-                <View
+                <Pressable
+                  onLongPress={onBubbleLongPress}
+                  delayLongPress={450}
+                  testID={`chat-bubble-${item.id}`}
                   style={[
                     styles.msgBubble,
                     mine ? styles.msgBubbleMine : styles.msgBubbleOther,
@@ -1025,7 +1047,7 @@ function ChatView({
                       minute: "2-digit",
                     })}
                   </Text>
-                </View>
+                </Pressable>
                 {(mine || isAdmin) ? (
                   <Pressable
                     testID={`chat-delete-${item.id}`}

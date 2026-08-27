@@ -213,28 +213,36 @@ Emergent Support confirmed via `support_agent`: **managed OTA / EAS Update is no
 - Because each OTA bundles its own `app.json`, the flag travels with the specific update and doesn't leak into future releases.
 
 
+## Phase 15 User Blocking (v3.0 — DONE)
 
 ### Why
-User hit the "installed native build doesn't pick up new code" problem after Republishing. OTA lets any JavaScript / assets / config change roll out to already-installed compatible builds without waiting for App Store review.
+Chat + activity feed are shared spaces. Users need a mutual "make them go away" affordance so a single bad actor can't dominate the room or harass individuals. Reporting (existing feature) is for admins; blocking is for the user themselves.
 
-### Frontend changes
-- `expo-updates@29.0.20` installed via `yarn expo install`.
-- **`app.json`**:
-  - Top-level `expo.runtimeVersion.policy = "appVersion"` so OTA bundles are pinned to the installed native version.
-  - `expo.updates.{enabled, url, checkAutomatically: "NEVER", fallbackToCacheTimeout: 0, useEmbeddedUpdate: true}` — we drive checks manually so we can show a friendly banner.
-  - `expo.extra.eas.projectId` placeholder (`REPLACE_WITH_EAS_PROJECT_ID`).
-- **`eas.json`** created with `development`, `preview`, and `production` build profiles; each pins its own `channel` so binaries route to the correct EAS Update branch.
-- **`src/hooks/useOTAUpdates.ts`**: wrapper around `expo-updates` that guards on `Platform.OS !== 'web'` + `Updates.isEnabled`, exposes `checkNow()` / `applyReady()` / `status`.
-- **`src/components/UpdateBanner.tsx`**: sticky brand-red banner that appears at the top of the app on native when a bundle is downloaded, with a "Reload" CTA. Non-blocking; auto-hides after reload or when no update is pending.
-- **`app/_layout.tsx`**: mounts `UpdateBanner` at the root inside SafeAreaProvider so the banner respects the notch.
-- **`app/(tabs)/profile.tsx`**: new `CheckForUpdatesRow` beneath Community Guidelines — dancers can force a check any time and see which OTA channel + runtime version their build is on (helpful when debugging staleness).
+### Backend
+- **`db.user_blocks`** collection — `{blocker_id, blocked_id, blocked_email, blocked_name, created_at}` with unique `(blocker_id, blocked_id)` index + secondary indexes on both sides for the "hidden from me" query.
+- **`services/blocks.py`** — canonical block store:
+  - `hidden_user_ids(viewer_id)` returns the MUTUAL union (users I blocked ∪ users who blocked me). Every downstream filter (chat, feed, reactors) calls this one function.
+  - `block_user()` is idempotent and auto-mutually-unfollows so the follow graph doesn't stay stale.
+  - `purge_user()` wired into account-deletion so blocks don't outlive either party.
+- **Routes** (`routes/blocks.py`):
+  - `POST /api/blocks` `{user_id? | email?}` → 201 idempotent.
+  - `GET /api/blocks` → hydrated list with fresh name/picture (falls back to denormalised snapshot if account was deleted).
+  - `DELETE /api/blocks/{blocked_user_id}` → 200 idempotent (unblocking a not-blocked user also returns ok).
+- **`routes/chat.py`** `list_chat` — over-fetches by a small margin then filters out `hidden_user_ids`, keeping the page near ``limit`` even in a spammy blocked-poster case.
+- **`services/social.py`**:
+  - `get_feed` — drops events authored by anyone in `hidden_user_ids` (never applies to the viewer themselves so you always see your own activity).
+  - `list_reactors` gained a `viewer_id` kwarg + `routes/social.py` passes it in, so the "who reacted" long-press sheet also respects blocks.
 
-### Follow-up user actions required
-1. `npm i -g eas-cli && eas login` on their laptop.
-2. `cd /app/frontend && npx expo install expo-updates` (already done in preview but re-run locally so their local node_modules match).
-3. `eas update:configure` — this replaces the two `REPLACE_WITH_EAS_PROJECT_ID` placeholders with the real UUID.
-4. Generate a new native build via Emergent so the binary knows its channel.
-5. Publish updates via `eas update --branch preview --message "..."` for QA, then `eas update --branch production --message "..."` for release.
+### Frontend
+- **`src/hooks/useBlockUser.ts`** — reusable `confirmBlock({user_id, email, name, onBlocked})`. Fires a native Alert (2-step confirm), calls the API, then invokes `onBlocked` for optimistic UI hiding. Handles self-block guard.
+- **Chat bubble long-press** (`app/(tabs)/instructor.tsx` `ChatView`) — long-press someone else's message → Block user confirm. Own bubbles ignore long-press.
+- **Feed card long-press** (`src/components/FeedEventCard.tsx`) — replaced direct report sheet open with an ActionSheet: `Report this post` / `Block user` / `Cancel`. Blocking a user hides the card immediately (`setHidden(true)`) and future feed loads skip them entirely.
+- **`app/blocked-users.tsx`** — new management screen (reached from Profile → "Blocked users"): avatar + name + email + Unblock pill. Empty state explains what blocking does in plain English. Pull-to-refresh.
+- **Profile row** (`app/(tabs)/profile.tsx`) — new "Blocked users" entry under Community Guidelines with subtitle "Manage who you've muted in chat and feed".
+- **`src/api/client.ts`** — three new methods: `blockUser`, `listBlocks`, `unblockUser`.
+
+
+## Phase 14 Version-Pin on Bug Reports + Silent OTA (v2.9 — DONE)
 
 
 

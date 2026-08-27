@@ -83,6 +83,11 @@ async def _ensure_indexes() -> None:
             [("reporter_id", 1), ("event_id", 1)], unique=True
         )
         await db.feed_reports.create_index([("status", 1), ("created_at", -1)])
+        # User-level blocks (mutual invisibility). Indexes live in
+        # ``services/blocks.py`` so anywhere that touches the collection
+        # picks up the same shape.
+        from services.blocks import ensure_indexes as ensure_block_indexes
+        await ensure_block_indexes()
         # Suggestions targeted at a specific instructor
         await db.suggestions.create_index(
             [("target_instructor_id", 1), ("created_at", -1)]

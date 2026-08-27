@@ -785,6 +785,27 @@ export default function Profile() {
           </Pressable>
 
           <Pressable
+            testID="profile-blocked-users-cta"
+            onPress={() => router.push("/blocked-users")}
+            style={styles.websiteRow}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="hand-left-outline"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>Blocked users</Text>
+                <Text style={styles.deleteSub}>
+                  Manage who you've muted in chat and feed
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          <Pressable
             testID="profile-feedback-cta"
             onPress={() => router.push("/feedback")}
             style={styles.websiteRow}

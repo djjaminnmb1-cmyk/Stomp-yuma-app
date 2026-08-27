@@ -276,7 +276,9 @@ async def get_feed_reactors(
     if kind is not None:
         if kind not in REACTION_KINDS and kind not in LEGACY_REACTION_KINDS:
             raise HTTPException(400, "Unknown reaction kind.")
-    reactors = await list_reactors(event_id, kind=kind, limit=limit)
+    reactors = await list_reactors(
+        event_id, kind=kind, limit=limit, viewer_id=user["user_id"]
+    )
     return {
         "event_id": event_id,
         "kind": kind,
