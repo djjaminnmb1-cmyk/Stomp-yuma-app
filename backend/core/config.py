@@ -41,7 +41,7 @@ ADMIN_EMAILS = {
     e.strip().lower()
     for e in os.environ.get(
         "ADMIN_EMAILS",
-        "admin@stompinground.com,erinboroughs@gmail.com",
+        "admin@stompinground.com,erinboroughs@gmail.com,luvtowork247@yahoo.com",
     ).split(",")
     if e.strip()
 }

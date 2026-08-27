@@ -13,6 +13,7 @@ from . import (
     activity,
     admin_bulk_import,
     admin_leaderboard,
+    admin_users,
     badges,
     certificate,
     chat,
@@ -48,6 +49,7 @@ api_router.include_router(leaderboard.router)
 api_router.include_router(prizes.router)
 api_router.include_router(admin_leaderboard.router)
 api_router.include_router(admin_bulk_import.router)
+api_router.include_router(admin_users.router)
 api_router.include_router(feedback.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(activity.router)
