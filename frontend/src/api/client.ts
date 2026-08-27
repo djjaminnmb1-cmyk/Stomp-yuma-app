@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import { diagnosticsHeaders } from "@/src/lib/diagnostics";
 
 const BASE =
   process.env.EXPO_PUBLIC_BACKEND_URL ||
@@ -428,6 +429,8 @@ export type Dance = {
   youtube_url?: string;
   step_sheet?: string;
   step_sheet_image?: string;
+  copperknob_url?: string;
+  bootstepper_url?: string;
   description?: string;
   tags?: string[];
   is_published?: boolean;
@@ -483,6 +486,10 @@ async function req<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    // Auto-tag every request with the running app version / OTA
+    // update ID / channel — lets admins trace a bug report back to
+    // the exact bundle the dancer was on.
+    ...diagnosticsHeaders(),
     ...((opts.headers as Record<string, string>) || {}),
   };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -654,6 +661,47 @@ export const api = {
       token
     ),
   getStreak: (token: string) => req<Streak>("/streak", {}, token),
+
+  // ---------------- Feedback ----------------
+  submitFeedback: (
+    token: string,
+    body: {
+      message: string;
+      category?: "bug" | "feature_request" | "content_error" | "instructor_help" | "other";
+      screen?: string;
+      context?: Record<string, unknown>;
+    }
+  ) =>
+    req<{ ok: boolean; feedback: any }>(
+      "/feedback",
+      { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
+  listFeedback: (
+    token: string,
+    opts?: { status?: string; category?: string; limit?: number }
+  ) => {
+    const params = new URLSearchParams();
+    if (opts?.status) params.set("status", opts.status);
+    if (opts?.category) params.set("category", opts.category);
+    if (typeof opts?.limit === "number") params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return req<{ items: any[]; counts: Record<string, number>; total_returned: number }>(
+      `/admin/feedback${qs ? `?${qs}` : ""}`,
+      {},
+      token
+    );
+  },
+  patchFeedback: (
+    token: string,
+    id: string,
+    body: { status?: "open" | "in_progress" | "resolved" | "wontfix"; admin_note?: string }
+  ) =>
+    req<{ ok: boolean; feedback: any }>(
+      `/admin/feedback/${encodeURIComponent(id)}`,
+      { method: "PATCH", body: JSON.stringify(body) },
+      token
+    ),
 
   // ---------------- Practice history ----------------
   getPracticeHistory: (token: string, days = 30) =>

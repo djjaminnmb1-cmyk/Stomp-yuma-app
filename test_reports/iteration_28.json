@@ -1,0 +1,42 @@
+{
+  "summary": "Phase 14 — Version-Pin on Bug Reports + Silent OTA — FULLY GREEN. Backend: 16/16 pytest passed (new /app/backend/tests/test_version_pin.py). Feedback POST correctly persists all 9 diagnostics headers (app_version, build_number, sdk_version, runtime_version, ota_update_id, ota_channel, ota_is_embedded, platform, os_version); missing headers produce empty strings (ota_is_embedded defaults True). Auth/validation: 401 without token, 422 for empty message, 400 for >2KB context. GET /api/admin/feedback: 401 unauth, 403 non-admin, 200 for admin with items/counts/total_returned; filters by status=open and category=bug both work. PATCH /api/admin/feedback/{id}: 403 non-admin, 404 unknown id, 200 sets status+admin_note, and resolved_by=admin email on status=resolved. Feed-report diagnostics: POST /api/feed/{event_id}/report round-trips diagnostics onto feed_reports doc (verified via /api/admin/feed/reports; row.diagnostics.app_version='9.9.9', ota_update_id='test-ota-uuid-12345', ota_channel='preview', platform='ios'). Legacy /api/admin/feed/reports still renders reports without diagnostics field — no regression. Frontend: /feedback shows all 5 category pills (bug/feature_request/content_error/instructor_help/other), 'Auto-attached to help us investigate' footer with app version/platform/OTA channel/update id, submit correctly disabled at empty message (aria-disabled=true) and enabled ≥3 chars. Live POST /api/feedback from the app carried X-Client-App-Version=1.0.0, X-Client-SDK-Version=54.0.0, X-Client-Platform=web, X-Client-OTA-Is-Embedded=0 — diagnostic headers flow end-to-end. Admin /admin/feedback: Erin sees 5 status tabs, 3 rows, detail sheet with full Diagnostics section (App v/Build, Platform, SDK/Runtime, OTA channel, Update id, Screen) and 4 status quick-action buttons. Non-admin (Jamin) hits 'Admins only' guard. Silent OTA: useOTAUpdates.readSilentFlag correctly probes 3 manifest paths (extra.otaUpdate.silent, extra.expoClient.extra.otaUpdate.silent, metadata.otaUpdate.silent) and returns 'silent-ready' status; UpdateBanner.tsx:46 renders ONLY on status in ('ready','downloading'), so 'silent-ready' does NOT show the banner (verified by code review). Web guard also holds — UpdateBanner returns null on Platform.OS==='web' (line 45).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "Whitespace text node warning", "issue": "Console still emits 'Unexpected text node: A text node cannot be a child of a <View>' on Auth screen (pre-existing, carried over from iteration 27). Not new to Phase 14 but has now been seen for 2 iterations — worth chasing. Likely stray whitespace between JSX children in a <View> on /app/frontend/app/auth.tsx or a shared component. Non-blocking."},
+    {"component": "Deprecated style props (shadow*, textShadow*)", "issue": "Console warns '\"shadow*\" style props are deprecated. Use \"boxShadow\"' and same for textShadow*. Wide-spread across styles — RN 0.76+ deprecates the individual shadowColor/shadowOffset/shadowOpacity/shadowRadius props in favor of boxShadow. Non-blocking but will break on future SDK bumps."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_version_pin.py",
+    "/app/test_reports/pytest/version_pin.xml"
+  ],
+  "action_items": [
+    "Consider adding a `screen` field capture on the client for feed-reports too (currently only feedback records `screen`).",
+    "Sweep for the stray whitespace text node in <View> (pre-existing warning from iter 27 — still present).",
+    "Plan a mass rename of shadow*/textShadow* style props to boxShadow/textShadow ahead of the next Expo SDK bump — RN is deprecating them.",
+    "Optional: rename FeedbackCategory literal `feature_request` to align with the emoji 'Idea' label used in UI — cosmetic only, wire-format is fine."
+  ],
+  "critical_code_review_comments": [
+    "core/diagnostics.py:44 – `ota_is_embedded = _s(x_client_ota_is_embedded) != '0'` correctly treats missing header as 'embedded=True' (safest default for pre-Phase-14 clients).",
+    "routes/feedback.py:63 – 2KB cap uses `len(str(ctx))` which is stringified-dict length, not JSON bytes. That's close enough for a defensive cap; a JSON attacker could still push slightly larger. Acceptable trade-off.",
+    "routes/feedback.py:123 – `resolved_by` is unconditionally overwritten to '' when the new status is anything other than 'resolved'. Slight edge case: a resolved item that gets flipped to in_progress loses its historical resolver. Consider only setting `resolved_by` on transition INTO resolved and leaving prior value otherwise. Minor.",
+    "services/social.py:126-132 – Correct guard: diagnostics only merged into the report doc when at least one field is truthy. Note: ota_is_embedded defaults to True per the dependency, which is truthy, so a client that sends NO headers at all will still trigger the merge (dict has `ota_is_embedded=True`). If that's undesired, filter it out of the truthy check.",
+    "hooks/useOTAUpdates.ts:70 – `isNativeRuntime` gate correctly short-circuits web; verified UpdateBanner returns null on web (line 45).",
+    "hooks/useOTAUpdates.ts:91 – Reads silent flag from BOTH the freshly-fetched manifest and the check result — good, some expo-updates versions only populate one.",
+    "components/UpdateBanner.tsx:46 – Explicitly excludes 'silent-ready' from render — matches spec.",
+    "api/client.ts:490 – diagnosticsHeaders() spread BEFORE opts.headers so any per-call override still wins; testable via network intercept — confirmed X-Client-* on POST /api/feedback."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_version_pin.py (new)"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% (all Phase-14 flows verified: /feedback UI + diag headers on live POST + /admin/feedback for admin + guard for non-admin)"},
+  "seed_data_creation": "Test creates feedback via POST /api/feedback (id prefix TEST_ where applicable), and seeds a completion feed event via POST /api/tracking/{dance_id} to exercise the /feed/{id}/report diagnostics path. No manual DB mutation.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "For any auth flow: dismiss the 'Age check' modal first — page.get_by_text(\"I'm 13 or older\").click(force=True). Auth has TWO 'Sign In' matches (tab + submit); use nth(count-1). Admin login (Erin) needs a live network round-trip (~3-4s) before /admin/feedback shows rows. testIDs: feedback-category-{key}, feedback-message, feedback-submit, feedback-back, admin-feedback-tab-{key|all}, admin-feedback-row-{id}, admin-feedback-refresh, admin-feedback-back. UpdateBanner testID is 'ota-update-banner' but only renders on native+ready/downloading.",
+  "rca_of_issue": "N/A — no bugs found in Phase 14 scope."
+}

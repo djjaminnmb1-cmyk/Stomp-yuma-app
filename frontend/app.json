@@ -8,6 +8,16 @@
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0,
+      "useEmbeddedUpdate": true,
+      "url": "https://u.expo.dev/REPLACE_WITH_EAS_PROJECT_ID"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.emergent.stompinyumaapp.uyr5zg",
@@ -75,7 +85,10 @@
       "typedRoutes": true
     },
     "extra": {
-      "privacyPolicyUrl": "https://stompin-yuma-app.preview.emergentagent.com/privacy"
+      "privacyPolicyUrl": "https://stompin-yuma-app.preview.emergentagent.com/privacy",
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
     }
   }
 }

@@ -156,6 +156,93 @@ Add an "Upcoming Classes" section on Home so the venue can drive attendance to r
 ## Phase 12 Reactions v2 — Sound + Reactor Names + Pack Refresh (v2.7 — DONE)
 
 ### Reaction Pack Refresh
+- **Swap**: 👏 (`clap`) → 🕺 (`dancer`). Current pack: `high_five` (🙌), `dancer` (🕺), `yeehaw` (🤠), `heart` (❤️). Legacy `clap` rows still render but are refused for new inserts.
+
+### Reactor Names (long-press)
+- **Backend**: `GET /api/feed/{event_id}/reactors?kind=&limit=` returns `{event_id, kind, reactors:[{user_id, name, picture, is_instructor, kind, emoji, created_at}], count}`.
+- **Frontend**: Long-press (350ms) on any chip opens `ReactorsSheet.tsx`; long-press the "+" shows all reactors. Instructor checkmarks inline.
+
+### Click Sound (silent-mode friendly)
+- New `useTapSound()` hook wraps `expo-audio` with a bundled 50ms WAV click (`assets/sounds/reaction-tap.wav`, 4.3KB) + `expo-haptics.selectionAsync()` on non-web.
+- `setAudioModeAsync({ playsInSilentMode: true, interruptionMode: "mixWithOthers" })` so the ping plays over the silent switch without ducking Practice Mode audio.
+
+
+## Phase 13 OTA Updates via expo-updates (v2.8 — DONE, needs EAS setup)
+
+### Why
+User hit the "installed native build doesn't pick up new code" problem after Republishing. OTA lets any JavaScript / assets / config change roll out to already-installed compatible builds without waiting for App Store review.
+
+### Frontend changes
+- `expo-updates@29.0.20` installed via `yarn expo install`.
+- **`app.json`**:
+  - Top-level `expo.runtimeVersion.policy = "appVersion"` so OTA bundles are pinned to the installed native version.
+  - `expo.updates.{enabled, url, checkAutomatically: "NEVER", fallbackToCacheTimeout: 0, useEmbeddedUpdate: true}` — we drive checks manually so we can show a friendly banner.
+  - `expo.extra.eas.projectId` placeholder (`REPLACE_WITH_EAS_PROJECT_ID`).
+- **`eas.json`** created with `development`, `preview`, and `production` build profiles; each pins its own `channel` so binaries route to the correct EAS Update branch.
+- **`src/hooks/useOTAUpdates.ts`**: wrapper around `expo-updates` guarded on `Platform.OS !== 'web'` + `Updates.isEnabled`. Exposes `checkNow()` / `applyReady()` / `status`.
+- **`src/components/UpdateBanner.tsx`**: sticky brand-red banner with a "Reload" CTA. Non-blocking.
+- **`app/_layout.tsx`**: mounts `UpdateBanner` at the root.
+- **`app/(tabs)/profile.tsx`**: `CheckForUpdatesRow` beneath Community Guidelines — dancers can force a check any time.
+
+### Follow-up user actions required
+1. `npm i -g eas-cli && eas login` on their laptop.
+2. `eas update:configure` — replaces the `REPLACE_WITH_EAS_PROJECT_ID` placeholders with the real UUID.
+3. Generate a new native build via Emergent so the binary knows its channel.
+4. Publish updates via `eas update --branch preview --message "..."` for QA, then `eas update --branch production --message "..."` for release.
+
+
+## Phase 14 Version-Pin on Bug Reports + Silent OTA (v2.9 — DONE)
+
+### Version-Pin on Bug Reports
+- **`src/lib/diagnostics.ts`** collects `{app_version, build_number, sdk_version, runtime_version, ota_update_id, ota_channel, ota_is_embedded, platform, os_version}` from `expo-constants` + `expo-updates` + `Platform`, memoised per app-run.
+- **Every** API request now auto-tags via the `X-Client-…` header set injected into the shared `req()` in `src/api/client.ts`.
+- **`core/diagnostics.py::client_diagnostics`** FastAPI dependency extracts those headers.
+- **`services/social.report_event`** persists diagnostics onto every new moderation report; older rows are untouched.
+- **New router `routes/feedback.py`**:
+  - `POST /api/feedback` — authenticated dancer sends `{message, category, screen?, context?}` and the server stamps `diagnostics` from the request headers.
+  - `GET /api/admin/feedback?status=&category=&limit=` — admin list with per-status counts.
+  - `PATCH /api/admin/feedback/{id}` — admin sets status (open/in_progress/resolved/wontfix) + private admin note.
+- **`app/feedback.tsx`** — user-facing screen with category pills, message textarea, and a visible "Auto-attached to help us investigate" diagnostics footer so nothing feels sneaky.
+- **`app/admin/feedback.tsx`** — status-tab list + detail sheet showing full diagnostics (channel, update id, runtime, platform) and Open/In progress/Resolved/Won't fix quick-actions with admin-only notes.
+- **Profile rows**: `Send Feedback` for dancers, `User Feedback` under SGY Admin for admins.
+
+### Silent OTA
+- **`useOTAUpdates`** now inspects the newly-downloaded manifest's `extra.otaUpdate.silent` flag. Also probes `extra.expoClient.extra.otaUpdate.silent` and `metadata.otaUpdate.silent` for broader manifest shapes.
+- Silent updates → status flips to `"silent-ready"`, banner does NOT render, install happens on next natural cold-start.
+- Regular updates → banner appears with "Reload" CTA (unchanged behaviour).
+- **Admin flow to publish silent hotfix**:
+  1. Edit `app.json.extra.otaUpdate = { silent: true, reason: "typo fix" }`.
+  2. Run `eas update --branch production --message "silent hotfix"`.
+  3. Revert `app.json` before the next non-silent update.
+- Because each OTA bundles its own `app.json`, the flag travels with the specific update and doesn't leak into future releases.
+
+
+
+### Why
+User hit the "installed native build doesn't pick up new code" problem after Republishing. OTA lets any JavaScript / assets / config change roll out to already-installed compatible builds without waiting for App Store review.
+
+### Frontend changes
+- `expo-updates@29.0.20` installed via `yarn expo install`.
+- **`app.json`**:
+  - Top-level `expo.runtimeVersion.policy = "appVersion"` so OTA bundles are pinned to the installed native version.
+  - `expo.updates.{enabled, url, checkAutomatically: "NEVER", fallbackToCacheTimeout: 0, useEmbeddedUpdate: true}` — we drive checks manually so we can show a friendly banner.
+  - `expo.extra.eas.projectId` placeholder (`REPLACE_WITH_EAS_PROJECT_ID`).
+- **`eas.json`** created with `development`, `preview`, and `production` build profiles; each pins its own `channel` so binaries route to the correct EAS Update branch.
+- **`src/hooks/useOTAUpdates.ts`**: wrapper around `expo-updates` that guards on `Platform.OS !== 'web'` + `Updates.isEnabled`, exposes `checkNow()` / `applyReady()` / `status`.
+- **`src/components/UpdateBanner.tsx`**: sticky brand-red banner that appears at the top of the app on native when a bundle is downloaded, with a "Reload" CTA. Non-blocking; auto-hides after reload or when no update is pending.
+- **`app/_layout.tsx`**: mounts `UpdateBanner` at the root inside SafeAreaProvider so the banner respects the notch.
+- **`app/(tabs)/profile.tsx`**: new `CheckForUpdatesRow` beneath Community Guidelines — dancers can force a check any time and see which OTA channel + runtime version their build is on (helpful when debugging staleness).
+
+### Follow-up user actions required
+1. `npm i -g eas-cli && eas login` on their laptop.
+2. `cd /app/frontend && npx expo install expo-updates` (already done in preview but re-run locally so their local node_modules match).
+3. `eas update:configure` — this replaces the two `REPLACE_WITH_EAS_PROJECT_ID` placeholders with the real UUID.
+4. Generate a new native build via Emergent so the binary knows its channel.
+5. Publish updates via `eas update --branch preview --message "..."` for QA, then `eas update --branch production --message "..."` for release.
+
+
+
+### Reaction Pack Refresh
 - **Swap**: 👏 (`clap`) → 🕺 (`dancer`) to lean into the line-dance vibe. Current pack is now `high_five` (🙌), `dancer` (🕺), `yeehaw` (🤠), `heart` (❤️).
 - **Legacy**: `clap` kept as read/remove-only for any historical rows so nothing disappears mid-session. `POST /api/feed/{id}/reactions/clap` now returns 400 (can't add new claps); `DELETE` still works so a user can retire an old chip.
 

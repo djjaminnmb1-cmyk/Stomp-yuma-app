@@ -69,6 +69,10 @@ def dance_to_out(d: dict, viewer_user_id: Optional[str] = None) -> dict:
         "youtube_url": d.get("youtube_url", ""),
         "step_sheet": d.get("step_sheet", ""),
         "step_sheet_image": d.get("step_sheet_image", ""),
+        # Direct step-sheet URLs — used by the client to open the exact
+        # dance on CopperKnob / BootStepper instead of a search page.
+        "copperknob_url": d.get("copperknob_url", "") or "",
+        "bootstepper_url": d.get("bootstepper_url", "") or "",
         "description": d.get("description", ""),
         "tags": d.get("tags", []),
         "is_published": bool(d.get("is_published", True)),

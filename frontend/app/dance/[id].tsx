@@ -47,6 +47,76 @@ export default function DanceDetail() {
   const [fYt, setFYt] = useState("");
   const [savingSheet, setSavingSheet] = useState(false);
   const [uploadingImg, setUploadingImg] = useState(false);
+  // Long-press → Set direct step-sheet URL modal state.
+  const [stepSheetHost, setStepSheetHost] = useState<
+    "copperknob" | "bootstepper" | null
+  >(null);
+  const [stepSheetUrlDraft, setStepSheetUrlDraft] = useState("");
+  const [savingLink, setSavingLink] = useState(false);
+
+  // Admins + step-sheet editors can pin direct URLs. Instructors who
+  // aren't editors get the standard search-page flow.
+  const canEdit = !!(user?.is_admin || user?.can_edit_step_sheets);
+
+  const openStepSheetLinkEditor = (host: "copperknob" | "bootstepper") => {
+    if (!dance) return;
+    setStepSheetHost(host);
+    setStepSheetUrlDraft(
+      host === "copperknob"
+        ? dance.copperknob_url || ""
+        : dance.bootstepper_url || ""
+    );
+  };
+
+  const closeStepSheetLinkEditor = () => {
+    setStepSheetHost(null);
+    setStepSheetUrlDraft("");
+  };
+
+  const saveStepSheetUrl = async () => {
+    if (!dance || !token || !stepSheetHost) return;
+    const url = stepSheetUrlDraft.trim();
+    // Empty clears the pinned link — fall back to search.
+    if (url && !isValidStepSheetUrl(url, stepSheetHost)) {
+      Alert.alert(
+        "That URL doesn't look right",
+        stepSheetHost === "copperknob"
+          ? "Paste a full URL that starts with https:// and points to copperknob.co.uk"
+          : "Paste a full URL that starts with https:// and points to bootstepper.com"
+      );
+      return;
+    }
+    setSavingLink(true);
+    try {
+      const bpmNum = dance.bpm ?? null;
+      const updated = await api.updateDance(
+        dance.id,
+        {
+          name: dance.name,
+          choreographer: dance.choreographer,
+          song: dance.song,
+          artist: dance.artist,
+          difficulty: dance.difficulty,
+          bpm: bpmNum,
+          count: dance.count,
+          youtube_url: dance.youtube_url,
+          step_sheet: dance.step_sheet,
+          step_sheet_image: dance.step_sheet_image,
+          copperknob_url:
+            stepSheetHost === "copperknob" ? url : dance.copperknob_url,
+          bootstepper_url:
+            stepSheetHost === "bootstepper" ? url : dance.bootstepper_url,
+        },
+        token
+      );
+      setDance(updated);
+      closeStepSheetLinkEditor();
+    } catch (e: any) {
+      Alert.alert("Couldn't save", e?.message || "Try again in a moment.");
+    } finally {
+      setSavingLink(false);
+    }
+  };
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -155,23 +225,61 @@ export default function DanceDetail() {
     if (dance?.youtube_url) openInApp(dance.youtube_url);
   };
 
+  /** Build the CopperKnob search URL. Includes the choreographer in the
+   *  query when known — CopperKnob's search accepts free-text so
+   *  "Cha Cha Slide Casper" is far more precise than "Cha Cha Slide". */
+  const copperKnobSearchUrl = (name: string, chor: string): string => {
+    const parts = [name.trim(), chor.trim()].filter(Boolean);
+    const q = parts.join(" ");
+    return (
+      `https://www.copperknob.co.uk/search?Search=${encodeURIComponent(q)}` +
+      `&SearchType=Any&Order=BestMatch&Lang=Any&Level=Any&Beat=-1&Wall=-1&recnum=0`
+    );
+  };
+
+  /** BootStepper search URL. Same principle: name + choreographer. */
+  const bootStepperSearchUrl = (name: string, chor: string): string => {
+    const parts = [name.trim(), chor.trim()].filter(Boolean);
+    const q = parts.join(" ");
+    return `https://bootstepper.com/dances?search=${encodeURIComponent(q)}`;
+  };
+
+  /** Basic URL sanity check — must start with http(s):// and target the
+   *  expected host so a paste of the wrong site doesn't slip through. */
+  const isValidStepSheetUrl = (url: string, host: "copperknob" | "bootstepper") => {
+    const s = (url || "").trim();
+    if (!/^https?:\/\//i.test(s)) return false;
+    try {
+      const u = new URL(s);
+      if (host === "copperknob") {
+        return /(^|\.)copperknob\.co\.uk$/i.test(u.hostname);
+      }
+      return /(^|\.)bootstepper\.com$/i.test(u.hostname);
+    } catch {
+      return false;
+    }
+  };
+
   const openCopperKnob = () => {
     if (!dance) return;
-    // Only pass the dance name — including the choreographer/artist can
-    // over-constrain their search engines and return no results.
-    const q = (dance.name || "").trim();
-    const url =
-      `https://www.copperknob.co.uk/search?Search=${encodeURIComponent(q)}` +
-      `&SearchType=Any&Order=BestMatch&Lang=Any&Level=Any&Beat=-1&Wall=-1&recnum=0`;
-    openInApp(url);
+    // Direct URL trumps search — set by an instructor/admin who
+    // hand-picked the exact dance-by-choreographer.
+    const direct = (dance.copperknob_url || "").trim();
+    if (direct && isValidStepSheetUrl(direct, "copperknob")) {
+      openInApp(direct);
+      return;
+    }
+    openInApp(copperKnobSearchUrl(dance.name || "", dance.choreographer || ""));
   };
 
   const openBootStepper = () => {
     if (!dance) return;
-    // Only pass the dance name — see openCopperKnob for reasoning.
-    const q = (dance.name || "").trim();
-    const url = `https://bootstepper.com/dances?search=${encodeURIComponent(q)}`;
-    openInApp(url);
+    const direct = (dance.bootstepper_url || "").trim();
+    if (direct && isValidStepSheetUrl(direct, "bootstepper")) {
+      openInApp(direct);
+      return;
+    }
+    openInApp(bootStepperSearchUrl(dance.name || "", dance.choreographer || ""));
   };
 
   const saveDance = async () => {
@@ -359,12 +467,29 @@ export default function DanceDetail() {
             <Pressable
               testID="open-copperknob"
               onPress={openCopperKnob}
+              onLongPress={
+                canEdit ? () => openStepSheetLinkEditor("copperknob") : undefined
+              }
+              delayLongPress={400}
               style={[styles.linkBtn, styles.copperknobBtn]}
             >
               <Ionicons name="open-outline" size={18} color="#fff" />
               <View style={{ flex: 1 }}>
-                <Text style={styles.linkBtnText}>CopperKnob</Text>
-                <Text style={styles.linkBtnSub}>copperknob.co.uk</Text>
+                <Text style={styles.linkBtnText}>
+                  CopperKnob
+                  {dance.copperknob_url &&
+                  isValidStepSheetUrl(dance.copperknob_url, "copperknob")
+                    ? " ✓"
+                    : ""}
+                </Text>
+                <Text style={styles.linkBtnSub}>
+                  {dance.copperknob_url &&
+                  isValidStepSheetUrl(dance.copperknob_url, "copperknob")
+                    ? "Direct link · long-press to edit"
+                    : canEdit
+                      ? "Search · long-press to pin direct link"
+                      : "copperknob.co.uk"}
+                </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color="#fff" />
             </Pressable>
@@ -372,16 +497,46 @@ export default function DanceDetail() {
             <Pressable
               testID="open-bootstepper"
               onPress={openBootStepper}
+              onLongPress={
+                canEdit ? () => openStepSheetLinkEditor("bootstepper") : undefined
+              }
+              delayLongPress={400}
               style={[styles.linkBtn, styles.bootstepperBtn]}
             >
               <Ionicons name="open-outline" size={18} color="#fff" />
               <View style={{ flex: 1 }}>
-                <Text style={styles.linkBtnText}>BootStepper</Text>
-                <Text style={styles.linkBtnSub}>bootstepper.com</Text>
+                <Text style={styles.linkBtnText}>
+                  BootStepper
+                  {dance.bootstepper_url &&
+                  isValidStepSheetUrl(dance.bootstepper_url, "bootstepper")
+                    ? " ✓"
+                    : ""}
+                </Text>
+                <Text style={styles.linkBtnSub}>
+                  {dance.bootstepper_url &&
+                  isValidStepSheetUrl(dance.bootstepper_url, "bootstepper")
+                    ? "Direct link · long-press to edit"
+                    : canEdit
+                      ? "Search · long-press to pin direct link"
+                      : "bootstepper.com"}
+                </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color="#fff" />
             </Pressable>
           </View>
+
+          {/* Instructor-only: small hint explaining the long-press flow.
+              Only rendered the first time a user is looking at a dance
+              whose direct links haven't been pinned yet. */}
+          {canEdit &&
+          !dance.copperknob_url &&
+          !dance.bootstepper_url ? (
+            <Text style={styles.editHint}>
+              Long-press a button to paste the exact CopperKnob or
+              BootStepper URL — pinned links open the correct dance
+              by the correct choreographer every time.
+            </Text>
+          ) : null}
 
           {/* Third-party attribution notice. Required legal boilerplate
               stating we don't host or endorse third-party step-sheet
@@ -747,6 +902,164 @@ export default function DanceDetail() {
         artist={dance.artist}
         danceId={dance.id}
       />
+
+      {/* Set direct step-sheet URL (long-press instructor UX). Live
+          preview shows what the button will jump to — makes it obvious
+          when the URL is the correct dance-by-correct-choreographer. */}
+      <Modal
+        visible={stepSheetHost !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={closeStepSheetLinkEditor}
+      >
+        <View style={styles.stepsheetBackdrop}>
+          <Pressable
+            style={{ flex: 1 }}
+            onPress={closeStepSheetLinkEditor}
+          />
+          <View style={styles.stepsheetSheet} testID="stepsheet-link-editor">
+            <View style={styles.stepsheetGrabber} />
+            <View style={styles.stepsheetHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.stepsheetTitle}>
+                  {stepSheetHost === "copperknob"
+                    ? "Pin CopperKnob link"
+                    : "Pin BootStepper link"}
+                </Text>
+                <Text style={styles.stepsheetSub}>
+                  Paste the exact URL for <Text style={styles.stepsheetBold}>
+                    {dance.name}
+                  </Text>{" "}
+                  by <Text style={styles.stepsheetBold}>{dance.choreographer || "?"}</Text>.
+                  Everyone who taps this button will land on that exact page.
+                </Text>
+              </View>
+              <Pressable
+                onPress={closeStepSheetLinkEditor}
+                style={styles.stepsheetCloseBtn}
+                hitSlop={8}
+                testID="stepsheet-link-editor-close"
+              >
+                <Ionicons name="close" size={20} color={colors.onSurface} />
+              </Pressable>
+            </View>
+
+            <View style={{ padding: spacing.md, gap: spacing.sm }}>
+              <TextInput
+                testID="stepsheet-url-input"
+                value={stepSheetUrlDraft}
+                onChangeText={setStepSheetUrlDraft}
+                placeholder={
+                  stepSheetHost === "copperknob"
+                    ? "https://www.copperknob.co.uk/stepsheets/..."
+                    : "https://bootstepper.com/dances/..."
+                }
+                placeholderTextColor={colors.muted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                style={styles.stepsheetInput}
+              />
+              {stepSheetUrlDraft.trim() &&
+              !isValidStepSheetUrl(
+                stepSheetUrlDraft.trim(),
+                stepSheetHost as "copperknob" | "bootstepper"
+              ) ? (
+                <Text style={styles.stepsheetWarn}>
+                  URL must be on{" "}
+                  {stepSheetHost === "copperknob"
+                    ? "copperknob.co.uk"
+                    : "bootstepper.com"}
+                  .
+                </Text>
+              ) : null}
+
+              <Pressable
+                onPress={() => {
+                  const s = stepSheetUrlDraft.trim();
+                  if (
+                    stepSheetHost &&
+                    s &&
+                    isValidStepSheetUrl(
+                      s,
+                      stepSheetHost as "copperknob" | "bootstepper"
+                    )
+                  ) {
+                    openInApp(s);
+                  } else if (stepSheetHost && dance) {
+                    openInApp(
+                      stepSheetHost === "copperknob"
+                        ? copperKnobSearchUrl(dance.name || "", dance.choreographer || "")
+                        : bootStepperSearchUrl(dance.name || "", dance.choreographer || "")
+                    );
+                  }
+                }}
+                style={styles.stepsheetPreview}
+                testID="stepsheet-preview-btn"
+              >
+                <Ionicons name="open-outline" size={14} color={colors.brandPrimary} />
+                <Text style={styles.stepsheetPreviewText}>
+                  {stepSheetUrlDraft.trim()
+                    ? "Preview this URL"
+                    : "Preview the search fallback"}
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.stepsheetFooter}>
+              {(stepSheetHost === "copperknob"
+                ? dance.copperknob_url
+                : dance.bootstepper_url) ? (
+                <Pressable
+                  onPress={() => setStepSheetUrlDraft("")}
+                  style={styles.stepsheetSecondary}
+                  testID="stepsheet-clear"
+                  disabled={savingLink}
+                >
+                  <Ionicons name="trash-outline" size={14} color={colors.warning} />
+                  <Text style={[styles.stepsheetSecondaryText, { color: colors.warning }]}>
+                    Clear
+                  </Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                onPress={closeStepSheetLinkEditor}
+                style={styles.stepsheetSecondary}
+                testID="stepsheet-cancel"
+                disabled={savingLink}
+              >
+                <Text style={styles.stepsheetSecondaryText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={saveStepSheetUrl}
+                style={[
+                  styles.stepsheetSave,
+                  savingLink && { opacity: 0.6 },
+                ]}
+                disabled={savingLink}
+                testID="stepsheet-save"
+              >
+                {savingLink ? (
+                  <ActivityIndicator color={colors.onBrandPrimary} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={16}
+                      color={colors.onBrandPrimary}
+                    />
+                    <Text style={styles.stepsheetSaveText}>
+                      {stepSheetUrlDraft.trim()
+                        ? "Pin link"
+                        : "Save (use search)"}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -952,6 +1265,132 @@ const styles = StyleSheet.create({
   bootstepperBtn: { backgroundColor: "#1F2A44" },
   linkBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   linkBtnSub: { color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 2 },
+  editHint: {
+    marginTop: 6,
+    fontSize: 11,
+    lineHeight: 15,
+    color: colors.brandSecondary,
+    fontStyle: "italic",
+  },
+  // ---- Set step-sheet URL modal ----
+  stepsheetBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
+  },
+  stepsheetSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingBottom: spacing.xl,
+  },
+  stepsheetGrabber: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: "center",
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  stepsheetHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  stepsheetTitle: {
+    fontFamily: "serif",
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.onSurface,
+  },
+  stepsheetSub: {
+    color: colors.onSurfaceSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  stepsheetBold: { color: colors.onSurface, fontWeight: "800" },
+  stepsheetCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  stepsheetInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    fontSize: 13,
+    color: colors.onSurface,
+    backgroundColor: colors.surface,
+  },
+  stepsheetWarn: {
+    color: colors.warning,
+    fontSize: 11,
+    marginLeft: 4,
+  },
+  stepsheetPreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    backgroundColor: colors.brandPrimary + "18",
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "55",
+  },
+  stepsheetPreviewText: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  stepsheetFooter: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+  },
+  stepsheetSecondary: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  stepsheetSecondaryText: {
+    color: colors.onSurface,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  stepsheetSave: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    backgroundColor: colors.brandPrimary,
+  },
+  stepsheetSaveText: {
+    color: colors.onBrandPrimary,
+    fontWeight: "800",
+    fontSize: 13,
+  },
   disclaimer: {
     flexDirection: "row",
     alignItems: "flex-start",

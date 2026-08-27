@@ -26,6 +26,7 @@ import { StreakCard } from "@/src/components/StreakCard";
 import { PracticeHistoryChart } from "@/src/components/PracticeHistoryChart";
 import { SignInMethodsSection } from "@/src/components/SignInMethodsSection";
 import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
+import { useOTAUpdates } from "@/src/hooks/useOTAUpdates";
 
 // ---------- Social links ----------
 // Each entry has:
@@ -781,6 +782,25 @@ export default function Profile() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
+
+          <Pressable
+            testID="profile-feedback-cta"
+            onPress={() => router.push("/feedback")}
+            style={styles.websiteRow}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.brandPrimary} />
+              <View>
+                <Text style={styles.rowText}>Send Feedback</Text>
+                <Text style={styles.deleteSub}>
+                  Bugs, ideas or a shout-out
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          <CheckForUpdatesRow />
         </View>
 
         <SignInMethodsSection />
@@ -800,6 +820,21 @@ export default function Profile() {
                   color={colors.brandPrimary}
                 />
                 <Text style={styles.rowText}>Feed Moderation Queue</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </Pressable>
+            <Pressable
+              testID="profile-admin-feedback-cta"
+              onPress={() => router.push("/admin/feedback")}
+              style={styles.websiteRow}
+            >
+              <View style={styles.rowLeft}>
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={22}
+                  color={colors.brandPrimary}
+                />
+                <Text style={styles.rowText}>User Feedback</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
@@ -975,6 +1010,86 @@ export default function Profile() {
     </SafeAreaView>
   );
 }
+
+/**
+ * CheckForUpdatesRow
+ * ------------------
+ * Manual "did I miss an OTA update?" affordance under Legal &
+ * Community. Runs a check-and-download against the EAS Update service
+ * and, when a bundle is ready, offers a "Reload" pressable that flips
+ * the app onto the new bundle. Silent on web (OTA is native-only).
+ */
+function CheckForUpdatesRow() {
+  const ota = useOTAUpdates({ checkOnMount: false, checkOnForeground: false });
+  const [pressed, setPressed] = useState(false);
+
+  if (Platform.OS === "web") return null;
+
+  const onPress = async () => {
+    setPressed(true);
+    const result = await ota.checkNow();
+    if (result === "ready") {
+      // The banner will offer Reload — but also nudge here so a user
+      // who tapped explicitly gets an immediate CTA.
+      Alert.alert(
+        "Update ready",
+        "A new version has been downloaded. Reload now to install it.",
+        [
+          { text: "Later", style: "cancel" },
+          { text: "Reload", onPress: ota.applyReady },
+        ]
+      );
+    } else if (result === "up-to-date") {
+      Alert.alert("You're up to date", "No new version was found.");
+    } else {
+      Alert.alert(
+        "Couldn't check",
+        ota.errorMsg || "Please try again in a moment."
+      );
+    }
+    setPressed(false);
+  };
+
+  const label =
+    ota.status === "downloading"
+      ? "Downloading update…"
+      : ota.status === "checking"
+        ? "Checking for updates…"
+        : ota.status === "ready"
+          ? "Update downloaded — tap to reload"
+          : "Check for updates";
+
+  return (
+    <Pressable
+      testID="profile-check-updates"
+      onPress={ota.status === "ready" ? ota.applyReady : onPress}
+      style={styles.websiteRow}
+      disabled={pressed || ota.isChecking}
+    >
+      <View style={styles.rowLeft}>
+        {ota.isChecking ? (
+          <ActivityIndicator size="small" color={colors.brandPrimary} />
+        ) : (
+          <Ionicons
+            name={ota.status === "ready" ? "rocket-outline" : "cloud-download-outline"}
+            size={22}
+            color={colors.brandPrimary}
+          />
+        )}
+        <View>
+          <Text style={styles.rowText}>{label}</Text>
+          {ota.channel ? (
+            <Text style={styles.deleteSub}>
+              Channel: {ota.channel} · Runtime: {ota.runtimeVersion || "auto"}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+    </Pressable>
+  );
+}
+
 
 function AdminAddModal({
   visible,

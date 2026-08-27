@@ -90,11 +90,15 @@ async def report_event(
     event_id: str,
     reason: str,
     note: str = "",
+    diagnostics: Optional[dict] = None,
 ) -> dict:
     """Persist a moderation report against a feed event.
 
     * Enforces one report per (reporter, event) — a second report from the
       same user just updates the reason/note instead of stacking.
+    * Attaches ``diagnostics`` (client version, OTA update id, channel,
+      platform) so admins can trace which bundle the reporter was on
+      when they hit the flag.
     * Returns ``{"ok": True, "created": bool}``.
     * Silently no-ops on invalid ``reason`` — caller is expected to
       validate first, but we double-check here so a rogue client can't
@@ -111,17 +115,25 @@ async def report_event(
         return {"ok": False, "error": "self_report"}
     trimmed_note = (note or "").strip()[:600]
     now = now_iso()
+    set_doc = {
+        "reporter_id": reporter_id,
+        "event_id": event_id,
+        "reason": reason,
+        "note": trimmed_note,
+        "reported_user_id": ev.get("user_id", ""),
+        "updated_at": now,
+    }
+    if diagnostics:
+        # Only persist diagnostics on the LATEST report of this pair —
+        # matches the semantics of updating the reason/note. Empty
+        # dict means "client didn't send headers" — skip in that case
+        # to avoid clobbering older, richer data.
+        if any(v for v in diagnostics.values() if v):
+            set_doc["diagnostics"] = diagnostics
     result = await db.feed_reports.update_one(
         {"reporter_id": reporter_id, "event_id": event_id},
         {
-            "$set": {
-                "reporter_id": reporter_id,
-                "event_id": event_id,
-                "reason": reason,
-                "note": trimmed_note,
-                "reported_user_id": ev.get("user_id", ""),
-                "updated_at": now,
-            },
+            "$set": set_doc,
             "$setOnInsert": {"created_at": now, "status": "open"},
         },
         upsert=True,

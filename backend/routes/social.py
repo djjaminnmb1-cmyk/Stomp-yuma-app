@@ -23,6 +23,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from core.database import db
+from core.diagnostics import client_diagnostics
 from core.security import get_current_user
 from core.time_helpers import now_iso
 from services.social import (
@@ -305,12 +306,16 @@ async def post_feed_report(
     event_id: str,
     body: FeedReportBody,
     user: dict = Depends(get_current_user),
+    diag: dict = Depends(client_diagnostics),
 ):
     """Flag a feed event for moderation review.
 
     * One report per (reporter, event) — re-submitting updates the
       reason/note. Prevents runaway rows from misclicks.
     * Users cannot report their own posts (400).
+    * Captures client diagnostics (OTA update id, channel, app
+      version) so an admin can identify the bundle the reporter was
+      on when they hit the flag.
     """
     if body.reason not in REPORT_REASONS:
         raise HTTPException(400, "Unknown reason.")
@@ -319,6 +324,7 @@ async def post_feed_report(
         event_id=event_id,
         reason=body.reason,
         note=body.note or "",
+        diagnostics=diag,
     )
     if not result.get("ok"):
         if result.get("error") == "event_not_found":

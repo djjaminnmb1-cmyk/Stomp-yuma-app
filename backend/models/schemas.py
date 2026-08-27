@@ -82,6 +82,11 @@ class DanceIn(BaseModel):
     description: Optional[str] = ""
     tags: Optional[List[str]] = []
     is_published: Optional[bool] = None  # None = keep existing / creation default
+    # Direct step-sheet URLs. When set, override the search-page
+    # fallback so tapping "CopperKnob" / "BootStepper" opens the exact
+    # dance-by-choreographer instead of a search results page.
+    copperknob_url: Optional[str] = ""
+    bootstepper_url: Optional[str] = ""
 
 
 class DanceImportRow(BaseModel):
@@ -94,6 +99,8 @@ class DanceImportRow(BaseModel):
     count: Optional[str] = ""
     youtube_url: Optional[str] = ""
     step_sheet: Optional[str] = ""
+    copperknob_url: Optional[str] = ""
+    bootstepper_url: Optional[str] = ""
 
 
 class DanceImportBody(BaseModel):
