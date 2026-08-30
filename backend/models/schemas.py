@@ -94,6 +94,10 @@ class DanceIn(BaseModel):
     # dance-by-choreographer instead of a search results page.
     copperknob_url: Optional[str] = ""
     bootstepper_url: Optional[str] = ""
+    # CopperKnob API reference (stable ID like ``XCZW7BV``) when the
+    # dance was imported from — or linked to — a CopperKnob record.
+    # Nullable so existing listings continue to validate cleanly.
+    copperknob_ref: Optional[str] = ""
 
 
 class DanceImportRow(BaseModel):

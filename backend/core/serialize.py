@@ -73,6 +73,12 @@ def dance_to_out(d: dict, viewer_user_id: Optional[str] = None) -> dict:
         # dance on CopperKnob / BootStepper instead of a search page.
         "copperknob_url": d.get("copperknob_url", "") or "",
         "bootstepper_url": d.get("bootstepper_url", "") or "",
+        # CopperKnob API record ID (added Phase 17). Stable across
+        # renames on CopperKnob's side and used to power our
+        # duplicate-detection + refresh-from-CopperKnob flows. Nullable
+        # for the ~1200 pre-existing dances that predate the
+        # integration.
+        "copperknob_ref": d.get("copperknob_ref", "") or "",
         "description": d.get("description", ""),
         "tags": d.get("tags", []),
         "is_published": bool(d.get("is_published", True)),

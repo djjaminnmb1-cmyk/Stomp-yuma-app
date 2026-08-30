@@ -431,12 +431,36 @@ export type Dance = {
   step_sheet_image?: string;
   copperknob_url?: string;
   bootstepper_url?: string;
+  /** CopperKnob stable reference (e.g. ``XCZW7BV``). Present when the
+   *  dance was imported from — or manually linked to — a CopperKnob
+   *  record. Powers duplicate detection + the admin refresh flow. */
+  copperknob_ref?: string;
   description?: string;
   tags?: string[];
   is_published?: boolean;
   created_by?: string;
   created_by_name?: string;
   created_at: string;
+};
+
+export type CopperKnobResult = {
+  ref: string;
+  title: string;
+  choreographer: string;
+  count: string;
+  wall: string;
+  level: string;
+  music: string;
+  song: string;
+  artist: string;
+  url: string;
+  /** Present when this CopperKnob record is already listed in our
+   *  Dance Library. Used to swap the "Add" button for "View Dance". */
+  existing_dance?: {
+    id: string;
+    name: string;
+    difficulty?: string;
+  } | null;
 };
 
 export type ChatMessage = {
@@ -1120,6 +1144,106 @@ export const api = {
       { method: "DELETE" },
       token
     ),
+
+  // ---------------- CopperKnob (external stepsheet directory) ----------------
+  // All calls are server-proxied — the API key never touches the app.
+  copperknobSearch: (
+    q: string,
+    type_: "all" | "title" | "music" | "choreographer",
+    token: string
+  ) =>
+    req<{
+      results: number;
+      query: string;
+      type: string;
+      attribution: {
+        provider: string;
+        text: string;
+        link_label: string;
+        home_url: string;
+      };
+      data: CopperKnobResult[];
+    }>(
+      `/copperknob/search?q=${encodeURIComponent(q)}&type=${encodeURIComponent(type_)}`,
+      {},
+      token
+    ),
+  copperknobPopular: (token: string) =>
+    req<{
+      results: number;
+      attribution: {
+        provider: string;
+        text: string;
+        link_label: string;
+        home_url: string;
+      };
+      data: CopperKnobResult[];
+    }>("/copperknob/popular", {}, token),
+  copperknobByRef: (ref: string, token: string) =>
+    req<{
+      data: CopperKnobResult;
+      existing_dance: { id: string; name: string } | null;
+      attribution: {
+        provider: string;
+        text: string;
+        link_label: string;
+        home_url: string;
+      };
+    }>(`/copperknob/stepsheets/${encodeURIComponent(ref)}`, {}, token),
+  createDanceFromCopperKnob: (
+    body: {
+      ref: string;
+      name?: string;
+      choreographer?: string;
+      song?: string;
+      artist?: string;
+      difficulty?: string;
+      count?: string;
+      bpm?: number | null;
+      description?: string;
+      tags?: string[];
+      is_published?: boolean;
+    },
+    token: string
+  ) =>
+    req<{ dance: Dance }>(
+      "/dances/from-copperknob",
+      { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
+  linkCopperKnob: (
+    dance_id: string,
+    ref: string,
+    overwrite_url: boolean,
+    token: string
+  ) =>
+    req<{ dance: Dance }>(
+      `/dances/${encodeURIComponent(dance_id)}/link-copperknob`,
+      {
+        method: "POST",
+        body: JSON.stringify({ ref, overwrite_url }),
+      },
+      token
+    ),
+  compareCopperKnob: (dance_id: string, token: string) =>
+    req<{
+      dance_id: string;
+      ref: string;
+      copperknob_url: string;
+      fields: {
+        field: string;
+        ours: string;
+        copperknob: string;
+        differs: boolean;
+      }[];
+      differs_count: number;
+      attribution: {
+        provider: string;
+        text: string;
+        link_label: string;
+        home_url: string;
+      };
+    }>(`/dances/${encodeURIComponent(dance_id)}/copperknob-compare`, {}, token),
 
   // ---------------- Activity / Recently Practiced ----------------
   logPractice: (dance_id: string, token: string) =>

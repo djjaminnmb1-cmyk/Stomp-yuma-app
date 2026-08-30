@@ -23,6 +23,8 @@ import { colors, spacing, radius, difficultyColor, images } from "@/src/theme";
 import { api, Dance, Tracking } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import PracticeModePanel from "@/src/components/PracticeModePanel";
+import { CopperKnobLinkSheet } from "@/src/components/CopperKnobLinkSheet";
+import { CopperKnobCompareSheet } from "@/src/components/CopperKnobCompareSheet";
 
 export default function DanceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +36,9 @@ export default function DanceDetail() {
   const [rating, setRating] = useState(0);
   const [saving, setSaving] = useState<null | "completed" | "wishlist" | "notes">(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
+  // Admin-only CopperKnob sheets (linking + compare-and-refresh)
+  const [ckLinkOpen, setCkLinkOpen] = useState(false);
+  const [ckCompareOpen, setCkCompareOpen] = useState(false);
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [editImage, setEditImage] = useState<string>("");
   // Full metadata edit form (whitelist editors: Erin & Jamin)
@@ -538,6 +543,55 @@ export default function DanceDetail() {
             </Text>
           ) : null}
 
+          {/* Admin-only CopperKnob record tools. Rendered as a
+              secondary "advanced" row below the primary link buttons
+              so it never distracts regular users. */}
+          {canEdit ? (
+            <View style={styles.ckAdminRow}>
+              {dance.copperknob_ref ? (
+                <Pressable
+                  testID="ck-compare"
+                  onPress={() => setCkCompareOpen(true)}
+                  style={styles.ckAdminBtn}
+                >
+                  <Ionicons
+                    name="git-compare-outline"
+                    size={14}
+                    color={colors.brandPrimary}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.ckAdminBtnText}>
+                      Check CopperKnob data
+                    </Text>
+                    <Text style={styles.ckAdminBtnHint}>
+                      Ref {dance.copperknob_ref} · compare fields
+                    </Text>
+                  </View>
+                </Pressable>
+              ) : (
+                <Pressable
+                  testID="ck-link"
+                  onPress={() => setCkLinkOpen(true)}
+                  style={styles.ckAdminBtn}
+                >
+                  <Ionicons
+                    name="link-outline"
+                    size={14}
+                    color={colors.brandPrimary}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.ckAdminBtnText}>
+                      Link CopperKnob record
+                    </Text>
+                    <Text style={styles.ckAdminBtnHint}>
+                      Find + attach the CopperKnob reference
+                    </Text>
+                  </View>
+                </Pressable>
+              )}
+            </View>
+          ) : null}
+
           {/* Third-party attribution notice. Required legal boilerplate
               stating we don't host or endorse third-party step-sheet
               content — we only link out. Both site names are tappable
@@ -698,6 +752,24 @@ export default function DanceDetail() {
           </Pressable>
         </View>
       </SafeAreaView>
+
+      {/* Admin-only CopperKnob sheets — mounted at the root of the
+          screen so they overlay everything and the FlatList/scroll
+          view above stays in place while they animate. */}
+      <CopperKnobLinkSheet
+        visible={ckLinkOpen}
+        danceId={dance.id}
+        danceName={dance.name}
+        danceChoreographer={dance.choreographer}
+        onClose={() => setCkLinkOpen(false)}
+        onLinked={() => load()}
+      />
+      <CopperKnobCompareSheet
+        visible={ckCompareOpen}
+        dance={dance}
+        onClose={() => setCkCompareOpen(false)}
+        onApplied={() => load()}
+      />
 
       <Modal
         visible={editSheetOpen}
@@ -1271,6 +1343,31 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     color: colors.brandSecondary,
     fontStyle: "italic",
+  },
+  // ---- CopperKnob admin row (Link / Check data) ----
+  ckAdminRow: {
+    marginTop: 10,
+    gap: 6,
+  },
+  ckAdminBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 10,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "55",
+    backgroundColor: colors.brandPrimary + "0F",
+  },
+  ckAdminBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.brandPrimary,
+  },
+  ckAdminBtnHint: {
+    fontSize: 11,
+    color: colors.muted,
+    marginTop: 1,
   },
   // ---- Set step-sheet URL modal ----
   stepsheetBackdrop: {

@@ -213,6 +213,62 @@ Emergent Support confirmed via `support_agent`: **managed OTA / EAS Update is no
 - Because each OTA bundles its own `app.json`, the flag travels with the specific update and doesn't leak into future releases.
 
 
+## Phase 17 CopperKnob API Integration (v3.2 — DONE)
+
+### Why
+Two dance-directory resource sites dominate the line-dance world: CopperKnob (larger, official API) and BootStepper. Users hitting a wall in our own ~1,200-dance library needed a way to widen the search without us bloating the DB with 200,000+ third-party rows. Admins needed a way to *grow* the directory by ingesting selected records under proper attribution.
+
+CopperKnob's TOU is strict: **API returns metadata only**, we're forbidden from mirroring stepsheet content, and every surface must attribute + link back.
+
+### Backend
+- **`services/copperknob.py`** — the ONLY module that talks to `api.copperknob.co.uk`. Bearer auth via `COPPERKNOB_API_KEY` env var. 10s timeout, ES256 client_secret style errors normalised, small in-process cache (60s search / 15min popular / 15min ref) capped at 256 entries. `is_configured()` gate + graceful outage handling (never 500s).
+- **`routes/copperknob.py`** — six routes:
+  - `GET  /api/copperknob/search?q=&type=` — auth-required (any dancer). `type` ∈ {all, title, music, choreographer}, 2-char minimum, up to 50 results.
+  - `GET  /api/copperknob/popular` — top 99 CopperKnob stepsheets.
+  - `GET  /api/copperknob/stepsheets/{ref}` — single record + our match status.
+  - `POST /api/dances/from-copperknob` — **admin-or-editor only**. Creates a new library listing pre-filled from a ref. Draft-by-default (`is_published: false`) so nothing goes live without an explicit publish toggle. Refuses on duplicate (409). Never copies stepsheet content — the API doesn't provide any.
+  - `POST /api/dances/{dance_id}/link-copperknob` — **admin-or-editor only**. Attaches a `copperknob_ref` to an existing dance. Never touches other fields. Refuses if another dance already claims the ref (409 with `existing_dance_id`).
+  - `GET  /api/dances/{dance_id}/copperknob-compare` — **admin-or-editor only**. Field-by-field diff (`name`, `choreographer`, `song`, `artist`, `difficulty`, `count`, `copperknob_url`). Read-only — writing is done via the existing `PUT /api/dances/{id}` from the review sheet.
+
+- **Duplicate detection** (`_match_existing_dance`) — preferred → weakest:
+  1. Same stored `copperknob_ref`
+  2. Same ref inferred from a stored `copperknob_url`
+  3. Case-insensitive `name` + `choreographer` both match
+
+- **Schema** — added `copperknob_ref: Optional[str]` to `DanceIn`. Nullable so all 1,162 pre-existing dances validate unchanged. Serializer emits `copperknob_ref` on every dance response.
+
+### Frontend
+- **`src/api/client.ts`** — 6 new methods: `copperknobSearch`, `copperknobPopular`, `copperknobByRef`, `createDanceFromCopperKnob`, `linkCopperKnob`, `compareCopperKnob`. Added `CopperKnobResult` type + `copperknob_ref` on `Dance` type.
+- **Shared UI**
+  - `src/components/CopperKnobResultCard.tsx` — Result card + attribution footer. **Regular users** see "View on CopperKnob" always, plus "View Dance" when already in library. **Admins/editors** additionally see "+ Add to Library" when NOT already in library.
+  - `src/components/CopperKnobLinkSheet.tsx` — Admin-only sheet for attaching a ref to an existing dance (never overwrites other fields).
+  - `src/components/CopperKnobCompareSheet.tsx` — Admin-only field-by-field diff with per-field pick-or-keep toggles. Nothing is written until Apply.
+- **Screens**
+  - `app/copperknob/search.tsx` — Search screen with 350ms debounce, type filter chips, deep-linkable via `?q=`.
+  - `app/copperknob/popular.tsx` — Popular-on-CopperKnob discovery.
+  - `app/copperknob/import.tsx` — Admin review-and-save (pre-filled, editable, publish toggle default off).
+- **Integrations into existing surfaces**
+  - **`(tabs)/library.tsx`** — footer under any non-empty result list: "Can't find it? Search CopperKnob / Popular on CopperKnob". Empty-state gets a bold primary CTA carrying the user's current query.
+  - **`dance/[id].tsx`** — for admins/editors, a new admin-only row under the External Resources block: "Link CopperKnob record" (when no ref) or "Check CopperKnob data" (when ref set). Both open the corresponding modal sheet.
+
+### Attribution + ownership
+- Every screen showing CopperKnob content displays "Dance information provided by CopperKnob" and links to `copperknob.co.uk` (footer).
+- Choreographer name is preserved unmodified on import and never hidden.
+- Import screen carries an explicit footnote: SGY does not claim ownership of third-party choreography or stepsheets; the full step-by-step instructions remain on CopperKnob.
+
+### Security
+- API key ONLY lives in `/app/backend/.env` as `COPPERKNOB_API_KEY`.
+- No route echoes the key. No log or error response includes it (verified).
+- Frontend never sees or handles the key — every CopperKnob call is proxied through our backend.
+- Admin write routes gated server-side with `require_admin_or_editor`; regular users get 403.
+
+### Rate-limit / outage handling
+- Client-side 350ms debounce on the search input.
+- 2-character minimum query length before hitting the network.
+- Server-side in-memory cache dedupes identical searches within the TTL.
+- `services.copperknob.CopperKnobError` is always converted to a user-friendly message; our own library keeps functioning regardless of CopperKnob availability.
+
+
 ## Phase 16 App Store Readiness Hardening (v3.1 — DONE, 1 pending env var)
 
 ### Why

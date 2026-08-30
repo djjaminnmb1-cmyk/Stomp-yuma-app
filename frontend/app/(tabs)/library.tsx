@@ -226,6 +226,54 @@ export default function Library() {
               tintColor={colors.brandPrimary}
             />
           }
+          // CopperKnob discovery CTAs — always visible so admins &
+          // dancers know they can widen the search. When our own
+          // library returned zero hits the footer stays; the empty
+          // state also carries a Search CopperKnob link.
+          ListFooterComponent={
+            items.length > 0 ? (
+              <View style={styles.ckFooter}>
+                <Text style={styles.ckFooterHint}>
+                  Can&apos;t find what you&apos;re looking for?
+                </Text>
+                <View style={styles.ckFooterRow}>
+                  <Pressable
+                    testID="library-search-copperknob"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/copperknob/search",
+                        params: q ? { q } : {},
+                      })
+                    }
+                    style={styles.ckSecondaryBtn}
+                  >
+                    <Ionicons
+                      name="search"
+                      size={14}
+                      color={colors.brandPrimary}
+                    />
+                    <Text style={styles.ckSecondaryText}>
+                      Search CopperKnob
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    testID="library-popular-copperknob"
+                    onPress={() => router.push("/copperknob/popular")}
+                    style={styles.ckSecondaryBtn}
+                  >
+                    <Ionicons
+                      name="flame"
+                      size={14}
+                      color={colors.brandPrimary}
+                    />
+                    <Text style={styles.ckSecondaryText}>
+                      Popular on CopperKnob
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="search" size={40} color={colors.muted} />
@@ -242,6 +290,24 @@ export default function Library() {
                   <Text style={styles.emptyResetText}>Reset filters</Text>
                 </Pressable>
               ) : null}
+              {/* Bigger, high-contrast CTA when our own library
+                  came up empty — this is exactly when CopperKnob is
+                  most useful. */}
+              <Pressable
+                testID="empty-search-copperknob"
+                onPress={() =>
+                  router.push({
+                    pathname: "/copperknob/search",
+                    params: q ? { q } : {},
+                  })
+                }
+                style={styles.ckPrimaryBtn}
+              >
+                <Ionicons name="search" size={16} color={colors.onBrandPrimary} />
+                <Text style={styles.ckPrimaryText}>
+                  Search CopperKnob{q ? ` for "${q}"` : ""}
+                </Text>
+              </Pressable>
             </View>
           }
           renderItem={({ item }) => (
@@ -478,4 +544,54 @@ const styles = StyleSheet.create({
     borderColor: colors.brandPrimary,
   },
   emptyResetText: { color: colors.brandPrimary, fontSize: 13, fontWeight: "700" },
+
+  // CopperKnob discovery CTAs (footer + empty-state)
+  ckFooter: {
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSecondary,
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  ckFooterHint: {
+    color: colors.muted,
+    fontSize: 13,
+  },
+  ckFooterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  ckSecondaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  ckSecondaryText: {
+    color: colors.brandPrimary,
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  ckPrimaryBtn: {
+    marginTop: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.brandPrimary,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+  },
+  ckPrimaryText: {
+    color: colors.onBrandPrimary,
+    fontWeight: "700",
+    fontSize: 13,
+  },
 });
