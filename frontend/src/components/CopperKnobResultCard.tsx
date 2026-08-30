@@ -55,6 +55,13 @@ export function CopperKnobResultCard({
             By {item.choreographer || "Unknown choreographer"}
           </Text>
         </View>
+        {/* Subtle source-of-truth tag — mirrors the "Dance Library" pill
+            used on our local listings, so a user scanning mixed
+            surfaces knows at a glance which directory each card came
+            from. Muted styling keeps it out of the way. */}
+        <View style={styles.sourceBadge}>
+          <Text style={styles.sourceBadgeText}>CopperKnob</Text>
+        </View>
       </View>
 
       <View style={styles.badgeRow}>
@@ -156,7 +163,23 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardCompact: { padding: spacing.sm },
-  headerRow: { flexDirection: "row", alignItems: "flex-start" },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  sourceBadge: {
+    backgroundColor: "#B87333" + "22",
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  sourceBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#8A5323",
+    letterSpacing: 0.3,
+  },
   title: {
     fontSize: 16,
     fontWeight: "700",

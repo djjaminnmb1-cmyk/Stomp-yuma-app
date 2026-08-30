@@ -336,7 +336,20 @@ export default function Library() {
                   {item.count ? <Text style={styles.metaSmall}>{item.count}</Text> : null}
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+              {/* Subtle source badge — makes it clear at a glance which
+                  cards are our own listings vs. the CopperKnob ones the
+                  user finds when they widen the search. Muted so it
+                  never competes with the primary metadata. */}
+              <View style={styles.sourceBadgeCol}>
+                <View style={styles.sourceBadgeLocal}>
+                  <Text style={styles.sourceBadgeText}>Dance Library</Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.muted}
+                />
+              </View>
             </Pressable>
           )}
         />
@@ -593,5 +606,26 @@ const styles = StyleSheet.create({
     color: colors.onBrandPrimary,
     fontWeight: "700",
     fontSize: 13,
+  },
+
+  // Subtle source-of-truth badge on library result cards.
+  // Sits in a small right-aligned column above the chevron.
+  sourceBadgeCol: {
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 8,
+    marginLeft: 4,
+  },
+  sourceBadgeLocal: {
+    backgroundColor: colors.brandPrimary + "18",
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  sourceBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.brandPrimary,
+    letterSpacing: 0.3,
   },
 });
