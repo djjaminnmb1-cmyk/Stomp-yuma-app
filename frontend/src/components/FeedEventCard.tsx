@@ -173,10 +173,21 @@ export function FeedEventCard({ event }: { event: FeedEvent }) {
       <ReportFeedSheet
         visible={reportOpen}
         eventId={event.id}
+        reportedUser={{
+          user_id: event.user.user_id,
+          name: event.user.name,
+        }}
         onClose={() => setReportOpen(false)}
         onReported={() => {
           // Hide the flagged card from the reporter's own feed so it
           // doesn't sit there awkwardly after they've spoken up.
+          setHidden(true);
+        }}
+        onBlocked={() => {
+          // Extra safeguard: if the user opted-in to "also block",
+          // hide the card immediately. `onReported` already does
+          // this, but be explicit so callers of the sheet without
+          // an ``onReported`` callback still get the correct UX.
           setHidden(true);
         }}
       />

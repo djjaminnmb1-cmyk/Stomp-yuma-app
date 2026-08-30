@@ -21,6 +21,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/src/api/client";
@@ -53,15 +54,26 @@ async function loadReasons(token: string) {
 export function ReportFeedSheet({
   visible,
   eventId,
+  reportedUser,
   onClose,
   onReported,
+  onBlocked,
 }: {
   visible: boolean;
   eventId: string;
+  /** Optional — when provided, a "Also block this user" toggle is
+   *  offered inline so a report + block is a single action rather
+   *  than two menu trips. Own posts never render this toggle. */
+  reportedUser?: { user_id?: string; name?: string };
   onClose: () => void;
   onReported?: () => void;
+  /** Fired only when the user opted-in to the "Also block" toggle
+   *  AND the block API call succeeded. Callers use this to hide
+   *  the reported card locally + drop the poster from any other
+   *  feed rows that were already on-screen. */
+  onBlocked?: () => void;
 }) {
-  const { token } = useAuth();
+  const { token, user: me } = useAuth();
   const [reasons, setReasons] = useState<{ reason: string; label: string }[]>(
     FALLBACK_REASONS
   );
@@ -69,6 +81,18 @@ export function ReportFeedSheet({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [inlineOk, setInlineOk] = useState(false);
+  // Default the "Also block" toggle to OFF — reporting a spammy post
+  // is often not a personal issue, so we don't want to silently
+  // convert a report into a block. The user has to opt in.
+  const [alsoBlock, setAlsoBlock] = useState(false);
+
+  // Only offer the block toggle if we know WHO to block AND it's
+  // not the caller themselves.
+  const canOfferBlock = !!(
+    reportedUser?.user_id &&
+    me?.user_id &&
+    reportedUser.user_id !== me.user_id
+  );
 
   // Reset each time the sheet opens so a leftover note from another card
   // doesn't leak into the next flag.
@@ -77,6 +101,7 @@ export function ReportFeedSheet({
     setReason(null);
     setNote("");
     setInlineOk(false);
+    setAlsoBlock(false);
   }, [visible]);
 
   useEffect(() => {
@@ -93,13 +118,36 @@ export function ReportFeedSheet({
   const submit = useCallback(async () => {
     if (!token || !reason) return;
     setBusy(true);
+    let blocked = false;
     try {
       await api.reportFeedEvent(token, eventId, reason, note.trim() || undefined);
       onReported?.();
+
+      // Chain the block if the user opted-in. Report always succeeds
+      // FIRST — that's the primary user intent. Block failure is
+      // surfaced as a soft warning; the report still stands.
+      if (alsoBlock && canOfferBlock && reportedUser?.user_id) {
+        try {
+          await api.blockUser({ user_id: reportedUser.user_id }, token);
+          blocked = true;
+          onBlocked?.();
+        } catch (blockErr: any) {
+          // Non-fatal — we already succeeded on the primary action.
+          console.warn("Block after report failed:", blockErr?.message || blockErr);
+        }
+      }
+
+      const label = reportedUser?.name?.trim() || "this user";
       // Native alert closes the sheet; web shows an inline banner.
       if (Platform.OS === "web") {
         setInlineOk(true);
-        setTimeout(onClose, 1600);
+        setTimeout(onClose, 1800);
+      } else if (blocked) {
+        Alert.alert(
+          "Report sent · user blocked",
+          `We'll review this within 48 hours. ${label} won't see your activity and vice-versa. Unblock anytime from Profile → Blocked users.`,
+          [{ text: "OK", onPress: onClose }]
+        );
       } else {
         Alert.alert(
           "Thanks — report sent",
@@ -115,7 +163,19 @@ export function ReportFeedSheet({
     } finally {
       setBusy(false);
     }
-  }, [token, reason, note, eventId, onClose, onReported]);
+  }, [
+    token,
+    reason,
+    note,
+    eventId,
+    onClose,
+    onReported,
+    alsoBlock,
+    canOfferBlock,
+    reportedUser?.user_id,
+    reportedUser?.name,
+    onBlocked,
+  ]);
 
   const canSubmit = useMemo(() => !!reason && !busy, [reason, busy]);
 
@@ -199,6 +259,33 @@ export function ReportFeedSheet({
               <Text style={styles.counter}>{note.length} / 600</Text>
             </View>
 
+            {canOfferBlock ? (
+              <View style={styles.blockCard}>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.blockTitleRow}>
+                    <Ionicons
+                      name="eye-off"
+                      size={16}
+                      color={colors.brandPrimary}
+                    />
+                    <Text style={styles.blockTitle}>
+                      Also block {reportedUser?.name?.trim() || "this user"}?
+                    </Text>
+                  </View>
+                  <Text style={styles.blockSub}>
+                    You won&apos;t see each other&apos;s chat messages or activity
+                    posts. Reversible from Profile → Blocked users.
+                  </Text>
+                </View>
+                <Switch
+                  testID="report-also-block-toggle"
+                  value={alsoBlock}
+                  onValueChange={setAlsoBlock}
+                  trackColor={{ true: colors.brandPrimary }}
+                />
+              </View>
+            ) : null}
+
             {inlineOk ? (
               <View style={styles.okBanner}>
                 <Ionicons
@@ -233,7 +320,9 @@ export function ReportFeedSheet({
               ) : (
                 <>
                   <Ionicons name="flag" size={14} color="#fff" />
-                  <Text style={styles.submitText}>Send report</Text>
+                  <Text style={styles.submitText}>
+                    {alsoBlock ? "Report + Block" : "Send report"}
+                  </Text>
                 </>
               )}
             </Pressable>
@@ -369,6 +458,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     flex: 1,
+  },
+  blockCard: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary + "44",
+    backgroundColor: colors.brandPrimary + "0F",
+  },
+  blockTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  blockTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.onSurface,
+    flex: 1,
+  },
+  blockSub: {
+    color: colors.onSurfaceSecondary,
+    fontSize: 12,
+    marginTop: 4,
+    lineHeight: 17,
   },
   footRow: {
     flexDirection: "row",

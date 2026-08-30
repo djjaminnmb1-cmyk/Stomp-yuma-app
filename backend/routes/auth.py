@@ -573,6 +573,14 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
     # Social graph + activity feed events (both incoming + outgoing)
     from services.social import purge_user as purge_social
     await purge_social(uid)
+    # Choreographer follow-graph + notification ledger — mirrors the
+    # social purge so an ex-user can't leave orphan rows pointing back
+    # at their user_id.
+    from services.choreographer_follows import purge_user as purge_chor
+    await purge_chor(uid)
+    # Chat @mention rows (both sent BY and TO this user)
+    from services.chat_mentions import purge_user as purge_mentions
+    await purge_mentions(uid)
 
     # 2) Shared content — anonymise so other users' tracking/attendance still works
     await db.dances.update_many(

@@ -265,6 +265,17 @@ async def bulk_import(
         result["dance_name"] = doc["name"]
         result["is_published"] = bool(publish)
         imported_count += 1
+        # Fan-out to choreographer followers when this row was published
+        # inline. Best-effort; the notify helper is idempotent per
+        # (user, dance) so re-imports never spam the same follower.
+        if publish:
+            from services.choreographer_follows import (
+                notify_followers_of_new_dance,
+            )
+            try:
+                await notify_followers_of_new_dance(doc)
+            except Exception as _e:  # noqa: BLE001
+                logger.warning("chor-follow fanout failed: %s", _e)
         results.append(result)
 
     return {

@@ -25,6 +25,7 @@ import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { api, ClassSession, Dance, ChatMessage, EventItem } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { useBlockUser } from "@/src/hooks/useBlockUser";
+import { MentionAutocomplete } from "@/src/components/MentionAutocomplete";
 import { useDraftCount } from "@/src/context/draft-count-context";
 import { parseCsv } from "@/src/lib/csv";
 
@@ -1062,12 +1063,17 @@ function ChatView({
           }}
         />
       )}
+      <MentionAutocomplete
+        text={text}
+        onPickMention={(replaced) => setText(replaced)}
+        token={token}
+      />
       <View style={styles.chatInput}>
         <TextInput
           testID="chat-input"
           value={text}
           onChangeText={setText}
-          placeholder="Message the instructors…"
+          placeholder="Message the instructors… (tag with @name)"
           placeholderTextColor={colors.muted}
           multiline
           style={styles.chatField}

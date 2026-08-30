@@ -336,6 +336,9 @@ async def create_dance_from_bootstepper(
     }
     await db.dances.insert_one(doc)
     doc.pop("_id", None)
+    if doc.get("is_published"):
+        from services.choreographer_follows import notify_followers_of_new_dance
+        await notify_followers_of_new_dance(doc)
     return {"dance": dance_to_out(doc, user["user_id"])}
 
 

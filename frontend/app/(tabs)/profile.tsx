@@ -544,6 +544,36 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
 
+          {/* Follow-a-choreographer entry point — separate from the
+              "My instructors" row above because it's a broader
+              nudge-me-when-they-drop-new-content list, whereas the
+              instructor picker drives Suggest-a-Dance routing. */}
+          <Pressable
+            testID="profile-followed-choreographers-row"
+            style={styles.row}
+            onPress={() => router.push("/choreographers")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="notifications"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>Followed choreographers</Text>
+                <Text style={styles.deleteSub}>
+                  Get a nudge when they drop a new dance
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          {/* @Mentions inbox — populated whenever an instructor tags
+              this user in a chat message. Unread pill hydrates from
+              the same endpoint. */}
+          <MentionsProfileRow />
+
           <Pressable
             testID="profile-leaderboard-row"
             style={styles.row}
@@ -798,7 +828,7 @@ export default function Profile() {
               <View>
                 <Text style={styles.rowText}>Blocked users</Text>
                 <Text style={styles.deleteSub}>
-                  Manage who you've muted in chat and feed
+                  Manage who you&apos;ve muted in chat and feed
                 </Text>
               </View>
             </View>
@@ -860,6 +890,7 @@ export default function Profile() {
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
+            <RefreshRecommendationsAdminRow />
           </View>
         ) : null}
 
@@ -1043,12 +1074,131 @@ export default function Profile() {
  * misleading "Check for updates" button that used to sit here and
  * always errored.
  */
+/**
+ * Small profile row that shows the user's unread-mention count.
+ * Fetches ``/chat/mentions/me`` on mount (and every 30s afterwards
+ * so a fresh @-mention popping in while the user sits on Profile
+ * still lights up the pill). Deep-links into ``/mentions``.
+ */
+function MentionsProfileRow() {
+  const { token } = useAuth();
+  const router = useRouter();
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await api.getMyMentions(token, 1);
+        if (!cancelled) setUnread(r.unread_count || 0);
+      } catch {
+        // Silent — worst case the pill just doesn't render.
+      }
+    };
+    load();
+    const iv = setInterval(load, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+  }, [token]);
+  return (
+    <Pressable
+      testID="profile-mentions-row"
+      style={styles.row}
+      onPress={() => router.push("/mentions")}
+    >
+      <View style={styles.rowLeft}>
+        <Ionicons name="at" size={22} color={colors.brandPrimary} />
+        <View>
+          <Text style={styles.rowText}>My mentions</Text>
+          <Text style={styles.deleteSub}>
+            {unread > 0
+              ? `${unread} unread mention${unread === 1 ? "" : "s"} from instructors`
+              : "See instructor tags in your class chat"}
+          </Text>
+        </View>
+      </View>
+      {unread > 0 ? (
+        <View style={styles.mentionPill}>
+          <Text style={styles.mentionPillText}>
+            {unread > 99 ? "99+" : unread}
+          </Text>
+        </View>
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+      )}
+    </Pressable>
+  );
+}
+
+
+/**
+ * Admin-only row that surfaces the number of drifted-metadata flags
+ * still waiting for review. Uses the cheap /counts endpoint so it
+ * doesn't blow the whole flag payload on a tab switch.
+ */
+function RefreshRecommendationsAdminRow() {
+  const { token, user } = useAuth();
+  const router = useRouter();
+  const [unseen, setUnseen] = useState(0);
+  useEffect(() => {
+    if (!token || !user?.is_admin) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await api.getRefreshRecommendationCounts(token);
+        if (!cancelled) setUnseen(r.unseen || 0);
+      } catch {
+        // Silent — the row still works without the badge.
+      }
+    };
+    load();
+    // Cheaper interval than 30s — this list changes at nightly cadence.
+    const iv = setInterval(load, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+  }, [token, user?.is_admin]);
+  if (!user?.is_admin) return null;
+  return (
+    <Pressable
+      testID="profile-admin-drift-cta"
+      onPress={() => router.push("/admin/refresh-recommendations")}
+      style={styles.websiteRow}
+    >
+      <View style={styles.rowLeft}>
+        <Ionicons name="refresh-circle" size={22} color={colors.brandPrimary} />
+        <View>
+          <Text style={styles.rowText}>Refresh Recommendations</Text>
+          <Text style={styles.deleteSub}>
+            {unseen > 0
+              ? `${unseen} dance${unseen === 1 ? "" : "s"} with drifted metadata`
+              : "Library metadata is in sync with providers"}
+          </Text>
+        </View>
+      </View>
+      {unseen > 0 ? (
+        <View style={styles.mentionPill}>
+          <Text style={styles.mentionPillText}>
+            {unseen > 99 ? "99+" : unseen}
+          </Text>
+        </View>
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+      )}
+    </Pressable>
+  );
+}
+
+
+
 function CurrentVersionRow() {
   if (Platform.OS === "web") return null;
 
   const version =
     (Constants.expoConfig?.version as string) ||
-    (Constants as any)?.manifest?.version ||
     (Application as any)?.nativeApplicationVersion ||
     "—";
   const build =
@@ -1415,6 +1565,20 @@ const styles = StyleSheet.create({
   },
   rowLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   rowText: { fontSize: 15, color: colors.onSurface, fontWeight: "600" },
+  mentionPill: {
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 8,
+    borderRadius: 11,
+    backgroundColor: colors.brandPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mentionPillText: {
+    color: colors.onBrandPrimary,
+    fontSize: 11,
+    fontWeight: "800",
+  },
   themeCard: {
     padding: spacing.lg,
     backgroundColor: colors.surfaceSecondary,

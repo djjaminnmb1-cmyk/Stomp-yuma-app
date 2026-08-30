@@ -458,3 +458,65 @@ Chat + activity feed are shared spaces. Users need a mutual "make them go away" 
 
 ### Test coverage
 - `testing_agent` iteration 27 — all 5 frontend integration scenarios passed (100%): Library CTA wiring, merged search rendering, batch mode selection, batch preview + import flow, regression check on remaining fallback routes.
+
+## Phase 20 — Community + Ops (v3.3 — DONE)
+
+### 1. Login Title Polish
+- Rye-font "Stompin' Ground" is now a masked linear gradient
+  (cream → warm gold → pumpkin amber → saloon amber). Ultra-soft
+  charcoal glow behind, twin amber stars flanking, three-pip
+  divider above the "DANCE SOCIAL HQ" subtitle. Uses
+  `@react-native-masked-view/masked-view` over `expo-linear-gradient`.
+
+### 2. Follow Choreographers
+- Backend: ``choreographer_follows`` collection (unique on
+  ``user_id + choreographer_key``), ``choreographer_notifications``
+  ledger (idempotent per user+dance). 5 endpoints under
+  ``/api/choreographers``.
+- Fan-out on publish (create, update-publish flip, single-import,
+  bulk-import) sends push via ``send_push`` — dead-letter safe.
+- Frontend: ``/choreographers`` list (Following + Discover tabs +
+  search), ``/choreographers/[name]`` detail, reusable
+  ``ChoreographerFollowButton`` on Dance Detail + rows.
+
+### 3. Auto-Hide Reported Posts
+- ``ReportFeedSheet`` accepts ``reportedUser`` + shows "Also block
+  this user?" Switch (default OFF). On submit, chains a
+  ``blockUser`` call; report always succeeds first. Native alert
+  reads "Report sent · user blocked". ``FeedEventCard`` wires
+  ``onBlocked`` so the card hides locally.
+
+### 4. @Mentions in Instructor Chat
+- Backend: ``chat_mentions`` collection (unique on
+  ``mentioned_user_id + message_id + mentioner_id``). Chat post
+  parses ``@name`` tokens, resolves via iExact then unique-prefix
+  match on ``users.name`` (skips ambiguity), inserts ledger rows,
+  fires pushes. New endpoints: ``GET /chat/mentions/me`` +
+  ``POST /chat/mentions/mark-seen``.
+- Frontend: ``MentionAutocomplete`` on the instructor chat composer
+  (200ms debounced ``/users/search``), ``/mentions`` recipient
+  screen (auto-marks-seen on visit), Profile row with unread pill.
+
+### 5. Refresh Recommendations (nightly drift scanner)
+- Backend: ``dance_drift_flags`` collection.
+  ``services/refresh_recommendations.py`` scans upstream metadata for
+  every dance carrying a CopperKnob or BootStepper ref, diffs against
+  local metadata, upserts flag rows. Rate-limited ``~1 req/sec``,
+  60 per source per pass, so a full sweep spans multiple nights.
+- APScheduler: daily job (first run 5min after boot).
+- Admin routes: list / counts / rerun / seen / dismiss under
+  ``/api/admin/refresh-recommendations`` (admin-only).
+- Frontend: ``/admin/refresh-recommendations`` screen with
+  Unreviewed/All tabs, per-row Review + Dismiss actions, Rerun scan
+  button, Profile admin row with unseen pill.
+
+### Ops fix
+- ``services/startup.py`` refactored: new-feature ``ensure_indexes``
+  calls moved into their own try/except blocks so a legacy index
+  conflict (e.g. the pre-existing ``event_id_1`` unique index) can
+  no longer skip the follow-graph / mention / drift-scan setups.
+- Added ``deduplicate_existing_rows`` helper to
+  ``services/choreographer_follows.py`` — runs on boot to keep the
+  oldest row for each ``(user_id, choreographer_key)`` pair before
+  the unique index is created.
+

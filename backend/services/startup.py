@@ -104,6 +104,45 @@ async def _ensure_indexes() -> None:
     except Exception as e:
         logger.warning(f"Index issue: {e}")
 
+    # NEW-FEATURE INDEXES — isolated in their own try/except blocks so
+    # a conflict in the legacy indexes above (e.g. the pre-existing
+    # ``event_id_1`` unique index on activity_events) can never skip
+    # the follow-graph / mention / drift-scan setups underneath.
+    try:
+        from services.choreographer_follows import (
+            ensure_indexes as ensure_chor_indexes,
+        )
+        await ensure_chor_indexes()
+    except Exception as e:
+        logger.warning(f"choreographer_follows index issue: {e}")
+    try:
+        from services.chat_mentions import (
+            ensure_indexes as ensure_mention_indexes,
+        )
+        await ensure_mention_indexes()
+    except Exception as e:
+        logger.warning(f"chat_mentions index issue: {e}")
+    try:
+        from services.refresh_recommendations import (
+            ensure_indexes as ensure_drift_indexes,
+        )
+        await ensure_drift_indexes()
+    except Exception as e:
+        logger.warning(f"drift_flags index issue: {e}")
+
+    # De-dupe any historical follow rows that slipped in before the
+    # unique index existed — otherwise the new index creation will
+    # fail on legacy data. Idempotent + safe to run every boot.
+    try:
+        from services.choreographer_follows import (
+            deduplicate_existing_rows as chor_dedupe,
+        )
+        removed = await chor_dedupe()
+        if removed:
+            logger.info(f"choreographer_follows: removed {removed} duplicates")
+    except Exception as e:
+        logger.warning(f"choreographer_follows dedupe issue: {e}")
+
     # Password reset indexes (idempotent)
     await ensure_reset_indexes()
 

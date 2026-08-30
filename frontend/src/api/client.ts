@@ -580,6 +580,61 @@ export type BulkImportResponse = {
   results: BulkImportRow[];
 };
 
+export type ChoreographerFollowRow = {
+  choreographer: string;
+  choreographer_key: string;
+  dance_count: number;
+  latest_dance_id: string;
+  latest_dance_name: string;
+  latest_dance_at: string;
+  created_at?: string;
+  is_following?: boolean;
+};
+
+export type ChoreographerDetail = {
+  choreographer: string;
+  choreographer_key: string;
+  dance_count: number;
+  follower_count: number;
+  is_following: boolean;
+  dances: Array<{
+    id: string;
+    name: string;
+    choreographer: string;
+    song: string;
+    artist: string;
+    difficulty: string;
+    bpm?: number | null;
+    count?: string;
+    created_at: string;
+  }>;
+};
+
+export type RefreshRecommendationFlag = {
+  dance_id: string;
+  source: "copperknob" | "bootstepper";
+  differs_count: number;
+  drift_summary: string;
+  fields: Array<{ field: string; ours: string; theirs: string }>;
+  checked_at: string;
+  seen: boolean;
+  dance_name: string;
+  dance_choreographer: string;
+  dance_difficulty: string;
+  dance_exists: boolean;
+};
+
+export type ChatMention = {
+  mention_id: string;
+  mentioned_user_id: string;
+  mentioner_id: string;
+  mentioner_name: string;
+  message_id: string;
+  message_text_snippet: string;
+  seen: boolean;
+  created_at: string;
+};
+
 export type ChatMessage = {
   id: string;
   user_id: string;
@@ -1218,9 +1273,88 @@ export const api = {
 
   listChat: (token: string) => req<ChatMessage[]>("/chat/messages", {}, token),
   postChat: (message: string, token: string) =>
-    req<ChatMessage>("/chat/messages", { method: "POST", body: JSON.stringify({ message }) }, token),
+    req<ChatMessage & { mentioned_user_ids?: string[] }>(
+      "/chat/messages",
+      { method: "POST", body: JSON.stringify({ message }) },
+      token
+    ),
   deleteChat: (id: string, token: string) =>
     req<{ ok: boolean }>(`/chat/messages/${id}`, { method: "DELETE" }, token),
+
+  // ---------------- Chat @mentions (recipient view) ----------------
+  getMyMentions: (token: string, limit: number = 40) =>
+    req<{ mentions: ChatMention[]; count: number; unread_count: number }>(
+      `/chat/mentions/me?limit=${limit}`,
+      {},
+      token
+    ),
+  markMentionsSeen: (token: string, mention_ids?: string[]) =>
+    req<{ ok: boolean; updated: number }>(
+      "/chat/mentions/mark-seen",
+      {
+        method: "POST",
+        body: JSON.stringify({ mention_ids: mention_ids || null }),
+      },
+      token
+    ),
+
+  // ---------------- Admin: Refresh Recommendations (drift) ----------------
+  getRefreshRecommendations: (token: string, opts?: { seen?: boolean; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (typeof opts?.seen === "boolean") params.set("seen", String(opts.seen));
+    if (typeof opts?.limit === "number") params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return req<{ flags: RefreshRecommendationFlag[]; count: number }>(
+      `/admin/refresh-recommendations${qs ? `?${qs}` : ""}`,
+      {},
+      token
+    );
+  },
+  getRefreshRecommendationCounts: (token: string) =>
+    req<{ unseen: number; total: number }>(
+      "/admin/refresh-recommendations/counts",
+      {},
+      token
+    ),
+  rerunRefreshRecommendations: (token: string) =>
+    req<{
+      ok: boolean;
+      finished_at: string;
+      runs: Array<{
+        source: string;
+        checked: number;
+        flagged: number;
+        cleared: number;
+      }>;
+    }>(
+      "/admin/refresh-recommendations/rerun",
+      { method: "POST" },
+      token
+    ),
+  markRefreshRecommendationSeen: (
+    token: string,
+    dance_id: string,
+    source?: "copperknob" | "bootstepper"
+  ) => {
+    const qs = source ? `?source=${source}` : "";
+    return req<{ ok: boolean; updated: number }>(
+      `/admin/refresh-recommendations/${encodeURIComponent(dance_id)}/seen${qs}`,
+      { method: "POST" },
+      token
+    );
+  },
+  dismissRefreshRecommendation: (
+    token: string,
+    dance_id: string,
+    source?: "copperknob" | "bootstepper"
+  ) => {
+    const qs = source ? `?source=${source}` : "";
+    return req<{ ok: boolean; removed: number }>(
+      `/admin/refresh-recommendations/${encodeURIComponent(dance_id)}${qs}`,
+      { method: "DELETE" },
+      token
+    );
+  },
 
   // ---------------- User blocks ----------------
   /**
@@ -1515,6 +1649,60 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ entries, publish_all }),
       },
+      token
+    ),
+
+  // ---------------- Choreographer follows ----------------
+  /** Discover choreographers who have at least one PUBLISHED dance
+   *  in the local library. Hydrated with the caller's follow state
+   *  and a per-choreographer published-dance count.
+   */
+  listChoreographers: (
+    token: string,
+    opts?: { q?: string; limit?: number }
+  ) => {
+    const params = new URLSearchParams();
+    if (opts?.q) params.set("q", opts.q);
+    if (typeof opts?.limit === "number")
+      params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return req<{ choreographers: ChoreographerFollowRow[]; count: number }>(
+      `/choreographers${qs ? `?${qs}` : ""}`,
+      {},
+      token
+    );
+  },
+  myFollowedChoreographers: (token: string) =>
+    req<{
+      choreographers: ChoreographerFollowRow[];
+      counts: { following: number };
+    }>("/choreographers/me/follows", {}, token),
+  getChoreographerDetail: (name: string, token: string) =>
+    req<ChoreographerDetail>(
+      `/choreographers/${encodeURIComponent(name)}`,
+      {},
+      token
+    ),
+  followChoreographer: (name: string, token: string) =>
+    req<{
+      ok: boolean;
+      created: boolean;
+      is_following: boolean;
+      follower_count: number;
+    }>(
+      `/choreographers/${encodeURIComponent(name)}/follow`,
+      { method: "POST" },
+      token
+    ),
+  unfollowChoreographer: (name: string, token: string) =>
+    req<{
+      ok: boolean;
+      removed: boolean;
+      is_following: boolean;
+      follower_count: number;
+    }>(
+      `/choreographers/${encodeURIComponent(name)}/follow`,
+      { method: "DELETE" },
       token
     ),
 

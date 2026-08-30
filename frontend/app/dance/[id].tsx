@@ -27,6 +27,7 @@ import { CopperKnobLinkSheet } from "@/src/components/CopperKnobLinkSheet";
 import { CopperKnobCompareSheet } from "@/src/components/CopperKnobCompareSheet";
 import { BootStepperLinkSheet } from "@/src/components/BootStepperLinkSheet";
 import { BootStepperCompareSheet } from "@/src/components/BootStepperCompareSheet";
+import { ChoreographerFollowButton } from "@/src/components/ChoreographerFollowButton";
 
 export default function DanceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -400,7 +401,31 @@ export default function DanceDetail() {
               <Text style={styles.diffBigText}>{dance.difficulty}</Text>
             </View>
             <Text style={styles.title}>{dance.name}</Text>
-            <Text style={styles.subtitle}>By {dance.choreographer || "Unknown"}</Text>
+            <View style={styles.subtitleRow}>
+              <Pressable
+                testID="chor-open"
+                onPress={() =>
+                  dance.choreographer &&
+                  dance.choreographer.trim() &&
+                  dance.choreographer.trim().toLowerCase() !== "unknown"
+                    ? router.push(
+                        `/choreographers/${encodeURIComponent(
+                          dance.choreographer.trim()
+                        )}`
+                      )
+                    : undefined
+                }
+                style={{ flex: 1 }}
+                hitSlop={4}
+              >
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  By {dance.choreographer || "Unknown"}
+                </Text>
+              </Pressable>
+              <ChoreographerFollowButton
+                choreographer={dance.choreographer || ""}
+              />
+            </View>
           </View>
         </View>
 
@@ -1246,6 +1271,13 @@ const styles = StyleSheet.create({
     lineHeight: 40,
   },
   subtitle: { color: colors.onSurfaceInverse, opacity: 0.9, fontSize: 14 },
+  subtitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 4,
+    flexWrap: "wrap",
+  },
   section: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.md },
   sectionTitle: { fontFamily: "serif", fontSize: 20, fontWeight: "700", color: colors.onSurface },
   infoRow: { flexDirection: "row", gap: spacing.md },

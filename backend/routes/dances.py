@@ -21,6 +21,7 @@ from core.security import (
 from core.serialize import dance_to_out, youtube_search_url
 from core.time_helpers import now_iso
 from models.schemas import DanceImportBody, DanceIn
+from services.choreographer_follows import notify_followers_of_new_dance
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -240,6 +241,10 @@ async def create_dance(inp: DanceIn, user: dict = Depends(require_instructor)):
         doc["is_published"] = False
     await db.dances.insert_one(doc)
     doc.pop("_id", None)
+    # Fan-out to choreographer followers if the dance is being
+    # published inline. Best-effort — swallowed inside the helper.
+    if doc.get("is_published"):
+        await notify_followers_of_new_dance(doc)
     return dance_to_out(doc, user["user_id"])
 
 
@@ -317,6 +322,13 @@ async def import_dances(inp: DanceImportBody, user: dict = Depends(require_instr
 
     if to_insert:
         await db.dances.insert_many(to_insert)
+        # Fan-out to choreographer followers if these were published
+        # immediately (publish_all=True). The idempotency ledger inside
+        # the helper prevents double-fires when the same dance is
+        # imported twice by mistake.
+        if bool(inp.publish_all):
+            for _row in to_insert:
+                await notify_followers_of_new_dance(_row)
     return {
         "imported": len(to_insert),
         "skipped_duplicates": skipped,
@@ -376,6 +388,19 @@ async def update_dance(dance_id: str, inp: DanceIn, user: dict = Depends(require
 
     await db.dances.update_one({"id": dance_id}, {"$set": updates})
     d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
+    # Fan-out to choreographer followers if this edit flipped an
+    # existing draft to published, OR changed the choreographer of an
+    # already-published dance. The idempotency ledger inside the
+    # helper de-dupes per (user_id, dance_id) so re-publishing after
+    # unpublish never spams the same follower again.
+    was_published = bool(existing.get("is_published"))
+    is_now_published = bool(d.get("is_published"))
+    chor_changed = (
+        (existing.get("choreographer") or "").strip().lower()
+        != (d.get("choreographer") or "").strip().lower()
+    )
+    if is_now_published and (not was_published or chor_changed):
+        await notify_followers_of_new_dance(d)
     return dance_to_out(d, user["user_id"])
 
 
@@ -389,6 +414,9 @@ async def publish_dance(dance_id: str, user: dict = Depends(require_instructor))
         raise HTTPException(403, "Not allowed")
     await db.dances.update_one({"id": dance_id}, {"$set": {"is_published": True}})
     d["is_published"] = True
+    # Fan-out — the helper's ledger stops repeat fires on unpublish→
+    # re-publish so a follower only ever gets one push per dance.
+    await notify_followers_of_new_dance(d)
     return dance_to_out(d, user["user_id"])
 
 

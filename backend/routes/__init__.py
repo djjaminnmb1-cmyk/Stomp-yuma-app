@@ -9,6 +9,7 @@ so we only need to include it once here.
 from fastapi import APIRouter
 
 from . import (
+    admin_refresh_recommendations,
     auth,
     activity,
     admin_bulk_import,
@@ -20,6 +21,7 @@ from . import (
     bulk_import,
     certificate,
     chat,
+    choreographer_follows,
     classes,
     copperknob,
     dances,
@@ -55,12 +57,14 @@ api_router.include_router(prizes.router)
 api_router.include_router(admin_leaderboard.router)
 api_router.include_router(admin_bulk_import.router)
 api_router.include_router(admin_users.router)
+api_router.include_router(admin_refresh_recommendations.router)
 api_router.include_router(feedback.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(activity.router)
 api_router.include_router(certificate.router)
 api_router.include_router(badges.router)
 api_router.include_router(social.router)
+api_router.include_router(choreographer_follows.router)
 api_router.include_router(blocks.router)
 api_router.include_router(copperknob.router)
 api_router.include_router(bootstepper.router)

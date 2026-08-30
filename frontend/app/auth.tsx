@@ -17,6 +17,7 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import MaskedView from "@react-native-masked-view/masked-view";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/src/context/auth-context";
@@ -195,15 +196,85 @@ export default function AuthScreen() {
               style={StyleSheet.absoluteFillObject as any}
             />
             <View style={styles.heroTopContent} pointerEvents="none">
-              <Text
-                style={styles.heroTitle}
-                numberOfLines={2}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-                testID="auth-hero-title"
-              >
-                Stompin&apos; Ground
-              </Text>
+              {/* Wild-west title — Rye font is the base but we mask it
+                  with a sunset gradient (deep red → sunburst amber
+                  → hot gold) so the letters "pop" against the
+                  hero image without losing the printed-poster
+                  wood-block feel. Twin star ornaments flank the
+                  title for extra saloon-signage pride. */}
+              <View style={styles.heroTitleRow} pointerEvents="none">
+                <Ionicons
+                  name="star"
+                  size={12}
+                  color="#FFD065"
+                  style={styles.heroTitleStar}
+                />
+                <View style={styles.heroTitleWrap}>
+                  {/* Dark diffusion halo behind the title so it stays
+                      legible on the bright sunset patch of the hero
+                      image. Rendered as a duplicate Text one row
+                      behind, tinted almost-black + heavily blurred
+                      via text-shadow. */}
+                  <Text
+                    style={styles.heroTitleShadow}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                    aria-hidden
+                  >
+                    Stompin&apos; Ground
+                  </Text>
+                  <MaskedView
+                    maskElement={
+                      <Text
+                        style={styles.heroTitleMask}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.75}
+                      >
+                        Stompin&apos; Ground
+                      </Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={[
+                        "#FFF6D0", // brightest sunlit cream — top highlight
+                        "#FFD469", // warm gold — mid-top
+                        "#F9A63A", // pumpkin amber — mid-bottom
+                        "#E27C2E", // saloon amber — bottom (stays bright)
+                      ]}
+                      locations={[0, 0.4, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                    >
+                      <Text
+                        style={[styles.heroTitleMask, styles.heroTitleInvisible]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.75}
+                        testID="auth-hero-title"
+                      >
+                        Stompin&apos; Ground
+                      </Text>
+                    </LinearGradient>
+                  </MaskedView>
+                </View>
+                <Ionicons
+                  name="star"
+                  size={12}
+                  color="#FFD065"
+                  style={styles.heroTitleStar}
+                />
+              </View>
+              {/* Wooden-slat divider — three tiny amber pips echo the
+                  seed lights strung across the printed poster. */}
+              <View style={styles.heroDivider}>
+                <View style={styles.heroDividerPip} />
+                <View style={styles.heroDividerBar} />
+                <View style={styles.heroDividerPip} />
+                <View style={styles.heroDividerBar} />
+                <View style={styles.heroDividerPip} />
+              </View>
               <Text
                 style={styles.heroSubtitle}
                 numberOfLines={1}
@@ -459,11 +530,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   heroTitle: {
-    // Rye — bundled Wild-West display face that matches the
-    // "STOMPIN' GROUND" lettering on the printed logo below.
-    // Loaded once at app-start via ``useIconFonts`` (see
-    // src/hooks/use-icon-fonts.ts). Fallback to serif if the font
-    // hasn't loaded yet so the layout doesn't jump.
+    // Legacy solid-color title kept for tests / fallbacks. The live
+    // login header now uses the masked-gradient version below
+    // (heroTitleMask + LinearGradient) so the printed sunset colours
+    // read through the Rye letterforms.
     fontFamily: Platform.select({ web: "Rye, serif", default: "Rye" }),
     fontSize: 30,
     // Rye is already heavy by design — explicit weights on this
@@ -475,15 +545,95 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 10,
   },
+  // ---- Masked-gradient hero title ----
+  // Wraps both the shadow layer and the MaskedView so they overlap
+  // pixel-perfectly. `MaskedView` uses the mask Text (which we hide
+  // visually) to clip the LinearGradient beneath.
+  heroTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    alignSelf: "stretch",
+  },
+  heroTitleStar: {
+    // Warm amber glow around each flanking star — kicks up the
+    // sunset warmth even on Android where LinearGradient dithering
+    // sometimes softens the reds.
+    textShadowColor: "rgba(255,182,72,0.9)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+  },
+  heroTitleWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    // Fixed height keeps the LinearGradient from collapsing on iOS
+    // when the mask Text hasn't fully laid out yet.
+    minHeight: 42,
+    flexShrink: 1,
+  },
+  heroTitleShadow: {
+    position: "absolute",
+    fontFamily: Platform.select({ web: "Rye, serif", default: "Rye" }),
+    fontSize: 30,
+    letterSpacing: 0.4,
+    textAlign: "center",
+    // Ultra-soft charcoal glow — just enough to keep the gold-on-
+    // sunset legible without darkening the gradient sitting on top.
+    // Reduced from the old heavy shadow that was making letters
+    // look muddy at the bottom of the gradient.
+    color: "transparent",
+    textShadowColor: "rgba(90,30,10,0.65)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+  },
+  heroTitleMask: {
+    fontFamily: Platform.select({ web: "Rye, serif", default: "Rye" }),
+    fontSize: 30,
+    letterSpacing: 0.4,
+    textAlign: "center",
+    // Any solid non-transparent colour works — MaskedView only
+    // cares about the alpha channel of the mask.
+    color: "#000",
+  },
+  heroTitleInvisible: {
+    // Hide the masked Text visually — it exists only to give the
+    // LinearGradient a shape to fill. `opacity: 0` keeps the
+    // layout intact so the gradient sizes correctly.
+    opacity: 0,
+  },
+  heroDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 4,
+    opacity: 0.9,
+  },
+  heroDividerPip: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#FFCC7A",
+    shadowColor: "#FFCC7A",
+    shadowOpacity: 0.9,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  heroDividerBar: {
+    width: 26,
+    height: 1.2,
+    backgroundColor: "rgba(255,214,148,0.75)",
+  },
   heroSubtitle: {
     fontFamily: Platform.select({ web: "Rye, serif", default: "Rye" }),
-    fontSize: 13,
-    color: "#FFF3D9",
+    fontSize: 12,
+    color: "#FFE7B8",
     textAlign: "center",
-    letterSpacing: 2.4,
+    letterSpacing: 3,
     textTransform: "uppercase",
     marginTop: 2,
-    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowColor: "rgba(0,0,0,0.7)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
   },
