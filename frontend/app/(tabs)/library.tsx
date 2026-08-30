@@ -226,10 +226,11 @@ export default function Library() {
               tintColor={colors.brandPrimary}
             />
           }
-          // CopperKnob discovery CTAs — always visible so admins &
-          // dancers know they can widen the search. When our own
-          // library returned zero hits the footer stays; the empty
-          // state also carries a Search CopperKnob link.
+          // CopperKnob + BootStepper discovery CTAs — always visible
+          // so admins & dancers know they can widen the search across
+          // BOTH external directories. When our own library returned
+          // zero hits the footer stays; the empty state carries CTAs
+          // for both providers.
           ListFooterComponent={
             items.length > 0 ? (
               <View style={styles.ckFooter}>
@@ -257,6 +258,25 @@ export default function Library() {
                     </Text>
                   </Pressable>
                   <Pressable
+                    testID="library-search-bootstepper"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/bootstepper/search",
+                        params: q ? { q } : {},
+                      })
+                    }
+                    style={styles.ckSecondaryBtn}
+                  >
+                    <Ionicons
+                      name="search"
+                      size={14}
+                      color={colors.brandPrimary}
+                    />
+                    <Text style={styles.ckSecondaryText}>
+                      Search BootStepper
+                    </Text>
+                  </Pressable>
+                  <Pressable
                     testID="library-popular-copperknob"
                     onPress={() => router.push("/copperknob/popular")}
                     style={styles.ckSecondaryBtn}
@@ -268,6 +288,20 @@ export default function Library() {
                     />
                     <Text style={styles.ckSecondaryText}>
                       Popular on CopperKnob
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    testID="library-popular-bootstepper"
+                    onPress={() => router.push("/bootstepper/popular")}
+                    style={styles.ckSecondaryBtn}
+                  >
+                    <Ionicons
+                      name="flame"
+                      size={14}
+                      color={colors.brandPrimary}
+                    />
+                    <Text style={styles.ckSecondaryText}>
+                      Popular on BootStepper
                     </Text>
                   </Pressable>
                 </View>
@@ -290,9 +324,10 @@ export default function Library() {
                   <Text style={styles.emptyResetText}>Reset filters</Text>
                 </Pressable>
               ) : null}
-              {/* Bigger, high-contrast CTA when our own library
-                  came up empty — this is exactly when CopperKnob is
-                  most useful. */}
+              {/* Bigger, high-contrast CTAs when our own library came up
+                  empty — this is exactly when the external directories
+                  are most useful. Two side-by-side buttons: CopperKnob
+                  first (larger network) then BootStepper. */}
               <Pressable
                 testID="empty-search-copperknob"
                 onPress={() =>
@@ -306,6 +341,21 @@ export default function Library() {
                 <Ionicons name="search" size={16} color={colors.onBrandPrimary} />
                 <Text style={styles.ckPrimaryText}>
                   Search CopperKnob{q ? ` for "${q}"` : ""}
+                </Text>
+              </Pressable>
+              <Pressable
+                testID="empty-search-bootstepper"
+                onPress={() =>
+                  router.push({
+                    pathname: "/bootstepper/search",
+                    params: q ? { q } : {},
+                  })
+                }
+                style={[styles.ckPrimaryBtn, styles.ckPrimaryBtnAlt]}
+              >
+                <Ionicons name="search" size={16} color={colors.brandPrimary} />
+                <Text style={[styles.ckPrimaryText, styles.ckPrimaryTextAlt]}>
+                  Search BootStepper{q ? ` for "${q}"` : ""}
                 </Text>
               </Pressable>
             </View>
@@ -606,6 +656,18 @@ const styles = StyleSheet.create({
     color: colors.onBrandPrimary,
     fontWeight: "700",
     fontSize: 13,
+  },
+  // Second empty-state CTA (BootStepper) — visually secondary to the
+  // primary CopperKnob button so the two don't compete for attention.
+  // Same size + hit target, brand outline instead of filled.
+  ckPrimaryBtnAlt: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: colors.brandPrimary,
+    marginTop: spacing.sm,
+  },
+  ckPrimaryTextAlt: {
+    color: colors.brandPrimary,
   },
 
   // Subtle source-of-truth badge on library result cards.

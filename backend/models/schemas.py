@@ -98,6 +98,11 @@ class DanceIn(BaseModel):
     # dance was imported from — or linked to — a CopperKnob record.
     # Nullable so existing listings continue to validate cleanly.
     copperknob_ref: Optional[str] = ""
+    # BootStepper API reference (opaque stable ID like
+    # ``D36J5F44H3GB38N``). A single dance MAY carry BOTH refs at
+    # once — the two integrations coexist and never overwrite each
+    # other's fields.
+    bootstepper_ref: Optional[str] = ""
 
 
 class DanceImportRow(BaseModel):

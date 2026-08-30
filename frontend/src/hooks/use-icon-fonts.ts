@@ -5,11 +5,25 @@
 // immediately via react-native-vector-icons autolinking / web stubs.
 // ICON_VECTOR_VERSION must match @expo/vector-icons in package.json.
 // Usage: const [loaded, error] = useIconFonts();
+//
+// We ALSO bundle the display typeface used by the SGY brand mark
+// ("Rye") here so it's loaded once at app-startup regardless of
+// build target. The .ttf ships in ``assets/fonts`` — no CDN fetch,
+// no external dependency. Consuming components reference it via
+// ``fontFamily: "Rye"``. Rye is licensed under SIL Open Font License
+// (1.1), free for commercial + non-commercial use.
 
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { useFonts } from "expo-font";
 
 const ICON_VECTOR_VERSION = "15.1.1";
+
+// Locally-bundled brand display fonts. Keep this map small — every
+// entry is loaded synchronously and blocks the splash screen.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const BRAND_FONTS: Record<string, number> = {
+  Rye: require("../../assets/fonts/Rye-Regular.ttf"),
+};
 
 // short internal fontName (what the library queries) -> CDN .ttf file name
 const ICON_FAMILIES: Record<string, string> = {
@@ -45,8 +59,9 @@ const iconFontMap = (): Record<string, string> =>
   );
 
 export const useIconFonts = (): readonly [boolean, Error | null] =>
-  useFonts(
-    Constants.executionEnvironment === ExecutionEnvironment.StoreClient
+  useFonts({
+    ...BRAND_FONTS,
+    ...(Constants.executionEnvironment === ExecutionEnvironment.StoreClient
       ? iconFontMap()
-      : {},
-  );
+      : {}),
+  });

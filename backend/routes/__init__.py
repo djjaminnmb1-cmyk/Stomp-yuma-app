@@ -16,6 +16,7 @@ from . import (
     admin_users,
     badges,
     blocks,
+    bootstepper,
     certificate,
     chat,
     classes,
@@ -60,6 +61,7 @@ api_router.include_router(badges.router)
 api_router.include_router(social.router)
 api_router.include_router(blocks.router)
 api_router.include_router(copperknob.router)
+api_router.include_router(bootstepper.router)
 api_router.include_router(events.router)
 api_router.include_router(instructors.router)
 api_router.include_router(song_preview.router)

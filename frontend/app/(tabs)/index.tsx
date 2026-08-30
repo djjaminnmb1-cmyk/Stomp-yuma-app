@@ -161,7 +161,12 @@ export default function Home() {
         {token ? (
           <View style={styles.section} testID="home-feed-section">
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Community Activity</Text>
+              <Text
+                style={[styles.sectionTitle, styles.sectionTitleFlex]}
+                numberOfLines={1}
+              >
+                Community Activity
+              </Text>
               <Pressable
                 onPress={() => router.push("/feed")}
                 testID="home-feed-see-all"
@@ -202,7 +207,12 @@ export default function Home() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Fresh on the Floor</Text>
+            <Text
+              style={[styles.sectionTitle, styles.sectionTitleFlex]}
+              numberOfLines={1}
+            >
+              Fresh on the Floor
+            </Text>
             <Pressable onPress={() => router.push("/(tabs)/library")} testID="home-see-all">
               <Text style={styles.link}>See all</Text>
             </Pressable>
@@ -211,11 +221,20 @@ export default function Home() {
           {token && practiced.length > 0 && (
             <View style={styles.practicedWrap}>
               <View style={styles.practicedHeader}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <View style={styles.practicedTitleRow}>
                   <Ionicons name="time" size={16} color={colors.brandPrimary} />
-                  <Text style={styles.practicedTitle}>Recently Practiced</Text>
+                  <Text style={styles.practicedTitle} numberOfLines={1}>
+                    Recently Practiced
+                  </Text>
                 </View>
-                <Text style={styles.practicedHint}>Pick up where you left off</Text>
+                <Text
+                  style={styles.practicedHint}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  Pick up where you left off
+                </Text>
               </View>
               <ScrollView
                 horizontal
@@ -445,9 +464,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ctaBtnText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 16 },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  sectionTitle: { fontFamily: "serif", fontSize: 22, fontWeight: "700", color: colors.onSurface },
-  link: { color: colors.brandPrimary, fontWeight: "600" },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  sectionTitle: {
+    fontFamily: "serif",
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
+  // Only used inside sectionHeader — takes remaining space so long
+  // titles truncate instead of pushing "See all" off the edge.
+  sectionTitleFlex: {
+    flex: 1,
+    minWidth: 0,
+  },
+  link: { color: colors.brandPrimary, fontWeight: "600", flexShrink: 0 },
   miniCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -624,17 +659,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: spacing.sm,
     marginBottom: spacing.sm,
+  },
+  // Left group of the practiced header — expands to eat any spare
+  // width so the hint on the right doesn't crash into it on narrow
+  // devices. minWidth 0 lets the child Text truncate properly.
+  practicedTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
   },
   practicedTitle: {
     fontSize: 15,
     fontWeight: "700",
     color: colors.onSurface,
+    flexShrink: 1,
   },
   practicedHint: {
     fontSize: 11,
     color: colors.muted,
     fontStyle: "italic",
+    flexShrink: 0,
+    maxWidth: 170,
   },
   practicedCard: {
     width: 140,

@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Switch,
   Alert,
-  Linking as RNLinking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Linking from "expo-linking";
@@ -23,8 +22,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/src/context/auth-context";
 import { AppleSignInButton } from "@/src/components/AppleSignInButton";
 import { api } from "@/src/api/client";
-import { colors, spacing, radius, images } from "@/src/theme";
-import { BrandLogo } from "../src/components/BrandLogo";
+import { colors, spacing, radius } from "@/src/theme";
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -169,18 +167,50 @@ export default function AuthScreen() {
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Login hero — bespoke portrait artwork with the SGY logo
+              already baked in. We do NOT re-render the BrandLogo
+              here (it would fight with the printed one). Instead
+              the app name sits pinned to the very top of the hero,
+              in the sunset-sky area above the printed logo so it
+              never occludes the brand mark. */}
           <View style={styles.hero}>
             <Image
-              source={{ uri: images.venue_hero }}
+              source={require("../assets/images/login-hero.jpg")}
               style={StyleSheet.absoluteFillObject as any}
               contentFit="cover"
+              contentPosition="top"
             />
+            {/* Soft dark scrim at the very top for text legibility. */}
             <LinearGradient
-              colors={["transparent", "rgba(43,29,22,0.6)", colors.surfaceInverse]}
+              colors={["rgba(0,0,0,0.55)", "rgba(0,0,0,0.15)", "transparent"]}
+              locations={[0, 0.35, 1]}
+              style={styles.heroTopScrim}
+            />
+            {/* Soft cream-to-transparent at the bottom so the sign-in
+                form feels seamless where the hero meets it. */}
+            <LinearGradient
+              colors={["transparent", colors.surface]}
+              locations={[0.7, 1]}
               style={StyleSheet.absoluteFillObject as any}
             />
-            <View style={styles.heroContent}>
-              <BrandLogo variant="light" size="lg" showTagline />
+            <View style={styles.heroTopContent} pointerEvents="none">
+              <Text
+                style={styles.heroTitle}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+                testID="auth-hero-title"
+              >
+                Stompin&apos; Ground
+              </Text>
+              <Text
+                style={styles.heroSubtitle}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                Dance Social HQ
+              </Text>
             </View>
           </View>
 
@@ -398,7 +428,64 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  hero: { height: 400, justifyContent: "flex-end" },
+  // Taller hero so the printed logo + boots artwork sits fully in
+  // view before the sign-in form scrolls up under it. 520 is a
+  // sweet spot on 6"-class phones — smaller devices get an ~64%
+  // window that still shows the boots.
+  hero: {
+    height: 520,
+    justifyContent: "flex-start",
+    backgroundColor: "#2B1D16",
+    overflow: "hidden",
+  },
+  heroTopScrim: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 180,
+  },
+  // App-name overlay pinned to the very top. Sits ABOVE the printed
+  // SGY logo (which lives at ~20-55% of the hero height) so it
+  // never occludes the brand mark. Small top padding keeps it clear
+  // of the notch / status bar.
+  heroTopContent: {
+    position: "absolute",
+    top: 12,
+    left: spacing.xl,
+    right: spacing.xl,
+    alignItems: "center",
+    gap: 2,
+  },
+  heroTitle: {
+    // Rye — bundled Wild-West display face that matches the
+    // "STOMPIN' GROUND" lettering on the printed logo below.
+    // Loaded once at app-start via ``useIconFonts`` (see
+    // src/hooks/use-icon-fonts.ts). Fallback to serif if the font
+    // hasn't loaded yet so the layout doesn't jump.
+    fontFamily: Platform.select({ web: "Rye, serif", default: "Rye" }),
+    fontSize: 30,
+    // Rye is already heavy by design — explicit weights on this
+    // font just render inconsistently across platforms.
+    color: "#FFFFFF",
+    textAlign: "center",
+    letterSpacing: 0.6,
+    textShadowColor: "rgba(0,0,0,0.65)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 10,
+  },
+  heroSubtitle: {
+    fontFamily: Platform.select({ web: "Rye, serif", default: "Rye" }),
+    fontSize: 13,
+    color: "#FFF3D9",
+    textAlign: "center",
+    letterSpacing: 2.4,
+    textTransform: "uppercase",
+    marginTop: 2,
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
   heroContent: { padding: spacing.xl, alignItems: "center" },
   form: { padding: spacing.xl, gap: spacing.md },
   tabs: {

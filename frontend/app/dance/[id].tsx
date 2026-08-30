@@ -25,6 +25,8 @@ import { useAuth } from "@/src/context/auth-context";
 import PracticeModePanel from "@/src/components/PracticeModePanel";
 import { CopperKnobLinkSheet } from "@/src/components/CopperKnobLinkSheet";
 import { CopperKnobCompareSheet } from "@/src/components/CopperKnobCompareSheet";
+import { BootStepperLinkSheet } from "@/src/components/BootStepperLinkSheet";
+import { BootStepperCompareSheet } from "@/src/components/BootStepperCompareSheet";
 
 export default function DanceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,6 +41,11 @@ export default function DanceDetail() {
   // Admin-only CopperKnob sheets (linking + compare-and-refresh)
   const [ckLinkOpen, setCkLinkOpen] = useState(false);
   const [ckCompareOpen, setCkCompareOpen] = useState(false);
+  // Admin-only BootStepper sheets — mirror the CopperKnob pair so
+  // admins can attach OR refresh EITHER provider's reference without
+  // affecting the other. A single dance may end up with both.
+  const [bsLinkOpen, setBsLinkOpen] = useState(false);
+  const [bsCompareOpen, setBsCompareOpen] = useState(false);
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [editImage, setEditImage] = useState<string>("");
   // Full metadata edit form (whitelist editors: Erin & Jamin)
@@ -543,9 +550,13 @@ export default function DanceDetail() {
             </Text>
           ) : null}
 
-          {/* Admin-only CopperKnob record tools. Rendered as a
-              secondary "advanced" row below the primary link buttons
-              so it never distracts regular users. */}
+          {/* Admin-only external directory tools (CopperKnob +
+              BootStepper). Rendered as a secondary "advanced" row
+              below the primary link buttons so it never distracts
+              regular users. Each provider gets its own button; the
+              two integrations coexist so a single dance may show
+              BOTH "Check CopperKnob data" AND "Check BootStepper
+              data" side by side. */}
           {canEdit ? (
             <View style={styles.ckAdminRow}>
               {dance.copperknob_ref ? (
@@ -585,6 +596,48 @@ export default function DanceDetail() {
                     </Text>
                     <Text style={styles.ckAdminBtnHint}>
                       Find + attach the CopperKnob reference
+                    </Text>
+                  </View>
+                </Pressable>
+              )}
+
+              {dance.bootstepper_ref ? (
+                <Pressable
+                  testID="bs-compare"
+                  onPress={() => setBsCompareOpen(true)}
+                  style={styles.ckAdminBtn}
+                >
+                  <Ionicons
+                    name="git-compare-outline"
+                    size={14}
+                    color={colors.brandPrimary}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.ckAdminBtnText}>
+                      Check BootStepper data
+                    </Text>
+                    <Text style={styles.ckAdminBtnHint}>
+                      Id {dance.bootstepper_ref} · compare fields
+                    </Text>
+                  </View>
+                </Pressable>
+              ) : (
+                <Pressable
+                  testID="bs-link"
+                  onPress={() => setBsLinkOpen(true)}
+                  style={styles.ckAdminBtn}
+                >
+                  <Ionicons
+                    name="link-outline"
+                    size={14}
+                    color={colors.brandPrimary}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.ckAdminBtnText}>
+                      Link BootStepper record
+                    </Text>
+                    <Text style={styles.ckAdminBtnHint}>
+                      Find + attach the BootStepper reference
                     </Text>
                   </View>
                 </Pressable>
@@ -768,6 +821,25 @@ export default function DanceDetail() {
         visible={ckCompareOpen}
         dance={dance}
         onClose={() => setCkCompareOpen(false)}
+        onApplied={() => load()}
+      />
+
+      {/* Admin-only BootStepper sheets — same pattern as CopperKnob.
+          Rendered here (root level of the screen) so they overlay
+          everything. A single dance may end up with BOTH refs, so
+          both provider sheets are mounted in parallel. */}
+      <BootStepperLinkSheet
+        visible={bsLinkOpen}
+        danceId={dance.id}
+        danceName={dance.name}
+        danceChoreographer={dance.choreographer}
+        onClose={() => setBsLinkOpen(false)}
+        onLinked={() => load()}
+      />
+      <BootStepperCompareSheet
+        visible={bsCompareOpen}
+        dance={dance}
+        onClose={() => setBsCompareOpen(false)}
         onApplied={() => load()}
       />
 

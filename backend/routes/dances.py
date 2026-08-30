@@ -355,6 +355,25 @@ async def update_dance(dance_id: str, inp: DanceIn, user: dict = Depends(require
 
     if updates.get("is_published") is None:
         updates["is_published"] = existing.get("is_published", True)
+
+    # ---- External provider refs are STICKY ----
+    # A single dance may carry BOTH a CopperKnob and a BootStepper
+    # reference at once (Phase 18). Regular Edit flows on the client
+    # don't include those refs in the payload; without this guard,
+    # Pydantic's default of ``""`` would silently wipe them out of
+    # the DB — which would break duplicate-detection and the admin
+    # "Check external data" tools. If the incoming value is empty
+    # (or absent), fall back to whatever we already have stored.
+    for _sticky in (
+        "copperknob_ref",
+        "copperknob_url",
+        "bootstepper_ref",
+        "bootstepper_url",
+    ):
+        incoming = (updates.get(_sticky) or "").strip()
+        if not incoming and existing.get(_sticky):
+            updates[_sticky] = existing.get(_sticky)
+
     await db.dances.update_one({"id": dance_id}, {"$set": updates})
     d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
     return dance_to_out(d, user["user_id"])

@@ -213,6 +213,56 @@ Emergent Support confirmed via `support_agent`: **managed OTA / EAS Update is no
 - Because each OTA bundles its own `app.json`, the flag travels with the specific update and doesn't leak into future releases.
 
 
+## Phase 18 BootStepper API Integration + Brand Polish (v3.3 — DONE)
+
+### Why
+Companion to Phase 17 (CopperKnob). Users hitting a wall in our own ~1,200-dance library needed a second external directory to widen the search. BootStepper's TOU + rate-limits are similar to CopperKnob's: metadata is fine, mirroring the raw stepsheet content isn't, and every surface must attribute + link back. Directory rules were strict: a **single local dance may carry BOTH `copperknob_ref` AND `bootstepper_ref` simultaneously** — the two integrations must never overwrite each other's fields.
+
+### Backend
+- **`services/bootstepper.py`** — the ONLY module that talks to `api.bootstepper.com`. Auth via `X-BootStepper-API-Key` env var. 10s timeout, 50-result hard cap, small in-process cache (60s search / 15min popular / 15min id) capped at 256 entries. `is_configured()` gate + graceful outage handling (never 500s). Normalises BootStepper's `danceChoreographers[0]` / `danceSongs[0]` shape into a stable dict mirroring CopperKnob's contract (so the UI can treat the two providers interchangeably where useful). **NEVER passes `includeStepSheet=true`** — we have no licence to persist third-party stepsheet content.
+- **`routes/bootstepper.py`** — six routes:
+  - `GET  /api/bootstepper/search?q=&limit=` — auth-required (any dancer). 2-char minimum, up to 50 results.
+  - `GET  /api/bootstepper/popular?limit=` — BootStepper has no formal "popular" list; we approximate with `sortBy=videoCount desc`.
+  - `GET  /api/bootstepper/dances/{id}` — single record + our match status (plus `has_copperknob_ref` / `has_bootstepper_ref` hint flags).
+  - `POST /api/dances/from-bootstepper` — **admin-or-editor only**. Creates a new library listing pre-filled from a BootStepper id. Draft-by-default. Refuses on duplicate (409). Never touches CopperKnob fields.
+  - `POST /api/dances/{dance_id}/link-bootstepper` — **admin-or-editor only**. Attaches a `bootstepper_ref` to an existing dance. Never touches CopperKnob refs/URLs or any other stored fields. Refuses if another dance already claims the id (409).
+  - `GET  /api/dances/{dance_id}/bootstepper-compare` — **admin-or-editor only**. Field-by-field diff. Read-only.
+- **Sticky-guard on `PUT /api/dances/{id}`** — extended `update_dance` in `routes/dances.py` so that when a client PUTs without including `copperknob_ref`/`copperknob_url`/`bootstepper_ref`/`bootstepper_url`, the existing stored values are preserved (Pydantic's default of `""` no longer wipes them out). This was a latent bug that would have surfaced the moment any client edited a dance without echoing its provider refs back — now defensively preserved.
+- **Schema** — added `bootstepper_ref: Optional[str]` to `DanceIn`. Nullable so all pre-existing dances validate unchanged. Serializer emits `bootstepper_ref` on every dance response alongside `copperknob_ref`.
+
+### Frontend
+- **`src/api/client.ts`** — 6 new methods (`bootstepperSearch`, `bootstepperPopular`, `bootstepperById`, `createDanceFromBootStepper`, `linkBootStepper`, `compareBootStepper`). New `BootStepperResult` type + `bootstepper_ref` on `Dance` type.
+- **Shared UI**
+  - `src/components/BootStepperResultCard.tsx` — Result card + attribution footer, blue-purple provider pill (visually distinct from CopperKnob's copper pill). Handles the "Already in Library · also on CopperKnob" combined-provider badge.
+  - `src/components/BootStepperLinkSheet.tsx` — Admin-only sheet, mirrors CopperKnobLinkSheet.
+  - `src/components/BootStepperCompareSheet.tsx` — Admin-only diff sheet. Explicitly echoes `copperknob_ref`/`copperknob_url` back on the PUT so nothing on the CopperKnob side ever gets clobbered.
+- **Screens**
+  - `app/bootstepper/search.tsx` — 350ms debounced search, deep-linkable via `?q=`.
+  - `app/bootstepper/popular.tsx` — Popular list (sortBy=videoCount desc).
+  - `app/bootstepper/import.tsx` — Admin review-and-save (pre-filled, editable, publish toggle default off). When the dance is already in the library it bounces to the local detail page with a hint about linking BootStepper alongside CopperKnob.
+- **Integrations into existing surfaces**
+  - **`(tabs)/library.tsx`** — footer + empty-state now show BOTH CopperKnob and BootStepper CTAs side-by-side (Search + Popular for each).
+  - **`dance/[id].tsx`** — admin row now shows CopperKnob AND BootStepper "Link" / "Check data" buttons in parallel. A single dance can end up with both providers linked.
+
+### Attribution + ownership
+- Every screen showing BootStepper content displays "Dance information provided by BootStepper" and links to `bootstepper.com`.
+- Choreographer name preserved unmodified on import and never hidden. Country of choreographer surfaced (BootStepper is stronger on this than CopperKnob).
+- Import screen footnote: SGY does not claim ownership of third-party choreography or step-by-step instructions; the full stepsheet + tutorial videos remain on BootStepper.
+
+### Security
+- `BOOTSTEPPER_API_KEY` ONLY in `/app/backend/.env`. No route echoes it. No log or error response includes it.
+- Admin write routes gated server-side with `require_admin_or_editor`.
+
+### Brand polish
+- **Login screen (`app/auth.tsx`)** — bespoke portrait hero image (`assets/images/login-hero.jpg`, 254KB) with the SGY printed logo baked in. App-name overlay "Stompin' Ground / DANCE SOCIAL HQ" pinned to the very top of the hero in the sunset-sky area — deliberately positioned so it never occludes the printed logo circle.
+- **Rye display font** — bundled `assets/fonts/Rye-Regular.ttf` (SIL OFL 1.1). Loaded once at app-start via `useIconFonts` (which already handles font loading). Applied to the login hero title/subtitle so the app-name typography matches the Wild-West lettering inside the printed logo.
+- **Home page overflow fixes** — section headers ("Fresh on the Floor", "Community Activity") now use `flex: 1 + numberOfLines={1}` on the title so "See all" always fits on-row. "Recently Practiced" header rebuilt as a flex row where the title row expands and "Pick up where you left off" hint sticks to the right at natural width.
+
+### Production env vars pending (unchanged from Phase 17)
+Same list as Phase 17 — user still needs to add `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_CLIENT_ID`, `APPLE_PRIVATE_KEY_PEM_B64`, `APPLE_AUDIENCES`, `COPPERKNOB_API_KEY`, plus now `BOOTSTEPPER_API_KEY=AT7G23KS2GJHR8CRR43JJ9N` to the prod environment via the Emergent dashboard and click Publish.
+
+
+
 ## Phase 17 CopperKnob API Integration (v3.2 — DONE)
 
 ### Why

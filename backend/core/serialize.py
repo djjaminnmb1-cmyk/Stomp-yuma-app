@@ -79,6 +79,10 @@ def dance_to_out(d: dict, viewer_user_id: Optional[str] = None) -> dict:
         # for the ~1200 pre-existing dances that predate the
         # integration.
         "copperknob_ref": d.get("copperknob_ref", "") or "",
+        # BootStepper API record ID (added Phase 18). Coexists with
+        # ``copperknob_ref`` — a single local dance can be linked to
+        # BOTH providers. Nullable for pre-existing rows.
+        "bootstepper_ref": d.get("bootstepper_ref", "") or "",
         "description": d.get("description", ""),
         "tags": d.get("tags", []),
         "is_published": bool(d.get("is_published", True)),

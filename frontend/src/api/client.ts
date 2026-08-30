@@ -435,6 +435,10 @@ export type Dance = {
    *  dance was imported from — or manually linked to — a CopperKnob
    *  record. Powers duplicate detection + the admin refresh flow. */
   copperknob_ref?: string;
+  /** BootStepper stable reference (e.g. ``D36J5F44H3GB38N``). Coexists
+   *  with ``copperknob_ref`` — a single dance may carry BOTH provider
+   *  references at once. */
+  bootstepper_ref?: string;
   description?: string;
   tags?: string[];
   is_published?: boolean;
@@ -460,6 +464,38 @@ export type CopperKnobResult = {
     id: string;
     name: string;
     difficulty?: string;
+  } | null;
+};
+
+export type BootStepperResult = {
+  /** BootStepper's opaque stable ID (e.g. ``D36J5F44H3GB38N``). */
+  id: string;
+  /** Duplicate of ``id`` — retained so shared code paths that
+   *  originally treated CopperKnob's ``ref`` as the canonical key
+   *  keep working without special-casing.  Always equals ``id``. */
+  ref: string;
+  title: string;
+  choreographer: string;
+  choreographer_country: string;
+  count: string;
+  wall: string;
+  level: string;
+  music: string;
+  song: string;
+  artist: string;
+  url: string;
+  video_count?: number;
+  tags_count?: number;
+  restarts?: number;
+  /** Present when this BootStepper record is already listed in our
+   *  Dance Library. ``has_copperknob_ref`` lets us surface hints
+   *  like "Already in Library · also on CopperKnob". */
+  existing_dance?: {
+    id: string;
+    name: string;
+    difficulty?: string;
+    has_copperknob_ref?: boolean;
+    has_bootstepper_ref?: boolean;
   } | null;
 };
 
@@ -1244,6 +1280,109 @@ export const api = {
         home_url: string;
       };
     }>(`/dances/${encodeURIComponent(dance_id)}/copperknob-compare`, {}, token),
+
+  // ---------------- BootStepper (external dance directory) ----------------
+  // All calls are server-proxied — the API key never touches the app.
+  // Mirrors the CopperKnob surface for consistency; a single dance can
+  // carry BOTH a copperknob_ref and a bootstepper_ref simultaneously.
+  bootstepperSearch: (q: string, limit: number, token: string) =>
+    req<{
+      results: number;
+      query: string;
+      attribution: {
+        provider: string;
+        text: string;
+        link_label: string;
+        home_url: string;
+      };
+      data: BootStepperResult[];
+    }>(
+      `/bootstepper/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+      {},
+      token
+    ),
+  bootstepperPopular: (token: string, limit: number = 30) =>
+    req<{
+      results: number;
+      attribution: {
+        provider: string;
+        text: string;
+        link_label: string;
+        home_url: string;
+      };
+      data: BootStepperResult[];
+    }>(`/bootstepper/popular?limit=${limit}`, {}, token),
+  bootstepperById: (id: string, token: string) =>
+    req<{
+      data: BootStepperResult;
+      existing_dance: {
+        id: string;
+        name: string;
+        has_copperknob_ref?: boolean;
+        has_bootstepper_ref?: boolean;
+      } | null;
+      attribution: {
+        provider: string;
+        text: string;
+        link_label: string;
+        home_url: string;
+      };
+    }>(`/bootstepper/dances/${encodeURIComponent(id)}`, {}, token),
+  createDanceFromBootStepper: (
+    body: {
+      id: string;
+      name?: string;
+      choreographer?: string;
+      choreographer_country?: string;
+      song?: string;
+      artist?: string;
+      difficulty?: string;
+      count?: string;
+      bpm?: number | null;
+      description?: string;
+      tags?: string[];
+      is_published?: boolean;
+    },
+    token: string
+  ) =>
+    req<{ dance: Dance }>(
+      "/dances/from-bootstepper",
+      { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
+  linkBootStepper: (
+    dance_id: string,
+    id: string,
+    overwrite_url: boolean,
+    token: string
+  ) =>
+    req<{ dance: Dance }>(
+      `/dances/${encodeURIComponent(dance_id)}/link-bootstepper`,
+      {
+        method: "POST",
+        body: JSON.stringify({ id, overwrite_url }),
+      },
+      token
+    ),
+  compareBootStepper: (dance_id: string, token: string) =>
+    req<{
+      dance_id: string;
+      id: string;
+      bootstepper_url: string;
+      fields: {
+        field: string;
+        ours: string;
+        bootstepper: string;
+        differs: boolean;
+      }[];
+      differs_count: number;
+      attribution: {
+        provider: string;
+        text: string;
+        link_label: string;
+        home_url: string;
+      };
+    }>(`/dances/${encodeURIComponent(dance_id)}/bootstepper-compare`, {}, token),
 
   // ---------------- Activity / Recently Practiced ----------------
   logPractice: (dance_id: string, token: string) =>
