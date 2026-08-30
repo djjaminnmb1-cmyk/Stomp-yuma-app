@@ -529,6 +529,7 @@ export const api = {
     identity_token: string,
     full_name?: string,
     email?: string,
+    authorization_code?: string,
   ) =>
     req<{ token: string; user: User; is_new_user?: boolean }>(
       "/auth/apple",
@@ -538,15 +539,23 @@ export const api = {
           identity_token,
           full_name: full_name || null,
           email: email || null,
+          authorization_code: authorization_code || null,
         }),
       },
     ),
-  linkApple: (token: string, identity_token: string) =>
+  linkApple: (
+    token: string,
+    identity_token: string,
+    authorization_code?: string,
+  ) =>
     req<{ ok: boolean; user: User }>(
       "/auth/apple/link",
       {
         method: "POST",
-        body: JSON.stringify({ identity_token }),
+        body: JSON.stringify({
+          identity_token,
+          authorization_code: authorization_code || null,
+        }),
       },
       token,
     ),

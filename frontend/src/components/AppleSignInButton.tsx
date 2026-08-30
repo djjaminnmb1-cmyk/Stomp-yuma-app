@@ -77,6 +77,10 @@ export function AppleSignInButton({
         credential.identityToken,
         composed || undefined,
         credential.email || undefined,
+        // Forward the one-shot server-side authorization code so the
+        // backend can exchange it for a refresh token. Required by
+        // App Store 5.1.1(v): revocation on account deletion.
+        credential.authorizationCode || undefined,
       );
       await signIn(res.token, res.user);
       router.replace("/");

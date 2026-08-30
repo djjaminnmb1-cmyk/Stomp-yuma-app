@@ -64,7 +64,13 @@ export function SignInMethodsSection() {
         return;
       }
       setBusy(true);
-      const res = await api.linkApple(token, credential.identityToken);
+      // Forward authorizationCode too so link path establishes the
+      // refresh token needed for revoke-on-delete (5.1.1(v)).
+      const res = await api.linkApple(
+        token,
+        credential.identityToken,
+        credential.authorizationCode || undefined,
+      );
       updateUser(res.user);
       Alert.alert("Apple linked", "You can now sign in with Apple.");
     } catch (err: any) {

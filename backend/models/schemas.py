@@ -50,11 +50,18 @@ class AppleSignInIn(BaseModel):
     ``full_name`` and ``email`` are ONLY populated on the very first
     sign-in (Apple's docs are explicit about this). We persist them
     only when the token is otherwise valid.
+
+    ``authorization_code`` is Apple's one-shot server-side code from
+    ``AppleAuthentication.signInAsync`` — the ONLY way to obtain a
+    refresh token which we later use to satisfy App Store 5.1.1(v)
+    (token revocation on account deletion). Optional so older client
+    builds keep working, but new builds MUST forward it.
     """
 
     identity_token: str
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    authorization_code: Optional[str] = None
 
 
 class ForgotPasswordIn(BaseModel):

@@ -213,6 +213,40 @@ Emergent Support confirmed via `support_agent`: **managed OTA / EAS Update is no
 - Because each OTA bundles its own `app.json`, the flag travels with the specific update and doesn't leak into future releases.
 
 
+## Phase 16 App Store Readiness Hardening (v3.1 — DONE, 1 pending env var)
+
+### Why
+Ran the `expo-appstore-readiness-review` skill: 1 hard blocker + 5 warnings for iOS submission. This phase closes all of them.
+
+### Backend
+- **`services/apple_revoke.py`** — new module: Apple REST integration for Sign in with Apple:
+  - `build_client_secret()` mints a fresh ES256-signed JWT per call, capped at 5 min lifetime.
+  - `exchange_code_for_refresh_token(auth_code)` calls Apple's `/auth/token` (grant_type=authorization_code) on first native sign-in to obtain a long-lived refresh_token, which we persist on the user doc.
+  - `revoke_refresh_token(refresh_token)` posts to Apple's `/auth/revoke` on account deletion. Idempotent (already-revoked → treated as success). Best-effort — failure logged but never blocks the local delete.
+  - `is_configured()` gates the whole flow — when env vars are missing, deletion still proceeds cleanly (Apple's server-to-server "consent revoked" webhook is the fallback).
+  - Env var contract: `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_CLIENT_ID`, `APPLE_PRIVATE_KEY_PEM` / `_PEM_B64` / `_PATH` (loader tries in that order).
+- **`routes/auth.py`** — `/auth/apple` + `/auth/apple/link` now accept `authorization_code`; on first receipt they exchange it for a refresh_token and persist it. `DELETE /auth/me` invokes `revoke_refresh_token` before deleting the user row.
+- **`models/schemas.py`** — `AppleSignInIn.authorization_code` (optional, backward-compat).
+- **`.p8` file** stored at `/app/backend/secrets/AuthKey_KGNZBJ85K4.p8` with a `.gitignore` so it never gets committed.
+
+### Frontend
+- **`AppleSignInButton`** + **`SignInMethodsSection`** — capture `credential.authorizationCode` from `expo-apple-authentication` and forward to the backend.
+- **`src/api/client.ts`** — `appleSignIn` and `linkApple` accept a new optional `authorization_code` param.
+
+### Other App Store fixes
+- **`ErrorBoundary`** (`src/components/ErrorBoundary.tsx`) — root-level React error boundary wraps the entire app in `_layout.tsx`. Any render error now shows a friendly "Something went wrong — Reload" screen instead of crashing to home (Apple 2.1 pre-emptive).
+- **`app.json` cleanup**:
+  - `name` = `Stompin' Ground Yuma` (was `frontend`)
+  - `slug` = `stompin-ground-yuma`
+  - `ios.infoPlist.CFBundleDisplayName` = `Stompin' Yuma` (fits home-screen label)
+  - Removed unused `NSCameraUsageDescription` (no camera SDK is imported anywhere).
+  - Added `ios.config.usesNonExemptEncryption: false` so App Store Connect no longer prompts for compliance on every build.
+- **`extra.privacyPolicyUrl`** — left as preview URL (only working URL); needs a permanent hosted URL for App Store Connect submission (documented in `/app/memory/PRD.md`).
+
+### Blocked on
+- **`APPLE_TEAM_ID` env var** — Team ID from developer.apple.com/account → Membership. Without it, `is_configured()` stays False and revoke calls no-op. **Everything else works.** Delete flow still fully deletes the local user record.
+
+
 ## Phase 15 User Blocking (v3.0 — DONE)
 
 ### Why

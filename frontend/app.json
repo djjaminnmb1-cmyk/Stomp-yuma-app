@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "Stompin' Ground Yuma",
+    "slug": "stompin-ground-yuma",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -21,10 +21,13 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.emergent.stompinyumaapp.uyr5zg",
       "usesAppleSignIn": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
+        "CFBundleDisplayName": "Stompin' Yuma",
         "NSPhotoLibraryUsageDescription": "Upload step-sheet images for dances",
         "NSPhotoLibraryAddUsageDescription": "Save step-sheet images to your device",
-        "NSCameraUsageDescription": "Take step-sheet photos to attach to dances",
         "NSLocationWhenInUseUsageDescription": "Find line-dance events near you",
         "LSApplicationQueriesSchemes": [
           "vnd.youtube",

@@ -280,6 +280,23 @@ async def apple_sign_in(inp: AppleSignInIn):
         user.update(updates)
         is_new_user = True
 
+    # Exchange the one-shot ``authorization_code`` for a durable refresh
+    # token the first time we see one. Apple codes expire in ~10 min
+    # and are single-use, so we only try when (a) the client sent one
+    # and (b) we don't already have one on the user doc. Failures are
+    # silent — sign-in still succeeds; revoke-on-delete just becomes
+    # best-effort until the next fresh sign-in.
+    if inp.authorization_code and not user.get("apple_refresh_token"):
+        from services.apple_revoke import exchange_code_for_refresh_token
+
+        refresh = await exchange_code_for_refresh_token(inp.authorization_code)
+        if refresh:
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {"apple_refresh_token": refresh}},
+            )
+            user["apple_refresh_token"] = refresh
+
     return {
         "token": make_jwt(
             user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0)
@@ -316,6 +333,17 @@ async def apple_link(
     await db.users.update_one(
         {"user_id": user["user_id"]}, {"$set": {"apple_sub": apple_sub}}
     )
+    # Same one-shot exchange as ``/auth/apple`` — get a refresh token
+    # so revoke-on-delete works for this account too.
+    if inp.authorization_code:
+        from services.apple_revoke import exchange_code_for_refresh_token
+
+        refresh = await exchange_code_for_refresh_token(inp.authorization_code)
+        if refresh:
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {"apple_refresh_token": refresh}},
+            )
     fresh = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
     return {"ok": True, "user": user_to_out(fresh)}
 
@@ -556,7 +584,27 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
         {"$set": {"instructor_id": "", "instructor_name": "Deleted user"}},
     )
 
-    # 3) The user itself
+    # 3) Apple Sign-In token revocation — App Store 5.1.1(v) requires
+    #    apps that offer Sign in with Apple to revoke the user's
+    #    Apple-side tokens when the account is deleted. We do this
+    #    BEFORE deleting the user row so a network hiccup doesn't
+    #    strand the refresh_token. Failure is logged and non-fatal —
+    #    Apple's server-to-server "consent revoked" callback is the
+    #    fallback reconciliation path.
+    refresh_token = (user.get("apple_refresh_token") or "").strip()
+    if refresh_token:
+        try:
+            from services.apple_revoke import revoke_refresh_token
+
+            ok = await revoke_refresh_token(refresh_token)
+            logger.info(
+                "apple revoke on delete: user=%s ok=%s", uid, ok
+            )
+        except Exception as e:  # pragma: no cover — never let this
+            # block deletion.
+            logger.warning("apple revoke crashed for user=%s: %s", uid, e)
+
+    # 4) The user itself
     await db.users.delete_one({"user_id": uid})
 
     logger.info("account deletion: %s (%s)", email, uid)
