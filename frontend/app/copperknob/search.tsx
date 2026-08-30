@@ -28,10 +28,11 @@ import {
   FlatList,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { api, CopperKnobResult } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { colors, spacing, radius } from "@/src/theme";
@@ -51,6 +52,7 @@ const TYPES: { key: SearchType; label: string; icon: any }[] = [
 
 export default function CopperKnobSearchScreen() {
   const params = useLocalSearchParams<{ q?: string }>();
+  const router = useRouter();
   const { token } = useAuth();
   const [q, setQ] = useState((params.q as string) || "");
   const [type, setType] = useState<SearchType>("all");
@@ -203,7 +205,25 @@ export default function CopperKnobSearchScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <Stack.Screen options={{ title: "Search CopperKnob" }} />
+      {/* In-app header — the root Stack runs with headerShown:false so
+          we render our own back button + title, matching the pattern
+          used by Community Guidelines / Terms / Leaderboard. Prevents
+          the "no way back to the library" dead-end. */}
+      <View style={styles.headerBar}>
+        <Pressable
+          testID="ck-search-back"
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace("/library");
+          }}
+          style={styles.backBtn}
+          hitSlop={12}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Search CopperKnob</Text>
+        <View style={{ width: 36 }} />
+      </View>
       <FlatList
         data={results}
         keyExtractor={(item) => item.ref}
@@ -231,6 +251,29 @@ export default function CopperKnobSearchScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
+  headerBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  headerTitle: {
+    fontFamily: Platform.select({ ios: "serif", default: undefined }),
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
   headerBox: { marginBottom: spacing.md },
   attributionBanner: {
     fontSize: 11,

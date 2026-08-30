@@ -36,7 +36,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { api, CopperKnobResult } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { colors, spacing, radius } from "@/src/theme";
@@ -182,12 +182,33 @@ export default function CopperKnobImportScreen() {
     }
   };
 
+  // Consistent in-app header + back button (the root Stack hides its
+  // own header — without this the admin has no way back to the search
+  // results after landing here).
+  const HeaderBar = ({ title }: { title: string }) => (
+    <View style={styles.headerBar}>
+      <Pressable
+        testID="ck-import-back"
+        onPress={() => {
+          if (router.canGoBack()) router.back();
+          else router.replace("/library");
+        }}
+        style={styles.backBtn}
+        hitSlop={12}
+      >
+        <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
+      </Pressable>
+      <Text style={styles.headerTitle}>{title}</Text>
+      <View style={{ width: 36 }} />
+    </View>
+  );
+
   // Client-side gate — the server also enforces this, but bouncing
   // regular users early is a better UX than a confused 403 toast.
   if (!isAdminOrEditor) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ title: "Add from CopperKnob" }} />
+        <HeaderBar title="Add from CopperKnob" />
         <View style={styles.center}>
           <Ionicons name="lock-closed" size={40} color={colors.muted} />
           <Text style={styles.errorTitle}>Admins only</Text>
@@ -210,7 +231,7 @@ export default function CopperKnobImportScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ title: "Add from CopperKnob" }} />
+        <HeaderBar title="Add from CopperKnob" />
         <View style={styles.center}>
           <ActivityIndicator color={colors.brandPrimary} />
         </View>
@@ -221,7 +242,7 @@ export default function CopperKnobImportScreen() {
   if (loadError || !item) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ title: "Add from CopperKnob" }} />
+        <HeaderBar title="Add from CopperKnob" />
         <View style={styles.center}>
           <Ionicons name="cloud-offline-outline" size={40} color={colors.muted} />
           <Text style={styles.errorTitle}>Couldn&apos;t load stepsheet</Text>
@@ -239,7 +260,7 @@ export default function CopperKnobImportScreen() {
   if (existingId) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ title: "Already in Library" }} />
+        <HeaderBar title="Already in Library" />
         <View style={styles.center}>
           <Ionicons
             name="checkmark-circle-outline"
@@ -263,7 +284,7 @@ export default function CopperKnobImportScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <Stack.Screen options={{ title: "Add from CopperKnob" }} />
+      <HeaderBar title="Add from CopperKnob" />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
@@ -448,6 +469,29 @@ function Field({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
+  headerBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  headerTitle: {
+    fontFamily: Platform.select({ ios: "serif", default: undefined }),
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
   center: {
     flex: 1,
     alignItems: "center",

@@ -15,10 +15,12 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Pressable,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack } from "expo-router";
+import { useRouter } from "expo-router";
 import { api, CopperKnobResult } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { colors, spacing } from "@/src/theme";
@@ -28,6 +30,7 @@ import {
 } from "@/src/components/CopperKnobResultCard";
 
 export default function CopperKnobPopularScreen() {
+  const router = useRouter();
   const { token } = useAuth();
   const [items, setItems] = useState<CopperKnobResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,10 +63,31 @@ export default function CopperKnobPopularScreen() {
     load();
   }, [load]);
 
+  // Consistent in-app header for parity with Search / Import — the root
+  // Stack hides its own header, so without this the user has no back
+  // button and gets stranded on the CopperKnob branch.
+  const HeaderBar = () => (
+    <View style={styles.headerBar}>
+      <Pressable
+        testID="ck-popular-back"
+        onPress={() => {
+          if (router.canGoBack()) router.back();
+          else router.replace("/library");
+        }}
+        style={styles.backBtn}
+        hitSlop={12}
+      >
+        <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
+      </Pressable>
+      <Text style={styles.headerTitle}>Popular on CopperKnob</Text>
+      <View style={{ width: 36 }} />
+    </View>
+  );
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <Stack.Screen options={{ title: "Popular on CopperKnob" }} />
+        <HeaderBar />
         <View style={styles.center}>
           <ActivityIndicator color={colors.brandPrimary} />
         </View>
@@ -73,7 +97,7 @@ export default function CopperKnobPopularScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <Stack.Screen options={{ title: "Popular on CopperKnob" }} />
+      <HeaderBar />
       {error && items.length === 0 ? (
         <View style={styles.center}>
           <Ionicons
@@ -125,6 +149,29 @@ export default function CopperKnobPopularScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.surface },
+  headerBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  headerTitle: {
+    fontFamily: Platform.select({ ios: "serif", default: undefined }),
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
   center: {
     flex: 1,
     alignItems: "center",
