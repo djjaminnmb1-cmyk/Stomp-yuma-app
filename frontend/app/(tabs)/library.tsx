@@ -226,56 +226,39 @@ export default function Library() {
               tintColor={colors.brandPrimary}
             />
           }
-          // CopperKnob + BootStepper discovery CTAs — always visible
-          // so admins & dancers know they can widen the search across
-          // BOTH external directories. When our own library returned
-          // zero hits the footer stays; the empty state carries CTAs
-          // for both providers.
+          // Unified external search CTA — one merged search box
+          // covers BOTH CopperKnob and BootStepper. Provider-specific
+          // buttons are kept as a "search individually" fallback for
+          // power users / when one provider outages the other.
           ListFooterComponent={
             items.length > 0 ? (
               <View style={styles.ckFooter}>
                 <Text style={styles.ckFooterHint}>
                   Can&apos;t find what you&apos;re looking for?
                 </Text>
+                <Pressable
+                  testID="library-search-external"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/external-search",
+                      params: q ? { q } : {},
+                    })
+                  }
+                  style={styles.ckFooterPrimaryBtn}
+                >
+                  <Ionicons
+                    name="search"
+                    size={16}
+                    color={colors.onBrandPrimary}
+                  />
+                  <Text style={styles.ckFooterPrimaryText}>
+                    Search CopperKnob + BootStepper
+                  </Text>
+                </Pressable>
+                <Text style={styles.ckFooterFallbackHint}>
+                  Or browse a single directory
+                </Text>
                 <View style={styles.ckFooterRow}>
-                  <Pressable
-                    testID="library-search-copperknob"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/copperknob/search",
-                        params: q ? { q } : {},
-                      })
-                    }
-                    style={styles.ckSecondaryBtn}
-                  >
-                    <Ionicons
-                      name="search"
-                      size={14}
-                      color={colors.brandPrimary}
-                    />
-                    <Text style={styles.ckSecondaryText}>
-                      Search CopperKnob
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    testID="library-search-bootstepper"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/bootstepper/search",
-                        params: q ? { q } : {},
-                      })
-                    }
-                    style={styles.ckSecondaryBtn}
-                  >
-                    <Ionicons
-                      name="search"
-                      size={14}
-                      color={colors.brandPrimary}
-                    />
-                    <Text style={styles.ckSecondaryText}>
-                      Search BootStepper
-                    </Text>
-                  </Pressable>
                   <Pressable
                     testID="library-popular-copperknob"
                     onPress={() => router.push("/copperknob/popular")}
@@ -324,15 +307,15 @@ export default function Library() {
                   <Text style={styles.emptyResetText}>Reset filters</Text>
                 </Pressable>
               ) : null}
-              {/* Bigger, high-contrast CTAs when our own library came up
-                  empty — this is exactly when the external directories
-                  are most useful. Two side-by-side buttons: CopperKnob
-                  first (larger network) then BootStepper. */}
+              {/* Bigger, high-contrast primary CTA when our own library
+                  came up empty — this is exactly when the external
+                  directories are most useful. One button covers BOTH
+                  CopperKnob + BootStepper via the unified search. */}
               <Pressable
-                testID="empty-search-copperknob"
+                testID="empty-search-external"
                 onPress={() =>
                   router.push({
-                    pathname: "/copperknob/search",
+                    pathname: "/external-search",
                     params: q ? { q } : {},
                   })
                 }
@@ -340,24 +323,40 @@ export default function Library() {
               >
                 <Ionicons name="search" size={16} color={colors.onBrandPrimary} />
                 <Text style={styles.ckPrimaryText}>
-                  Search CopperKnob{q ? ` for "${q}"` : ""}
+                  Search CopperKnob + BootStepper{q ? ` for "${q}"` : ""}
                 </Text>
               </Pressable>
-              <Pressable
-                testID="empty-search-bootstepper"
-                onPress={() =>
-                  router.push({
-                    pathname: "/bootstepper/search",
-                    params: q ? { q } : {},
-                  })
-                }
-                style={[styles.ckPrimaryBtn, styles.ckPrimaryBtnAlt]}
-              >
-                <Ionicons name="search" size={16} color={colors.brandPrimary} />
-                <Text style={[styles.ckPrimaryText, styles.ckPrimaryTextAlt]}>
-                  Search BootStepper{q ? ` for "${q}"` : ""}
-                </Text>
-              </Pressable>
+              <Text style={styles.emptyFallbackHint}>
+                Or search a single directory
+              </Text>
+              <View style={styles.emptyFallbackRow}>
+                <Pressable
+                  testID="empty-search-copperknob"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/copperknob/search",
+                      params: q ? { q } : {},
+                    })
+                  }
+                  style={styles.ckSecondaryBtn}
+                >
+                  <Ionicons name="search" size={12} color={colors.brandPrimary} />
+                  <Text style={styles.ckSecondaryText}>CopperKnob</Text>
+                </Pressable>
+                <Pressable
+                  testID="empty-search-bootstepper"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/bootstepper/search",
+                      params: q ? { q } : {},
+                    })
+                  }
+                  style={styles.ckSecondaryBtn}
+                >
+                  <Ionicons name="search" size={12} color={colors.brandPrimary} />
+                  <Text style={styles.ckSecondaryText}>BootStepper</Text>
+                </Pressable>
+              </View>
             </View>
           }
           renderItem={({ item }) => (
@@ -621,6 +620,26 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
   },
+  ckFooterPrimaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.brandPrimary,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+    marginTop: 2,
+  },
+  ckFooterPrimaryText: {
+    color: colors.onBrandPrimary,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  ckFooterFallbackHint: {
+    color: colors.muted,
+    fontSize: 11,
+    marginTop: 6,
+  },
   ckFooterRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -668,6 +687,17 @@ const styles = StyleSheet.create({
   },
   ckPrimaryTextAlt: {
     color: colors.brandPrimary,
+  },
+  emptyFallbackHint: {
+    color: colors.muted,
+    fontSize: 11,
+    marginTop: spacing.md,
+    marginBottom: 2,
+  },
+  emptyFallbackRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    justifyContent: "center",
   },
 
   // Subtle source-of-truth badge on library result cards.

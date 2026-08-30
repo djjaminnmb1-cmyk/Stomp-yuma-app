@@ -464,6 +464,8 @@ export type CopperKnobResult = {
     id: string;
     name: string;
     difficulty?: string;
+    has_copperknob_ref?: boolean;
+    has_bootstepper_ref?: boolean;
   } | null;
 };
 
@@ -497,6 +499,85 @@ export type BootStepperResult = {
     has_copperknob_ref?: boolean;
     has_bootstepper_ref?: boolean;
   } | null;
+};
+
+/**
+ * Unified result from the merged external search — coalesces
+ * CopperKnob + BootStepper records that describe the same dance
+ * into ONE row. ``sources`` tells the UI which provider chips to
+ * render, and the per-provider ref/URL is preserved so a downstream
+ * import knows which endpoint to hit.
+ */
+export type MergedExternalResult = {
+  title: string;
+  choreographer: string;
+  choreographer_country: string;
+  count: string;
+  wall: string;
+  level: string;
+  music: string;
+  song: string;
+  artist: string;
+  copperknob: { ref: string; url: string };
+  bootstepper: { id: string; url: string };
+  sources: ("copperknob" | "bootstepper")[];
+  existing_dance?: {
+    id: string;
+    name: string;
+    difficulty?: string;
+    has_copperknob_ref?: boolean;
+    has_bootstepper_ref?: boolean;
+  } | null;
+};
+
+export type BulkImportEntry = {
+  source: "copperknob" | "bootstepper";
+  ref: string;
+  is_published?: boolean;
+};
+
+export type BulkImportPreviewRow = {
+  source: "copperknob" | "bootstepper";
+  ref: string;
+  status: "ready" | "skipped_duplicate" | "error";
+  title?: string;
+  choreographer?: string;
+  level?: string;
+  count?: string;
+  wall?: string;
+  existing_dance_id?: string;
+  existing_dance_name?: string;
+  error?: string;
+};
+
+export type BulkImportPreviewResponse = {
+  total: number;
+  ready_to_import: number;
+  already_in_library: number;
+  errors: number;
+  resolved: BulkImportPreviewRow[];
+};
+
+export type BulkImportRow = {
+  source: "copperknob" | "bootstepper";
+  ref: string;
+  status: "imported" | "skipped_duplicate" | "error";
+  dance_id?: string;
+  dance_name?: string;
+  is_published?: boolean;
+  existing_dance_id?: string;
+  existing_dance_name?: string;
+  error?: string;
+  has_copperknob_ref?: boolean;
+  has_bootstepper_ref?: boolean;
+};
+
+export type BulkImportResponse = {
+  imported: number;
+  skipped_duplicates: number;
+  errors: number;
+  total: number;
+  results: BulkImportRow[];
 };
 
 export type ChatMessage = {
@@ -1383,6 +1464,59 @@ export const api = {
         home_url: string;
       };
     }>(`/dances/${encodeURIComponent(dance_id)}/bootstepper-compare`, {}, token),
+
+  // ---------------- Merged external search + Bulk import ----------------
+  /**
+   * One query, both providers. Server fans out to CopperKnob AND
+   * BootStepper in parallel, merges records that clearly represent the
+   * same dance (by title + choreographer surname), and returns a single
+   * unified list. Providers that fail are surfaced in the ``providers``
+   * block so the UI can render a graceful "X unavailable" banner.
+   */
+  externalSearch: (q: string, token: string, limit: number = 30) =>
+    req<{
+      query: string;
+      results: number;
+      providers: {
+        copperknob: { count: number; error: string | null };
+        bootstepper: { count: number; error: string | null };
+      };
+      data: MergedExternalResult[];
+    }>(
+      `/external-search?q=${encodeURIComponent(q)}&limit=${limit}`,
+      {},
+      token
+    ),
+  /** Dry-run — see which entries will actually be imported vs.
+   *  already-in-library vs. errored, without writing anything. */
+  bulkPreviewExternal: (
+    entries: { source: "copperknob" | "bootstepper"; ref: string }[],
+    token: string
+  ) =>
+    req<BulkImportPreviewResponse>(
+      "/dances/bulk-preview-external",
+      { method: "POST", body: JSON.stringify({ entries }) },
+      token
+    ),
+  /** Commit the batch. Same shape as the preview + per-entry status
+   *  ("imported" | "skipped_duplicate" | "error"). */
+  bulkImportExternal: (
+    entries: {
+      source: "copperknob" | "bootstepper";
+      ref: string;
+      is_published?: boolean;
+    }[],
+    publish_all: boolean,
+    token: string
+  ) =>
+    req<BulkImportResponse>(
+      "/dances/bulk-from-external",
+      {
+        method: "POST",
+        body: JSON.stringify({ entries, publish_all }),
+      },
+      token
+    ),
 
   // ---------------- Activity / Recently Practiced ----------------
   logPractice: (dance_id: string, token: string) =>

@@ -183,7 +183,26 @@ async def _request(path: str, params: Optional[dict] = None) -> Any:
         raise BootStepperError("BootStepper is unreachable", status=502)
 
     if r.status_code == 200:
-        return r.json()
+        # BootStepper occasionally returns a 200 with an empty body
+        # for lookups where the id is well-formed but doesn't exist
+        # (e.g. copy-paste typo). Treat that as a not-found instead
+        # of blowing up on ``r.json()`` — the caller then produces a
+        # clean 404 through the ``BootStepperError`` path.
+        if not r.content or not r.content.strip():
+            raise BootStepperError("Dance not found", status=404)
+        try:
+            return r.json()
+        except ValueError:
+            logger.info(
+                "BootStepper %s %s → 200 with non-JSON body (len=%s)",
+                r.request.method,
+                path,
+                len(r.content),
+            )
+            raise BootStepperError(
+                "BootStepper returned an unexpected response",
+                status=502,
+            )
     if r.status_code == 401:
         # Never leak — the client-facing message must be generic.
         logger.warning(

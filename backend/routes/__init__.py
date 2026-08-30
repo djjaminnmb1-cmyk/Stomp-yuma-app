@@ -17,6 +17,7 @@ from . import (
     badges,
     blocks,
     bootstepper,
+    bulk_import,
     certificate,
     chat,
     classes,
@@ -24,6 +25,7 @@ from . import (
     dances,
     dashboard,
     events,
+    external_search,
     feedback,
     instructors,
     leaderboard,
@@ -62,6 +64,8 @@ api_router.include_router(social.router)
 api_router.include_router(blocks.router)
 api_router.include_router(copperknob.router)
 api_router.include_router(bootstepper.router)
+api_router.include_router(external_search.router)
+api_router.include_router(bulk_import.router)
 api_router.include_router(events.router)
 api_router.include_router(instructors.router)
 api_router.include_router(song_preview.router)

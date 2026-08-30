@@ -88,7 +88,12 @@ export function CopperKnobResultCard({
       {item.existing_dance ? (
         <View style={styles.alreadyPill}>
           <Ionicons name="checkmark-circle" size={16} color="#16803C" />
-          <Text style={styles.alreadyText}>Already in Library</Text>
+          <Text style={styles.alreadyText}>
+            Already in Library
+            {(item.existing_dance as any).has_bootstepper_ref
+              ? " · also on BootStepper"
+              : ""}
+          </Text>
         </View>
       ) : null}
 

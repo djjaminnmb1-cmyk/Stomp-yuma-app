@@ -574,3 +574,45 @@ agent_communication:
         • Frontend smoke: multi-select opens from Profile → "My instructors" and
           Home → Suggest a Dance; picks + Primary + follow-toggle all persist; the
           "Save N picks" flow closes the sheet and toasts new follows.
+
+
+  - agent: "main"
+    message: |
+      Phase 19 — Merged External Search & Batch Import UI wiring:
+
+      Frontend wiring (this session):
+        • Library `(tabs)/library.tsx` — replaced the pair of provider-specific
+          "Search CopperKnob / Search BootStepper" CTAs with a SINGLE unified
+          "Search CopperKnob + BootStepper" primary button that routes to
+          `/external-search`. Provider-specific searches are demoted to
+          smaller fallback links ("Or search a single directory") so power
+          users still have an escape hatch.
+        • Footer of the library also gets the primary unified CTA + the two
+          "Popular on CopperKnob / Popular on BootStepper" fallbacks.
+        • `/external-search/index.tsx` (already built, now reachable): merged
+          search over both providers, provider outage banner, admin-only
+          "Select" batch mode with tap-to-toggle, bottom bar with "Review N"
+          → routes to `/external-search/batch`.
+        • `/external-search/batch.tsx` (already built, now reachable): dry-run
+          preview via `/api/dances/bulk-preview-external`, categorised list
+          (Ready / Already in Library / Error), publish-immediately toggle,
+          commit via `/api/dances/bulk-from-external`, per-row success view.
+
+      Screenshot-verified end-to-end (admin login `erinboroughs@gmail.com`):
+        1. Library empty-state ("xxxxxx" search) shows the unified primary
+           CTA + "Or search a single directory" fallback row.
+        2. External-search screen renders the merged results with source
+           badges (CopperKnob / BootStepper) and admin "Select" affordance.
+        3. Selecting "footloose" + tap Select → batch mode enters, "Already
+           in Library" row is locked, unlocked rows are tappable.
+        4. Pick a card → bottom bar shows "1 selected · Review 1" → tap
+           Review → Batch import preview loads with pre-ticked ready row,
+           "Publish immediately" toggle default off, `Import 1` CTA.
+
+      Testing:
+        • Needs `testing_agent` — end-to-end verification of the merged
+          search & batch import UI (login as admin, search, select 2-3,
+          preview, commit as drafts, verify DB rows exist as drafts).
+        • Old `/copperknob/*` and `/bootstepper/*` routes retained as
+          fallback per user request (they are still reachable from the
+          smaller fallback links). No routes were deleted.

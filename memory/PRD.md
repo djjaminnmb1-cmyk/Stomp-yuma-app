@@ -435,3 +435,26 @@ Chat + activity feed are shared spaces. Users need a mutual "make them go away" 
 - **Backend**: New `GET /api/weekly-recap` — merges Practice-Mode opens (`practice_daily`) and completions (`tracking.updated_at`, `status="completed"`) across the current Mon→Sun window. Returns `{days[], practices, completions, total, days_active, best_day}`.
 - **Frontend**: `WeeklyRecapCard.tsx` on Home renders directly under the Streak card. Sunday shows a "🎉 Weekly Recap" celebration tone; Mon–Sat shows "This week so far". Includes 3-stat row (Practices · Completed · Best day) and Mon–Sun activity dots highlighting today. Hidden entirely when the user has 0 activity this week — no zero-shame states.
 
+
+
+## Phase 19 Merged External Search + Batch Import UI Wiring (v3.2 — DONE)
+
+### Unified Search Entry Point
+- **Library screen** (`app/(tabs)/library.tsx`) — replaced the two split "Search CopperKnob / Search BootStepper" primary CTAs (footer + empty-state) with a **single unified** "Search CopperKnob + BootStepper" button that routes to `/external-search`. Provider-specific search links are demoted to smaller fallback pills ("Or search a single directory") so power users still have per-provider access when needed.
+- Old `/copperknob/*` and `/bootstepper/*` routes retained as safety fallbacks per user request.
+
+### Merged External Search screen (`/external-search/index.tsx`)
+- One query fans out to CopperKnob + BootStepper server-side (in parallel via `asyncio.gather`).
+- Results merged by title + choreographer surname; each merged card carries **both** provider chips + provider outage banner if one API fails.
+- Debounced input (350 ms), `Already in Library` badges for de-dup transparency.
+- Admin-only **Select** button in the header → tap-to-toggle batch mode.
+
+### Batch Import Preview (`/external-search/batch.tsx`)
+- Dry-run via `POST /api/dances/bulk-preview-external` — categorises entries into **Ready / Already in Library / Error** with per-row title, choreographer, and level.
+- `Publish immediately` toggle (default OFF = drafts).
+- `Check all` / `Uncheck all` bulk pick, sticky bottom action bar with "Import N".
+- Commit via `POST /api/dances/bulk-from-external`. Success view lists per-row status + deep-links into each newly-created dance detail.
+- Max 50 imports per batch (server-enforced).
+
+### Test coverage
+- `testing_agent` iteration 27 — all 5 frontend integration scenarios passed (100%): Library CTA wiring, merged search rendering, batch mode selection, batch preview + import flow, regression check on remaining fallback routes.

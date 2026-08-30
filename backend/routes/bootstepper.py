@@ -56,6 +56,7 @@ from core.security import (
 from core.serialize import dance_to_out, youtube_search_url
 from core.time_helpers import now_iso
 from services import bootstepper as bs_svc
+from services import dance_dedupe
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -86,60 +87,13 @@ def _extract_id_from_url(url: str) -> str:
 
 
 async def _match_existing_dance(bs_item: dict) -> Optional[dict]:
-    """Duplicate detection, preferred → weakest match:
-
-    1. Same ``bootstepper_ref``
-    2. Same id inferred from a stored ``bootstepper_url``
-    3. Case-insensitive title + choreographer both match
-
-    Returns the raw dance doc (with ``_id`` stripped) or ``None``.
-    NEVER overwrites existing CopperKnob data — we only READ here.
+    """Cross-provider duplicate detection — delegates to the shared
+    ``services.dance_dedupe`` module so a dance already added under
+    the CopperKnob provider is also flagged here (and vice versa).
+    Kept as a thin wrapper so existing call sites don't need to
+    change.
     """
-    bs_id = (bs_item.get("id") or bs_item.get("ref") or "").strip()
-    if not bs_id:
-        return None
-
-    # 1) Explicit stored ref
-    hit = await db.dances.find_one(
-        {"bootstepper_ref": bs_id}, {"_id": 0}
-    )
-    if hit:
-        return hit
-
-    # 2) Same id inferred from an existing bootstepper_url. Regex
-    #    prefix match on the collection because Mongo doesn't parse
-    #    URLs natively — cheap because URLs are short and the
-    #    collection is <2k rows.
-    hit = await db.dances.find_one(
-        {
-            "bootstepper_url": {
-                "$regex": f"bootstepper\\.com/dances/{re.escape(bs_id)}(?:$|[/?#])",
-                "$options": "i",
-            }
-        },
-        {"_id": 0},
-    )
-    if hit:
-        return hit
-
-    # 3) Weakest — same title + choreographer (case-insensitive).
-    #    Requires BOTH to avoid false positives on common titles.
-    title = (bs_item.get("title") or "").strip()
-    chor = (bs_item.get("choreographer") or "").strip()
-    if title and chor:
-        hit = await db.dances.find_one(
-            {
-                "name": {"$regex": f"^{re.escape(title)}$", "$options": "i"},
-                "choreographer": {
-                    "$regex": f"^{re.escape(chor)}$",
-                    "$options": "i",
-                },
-            },
-            {"_id": 0},
-        )
-        if hit:
-            return hit
-    return None
+    return await dance_dedupe.find_duplicate(bs_item, source="bootstepper")
 
 
 async def _annotate_matches(items: list[dict]) -> list[dict]:
@@ -323,13 +277,7 @@ async def create_dance_from_bootstepper(
     if dup:
         raise HTTPException(
             409,
-            {
-                "error": "already_exists",
-                "existing_dance_id": dup["id"],
-                "existing_dance_name": dup.get("name", ""),
-                "has_copperknob_ref": bool(dup.get("copperknob_ref")),
-                "has_bootstepper_ref": bool(dup.get("bootstepper_ref")),
-            },
+            dance_dedupe.duplicate_response_payload(dup),
         )
 
     name = (body.name or bs_item.get("title") or "").strip()

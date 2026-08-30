@@ -44,6 +44,7 @@ from core.security import (
 from core.serialize import dance_to_out, youtube_search_url
 from core.time_helpers import now_iso
 from services import copperknob as ck_svc
+from services import dance_dedupe
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -74,58 +75,20 @@ def _extract_ref_from_url(url: str) -> str:
 
 
 async def _match_existing_dance(ck_item: dict) -> Optional[dict]:
-    """Duplicate detection, preferred → weakest match:
-
-    1. Same ``copperknob_ref``
-    2. Same ref inferred from a stored ``copperknob_url``
-    3. Case-insensitive title + choreographer both match
-
-    Returns the raw dance doc (with ``_id`` stripped) or ``None``.
+    """Cross-provider duplicate detection — delegates to the shared
+    ``services.dance_dedupe`` module so a dance already added under
+    the BootStepper provider is also flagged here (and vice versa).
+    Kept as a thin wrapper so ``_annotate_matches`` and the write
+    paths below don't need to know the internal signal ordering.
     """
-    ref = (ck_item.get("ref") or "").upper()
-    if not ref:
-        return None
-
-    # 1) Explicit stored ref
-    hit = await db.dances.find_one(
-        {"copperknob_ref": ref}, {"_id": 0}
-    )
-    if hit:
-        return hit
-
-    # 2) Same ref inferred from an existing copperknob_url. Uses a
-    #    regex prefix match on the collection because Mongo doesn't
-    #    have URL parsing built in — this is cheap because URLs are
-    #    short and the collection is <2k rows.
-    hit = await db.dances.find_one(
-        {"copperknob_url": {"$regex": f"/stepsheets/{re.escape(ref)}", "$options": "i"}},
-        {"_id": 0},
-    )
-    if hit:
-        return hit
-
-    # 3) Weakest — same title + choreographer (case-insensitive). We
-    #    require BOTH to avoid false positives on common titles like
-    #    "Cowboy Rhythm".
-    title = (ck_item.get("title") or "").strip()
-    chor = (ck_item.get("choreographer") or "").strip()
-    if title and chor:
-        hit = await db.dances.find_one(
-            {
-                "name": {"$regex": f"^{re.escape(title)}$", "$options": "i"},
-                "choreographer": {"$regex": f"^{re.escape(chor)}$", "$options": "i"},
-            },
-            {"_id": 0},
-        )
-        if hit:
-            return hit
-    return None
+    return await dance_dedupe.find_duplicate(ck_item, source="copperknob")
 
 
 async def _annotate_matches(items: list[dict]) -> list[dict]:
-    """For every CopperKnob item, attach ``existing_dance`` (id + name)
-    when we already have this dance listed. Used so the UI can show
-    "Already in Library / View Dance" instead of "Add to Library".
+    """For every CopperKnob item, attach ``existing_dance`` (id + name
+    + provider-ref flags) when we already have this dance listed. Used
+    so the UI can show "Already in Library" — and, when useful, hint
+    that the match already carries a BootStepper ref too.
     """
     out: list[dict] = []
     for it in items:
@@ -136,6 +99,8 @@ async def _annotate_matches(items: list[dict]) -> list[dict]:
                 "id": match["id"],
                 "name": match.get("name", ""),
                 "difficulty": match.get("difficulty", ""),
+                "has_copperknob_ref": bool(match.get("copperknob_ref")),
+                "has_bootstepper_ref": bool(match.get("bootstepper_ref")),
             }
         out.append(annotated)
     return out
@@ -285,11 +250,7 @@ async def create_dance_from_copperknob(
     if dup:
         raise HTTPException(
             409,
-            {
-                "error": "already_exists",
-                "existing_dance_id": dup["id"],
-                "existing_dance_name": dup.get("name", ""),
-            },
+            dance_dedupe.duplicate_response_payload(dup),
         )
 
     name = (body.name or ck_item.get("title") or "").strip()

@@ -1,0 +1,24 @@
+{
+  "summary": "Frontend integration test for the Merged External Search (CopperKnob + BootStepper) + Batch Import Preview screens. All 5 test scenarios from the request PASSED end-to-end on the web preview using admin account erinboroughs@gmail.com. Library CTAs are wired to /external-search (both footer & empty-state), the unified search screen renders merged cards with source badges, admin batch-mode + Review flow works, batch preview and commit succeeds with per-row results, and the fallback /copperknob/popular + /bootstepper/popular routes plus existing library search/filter/dance-detail flows still work.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "library.tsx / external-search/index.tsx / external-search/batch.tsx sizes are healthy (<=725 lines). No StyleSheet, testID, HTML-element, or MongoDB _id concerns observed.",
+    "external-search/index.tsx: `runSearch` early-returns when `token` is missing which is correct, but the auth-guard is silent. If a non-authenticated user reaches the URL directly the screen shows the initial empty state with no explanation. Not a blocker (route is only linked from an authed tab), just a minor UX note.",
+    "external-search/batch.tsx: Preview and import currently rely on the caller-provided payload — passing >50 rows from search would fail server-side. Client already alerts on >50 which is fine; consider disabling `Import` button (not just Alert) if a future flow can exceed the cap."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (not requested)", "frontend": "100% (5/5 scenarios)" },
+  "seed_data_creation": "Imported 2 CopperKnob 'Footloose' dances (refs QS7JR2L, 85S56GY) as DRAFTS via the batch flow while executing Test 4. They are unpublished, so they don't appear on the public library list but will be visible in the admin drafts view. Main agent can leave them for future regression runs or clean up if desired.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Preview URL: https://stompin-yuma-app.preview.emergentagent.com. Admin login: erinboroughs@gmail.com / Stompin2026!. Age-gate modal appears on every fresh page load — click data-testid=age-gate-adult to dismiss before interacting with anything. Auth submit uses data-testid=auth-submit-button (get_by_text('Sign In') is NOT unique — matches both the tab and the button). External search debounces 350ms then fans out; allow ~6-8s for real network fetch. Batch preview needs another ~4-6s. All the merged-external testIDs are present: ext-search-input, ext-search-batch-start, ext-search-batch-cancel, ext-search-batch-review, merged-card-<ckref>|<bsid>, merged-open-<key>, batch-publish-toggle, batch-toggle-all, batch-import-confirm, batch-ready-<ref>, batch-already-<ref>, batch-error-<ref>, batch-result-<source>-<ref>. Library-side testIDs: library-search-external, library-popular-copperknob, library-popular-bootstepper, empty-search-external, empty-search-copperknob, empty-search-bootstepper.",
+  "rca_of_issue": "N/A — no defects found. All wiring, provider merging, admin gating, batch preview, and commit flow behaved as designed. Confirmed evidence: TEST1 primary CTA text = 'Search CopperKnob + BootStepper' (footer) and '... for \"xxxxxx\"' (empty-state), tap routes to /external-search?q=xxxxxx. TEST2 for 'footloose': 40 merged cards rendered, 19 CopperKnob + 21 BootStepper badges, 11 'Already in Library' pills, 40 Open buttons, admin Select button present. TEST3: Select entered batch mode (Cancel visible), tapping 3 cards produced 2 selected (first was locked/existing), batch bar text 'Review 2', navigation carried a JSON payload param. TEST4: preview '2 records · 2 new · 0 already listed · 0 couldn't load', Publish toggle OFF by default, Uncheck-all/Check-all works, Import 2 → success view '2 added · 0 skipped · 0 errors', per-row draft chips, Back-to-Library visible. TEST5: /copperknob/popular and /bootstepper/popular both render top lists; library search 'Fallin' returns 1 card; filter modal opens (BPM/Sort/Choreographer sections); dance detail /dance/<id> loads with step sheet + YouTube tutorial CTA."
+}
