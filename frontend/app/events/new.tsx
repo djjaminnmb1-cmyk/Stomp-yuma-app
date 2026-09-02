@@ -4,10 +4,16 @@
  * On save we submit to the backend which geocodes the address via
  * Nominatim. If geocoding fails the event still saves — it just won't
  * appear in distance-based searches until the address is corrected.
+ *
+ * Uses ``KeyboardAwareScrollView`` from ``react-native-keyboard-
+ * controller`` so focused inputs stay visible above the keyboard
+ * (particularly the address / description block which lives below
+ * the fold on smaller phones).
  */
 import { useCallback, useEffect, useState } from "react";
-import { View, ScrollView } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/src/context/auth-context";
 import { api, EventInput } from "@/src/api/client";
@@ -46,7 +52,13 @@ export default function NewEventScreen() {
   return (
     <View style={{ flex: 1 }}>
       <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-        <ScrollView keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView
+          keyboardShouldPersistTaps="handled"
+          // Small extra gap so the focused input sits comfortably
+          // above the keyboard rather than clipped to its edge.
+          bottomOffset={24}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
           <EventForm
             mode="create"
             initial={null}
@@ -55,7 +67,7 @@ export default function NewEventScreen() {
             submitting={busy}
             onCancel={() => router.back()}
           />
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </View>
   );

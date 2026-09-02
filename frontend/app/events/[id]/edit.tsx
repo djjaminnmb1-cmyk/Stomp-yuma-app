@@ -2,8 +2,9 @@
  * /events/[id]/edit — Instructor edit form.
  */
 import { useCallback, useEffect, useState } from "react";
-import { View, ScrollView, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/src/context/auth-context";
 import { api, EventInput, EventItem } from "@/src/api/client";
@@ -52,7 +53,11 @@ export default function EditEventScreen() {
   return (
     <View style={{ flex: 1 }}>
       <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
-        <ScrollView keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView
+          keyboardShouldPersistTaps="handled"
+          bottomOffset={24}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
           <EventForm
             mode="edit"
             initial={event}
@@ -61,7 +66,7 @@ export default function EditEventScreen() {
             submitting={busy}
             onCancel={() => router.back()}
           />
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </View>
   );

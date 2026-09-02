@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { LogBox, Platform, StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { AuthProvider } from "@/src/context/auth-context";
@@ -81,18 +82,20 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <AuthProvider>
-            <DraftCountProvider>
-              <StatusBar barStyle="dark-content" />
-              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#FDFBF7" } }} />
-              <AgeGateModal />
-              {/* Sticks to the top of the app; only renders on native
-                  when expo-updates has a bundle ready. Hidden on web. */}
-              <UpdateBanner />
-            </DraftCountProvider>
-          </AuthProvider>
-        </SafeAreaProvider>
+        <KeyboardProvider>
+          <SafeAreaProvider>
+            <AuthProvider>
+              <DraftCountProvider>
+                <StatusBar barStyle="dark-content" />
+                <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#FDFBF7" } }} />
+                <AgeGateModal />
+                {/* Sticks to the top of the app; only renders on native
+                    when expo-updates has a bundle ready. Hidden on web. */}
+                <UpdateBanner />
+              </DraftCountProvider>
+            </AuthProvider>
+          </SafeAreaProvider>
+        </KeyboardProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
   );
