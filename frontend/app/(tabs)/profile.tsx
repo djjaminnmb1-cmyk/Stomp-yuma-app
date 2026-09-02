@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -147,6 +148,89 @@ async function openSocial(s: SocialLink) {
     Alert.alert(`Unable to open ${s.label}`);
   }
 }
+
+/**
+ * ---------- Share the app ----------
+ * Pre-written invite for both platforms. On native (iOS/Android) we
+ * open the OS share sheet — recipients can pick Messages, WhatsApp,
+ * Email, etc., and the app-store link becomes a rich preview in
+ * most chat clients. On web we fall back to the native Web Share
+ * API when available, then clipboard-copy as a final graceful
+ * degradation so the user can paste manually.
+ *
+ * KEEP THE URL IN ONE PLACE: swap ``PLAY_STORE_URL`` in a single
+ * spot if the Play Store listing ID ever changes.
+ */
+const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.stompinyuma.app";
+
+const SHARE_MESSAGE =
+  `Join me on the Stompin' Ground Yuma app to find local dance ` +
+  `classes, events, and community updates: ${PLAY_STORE_URL}`;
+
+async function shareTheApp() {
+  // ---------- Web ----------
+  if (Platform.OS === "web") {
+    const w = typeof window !== "undefined" ? window : null;
+    const nav: any = (w as any)?.navigator;
+    // Chrome/Edge on Android + Safari on iOS expose navigator.share.
+    // Desktop browsers largely don't; we fall through to clipboard.
+    if (nav && typeof nav.share === "function") {
+      try {
+        await nav.share({
+          title: "Stompin' Ground Yuma",
+          text: SHARE_MESSAGE,
+          url: PLAY_STORE_URL,
+        });
+        return;
+      } catch (e: any) {
+        // User dismissed / share aborted — treat as a silent cancel.
+        // Anything else falls through to clipboard as a safety net.
+        if (e?.name === "AbortError") return;
+      }
+    }
+    // Clipboard fallback for desktop browsers.
+    if (nav?.clipboard?.writeText) {
+      try {
+        await nav.clipboard.writeText(SHARE_MESSAGE);
+        Alert.alert(
+          "Copied to clipboard",
+          "Invite text is on your clipboard — paste it into any chat or email."
+        );
+        return;
+      } catch {}
+    }
+    Alert.alert(
+      "Copy this to share",
+      SHARE_MESSAGE
+    );
+    return;
+  }
+
+  // ---------- Native (iOS / Android) ----------
+  try {
+    // `url` is iOS-only; putting it in `message` too guarantees a
+    // link on Android where the share intent ignores `url`.
+    await Share.share(
+      {
+        title: "Stompin' Ground Yuma",
+        message: SHARE_MESSAGE,
+        url: PLAY_STORE_URL,
+      },
+      {
+        // A friendlier picker title on Android.
+        dialogTitle: "Share Stompin' Ground Yuma",
+      }
+    );
+  } catch (e: any) {
+    Alert.alert(
+      "Couldn't open share sheet",
+      e?.message || "Try copying the link from the browser instead."
+    );
+  }
+}
+
+
 
 export default function Profile() {
   const router = useRouter();
@@ -765,6 +849,27 @@ export default function Profile() {
               </Pressable>
             ))}
           </View>
+
+          <Pressable
+            testID="profile-share-app-cta"
+            onPress={shareTheApp}
+            style={styles.websiteRow}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="share-social-outline"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>Share the app</Text>
+                <Text style={styles.deleteSub}>
+                  Invite friends to Stompin&apos; Ground Yuma
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
 
           <Pressable
             testID="profile-website-cta"
