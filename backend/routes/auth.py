@@ -581,6 +581,9 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
     # Chat @mention rows (both sent BY and TO this user)
     from services.chat_mentions import purge_user as purge_mentions
     await purge_mentions(uid)
+    # Follower push ledger for classes/events posted BY or seen BY user
+    from services.instructor_notifications import purge_user as purge_inst_notif
+    await purge_inst_notif(uid)
 
     # 2) Shared content — anonymise so other users' tracking/attendance still works
     await db.dances.update_many(

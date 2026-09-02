@@ -119,7 +119,20 @@ async def create_event(
         raise HTTPException(400, "Event date is required.")
     if not (inp.address or "").strip() or not (inp.city or "").strip():
         raise HTTPException(400, "Address + city are required.")
-    return await events_svc.create_event(inp, user)
+    out = await events_svc.create_event(inp, user)
+    # Fan-out to followers of the posting instructor. Best-effort;
+    # push failures never rollback the event insert.
+    try:
+        from services.instructor_notifications import (
+            notify_followers_of_new_event,
+        )
+        await notify_followers_of_new_event(out)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(
+            f"Event follower notification failed (non-blocking): {e}"
+        )
+    return out
 
 
 @router.patch("/events/{event_id}")
@@ -127,7 +140,7 @@ async def update_event(
     event_id: str, inp: EventIn, user: dict = Depends(require_instructor)
 ):
     existing = await db.events.find_one(
-        {"id": event_id}, {"_id": 0, "instructor_id": 1}
+        {"id": event_id}, {"_id": 0, "instructor_id": 1, "is_published": 1}
     )
     if not existing:
         raise HTTPException(404, "Event not found")
@@ -136,6 +149,23 @@ async def update_event(
     out = await events_svc.update_event(event_id, inp, user)
     if not out:
         raise HTTPException(404, "Event not found")
+    # Fire fan-out ONLY when the event just flipped from draft →
+    # published. The idempotency ledger inside the notifier ALSO
+    # guards this, but the extra pre-check saves a users.find on
+    # every edit of an already-published event.
+    was_published = bool(existing.get("is_published", False))
+    is_now_published = bool(out.get("is_published", True))
+    if is_now_published and not was_published:
+        try:
+            from services.instructor_notifications import (
+                notify_followers_of_new_event,
+            )
+            await notify_followers_of_new_event(out)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"Event follower notification failed (non-blocking): {e}"
+            )
     return out
 
 

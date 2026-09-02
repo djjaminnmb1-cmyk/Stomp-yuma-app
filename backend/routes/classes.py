@@ -1,7 +1,8 @@
 """Class sessions (instructor log) + attendance (student self-marking).
 
-Creating a class in the future fires push notifications to every user.
-Attendance rows are keyed by (user_id, class_id).
+Creating a class in the future fires push notifications to every user
+who FOLLOWS the posting instructor (via the "My instructors" picker on
+Profile). Attendance rows are keyed by (user_id, class_id).
 """
 from __future__ import annotations
 
@@ -12,7 +13,6 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
 from core.database import db
-from core.push_service import send_push
 from core.security import (
     get_current_user,
     require_instructor,
@@ -21,6 +21,7 @@ from core.security import (
 from core.time_helpers import now_iso
 from models.schemas import ClassSessionIn
 from services.badges import evaluate_badges
+from services.instructor_notifications import notify_followers_of_new_class
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -91,31 +92,15 @@ async def create_class(
     await db.classes.insert_one(doc)
     doc.pop("_id", None)
 
-    # Fire push to all registered users if this is an upcoming class
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    if inp.date >= today:
-        try:
-            all_users = await db.users.find(
-                {}, {"_id": 0, "user_id": 1}
-            ).to_list(5000)
-            recipients = [u["user_id"] for u in all_users]
-            label = doc["session_label"] or "New class"
-            dance_names = ", ".join([r["name"] for r in resolved[:3]])
-            more = f" +{len(resolved) - 3} more" if len(resolved) > 3 else ""
-            await send_push(
-                recipients=recipients,
-                data={
-                    "title": f"{label} · {inp.date}",
-                    "message": (
-                        f"{instructor.get('name', 'An instructor')} added a new class. "
-                        f"Dances: {dance_names}{more}"
-                    ),
-                    "action_url": "/classes",
-                },
-                idempotency_key=f"class-{doc['id']}",
-            )
-        except Exception as e:
-            logger.warning(f"Push failed (non-blocking): {e}")
+    # Fan-out to FOLLOWERS of this instructor only (per "My instructors"
+    # picker). Replaces the old "notify every user" broadcast — dancers
+    # who never opted-in to Erin's classes shouldn't get pinged.
+    # Helper handles: upcoming-only date check, idempotency, and swallows
+    # push-relay failures so a bad outage never blocks the CRUD path.
+    try:
+        await notify_followers_of_new_class(doc)
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"Class notification failed (non-blocking): {e}")
 
     return doc
 

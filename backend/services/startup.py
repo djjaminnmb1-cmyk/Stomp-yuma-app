@@ -129,6 +129,13 @@ async def _ensure_indexes() -> None:
         await ensure_drift_indexes()
     except Exception as e:
         logger.warning(f"drift_flags index issue: {e}")
+    try:
+        from services.instructor_notifications import (
+            ensure_indexes as ensure_inst_notif_indexes,
+        )
+        await ensure_inst_notif_indexes()
+    except Exception as e:
+        logger.warning(f"instructor_notifications index issue: {e}")
 
     # De-dupe any historical follow rows that slipped in before the
     # unique index existed — otherwise the new index creation will
