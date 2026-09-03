@@ -631,3 +631,71 @@ were fixed; 23/23 regression tests passed via `testing_agent`.
   so short-circuit evaluation can no longer bypass the synthetic-email
   check for accounts with no password.
 
+
+
+## Session (June 2026) — Android Deployment Fix
+
+**Symptom**: EAS Android app-bundle build failed at
+`:expo-updates-gradle-plugin:compileKotlin` with
+"Could not find kotlin-build-tools-impl-2.0.21.jar" (and the whole
+Kotlin 2.0.21 dep tree) in the EAS Maven mirror.
+
+### Root cause
+Every patch of `expo-updates@29.0.x` pins `kotlin("jvm") version("2.0.21")`
+in its Gradle plugin, but the EAS build cache
+(`http://maven.production.caches.eas-build.internal/artifactory/libs-release/`)
+only mirrors Kotlin `2.1.20`. Other Expo/RN plugins (which use `2.1.20`)
+compiled fine in the same build — so the fix is to bring
+`expo-updates` in line with them.
+
+### Fix — patch-package
+Because all 29.0.x patches use `2.0.21`, downgrading isn't an option.
+Instead, patched the plugin in-place:
+
+- Added `patch-package@8.0.1` + `postinstall-postinstall@2.1.0` as
+  devDependencies in `frontend/package.json`
+- Added `"postinstall": "patch-package"` to the npm scripts
+- Committed `patches/expo-updates+29.0.20.patch` — a 1-line diff that
+  rewrites the plugin's Kotlin version from `2.0.21` → `2.1.20`
+- Verified reproducibility: after a simulated fresh install, running
+  `npx patch-package` restores the fix cleanly.
+
+### Deployment-agent blockers also resolved
+
+- **`services/startup.py`**: removed the `deduplicate_existing_rows()`
+  call from the boot path. The unique
+  `(user_id, choreographer_key)` index prevents new duplicates; the
+  cleanup function remains available for manual admin invocation but
+  the boot path no longer touches DB records.
+- **`services/refresh_recommendations.py::_upsert_flag`**: converted
+  the `delete_one(...)` on cleared drift to a SOFT-CLEAR
+  (`differs_count=0` + `cleared_at`). `list_flags()` / `counts()`
+  now filter cleared rows out so the admin UX is identical.
+- **`frontend/eas.json`**: deleted. Emergent's deployment pipeline
+  supplies its own managed EAS configuration.
+
+### Env-file quoting
+
+Deployment validator requires values starting with `/` to be quoted.
+Fixed:
+
+- `frontend/.env` — `METRO_CACHE_ROOT="/app/frontend/.metro-cache"`
+- `backend/.env` — `APPLE_PRIVATE_KEY_PATH="/app/backend/secrets/AuthKey_KGNZBJ85K4.p8"`
+
+Both parsed correctly by `python-dotenv` and Expo's env resolver
+(quotes are stripped; leading `/` is preserved).
+
+### Final deployment-agent verdict
+
+- ✅ `expo_release_build_ok`: true
+- ✅ `env_files_malformed`: false
+- ✅ `destructive_db_startup_confirmed`: false
+- ✅ `eas_json_absent`: true
+- ✅ `compilation_passed`: true
+
+Remaining non-blocking WARN/INFO items (user action):
+- `frontend/app.json` privacy-policy URL still points at preview
+  domain — needs a permanent production URL before store review
+- iOS push registration disabled — needs `GoogleService-Info.plist`
+  under `frontend/` + `expo.ios.googleServicesFile` in `app.json`
+

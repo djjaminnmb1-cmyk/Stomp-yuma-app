@@ -140,11 +140,33 @@ async def _upsert_flag(
     source: str,
     fields: list[dict],
 ) -> None:
-    """Persist / refresh a flag row. differs_count == 0 removes the
-    flag entirely so a fixed dance stops showing in the queue."""
+    """Persist / refresh a flag row.
+
+    When ``fields`` is empty (previously-flagged dance now aligns
+    with upstream) we SOFT-CLEAR the row — ``differs_count=0`` and
+    ``cleared_at`` timestamp. Never a hard delete: production
+    deployment policy forbids scheduled background jobs from
+    removing records. The read helpers below filter cleared rows
+    out of the admin queue so the UX is identical.
+    """
     if not fields:
-        await db.dance_drift_flags.delete_one(
-            {"dance_id": dance_id, "source": source}
+        await db.dance_drift_flags.update_one(
+            {"dance_id": dance_id, "source": source},
+            {
+                "$set": {
+                    "differs_count": 0,
+                    "drift_summary": "",
+                    "fields": [],
+                    "cleared_at": now_iso(),
+                    "checked_at": now_iso(),
+                    # Auto-mark as seen so a cleared drift doesn't
+                    # stay on the admin's unseen badge.
+                    "seen": True,
+                },
+            },
+            # No upsert — no reason to create a "clean" row from
+            # nothing. Only convert an EXISTING flag to cleared.
+            upsert=False,
         )
         return
     await db.dance_drift_flags.update_one(
@@ -155,6 +177,10 @@ async def _upsert_flag(
                 "drift_summary": _summarise(fields),
                 "fields": fields[:5],  # cap preview to 5
                 "checked_at": now_iso(),
+                # Clearing this out if a previously-cleared row
+                # regains drift — otherwise a re-emerged drift
+                # would look like a cleared row in the admin UI.
+                "cleared_at": "",
                 # Only mark unseen when a NEW flag pops up. If the row
                 # already existed and admin already dismissed it, we
                 # don't want to re-nag them for the SAME drift — but
@@ -300,8 +326,11 @@ async def run_nightly_scan() -> dict:
 async def list_flags(seen: Optional[bool] = None, limit: int = 200) -> list[dict]:
     """Return the current flag queue, joined with the dance's basic
     metadata so the admin list can render without extra round-trips.
+
+    Filters out soft-cleared rows (``differs_count == 0``) — a
+    cleared row is preserved for audit but never surfaces here.
     """
-    query: dict = {}
+    query: dict = {"differs_count": {"$gt": 0}}
     if seen is not None:
         query["seen"] = bool(seen)
     rows = await db.dance_drift_flags.find(
@@ -330,9 +359,18 @@ async def list_flags(seen: Optional[bool] = None, limit: int = 200) -> list[dict
 
 
 async def counts() -> dict:
-    """Quick totals for the admin badge / dashboard."""
-    unseen = await db.dance_drift_flags.count_documents({"seen": False})
-    total = await db.dance_drift_flags.count_documents({})
+    """Quick totals for the admin badge / dashboard.
+
+    Soft-cleared rows (``differs_count == 0``) are excluded from
+    every counter — they exist only for audit and must never
+    inflate the admin nag badge.
+    """
+    unseen = await db.dance_drift_flags.count_documents(
+        {"seen": False, "differs_count": {"$gt": 0}}
+    )
+    total = await db.dance_drift_flags.count_documents(
+        {"differs_count": {"$gt": 0}}
+    )
     return {"unseen": int(unseen), "total": int(total)}
 
 

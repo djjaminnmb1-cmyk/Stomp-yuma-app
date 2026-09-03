@@ -156,18 +156,15 @@ async def _ensure_indexes() -> None:
     except Exception as e:
         logger.warning(f"dance_sync_log index issue: {e}")
 
-    # De-dupe any historical follow rows that slipped in before the
-    # unique index existed — otherwise the new index creation will
-    # fail on legacy data. Idempotent + safe to run every boot.
-    try:
-        from services.choreographer_follows import (
-            deduplicate_existing_rows as chor_dedupe,
-        )
-        removed = await chor_dedupe()
-        if removed:
-            logger.info(f"choreographer_follows: removed {removed} duplicates")
-    except Exception as e:
-        logger.warning(f"choreographer_follows dedupe issue: {e}")
+    # NOTE (deployment policy): the boot path is not allowed to
+    # delete existing DB records — even legacy duplicates. The
+    # ``choreographer_follows`` collection now has a unique
+    # ``(user_id, choreographer_key)`` index (see line 112 above) so
+    # new duplicates cannot form. The one-off
+    # ``deduplicate_existing_rows()`` cleanup remains available as a
+    # module function and can be triggered by an admin route if a
+    # legacy environment ever needs it — but we don't call it on
+    # every boot any more.
 
     # Password reset indexes (idempotent)
     await ensure_reset_indexes()
