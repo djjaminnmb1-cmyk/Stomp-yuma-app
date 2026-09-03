@@ -42,6 +42,10 @@ def user_to_out(u: dict) -> dict:
         # classes with, wants to follow). ``main_instructor_id`` is
         # always a member of this list when set. Order is preserved.
         "instructor_ids": list(u.get("instructor_ids") or []),
+        # Preferred UI / notification language — one of ``en``, ``es``,
+        # ``fr``. Empty string means "no override, follow device locale"
+        # (the client interprets an empty value as auto-detect).
+        "preferred_language": (u.get("preferred_language") or "") or "",
     }
 
 

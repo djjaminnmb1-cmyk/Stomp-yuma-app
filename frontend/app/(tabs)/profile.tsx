@@ -27,6 +27,8 @@ import { StreakCard } from "@/src/components/StreakCard";
 import { PracticeHistoryChart } from "@/src/components/PracticeHistoryChart";
 import { SignInMethodsSection } from "@/src/components/SignInMethodsSection";
 import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
+import { useTranslation } from "@/src/i18n";
+import { LOCALE_LABELS } from "@/src/i18n/translations";
 import Constants from "expo-constants";
 import * as Application from "expo-application";
 
@@ -235,6 +237,14 @@ async function shareTheApp() {
 export default function Profile() {
   const router = useRouter();
   const { user, token, signOut, updateUser } = useAuth();
+  // i18n helpers — aliased so the JSX rows can just call ``i18nT(...)``
+  // without colliding with the many local ``t`` / ``tracking`` names
+  // this screen already uses.
+  const { t: i18nT, tRaw: i18nTRaw, locale, override } = useTranslation();
+  const i18nLocaleLabel =
+    override === "system"
+      ? i18nT("language.system_default")
+      : LOCALE_LABELS[locale];
   const [tracking, setTracking] = useState<Tracking[]>([]);
   const [attendanceCount, setAttendanceCount] = useState(0);
   const [badges, setBadges] = useState<Badge[]>([]);
@@ -292,7 +302,7 @@ export default function Profile() {
   const submitInstructorCode = async () => {
     setCodeErr(null);
     if (!codeInput.trim()) {
-      setCodeErr("Enter your access code");
+      setCodeErr(i18nT("profile.enter_access_code"));
       return;
     }
     if (!token) return;
@@ -302,9 +312,9 @@ export default function Profile() {
       updateUser(res.user);
       setCodeInput("");
       setCodeOpen(false);
-      Alert.alert("You're an instructor!", "Your Instructor tab is now unlocked.");
+      Alert.alert(i18nT("profile.instructor_unlock_title"), i18nT("profile.instructor_unlock_msg"));
     } catch (e: any) {
-      setCodeErr(e?.message || "Invalid access code");
+      setCodeErr(e?.message || i18nT("profile.invalid_access_code"));
     } finally {
       setCodeBusy(false);
     }
@@ -345,7 +355,7 @@ export default function Profile() {
     if (!token) return;
     setDeleteErr(null);
     if (deleteConfirmText.trim().toUpperCase() !== "DELETE") {
-      setDeleteErr('Type "DELETE" (all caps) to confirm.');
+      setDeleteErr(i18nT("profile.delete_type_confirm"));
       return;
     }
     setDeleteBusy(true);
@@ -357,12 +367,12 @@ export default function Profile() {
         await signOut();
       } catch {}
       Alert.alert(
-        "Account deleted",
-        "Your account and personal data have been removed. Thanks for dancing with us!",
+        i18nT("profile.deleted_title"),
+        i18nT("profile.deleted_msg"),
       );
       router.replace("/auth");
     } catch (e: any) {
-      setDeleteErr(e?.message || "Could not delete account. Please try again.");
+      setDeleteErr(e?.message || i18nT("profile.deleted_generic_error"));
     } finally {
       setDeleteBusy(false);
     }
@@ -407,12 +417,12 @@ export default function Profile() {
         </View>
 
         <View style={styles.header}>
-          <Text style={styles.name} testID="profile-name">{user?.name || "Dancer"}</Text>
+          <Text style={styles.name} testID="profile-name">{user?.name || i18nT("profile.dancer_default")}</Text>
           <Text style={styles.email}>{user?.email}</Text>
           {user?.is_admin ? (
             <View style={styles.adminBadge}>
               <Ionicons name="shield-checkmark" size={12} color={colors.onBrandPrimary} />
-              <Text style={styles.adminText}>Admin</Text>
+              <Text style={styles.adminText}>{i18nT("profile.admin")}</Text>
             </View>
           ) : null}
         </View>
@@ -420,35 +430,35 @@ export default function Profile() {
         <View style={styles.stats}>
           <View style={styles.stat}>
             <Text style={styles.statNum} testID="stat-completed">{completed}</Text>
-            <Text style={styles.statLabel}>Completed</Text>
+            <Text style={styles.statLabel}>{i18nT("profile.stat_completed")}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statNum} testID="stat-wishlist">{wishlist}</Text>
-            <Text style={styles.statLabel}>Wishlist</Text>
+            <Text style={styles.statLabel}>{i18nT("profile.stat_wishlist")}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statNum} testID="stat-attended">{attendanceCount}</Text>
-            <Text style={styles.statLabel}>Classes</Text>
+            <Text style={styles.statLabel}>{i18nT("profile.stat_classes")}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statNum}>{avgRating}</Text>
-            <Text style={styles.statLabel}>Avg ★</Text>
+            <Text style={styles.statLabel}>{i18nT("profile.stat_avg_rating")}</Text>
           </View>
         </View>
 
         {/* -------- Achievements + Streak -------- */}
         <View style={styles.section}>
           <View style={styles.achievementsHead}>
-            <Text style={styles.sectionTitle}>Achievements</Text>
+            <Text style={styles.sectionTitle}>{i18nT("profile.section_achievements")}</Text>
             <Pressable
               onPress={() => router.push("/achievements")}
               testID="profile-achievements-see-all"
             >
               <Text style={styles.link}>
-                {badgeStats.earned}/{badgeStats.total} · View all
+                {badgeStats.earned}/{badgeStats.total} · {i18nT("common.see_all")}
               </Text>
             </Pressable>
           </View>
@@ -493,22 +503,22 @@ export default function Profile() {
         {/* -------- Practice History (30-day sparkline) -------- */}
         {practiceStats.total > 0 || practiceHistory.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Practice History</Text>
+            <Text style={styles.sectionTitle}>{i18nT("profile.section_practice_history")}</Text>
             <View style={styles.historyCard} testID="practice-history-card">
               <View style={styles.historyStatsRow}>
                 <View style={styles.historyStat}>
                   <Text style={styles.historyStatNum}>{practiceStats.total}</Text>
-                  <Text style={styles.historyStatLabel}>total sessions</Text>
+                  <Text style={styles.historyStatLabel}>{i18nT("profile.total_sessions")}</Text>
                 </View>
                 <View style={styles.historyStatDivider} />
                 <View style={styles.historyStat}>
                   <Text style={styles.historyStatNum}>{practiceStats.days_active}</Text>
-                  <Text style={styles.historyStatLabel}>days active</Text>
+                  <Text style={styles.historyStatLabel}>{i18nT("profile.days_active")}</Text>
                 </View>
                 <View style={styles.historyStatDivider} />
                 <View style={styles.historyStat}>
                   <Text style={styles.historyStatNum}>{practiceStats.best}</Text>
-                  <Text style={styles.historyStatLabel}>peak day</Text>
+                  <Text style={styles.historyStatLabel}>{i18nT("profile.peak_day")}</Text>
                 </View>
               </View>
               <View style={styles.historyChartWrap}>
@@ -519,14 +529,14 @@ export default function Profile() {
                 />
               </View>
               <Text style={styles.historyFoot}>
-                Last 30 days · Tap any dance and open Practice Mode to log a session.
+                {i18nT("profile.history_foot")}
               </Text>
             </View>
           </View>
         ) : null}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={styles.sectionTitle}>{i18nT("profile.section_account")}</Text>
 
           {(user?.is_admin || user?.is_instructor) ? (
             <Pressable
@@ -536,7 +546,7 @@ export default function Profile() {
             >
               <View style={styles.rowLeft}>
                 <Ionicons name="school" size={22} color={colors.brandPrimary} />
-                <Text style={styles.rowText}>Instructor Tab</Text>
+                <Text style={styles.rowText}>{i18nT("profile.instructor_tab")}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
@@ -553,7 +563,7 @@ export default function Profile() {
               <View style={styles.rowLeft}>
                 <Ionicons name="school-outline" size={22} color={colors.brandPrimary} />
                 <Text style={[styles.rowText, { color: colors.brandPrimary }]}>
-                  Switch to instructor profile
+                  {i18nT("profile.switch_to_instructor")}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.brandPrimary} />
@@ -568,7 +578,7 @@ export default function Profile() {
             <View style={styles.rowLeft}>
               <Ionicons name="calendar" size={22} color={colors.brandSecondary} />
               <Text style={styles.rowText}>
-                {user?.is_admin || user?.is_instructor ? "Log a Class" : "Class Recap"}
+                {user?.is_admin || user?.is_instructor ? i18nT("profile.log_a_class") : i18nT("profile.class_recap")}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
@@ -583,10 +593,10 @@ export default function Profile() {
               <Ionicons name="bulb" size={22} color={colors.brandTertiary} />
               <Text style={styles.rowText}>
                 {user?.is_admin
-                  ? "Review Suggestions"
+                  ? i18nT("profile.review_suggestions")
                   : mainInstructorName
-                    ? `Suggest a Dance to ${mainInstructorName.split(" ")[0]}`
-                    : "Suggest a Dance"}
+                    ? i18nT("profile.suggest_a_dance_to", { name: mainInstructorName.split(" ")[0] })
+                    : i18nT("profile.suggest_a_dance")}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
@@ -607,20 +617,20 @@ export default function Profile() {
                 color={colors.brandPrimary}
               />
               <View>
-                <Text style={styles.rowText}>My instructors</Text>
+                <Text style={styles.rowText}>{i18nT("profile.my_instructors")}</Text>
                 <Text style={styles.deleteSub}>
                   {(() => {
                     const count = user?.instructor_ids?.length || 0;
                     if (count === 0)
-                      return "Tap to pick who receives your suggestions";
+                      return i18nT("profile.instructors_hint_none");
                     const others = Math.max(0, count - 1);
                     if (mainInstructorName && others > 0) {
-                      return `Primary: ${mainInstructorName} · +${others} more`;
+                      return i18nT("profile.instructors_hint_primary_more", { name: mainInstructorName, count: others });
                     }
                     if (mainInstructorName) {
-                      return `Primary: ${mainInstructorName}`;
+                      return i18nT("profile.instructors_hint_primary", { name: mainInstructorName });
                     }
-                    return `${count} picked — tap to set primary`;
+                    return i18nT("profile.instructors_hint_no_primary", { count });
                   })()}
                 </Text>
               </View>
@@ -644,9 +654,9 @@ export default function Profile() {
                 color={colors.brandPrimary}
               />
               <View>
-                <Text style={styles.rowText}>Followed choreographers</Text>
+                <Text style={styles.rowText}>{i18nT("profile.followed_choreographers")}</Text>
                 <Text style={styles.deleteSub}>
-                  Get a nudge when they drop a new dance
+                  {i18nT("profile.followed_choreographers_sub")}
                 </Text>
               </View>
             </View>
@@ -671,9 +681,31 @@ export default function Profile() {
                 color={colors.brandPrimary}
               />
               <View>
-                <Text style={styles.rowText}>Notification preferences</Text>
+                <Text style={styles.rowText}>{i18nT("profile.notification_prefs")}</Text>
                 <Text style={styles.deleteSub}>
-                  Mute event, class, or mention pings independently
+                  {i18nT("profile.notification_prefs_sub")}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          {/* Language — user chooses UI + notification language */}
+          <Pressable
+            testID="profile-language-row"
+            style={styles.row}
+            onPress={() => router.push("/settings/language")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="language"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>{i18nT("profile.language")}</Text>
+                <Text style={styles.deleteSub}>
+                  {i18nLocaleLabel}
                 </Text>
               </View>
             </View>
@@ -688,11 +720,11 @@ export default function Profile() {
             <View style={styles.rowLeft}>
               <Ionicons name="trophy" size={22} color={colors.brandTertiary} />
               <View>
-                <Text style={styles.rowText}>Boot Scoot Board</Text>
+                <Text style={styles.rowText}>{i18nT("profile.boot_scoot_board")}</Text>
                 <Text style={styles.deleteSub}>
                   {user?.show_on_leaderboard
-                    ? "You're visible on the board."
-                    : "You're hidden. Tap to join."}
+                    ? i18nT("profile.boot_scoot_visible")
+                    : i18nT("profile.boot_scoot_hidden")}
                 </Text>
               </View>
             </View>
@@ -708,10 +740,17 @@ export default function Profile() {
             <View style={styles.rowLeft}>
               <Ionicons name="people" size={22} color={colors.brandSecondary} />
               <View>
-                <Text style={styles.rowText}>Following & Followers</Text>
+                <Text style={styles.rowText}>{i18nT("profile.follows_row")}</Text>
                 <Text style={styles.deleteSub}>
-                  {followCounts.following} following · {followCounts.followers}{" "}
-                  follower{followCounts.followers === 1 ? "" : "s"}
+                  {followCounts.followers === 1
+                    ? i18nT("profile.follows_row_sub", {
+                        following: followCounts.following,
+                        followers: followCounts.followers,
+                      })
+                    : i18nT("profile.follows_row_sub_plural", {
+                        following: followCounts.following,
+                        followers: followCounts.followers,
+                      })}
                 </Text>
               </View>
             </View>
@@ -730,8 +769,8 @@ export default function Profile() {
                 updateUser({ show_in_activity_feed: next });
               } catch (e: any) {
                 Alert.alert(
-                  "Couldn't save",
-                  e?.message || "Please try again."
+                  i18nT("profile.couldnt_save"),
+                  e?.message || i18nT("profile.please_try_again")
                 );
               } finally {
                 setSavingActivityOptIn(false);
@@ -751,11 +790,11 @@ export default function Profile() {
                 }
               />
               <View>
-                <Text style={styles.rowText}>Show me in activity feed</Text>
+                <Text style={styles.rowText}>{i18nT("profile.show_activity")}</Text>
                 <Text style={styles.deleteSub}>
                   {(user?.show_in_activity_feed ?? true)
-                    ? "Followers see your completions & badges."
-                    : "Your activity is hidden from others."}
+                    ? i18nT("profile.show_activity_on")
+                    : i18nT("profile.show_activity_off")}
                 </Text>
               </View>
             </View>
@@ -779,9 +818,9 @@ export default function Profile() {
             <View style={styles.themeCardHead}>
               <Ionicons name="ribbon" size={20} color={colors.brandPrimary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowText}>Certificate theme</Text>
+                <Text style={styles.rowText}>{i18nT("profile.certificate_theme")}</Text>
                 <Text style={styles.deleteSub}>
-                  Sets the default look for the PDF certificates you download.
+                  {i18nT("profile.certificate_theme_sub")}
                 </Text>
               </View>
             </View>
@@ -797,8 +836,8 @@ export default function Profile() {
                   updateUser({ certificate_theme: key });
                 } catch (e: any) {
                   Alert.alert(
-                    "Couldn't update theme",
-                    e?.message || "Please try again."
+                    i18nT("profile.couldnt_update_theme"),
+                    e?.message || i18nT("profile.please_try_again")
                   );
                 } finally {
                   setSavingCertTheme(false);
@@ -817,7 +856,7 @@ export default function Profile() {
           >
             <View style={styles.rowLeft}>
               <Ionicons name="log-out" size={22} color={colors.error} />
-              <Text style={[styles.rowText, { color: colors.error }]}>Sign Out</Text>
+              <Text style={[styles.rowText, { color: colors.error }]}>{i18nT("profile.sign_out")}</Text>
             </View>
           </Pressable>
 
@@ -833,9 +872,9 @@ export default function Profile() {
             <View style={styles.rowLeft}>
               <Ionicons name="trash" size={22} color={colors.error} />
               <View>
-                <Text style={[styles.rowText, { color: colors.error }]}>Delete My Account</Text>
+                <Text style={[styles.rowText, { color: colors.error }]}>{i18nT("profile.delete_account")}</Text>
                 <Text style={styles.deleteSub}>
-                  Permanently removes your account and personal data.
+                  {i18nT("profile.delete_account_sub")}
                 </Text>
               </View>
             </View>
@@ -845,10 +884,9 @@ export default function Profile() {
 
         {/* -------------------- Connect With Us -------------------- */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Connect With Us</Text>
+          <Text style={styles.sectionTitle}>{i18nT("profile.section_connect")}</Text>
           <Text style={styles.connectSub}>
-            Follow Stompin&apos; Ground Yuma on your favourite platform — links open
-            in the native app if installed.
+            {i18nT("profile.connect_sub")}
           </Text>
 
           <View style={styles.socialGrid}>
@@ -884,9 +922,9 @@ export default function Profile() {
                 color={colors.brandPrimary}
               />
               <View>
-                <Text style={styles.rowText}>Share the app</Text>
+                <Text style={styles.rowText}>{i18nT("profile.share_app")}</Text>
                 <Text style={styles.deleteSub}>
-                  Invite friends to Stompin&apos; Ground Yuma
+                  {i18nT("profile.share_app_sub")}
                 </Text>
               </View>
             </View>
@@ -900,7 +938,7 @@ export default function Profile() {
           >
             <View style={styles.rowLeft}>
               <Ionicons name="globe-outline" size={22} color={colors.brandPrimary} />
-              <Text style={styles.rowText}>Visit our website</Text>
+              <Text style={styles.rowText}>{i18nT("profile.visit_website")}</Text>
             </View>
             <Ionicons name="open-outline" size={18} color={colors.muted} />
           </Pressable>
@@ -912,7 +950,7 @@ export default function Profile() {
           >
             <View style={styles.rowLeft}>
               <Ionicons name="shield-checkmark-outline" size={22} color={colors.brandPrimary} />
-              <Text style={styles.rowText}>Privacy Policy</Text>
+              <Text style={styles.rowText}>{i18nT("profile.privacy_policy")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
@@ -924,7 +962,7 @@ export default function Profile() {
           >
             <View style={styles.rowLeft}>
               <Ionicons name="document-text-outline" size={22} color={colors.brandPrimary} />
-              <Text style={styles.rowText}>Terms of Service</Text>
+              <Text style={styles.rowText}>{i18nT("profile.terms_of_service")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
@@ -936,7 +974,7 @@ export default function Profile() {
           >
             <View style={styles.rowLeft}>
               <Ionicons name="people-outline" size={22} color={colors.brandPrimary} />
-              <Text style={styles.rowText}>Community Guidelines</Text>
+              <Text style={styles.rowText}>{i18nT("profile.community_guidelines")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
@@ -953,9 +991,9 @@ export default function Profile() {
                 color={colors.brandPrimary}
               />
               <View>
-                <Text style={styles.rowText}>Blocked users</Text>
+                <Text style={styles.rowText}>{i18nT("profile.blocked_users")}</Text>
                 <Text style={styles.deleteSub}>
-                  Manage who you&apos;ve muted in chat and feed
+                  {i18nT("profile.blocked_users_sub")}
                 </Text>
               </View>
             </View>
@@ -970,9 +1008,9 @@ export default function Profile() {
             <View style={styles.rowLeft}>
               <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.brandPrimary} />
               <View>
-                <Text style={styles.rowText}>Send Feedback</Text>
+                <Text style={styles.rowText}>{i18nT("profile.send_feedback")}</Text>
                 <Text style={styles.deleteSub}>
-                  Bugs, ideas or a shout-out
+                  {i18nT("profile.send_feedback_sub")}
                 </Text>
               </View>
             </View>
@@ -986,7 +1024,7 @@ export default function Profile() {
 
         {user?.is_admin ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>SGY Admin</Text>
+            <Text style={styles.sectionTitle}>{i18nT("profile.sgy_admin")}</Text>
             <Pressable
               testID="profile-moderation-cta"
               onPress={() => router.push("/admin/reports")}
@@ -998,7 +1036,7 @@ export default function Profile() {
                   size={22}
                   color={colors.brandPrimary}
                 />
-                <Text style={styles.rowText}>Feed Moderation Queue</Text>
+                <Text style={styles.rowText}>{i18nT("profile.moderation_queue")}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
@@ -1013,7 +1051,7 @@ export default function Profile() {
                   size={22}
                   color={colors.brandPrimary}
                 />
-                <Text style={styles.rowText}>User Feedback</Text>
+                <Text style={styles.rowText}>{i18nT("profile.user_feedback")}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
@@ -1022,10 +1060,9 @@ export default function Profile() {
         ) : null}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About Stompin&apos; Ground Yuma</Text>
+          <Text style={styles.sectionTitle}>{i18nT("profile.about_venue")}</Text>
           <Text style={styles.aboutText}>
-            Country line dancing for all ages in Yuma, AZ. Join us, learn a new step,
-            and make new friends on the dance floor.
+            {i18nT("profile.about_venue_text")}
           </Text>
         </View>
       </ScrollView>
@@ -1054,16 +1091,15 @@ export default function Profile() {
                 size={26}
                 color={colors.brandPrimary}
               />
-              <Text style={styles.codeModalTitle}>Switch to instructor profile</Text>
+              <Text style={styles.codeModalTitle}>{i18nT("profile.switch_to_instructor")}</Text>
             </View>
             <Text style={styles.modalSub}>
-              Enter the access code your studio gave you to unlock instructor
-              tools (log classes, upload step sheets, edit dances, chat).
+              {i18nT("profile.instructor_modal_sub")}
             </Text>
 
             <TextInput
               testID="profile-instructor-code-input"
-              placeholder="Instructor access code"
+              placeholder={i18nT("profile.instructor_code_placeholder")}
               placeholderTextColor={colors.muted}
               value={codeInput}
               onChangeText={setCodeInput}
@@ -1083,7 +1119,7 @@ export default function Profile() {
                 onPress={() => setCodeOpen(false)}
                 style={styles.modalCancelBtn}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalCancelText}>{i18nT("common.cancel")}</Text>
               </Pressable>
               <Pressable
                 testID="profile-instructor-submit"
@@ -1094,7 +1130,7 @@ export default function Profile() {
                 {codeBusy ? (
                   <ActivityIndicator color={colors.onBrandPrimary} />
                 ) : (
-                  <Text style={styles.modalPrimaryText}>Unlock</Text>
+                  <Text style={styles.modalPrimaryText}>{i18nT("profile.unlock")}</Text>
                 )}
               </Pressable>
             </View>
@@ -1117,26 +1153,30 @@ export default function Profile() {
             <View style={styles.codeModalHeader}>
               <Ionicons name="warning" size={26} color={colors.error} />
               <Text style={[styles.codeModalTitle, { color: colors.error }]}>
-                Delete your account?
+                {i18nT("profile.delete_title")}
               </Text>
             </View>
             <Text style={styles.modalSub}>
-              This permanently removes:
-              {"\n"}• Your login & profile
-              {"\n"}• Your dance tracking (completed / wishlist)
-              {"\n"}• Your class attendance history
-              {"\n"}• Any suggestions or chat messages you sent
-              {"\n\n"}
-              Any dances or classes you authored will remain visible to the
-              community, but your name will be replaced with &quot;Deleted user&quot;.
+              {i18nT("profile.delete_body")}
               {"\n\n"}
               <Text style={{ fontWeight: "700", color: colors.onSurface }}>
-                This can&apos;t be undone.
+                {i18nT("profile.delete_cant_undone")}
               </Text>
             </Text>
 
             <Text style={styles.deleteConfirmLabel}>
-              Type <Text style={{ fontWeight: "800" }}>DELETE</Text> to confirm
+              {(() => {
+                // Use raw source so the literal ``{word}`` token
+                // survives to be split around the bold "DELETE".
+                const parts = i18nTRaw("profile.delete_confirm_label").split("{word}");
+                return (
+                  <>
+                    {parts[0]}
+                    <Text style={{ fontWeight: "800" }}>DELETE</Text>
+                    {parts[1] || ""}
+                  </>
+                );
+              })()}
             </Text>
             <TextInput
               testID="delete-account-confirm"
@@ -1158,7 +1198,7 @@ export default function Profile() {
                 disabled={deleteBusy}
                 style={styles.modalCancelBtn}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalCancelText}>{i18nT("common.cancel")}</Text>
               </Pressable>
               <Pressable
                 testID="delete-account-submit"
@@ -1169,7 +1209,7 @@ export default function Profile() {
                 {deleteBusy ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.deletePrimaryText}>Delete Forever</Text>
+                  <Text style={styles.deletePrimaryText}>{i18nT("profile.delete_forever")}</Text>
                 )}
               </Pressable>
             </View>
@@ -1180,7 +1220,7 @@ export default function Profile() {
       <PickInstructorSheet
         visible={showPickInstructor}
         onClose={() => setShowPickInstructor(false)}
-        title={mainInstructorName ? "My instructors" : "Choose your instructors"}
+        title={mainInstructorName ? i18nT("profile.my_instructors") : i18nT("profile.pick_your_instructors")}
         onSaved={({ primary }) => {
           setShowPickInstructor(false);
           if (primary) setMainInstructorName(primary.name);
@@ -1210,6 +1250,7 @@ export default function Profile() {
 function MentionsProfileRow() {
   const { token } = useAuth();
   const router = useRouter();
+  const { t: i18nT } = useTranslation();
   const [unread, setUnread] = useState(0);
   useEffect(() => {
     if (!token) return;
@@ -1238,11 +1279,13 @@ function MentionsProfileRow() {
       <View style={styles.rowLeft}>
         <Ionicons name="at" size={22} color={colors.brandPrimary} />
         <View>
-          <Text style={styles.rowText}>My mentions</Text>
+          <Text style={styles.rowText}>{i18nT("profile.my_mentions")}</Text>
           <Text style={styles.deleteSub}>
             {unread > 0
-              ? `${unread} unread mention${unread === 1 ? "" : "s"} from instructors`
-              : "See instructor tags in your class chat"}
+              ? unread === 1
+                ? i18nT("profile.mentions_unread_one")
+                : i18nT("profile.mentions_unread", { count: unread })
+              : i18nT("profile.mentions_default")}
           </Text>
         </View>
       </View>
@@ -1268,6 +1311,7 @@ function MentionsProfileRow() {
 function RefreshRecommendationsAdminRow() {
   const { token, user } = useAuth();
   const router = useRouter();
+  const { t: i18nT } = useTranslation();
   const [unseen, setUnseen] = useState(0);
   useEffect(() => {
     if (!token || !user?.is_admin) return;
@@ -1298,11 +1342,13 @@ function RefreshRecommendationsAdminRow() {
       <View style={styles.rowLeft}>
         <Ionicons name="refresh-circle" size={22} color={colors.brandPrimary} />
         <View>
-          <Text style={styles.rowText}>Refresh Recommendations</Text>
+          <Text style={styles.rowText}>{i18nT("profile.refresh_recommendations")}</Text>
           <Text style={styles.deleteSub}>
             {unseen > 0
-              ? `${unseen} dance${unseen === 1 ? "" : "s"} with drifted metadata`
-              : "Library metadata is in sync with providers"}
+              ? unseen === 1
+                ? i18nT("profile.refresh_recommendations_unseen_one")
+                : i18nT("profile.refresh_recommendations_unseen", { count: unseen })
+              : i18nT("profile.refresh_recommendations_none")}
           </Text>
         </View>
       </View>
@@ -1322,6 +1368,7 @@ function RefreshRecommendationsAdminRow() {
 
 
 function CurrentVersionRow() {
+  const { t: i18nT } = useTranslation();
   if (Platform.OS === "web") return null;
 
   const version =
@@ -1343,11 +1390,12 @@ function CurrentVersionRow() {
         />
         <View style={{ flex: 1 }}>
           <Text style={styles.rowText}>
-            App version {version}
-            {build ? ` (${build})` : ""}
+            {build
+              ? i18nT("profile.app_version_with_build", { version, build })
+              : i18nT("profile.app_version", { version })}
           </Text>
           <Text style={styles.deleteSub}>
-            Updates arrive with new App Store / Play Store releases.
+            {i18nT("profile.updates_arrive")}
           </Text>
         </View>
       </View>

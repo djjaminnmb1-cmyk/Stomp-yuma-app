@@ -412,8 +412,7 @@ frontend_new:
 
 test_plan_next:
   current_focus:
-    - "Phase 1 Gamification backend: badges/streak endpoints + auto-award hooks"
-    - "Phase 1 Gamification frontend: Achievements screen + BadgeUnlockedOverlay"
+    - "App-wide localization (EN/ES/FR) — Language picker + tab wrapping across all major screens"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -616,3 +615,70 @@ agent_communication:
         • Old `/copperknob/*` and `/bootstepper/*` routes retained as
           fallback per user request (they are still reachable from the
           smaller fallback links). No routes were deleted.
+
+  - agent: "main"
+    message: |
+      Phase — App-wide localization (EN/ES/FR) — Frontend rollout completed:
+
+      Frontend:
+        • `src/i18n/translations.ts` expanded to ~200 keys/locale covering
+          onboarding, age gate, tabs, auth, welcome, common, home, library,
+          my_dances, instructor, profile, language screen, notifications
+          prefs and generic errors.
+        • `src/i18n/index.ts` — added:
+            – Custom `toRuntimeString` step at nest-time to rewrite our
+              authoring placeholder syntax `{name}` → i18n-js sprintf-style
+              `%{name}` so single-brace placeholders interpolate at runtime.
+            – Device-locale-change detection: bootstrap now serialises the
+              OS's ordered locale-tag list and, if it changed since the last
+              boot AND the user hadn't pinned an override, wipes the
+              "picker was shown" AsyncStorage flag so the LanguagePickerModal
+              re-prompts on the next launch. Users who explicitly picked a
+              language are NEVER re-prompted.
+        • Wrapped major screens with `useTranslation()`:
+            – `app/(tabs)/_layout.tsx` — tabs
+            – `app/auth.tsx` — every label incl. legal footer (mode swap)
+            – `app/welcome.tsx` — greeting + subtitle
+            – `app/(tabs)/index.tsx` — hello, CTAs, cards, about section,
+              activity feed empty state, all 5 orbit cards
+            – `app/(tabs)/library.tsx` — brand, chip labels (including all
+              6 difficulty codes mapped via DIFFICULTY_KEYS), search
+              placeholder, empty state, external-search CTAs, footer,
+              cards including "By {name}" / "{bpm} BPM"
+            – `app/(tabs)/my-dances.tsx` — title, seg tabs, empty states,
+              a11y labels for cert download
+            – `app/(tabs)/instructor.tsx` — header, dance/class empty
+              states, tab bar labels, legend, class card meta
+            – `app/(tabs)/profile.tsx` — every visible label (~40 keys)
+              including delete-account modal, sub-components
+              (MentionsProfileRow, RefreshRecommendationsAdminRow,
+              CurrentVersionRow)
+            – `src/components/AgeGateModal.tsx` — hero, body copy, both
+              CTAs, legal footer with in-place link splicing
+      Verified via screenshots:
+        1. Language picker opens on first launch, French → Continue.
+        2. Age Gate renders in FR ("Vérification d'âge", "J'ai 13 ans ou
+           plus").
+        3. Auth screen renders in FR ("Se connecter", "Créer un compte",
+           legal footer with linked Conditions + Politique de
+           confidentialité).
+        4. Home tab after login: "Salut, Erin !", "Prêt·e à danser ?",
+           "Succès", "Parcourir les danses", "Activité de la communauté",
+           "Récemment pratiqué", "Classement Boot Scoot", "Événements près
+           de chez vous", "Suggérer une danse à Jamin", "À propos du lieu"
+           + brand copy.
+        5. Library tab: "Bibliothèque de line dance", "Rechercher nom,
+           chanson, artiste, chorégraphe", Tous / Débutant absolu /
+           Débutant / Intermédiaire / Avancé chips, "Par {name}" and
+           "{bpm} BPM" formatting.
+        6. Profile tab: "Administrateur" badge, "Terminées / À faire /
+           Cours / ★ moy." stats, "Succès", "Historique de pratique",
+           all account rows.
+        7. Tab bar labels: "Accueil / Danses / Mes danses / Instructeur
+           / Profil".
+
+      Behaviour required per user request:
+        • Re-prompt if device language changes: DONE (see bootstrap
+          device-tag comparison above).
+
+      Ready for testing_agent frontend smoke.

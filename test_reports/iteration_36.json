@@ -1,0 +1,24 @@
+{
+  "summary": "Re-verified the legal-footer localization fix (tRaw helper) across FR/ES/EN paths on Expo web preview (mobile viewport 390x844). ALL previously-failing screens now render clean, natural-language legal footers with tappable Terms/Privacy links and NO '[missing \"%...\" value]' fragments. Verified: (1) Age Gate legal footer in FR/ES/EN — correct sentences ('En appuyant sur J'ai 13 ans ou plus vous acceptez nos Conditions et notre Politique de confidentialité.', 'Al tocar Tengo 13 o más aceptas nuestros Términos y Política de privacidad.', 'By tapping I'm 13 or older you agree to our Terms and Privacy Policy.'). (2) Auth 'Se connecter'/'Iniciar sesión'/'Sign In' legal footer — clean in all 3 locales. (3) Auth 'Créer un compte'/'Crear cuenta'/'Create Account' legal footer — clean and includes the extended physical-activity acknowledgement in all 3 locales, matching expected text. (4) Delete account modal (FR, logged in as erinboroughs@gmail.com) — 'TAPEZ DELETE POUR CONFIRMER' renders correctly with DELETE bolded, no {word}/%{word}/[missing markers. (5) Home tab greeting shows 'Salut, Erin !' (FR) — placeholder interpolation regression check passes. No React Native red-screen errors on any locale.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "deprecation warnings (pre-existing, not caused by this fix)", "issue": "Console warnings: 'shadow*' style props deprecated (use boxShadow), 'textShadow*' deprecated, props.pointerEvents deprecated. Also expo-notifications web push token listener not supported on web. Non-blocking; unchanged from previous iterations."}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "tRaw() implementation is clean and correctly falls back to English if a locale is missing the key. The three affected call-sites (auth.tsx legal_signin/legal_signup, AgeGateModal.tsx age_gate.legal, profile.tsx delete_confirm_label) all use tRaw exclusively for split-and-render and t() for the tappable link labels — the right split of responsibilities. Suggest adding a unit test that verifies any translation key containing an authoring-time '{ident}' token is consumed via tRaw (or via t() with matching params), to prevent this class of regression."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only per request)", "frontend": "100% for legal-footer + delete-confirm-label + placeholder-interpolation regressions across EN/ES/FR"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The tRaw() helper in /app/frontend/src/i18n/index.ts is now the correct pattern for any translation that needs .split('{ident}') for inline JSX injection (e.g. clickable links inside a sentence). Any FUTURE translations that need this pattern must also use tRaw(). Regular string translations (with params or no interpolation) continue to use t() unchanged. Reliable testIDs for locale flows: lang-pick-en/es/fr, lang-pick-continue, age-gate-modal, age-gate-adult, auth-tab-login/register, auth-input-email, auth-input-password, auth-submit-button, delete-account-confirm. Fresh browser session (localStorage.clear + reload) is required to re-trigger the Language Picker; this is expected behavior.",
+  "rca_of_issue": "N/A — bug fix verified. Previous iteration's RCA (toRuntimeString rewriting {ident}→%{ident} at nest-time conflicting with .split('{ident}') at render-time) has been correctly resolved via a new tRaw(key) helper that returns the raw pre-rewrite catalog string; call-sites in auth.tsx, AgeGateModal.tsx, and profile.tsx were updated to use tRaw for the split-and-inject-links pattern."
+}

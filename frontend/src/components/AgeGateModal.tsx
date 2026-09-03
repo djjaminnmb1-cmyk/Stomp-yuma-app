@@ -35,11 +35,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { storage } from "@/src/utils/storage";
 import { colors, radius, spacing, images } from "@/src/theme";
+import { useTranslation } from "@/src/i18n";
 
 const KEY = "age_gate_ack_at";
 
 export function AgeGateModal() {
   const router = useRouter();
+  const { t, tRaw } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState<"gate" | "under13">("gate");
   const [checked, setChecked] = useState(false);
@@ -101,9 +103,9 @@ export function AgeGateModal() {
             />
             <View style={styles.heroContent}>
               <Ionicons name="shield-checkmark" size={38} color="#fff" />
-              <Text style={styles.heroTitle}>Age check</Text>
+              <Text style={styles.heroTitle}>{t("age_gate.hero_title")}</Text>
               <Text style={styles.heroSub}>
-                Grab your boots — a quick step first.
+                {t("age_gate.hero_sub")}
               </Text>
             </View>
           </View>
@@ -111,12 +113,11 @@ export function AgeGateModal() {
           {step === "gate" ? (
             <View style={styles.body}>
               <Text style={styles.title}>
-                To use Stompin&apos; Ground Yuma you must be at least{" "}
-                <Text style={styles.emph}>13 years old</Text>.
+                {t("age_gate.title_line1")}{" "}
+                <Text style={styles.emph}>{t("age_gate.title_years")}</Text>.
               </Text>
               <Text style={styles.copy}>
-                Younger dancers are welcome on the floor with a parent or
-                guardian — just have them create the account.
+                {t("age_gate.body_copy")}
               </Text>
 
               <Pressable
@@ -124,7 +125,7 @@ export function AgeGateModal() {
                 onPress={confirmAdult}
                 style={styles.primary}
               >
-                <Text style={styles.primaryText}>I&apos;m 13 or older</Text>
+                <Text style={styles.primaryText}>{t("age_gate.adult_button")}</Text>
                 <Ionicons name="arrow-forward" size={16} color="#fff" />
               </Pressable>
 
@@ -134,51 +135,61 @@ export function AgeGateModal() {
                 hitSlop={8}
                 style={styles.secondary}
               >
-                <Text style={styles.secondaryText}>I&apos;m under 13</Text>
+                <Text style={styles.secondaryText}>{t("age_gate.child_button")}</Text>
               </Pressable>
 
-              <Text style={styles.legal}>
-                By tapping <Text style={{ fontWeight: "700" }}>I&apos;m 13 or older</Text>{" "}
-                you agree to our{" "}
-                <Text
-                  testID="age-gate-terms"
-                  onPress={() => {
-                    setVisible(false);
-                    router.push("/terms");
-                  }}
-                  style={styles.link}
-                >
-                  Terms
-                </Text>{" "}
-                and{" "}
-                <Text
-                  testID="age-gate-privacy"
-                  onPress={() => {
-                    setVisible(false);
-                    router.push("/privacy");
-                  }}
-                  style={styles.link}
-                >
-                  Privacy Policy
-                </Text>
-                .
-              </Text>
+              {(() => {
+                // Split "By tapping {emph} you agree to our {terms} and {privacy}."
+                // preserving the interpolated links. We use tRaw() to get
+                // the un-rewritten source string so the literal ``{terms}``
+                // / ``{privacy}`` tokens are still present to split on.
+                const raw = tRaw("age_gate.legal");
+                const [beforeEmph, rest1] = raw.split("{emph}");
+                const [beforeTerms, rest2] = (rest1 || "").split("{terms}");
+                const [betweenTermsPrivacy, afterPrivacy] = (rest2 || "").split("{privacy}");
+                return (
+                  <Text style={styles.legal}>
+                    {beforeEmph}
+                    <Text style={{ fontWeight: "700" }}>{t("age_gate.legal_emph")}</Text>
+                    {beforeTerms}
+                    <Text
+                      testID="age-gate-terms"
+                      onPress={() => {
+                        setVisible(false);
+                        router.push("/terms");
+                      }}
+                      style={styles.link}
+                    >
+                      {t("auth.terms")}
+                    </Text>
+                    {betweenTermsPrivacy}
+                    <Text
+                      testID="age-gate-privacy"
+                      onPress={() => {
+                        setVisible(false);
+                        router.push("/privacy");
+                      }}
+                      style={styles.link}
+                    >
+                      {t("auth.privacy_policy")}
+                    </Text>
+                    {afterPrivacy}
+                  </Text>
+                );
+              })()}
             </View>
           ) : (
             <View style={styles.body}>
-              <Text style={styles.title}>Ask a grown-up to sign in.</Text>
+              <Text style={styles.title}>{t("age_gate.under13_title")}</Text>
               <Text style={styles.copy}>
-                Stompin&apos; Ground Yuma is for dancers 13+. If you&apos;re
-                under 13, please have a parent or guardian create the
-                account and sign you in — they can bring you to class and
-                you can dance together in person any time!
+                {t("age_gate.under13_copy")}
               </Text>
               <Pressable
                 testID="age-gate-under13-back"
                 onPress={() => setStep("gate")}
                 style={styles.primary}
               >
-                <Text style={styles.primaryText}>Back</Text>
+                <Text style={styles.primaryText}>{t("age_gate.back")}</Text>
               </Pressable>
             </View>
           )}

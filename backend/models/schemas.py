@@ -265,3 +265,19 @@ class InstructorSelectionBody(BaseModel):
 # ---------------- Leaderboard ----------------
 class LeaderboardOptInBody(BaseModel):
     show_on_leaderboard: bool
+
+
+# ---------------- User preferences ----------------
+class PreferredLanguageIn(BaseModel):
+    """Language override the mobile client sends when the user picks
+    a language in the onboarding modal / settings toggle.
+
+    Empty string is legal — means "clear my override, follow the
+    device locale" (mirrors the semantics the UI uses).
+    """
+
+    language: str = Field(
+        ...,
+        max_length=8,
+        description="BCP-47 short code — 'en', 'es', 'fr', or '' to reset.",
+    )

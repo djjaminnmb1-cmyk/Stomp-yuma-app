@@ -16,12 +16,14 @@ import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { api, Dance, Tracking } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { downloadCertificate } from "@/src/lib/certificate";
+import { useTranslation } from "@/src/i18n";
 
 type Row = { dance: Dance; track: Tracking };
 
 export default function MyDances() {
   const router = useRouter();
   const { token, user } = useAuth();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<"completed" | "wishlist">("completed");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,7 @@ export default function MyDances() {
           setCertOkId((cur) => (cur === danceId ? null : cur));
         }, 2500);
       } else if (r.message) {
-        Alert.alert("Couldn't download certificate", r.message);
+        Alert.alert(t("my_dances.cert_error_title"), r.message);
       }
     } finally {
       setCertBusyId((cur) => (cur === danceId ? null : cur));
@@ -82,8 +84,8 @@ export default function MyDances() {
   return (
     <SafeAreaView style={styles.c} edges={["top"]}>
       <View style={styles.header}>
-        <Text style={styles.title}>My Tracker</Text>
-        <Text style={styles.subtitle}>Keep tabs on your line dance journey</Text>
+        <Text style={styles.title}>{t("my_dances.title")}</Text>
+        <Text style={styles.subtitle}>{t("my_dances.subtitle")}</Text>
         <View style={styles.seg}>
           <Pressable
             testID="tab-completed"
@@ -96,7 +98,7 @@ export default function MyDances() {
               color={tab === "completed" ? colors.onBrandPrimary : colors.onSurface}
             />
             <Text style={[styles.segText, tab === "completed" && styles.segTextActive]}>
-              Completed ({rows.filter((r) => r.track.status === "completed").length})
+              {t("my_dances.tab_completed", { count: rows.filter((r) => r.track.status === "completed").length })}
             </Text>
           </Pressable>
           <Pressable
@@ -110,7 +112,7 @@ export default function MyDances() {
               color={tab === "wishlist" ? colors.onBrandPrimary : colors.onSurface}
             />
             <Text style={[styles.segText, tab === "wishlist" && styles.segTextActive]}>
-              Wishlist ({rows.filter((r) => r.track.status === "wishlist").length})
+              {t("my_dances.tab_wishlist", { count: rows.filter((r) => r.track.status === "wishlist").length })}
             </Text>
           </Pressable>
         </View>
@@ -143,17 +145,17 @@ export default function MyDances() {
                 color={colors.muted}
               />
               <Text style={styles.emptyTitle}>
-                {tab === "completed" ? "No dances completed yet" : "Wishlist is empty"}
+                {tab === "completed" ? t("my_dances.empty_completed_title") : t("my_dances.empty_wishlist_title")}
               </Text>
               <Text style={styles.emptyText}>
-                Head to the Library to find your next challenge!
+                {t("my_dances.empty_text")}
               </Text>
               <Pressable
                 testID="empty-browse-btn"
                 onPress={() => router.push("/(tabs)/library")}
                 style={styles.emptyBtn}
               >
-                <Text style={styles.emptyBtnText}>Browse Dances</Text>
+                <Text style={styles.emptyBtnText}>{t("my_dances.browse_dances")}</Text>
               </Pressable>
             </View>
           }
@@ -209,8 +211,8 @@ export default function MyDances() {
                       okFlash && { backgroundColor: colors.success },
                     ]}
                     hitSlop={8}
-                    accessibilityLabel="Download certificate"
-                    accessibilityHint="Downloads a PDF certificate for this completed dance."
+                    accessibilityLabel={t("my_dances.cert_download_label")}
+                    accessibilityHint={t("my_dances.cert_download_hint")}
                   >
                     {busy ? (
                       <ActivityIndicator size="small" color={colors.brandPrimary} />

@@ -11,6 +11,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { FireworksOverlay } from "@/src/components/FireworksOverlay";
 import { colors, spacing } from "@/src/theme";
+import { useTranslation } from "@/src/i18n";
 
 /**
  * Dedicated first-visit welcome screen. The auth screen navigates here with
@@ -35,9 +36,11 @@ const SHOW_MS = 2500;      // must match FireworksOverlay TOTAL_DURATION_MS
 export default function WelcomeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ name?: string }>();
-  const first = ((params.name as string) || "").split(" ")[0] || "friend";
-  const greeting = `Welcome, ${first}!`;
-  const subtitle = "Let's get dancing 🥾";
+  const { t: tr } = useTranslation();
+  const first =
+    ((params.name as string) || "").split(" ")[0] || tr("welcome.default_name");
+  const greeting = tr("welcome.greeting", { name: first });
+  const subtitle = tr("welcome.subtitle");
 
   // 0..1 progress for greeting fade-in
   const t = useSharedValue(0);

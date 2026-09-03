@@ -3,10 +3,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
 import { useDraftCount } from "@/src/context/draft-count-context";
+import { useTranslation } from "@/src/i18n";
 
 export default function TabsLayout() {
   const { user } = useAuth();
   const { draftCount } = useDraftCount();
+  const { t } = useTranslation();
   const isInstructor = !!(user && (user.is_admin || user.is_instructor));
 
   return (
@@ -29,7 +31,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("tabs.home"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -38,7 +40,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="library"
         options={{
-          title: "Dances",
+          title: t("tabs.dances"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="musical-notes" size={size} color={color} />
           ),
@@ -47,7 +49,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="my-dances"
         options={{
-          title: "My Dances",
+          title: t("tabs.my_dances"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bookmark" size={size} color={color} />
           ),
@@ -56,7 +58,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="instructor"
         options={{
-          title: "Instructor",
+          title: t("tabs.instructor"),
           href: isInstructor ? "/instructor" : null,
           tabBarBadge: isInstructor && draftCount > 0 ? draftCount : undefined,
           tabBarBadgeStyle: {
@@ -76,7 +78,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: t("tabs.profile"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),

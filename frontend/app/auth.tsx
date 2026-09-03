@@ -24,10 +24,12 @@ import { useAuth } from "@/src/context/auth-context";
 import { AppleSignInButton } from "@/src/components/AppleSignInButton";
 import { api } from "@/src/api/client";
 import { colors, spacing, radius } from "@/src/theme";
+import { useTranslation } from "@/src/i18n";
 
 export default function AuthScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
+  const { t, tRaw } = useTranslation();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -41,11 +43,11 @@ export default function AuthScreen() {
   const submitEmail = async () => {
     setErr(null);
     if (!email || !pw || (mode === "register" && !name)) {
-      setErr("Fill all fields");
+      setErr(t("auth.error_fill_all"));
       return;
     }
     if (mode === "register" && isInstructor && !instructorCode.trim()) {
-      setErr("Please enter your instructor access code");
+      setErr(t("auth.error_enter_code"));
       return;
     }
     setBusy(true);
@@ -64,8 +66,8 @@ export default function AuthScreen() {
       // was on but the code didn't match — account still succeeds.
       if (mode === "register" && isInstructor && !res.user.is_instructor) {
         Alert.alert(
-          "Account created",
-          "The instructor access code didn't match, so you're signed in as a regular member. You can try again anytime from Profile → Switch to instructor profile."
+          t("auth.account_created_title"),
+          t("auth.account_created_msg")
         );
       }
       // 🎆 First-time users get a dedicated welcome + fireworks screen.
@@ -76,7 +78,7 @@ export default function AuthScreen() {
         router.replace("/(tabs)");
       }
     } catch (e: any) {
-      setErr(e?.message || "Something went wrong");
+      setErr(e?.message || t("auth.error_generic"));
     } finally {
       setBusy(false);
     }
@@ -94,7 +96,7 @@ export default function AuthScreen() {
       }
       const authBase = process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL;
       if (!authBase) {
-        setErr("Google sign-in isn't configured for this build.");
+        setErr(t("auth.error_google_not_configured"));
         setBusy(false);
         return;
       }
@@ -114,7 +116,7 @@ export default function AuthScreen() {
         url.match(/[#?]session_id=([^&]+)/) ||
         url.match(/session_id=([^&]+)/);
       if (!sidMatch) {
-        setErr("No session returned");
+        setErr(t("auth.error_google_no_session"));
         setBusy(false);
         return;
       }
@@ -128,7 +130,7 @@ export default function AuthScreen() {
         router.replace("/(tabs)");
       }
     } catch (e: any) {
-      setErr(e?.message || "Google sign-in failed");
+      setErr(e?.message || t("auth.error_google_failed"));
     } finally {
       setBusy(false);
     }
@@ -154,7 +156,7 @@ export default function AuthScreen() {
             router.replace("/(tabs)");
           }
         })
-        .catch((e) => setErr(e?.message || "Google sign-in failed"))
+        .catch((e) => setErr(e?.message || t("auth.error_google_failed")))
         .finally(() => setBusy(false));
     }
   }
@@ -281,7 +283,7 @@ export default function AuthScreen() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.75}
               >
-                Dance Social HQ
+                {t("auth.subtitle")}
               </Text>
             </View>
           </View>
@@ -294,7 +296,7 @@ export default function AuthScreen() {
                 style={[styles.tab, mode === "login" && styles.tabActive]}
               >
                 <Text style={[styles.tabText, mode === "login" && styles.tabTextActive]}>
-                  Sign In
+                  {t("auth.tab_signin")}
                 </Text>
               </Pressable>
               <Pressable
@@ -303,7 +305,7 @@ export default function AuthScreen() {
                 style={[styles.tab, mode === "register" && styles.tabActive]}
               >
                 <Text style={[styles.tabText, mode === "register" && styles.tabTextActive]}>
-                  Create Account
+                  {t("auth.tab_signup")}
                 </Text>
               </Pressable>
             </View>
@@ -311,7 +313,7 @@ export default function AuthScreen() {
             {mode === "register" && (
               <TextInput
                 testID="auth-input-name"
-                placeholder="Full name"
+                placeholder={t("auth.name")}
                 placeholderTextColor={colors.muted}
                 value={name}
                 onChangeText={setName}
@@ -320,7 +322,7 @@ export default function AuthScreen() {
             )}
             <TextInput
               testID="auth-input-email"
-              placeholder="Email"
+              placeholder={t("auth.email")}
               placeholderTextColor={colors.muted}
               value={email}
               onChangeText={setEmail}
@@ -331,7 +333,7 @@ export default function AuthScreen() {
             <View style={styles.pwWrap}>
               <TextInput
                 testID="auth-input-password"
-                placeholder="Password"
+                placeholder={t("auth.password")}
                 placeholderTextColor={colors.muted}
                 value={pw}
                 onChangeText={setPw}
@@ -345,7 +347,7 @@ export default function AuthScreen() {
                 onPress={() => setShowPassword((s) => !s)}
                 style={styles.pwEye}
                 hitSlop={10}
-                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                accessibilityLabel={showPassword ? t("auth.hide_password") : t("auth.show_password")}
               >
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -359,9 +361,9 @@ export default function AuthScreen() {
               <>
                 <View style={styles.toggleRow}>
                   <View style={{ flex: 1, paddingRight: spacing.md }}>
-                    <Text style={styles.toggleLabel}>I am an instructor</Text>
+                    <Text style={styles.toggleLabel}>{t("auth.instructor_toggle")}</Text>
                     <Text style={styles.toggleSub}>
-                      Requires the studio access code
+                      {t("auth.instructor_toggle_sub")}
                     </Text>
                   </View>
                   <Switch
@@ -382,7 +384,7 @@ export default function AuthScreen() {
                 {isInstructor && (
                   <TextInput
                     testID="auth-instructor-code"
-                    placeholder="Instructor access code"
+                    placeholder={t("auth.instructor_code")}
                     placeholderTextColor={colors.muted}
                     value={instructorCode}
                     onChangeText={setInstructorCode}
@@ -411,7 +413,7 @@ export default function AuthScreen() {
                 <ActivityIndicator color={colors.onBrandPrimary} />
               ) : (
                 <Text style={styles.primaryBtnText}>
-                  {mode === "login" ? "Sign In" : "Create Account"}
+                  {mode === "login" ? t("auth.signin_button") : t("auth.signup_button")}
                 </Text>
               )}
             </Pressable>
@@ -423,13 +425,13 @@ export default function AuthScreen() {
                 style={styles.forgotWrap}
                 hitSlop={8}
               >
-                <Text style={styles.forgotText}>Forgot password?</Text>
+                <Text style={styles.forgotText}>{t("auth.forgot_password")}</Text>
               </Pressable>
             )}
 
             <View style={styles.divider}>
               <View style={styles.line} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t("auth.or")}</Text>
               <View style={styles.line} />
             </View>
 
@@ -444,50 +446,49 @@ export default function AuthScreen() {
               style={styles.googleBtn}
             >
               <Ionicons name="logo-google" size={18} color={colors.onSurface} />
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
+              <Text style={styles.googleBtnText}>{t("auth.continue_with_google")}</Text>
             </Pressable>
 
             <Text style={styles.legal}>
               {mode === "register" ? (
                 <>
-                  By creating an account you agree to our{" "}
+                  {tRaw("auth.legal_signup").split("{terms}")[0]}
                   <Text
                     testID="auth-terms-link"
                     style={styles.legalLink}
                     onPress={() => router.push("/terms")}
                   >
-                    Terms of Service
-                  </Text>{" "}
-                  and{" "}
+                    {t("auth.terms_of_service")}
+                  </Text>
+                  {tRaw("auth.legal_signup").split("{terms}")[1]?.split("{privacy}")[0]}
                   <Text
                     testID="auth-privacy-link"
                     style={styles.legalLink}
                     onPress={() => router.push("/privacy")}
                   >
-                    Privacy Policy
+                    {t("auth.privacy_policy")}
                   </Text>
-                  , and acknowledge that line dancing is a physical activity
-                  you take part in at your own risk.
+                  {tRaw("auth.legal_signup").split("{privacy}")[1]}
                 </>
               ) : (
                 <>
-                  By continuing you agree to our{" "}
+                  {tRaw("auth.legal_signin").split("{terms}")[0]}
                   <Text
                     testID="auth-terms-link"
                     style={styles.legalLink}
                     onPress={() => router.push("/terms")}
                   >
-                    Terms
-                  </Text>{" "}
-                  and{" "}
+                    {t("auth.terms")}
+                  </Text>
+                  {tRaw("auth.legal_signin").split("{terms}")[1]?.split("{privacy}")[0]}
                   <Text
                     testID="auth-privacy-link"
                     style={styles.legalLink}
                     onPress={() => router.push("/privacy")}
                   >
-                    Privacy Policy
+                    {t("auth.privacy_policy")}
                   </Text>
-                  .
+                  {tRaw("auth.legal_signin").split("{privacy}")[1]}
                 </>
               )}
             </Text>

@@ -26,11 +26,21 @@ import {
   filterAndSortDances,
   countActiveFilters,
 } from "@/src/lib/dance-filter";
+import { useTranslation } from "@/src/i18n";
 
-const DIFFICULTIES = ["All", "Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"];
+const DIFFICULTY_KEYS: { code: string; key: string }[] = [
+  { code: "All", key: "library.diff_all" },
+  { code: "Absolute Beginner", key: "library.diff_absolute_beginner" },
+  { code: "Beginner", key: "library.diff_beginner" },
+  { code: "Improver", key: "library.diff_improver" },
+  { code: "High Improver", key: "library.diff_high_improver" },
+  { code: "Intermediate", key: "library.diff_intermediate" },
+  { code: "Advanced", key: "library.diff_advanced" },
+];
 
 export default function Library() {
   const router = useRouter();
+  const { t } = useTranslation();
   // ---------- Filter/sort state ----------
   const [q, setQ] = useState("");
   const [diff, setDiff] = useState("All");
@@ -100,8 +110,8 @@ export default function Library() {
             resizeMode="contain"
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.brandName}>Stompin&apos; Ground Yuma</Text>
-            <Text style={styles.brandSub}>Line dance library</Text>
+            <Text style={styles.brandName}>{t("library.brand_name")}</Text>
+            <Text style={styles.brandSub}>{t("library.brand_sub")}</Text>
           </View>
           <Text style={styles.countBadge}>{items.length}</Text>
         </View>
@@ -112,7 +122,7 @@ export default function Library() {
             <Ionicons name="search" size={18} color={colors.muted} />
             <TextInput
               testID="library-search"
-              placeholder="Search name, song, artist, choreographer"
+              placeholder={t("library.search_placeholder")}
               placeholderTextColor={colors.muted}
               value={q}
               onChangeText={setQ}
@@ -154,17 +164,17 @@ export default function Library() {
           contentContainerStyle={styles.chipsContent}
           style={styles.chipsScroll}
         >
-          {DIFFICULTIES.map((f) => {
-            const active = diff === f;
+          {DIFFICULTY_KEYS.map((f) => {
+            const active = diff === f.code;
             return (
               <Pressable
-                key={f}
-                testID={`filter-chip-${f.toLowerCase()}`}
-                onPress={() => setDiff(f)}
+                key={f.code}
+                testID={`filter-chip-${f.code.toLowerCase()}`}
+                onPress={() => setDiff(f.code)}
                 style={[styles.chip, active && styles.chipActive]}
               >
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                  {f}
+                  {t(f.key)}
                 </Text>
               </Pressable>
             );
@@ -234,7 +244,7 @@ export default function Library() {
             items.length > 0 ? (
               <View style={styles.ckFooter}>
                 <Text style={styles.ckFooterHint}>
-                  Can&apos;t find what you&apos;re looking for?
+                  {t("library.cant_find")}
                 </Text>
                 <Pressable
                   testID="library-search-external"
@@ -252,11 +262,11 @@ export default function Library() {
                     color={colors.onBrandPrimary}
                   />
                   <Text style={styles.ckFooterPrimaryText}>
-                    Search CopperKnob + BootStepper
+                    {t("library.external_cta")}
                   </Text>
                 </Pressable>
                 <Text style={styles.ckFooterFallbackHint}>
-                  Or browse a single directory
+                  {t("library.single_dir")}
                 </Text>
                 <View style={styles.ckFooterRow}>
                   <Pressable
@@ -270,7 +280,7 @@ export default function Library() {
                       color={colors.brandPrimary}
                     />
                     <Text style={styles.ckSecondaryText}>
-                      Popular on CopperKnob
+                      {t("library.popular_copperknob")}
                     </Text>
                   </Pressable>
                   <Pressable
@@ -284,7 +294,7 @@ export default function Library() {
                       color={colors.brandPrimary}
                     />
                     <Text style={styles.ckSecondaryText}>
-                      Popular on BootStepper
+                      {t("library.popular_bootstepper")}
                     </Text>
                   </Pressable>
                 </View>
@@ -295,7 +305,7 @@ export default function Library() {
             <View style={styles.empty}>
               <Ionicons name="search" size={40} color={colors.muted} />
               <Text style={styles.emptyText}>
-                No dances match these filters.
+                {t("library.empty_none")}
               </Text>
               {anyFilter ? (
                 <Pressable
@@ -304,7 +314,7 @@ export default function Library() {
                   style={styles.emptyResetBtn}
                 >
                   <Ionicons name="refresh" size={14} color={colors.brandPrimary} />
-                  <Text style={styles.emptyResetText}>Reset filters</Text>
+                  <Text style={styles.emptyResetText}>{t("library.reset_filters")}</Text>
                 </Pressable>
               ) : null}
               {/* Bigger, high-contrast primary CTA when our own library
@@ -323,11 +333,13 @@ export default function Library() {
               >
                 <Ionicons name="search" size={16} color={colors.onBrandPrimary} />
                 <Text style={styles.ckPrimaryText}>
-                  Search CopperKnob + BootStepper{q ? ` for "${q}"` : ""}
+                  {q
+                    ? t("library.external_cta_q", { q })
+                    : t("library.external_cta")}
                 </Text>
               </Pressable>
               <Text style={styles.emptyFallbackHint}>
-                Or search a single directory
+                {t("library.single_dir")}
               </Text>
               <View style={styles.emptyFallbackRow}>
                 <Pressable
@@ -371,7 +383,7 @@ export default function Library() {
                   {item.song}
                   {item.artist ? ` — ${item.artist}` : ""}
                 </Text>
-                <Text style={styles.cardChor}>By {item.choreographer || "Unknown"}</Text>
+                <Text style={styles.cardChor}>{t("library.by", { name: item.choreographer || t("library.unknown") })}</Text>
                 <View style={styles.cardRow}>
                   <View
                     style={[
@@ -381,7 +393,7 @@ export default function Library() {
                   >
                     <Text style={styles.diffBadgeText}>{item.difficulty}</Text>
                   </View>
-                  {item.bpm ? <Text style={styles.metaSmall}>{item.bpm} BPM</Text> : null}
+                  {item.bpm ? <Text style={styles.metaSmall}>{t("library.bpm", { bpm: item.bpm })}</Text> : null}
                   {item.count ? <Text style={styles.metaSmall}>{item.count}</Text> : null}
                 </View>
               </View>
@@ -391,7 +403,7 @@ export default function Library() {
                   never competes with the primary metadata. */}
               <View style={styles.sourceBadgeCol}>
                 <View style={styles.sourceBadgeLocal}>
-                  <Text style={styles.sourceBadgeText}>Dance Library</Text>
+                  <Text style={styles.sourceBadgeText}>{t("library.source_badge")}</Text>
                 </View>
                 <Ionicons
                   name="chevron-forward"

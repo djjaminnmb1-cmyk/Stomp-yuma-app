@@ -372,12 +372,22 @@ async def notify_followers_of_new_dance(dance: dict) -> int:
     # friends' actions, and "a choreographer you follow released a
     # new dance" is an ambient notification, not a social event. The
     # push tap deeplinks straight into the new dance detail screen.
+    #
+    # Localised per recipient's ``preferred_language`` — see
+    # ``core.push_service.send_push_localised``. Users without an
+    # override receive the English default.
     try:
-        await send_push(
-            recipients=fresh,
+        from core.push_service import send_push_localised
+
+        await send_push_localised(
+            fresh,
+            title_key="push.new_dance.title",
+            body_key="push.new_dance.body",
+            params={
+                "choreographer": choreographer,
+                "dance_name": dance_name,
+            },
             data={
-                "title": f"New dance by {choreographer}",
-                "message": f"“{dance_name}” just landed in the library — go check it out.",
                 "deeplink": f"/dance/{dance_id}",
                 "action_url": f"/dance/{dance_id}",
             },

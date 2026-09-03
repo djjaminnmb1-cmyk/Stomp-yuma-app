@@ -8,6 +8,7 @@ import React, {
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { api, User } from "../api/client";
+import { applyServerPreferredLanguage } from "../i18n";
 import { registerForPush } from "../lib/push";
 
 type AuthState = {
@@ -66,6 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(me);
           setToken(t);
           registerForPush(t);
+          // Restore server-side language preference if the user picked
+          // one on another device. No-op when the local device already
+          // has an explicit override (local is last-writer-wins).
+          void applyServerPreferredLanguage(me.preferred_language);
         } catch {
           await saveToken(null);
           setUser(null);
@@ -86,6 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(t);
     setUser(u);
     registerForPush(t);
+    // Same restore-from-server rule as the boot path.
+    void applyServerPreferredLanguage(u.preferred_language);
   }, []);
 
   const signOut = useCallback(async () => {

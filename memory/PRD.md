@@ -757,3 +757,67 @@ Once (1) is in the repo, we:
 - Remove the `Platform.OS === "ios"` early-return in
   `frontend/src/lib/push.ts`
 
+
+
+## Session (June 2026) — App-wide Localization (EN/ES/FR)
+
+**User request**: Localize the app in English, Spanish and French. Show a
+one-time "Choose your language" picker on first open, and RE-PROMPT if the
+device language changes. Push notifications, emails and the privacy policy
+must also be translated.
+
+### What shipped
+
+1. **`src/i18n/translations.ts`** — ~200 keys per locale (EN/ES/FR) covering:
+   - Onboarding language picker + Age Gate
+   - All 5 tabs (`_layout.tsx`, home, library, my-dances, instructor, profile)
+   - Auth screen (including split-and-render legal footer)
+   - Welcome / greeting screen
+   - Common CTAs (Save, Cancel, Follow, Search, See all, etc.)
+   - Modals (delete account, instructor unlock, code entry)
+   - Sub-components (mentions, admin drift row, current version row)
+
+2. **`src/i18n/index.ts`** — the runtime:
+   - `bootstrapI18n()` loads the persisted override, resolves system default
+     via `expo-localization`.
+   - `toRuntimeString()` rewrites authoring-time `{name}` → i18n-js's
+     `%{name}` at nest time so translations.ts stays human-friendly.
+   - `tRaw(key)` returns the un-rewritten source string for
+     split-and-render call sites (legal footer, delete-confirm label).
+   - **Device-language change detection**: bootstrap snapshots the OS's
+     ordered locale-tag list and, if it changed since the last boot AND
+     the user hadn't pinned a manual override, clears the "picker was
+     shown" flag so the LanguagePickerModal re-prompts on the next launch.
+     Users who explicitly picked a language are NEVER re-prompted.
+   - `useTranslation()` hook returns `{t, tRaw, locale, override, setLocale, hydrated, deviceLocale}` —
+     backed by `useSyncExternalStore` so every subscriber re-renders once
+     per locale change.
+
+3. **`src/components/LanguagePickerModal.tsx`** — one-time overlay with 3
+   options (English • System default / Español / Français) + Continue.
+   Persists both the locale choice AND a `picker_shown_at` marker.
+
+4. **`src/components/AgeGateModal.tsx`** — fully translated hero, body copy,
+   both CTAs and inline legal footer using `tRaw` for token splits.
+
+5. **Verified end-to-end** via testing_agent (iteration 36):
+   - Age Gate + Auth footer + Delete confirm modal render cleanly in EN/ES/FR
+     (no `[missing "%..."]` fragments).
+   - Home / Library / Profile / Instructor tabs all localize on locale
+     change.
+   - Placeholder interpolation stable across screens (e.g. "Salut, Erin !",
+     "Suggérer une danse à Jamin").
+
+### iOS Push question — answered inline for the operator
+
+- **Emergent push uses Firebase (FCM)**. On iOS FCM proxies through APNs, so
+  you still need Apple credentials on top of Firebase.
+- **Missing for iOS push**: `frontend/GoogleService-Info.plist` (from
+  Firebase console → add iOS app to project), a NEW APNs Auth Key `.p8`
+  (Apple Developer Portal → Keys → "+", tick "Apple Push Notifications
+  service"), the corresponding 10-char Key ID, and the "Push Notifications"
+  capability on App ID `com.emergent.stompinyumaapp.uyr5zg`.
+- Team ID is `5RVKA62THW` (already known from Sign-in-with-Apple).
+- Once you drop `GoogleService-Info.plist` into `frontend/`, we add
+  `expo.ios.googleServicesFile` to `app.config.js` and remove the
+  `Platform.OS === "ios"` early-return in `frontend/src/lib/push.ts`.

@@ -155,11 +155,18 @@ async def notify_followers_of_new_class(class_doc: dict) -> int:
 
     await _write_ledger(fresh, "class", class_id, instructor_id)
     try:
-        await send_push(
-            recipients=fresh,
+        from core.push_service import send_push_localised
+
+        await send_push_localised(
+            fresh,
+            title_key="push.new_class.title",
+            body_key="push.new_class.body",
+            params={
+                "instructor": instructor_name,
+                "class_title": label,
+                "when": f"{date} — {dance_names}{more}".strip(),
+            },
             data={
-                "title": f"{instructor_name} · {label}",
-                "message": f"{date} — {dance_names}{more}",
                 "deeplink": "/classes",
                 "action_url": "/classes",
             },
@@ -209,11 +216,18 @@ async def notify_followers_of_new_event(event_doc: dict) -> int:
 
     await _write_ledger(fresh, "event", event_id, instructor_id)
     try:
-        await send_push(
-            recipients=fresh,
+        from core.push_service import send_push_localised
+
+        await send_push_localised(
+            fresh,
+            title_key="push.new_event.title",
+            body_key="push.new_event.body",
+            params={
+                "instructor": instructor_name,
+                "event_title": ev_name,
+                "when": f"{when} @ {where}",
+            },
             data={
-                "title": f"{instructor_name} · {ev_name}",
-                "message": f"{when} @ {where}",
                 "deeplink": f"/events/{event_id}",
                 "action_url": f"/events/{event_id}",
                 # Interactive push category — the mobile app registers

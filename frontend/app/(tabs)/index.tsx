@@ -11,10 +11,12 @@ import { StreakCard } from "@/src/components/StreakCard";
 import { FeedEventCard } from "@/src/components/FeedEventCard";
 import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
 import { WeeklyRecapCard } from "@/src/components/WeeklyRecapCard";
+import { useTranslation } from "@/src/i18n";
 
 export default function Home() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { t } = useTranslation();
   const [topDancers, setTopDancers] = useState<LeaderboardEntry[]>([]);
   const [practiced, setPracticed] = useState<
     { dance: { id: string; name: string; choreographer: string; difficulty: string; bpm: number | null }; status: string; last_activity_at: string }[]
@@ -109,9 +111,11 @@ export default function Home() {
 
         <View style={styles.section}>
           <Text style={styles.helloText}>
-            Howdy{user?.name ? `, ${user.name.split(" ")[0]}` : ""}!
+            {user?.name
+              ? t("home.hello", { name: user.name.split(" ")[0] })
+              : t("home.hello_no_name")}
           </Text>
-          <Text style={styles.subHello}>Ready to boot-scoot?</Text>
+          <Text style={styles.subHello}>{t("home.subhello")}</Text>
 
           {token ? (
             <>
@@ -135,11 +139,13 @@ export default function Home() {
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.suggestTitle}>Achievements</Text>
+                  <Text style={styles.suggestTitle}>{t("home.achievements_title")}</Text>
                   <Text style={styles.suggestSub}>
                     {unseenBadges > 0
-                      ? `You unlocked ${unseenBadges} new badge${unseenBadges === 1 ? "" : "s"}!`
-                      : "Track your badges & practice streak."}
+                      ? unseenBadges === 1
+                        ? t("home.achievements_sub_unseen_one")
+                        : t("home.achievements_sub_unseen", { count: unseenBadges })
+                      : t("home.achievements_sub_default")}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.muted} />
@@ -152,7 +158,7 @@ export default function Home() {
             onPress={() => router.push("/(tabs)/library")}
             style={styles.ctaBtn}
           >
-            <Text style={styles.ctaBtnText}>Start Browsing Dances</Text>
+            <Text style={styles.ctaBtnText}>{t("home.browse_cta")}</Text>
             <Ionicons name="arrow-forward" size={18} color={colors.onBrandPrimary} />
           </Pressable>
         </View>
@@ -165,13 +171,13 @@ export default function Home() {
                 style={[styles.sectionTitle, styles.sectionTitleFlex]}
                 numberOfLines={1}
               >
-                Community Activity
+                {t("home.community_activity")}
               </Text>
               <Pressable
                 onPress={() => router.push("/feed")}
                 testID="home-feed-see-all"
               >
-                <Text style={styles.link}>See all</Text>
+                <Text style={styles.link}>{t("common.see_all")}</Text>
               </Pressable>
             </View>
             {feedPreview.length === 0 ? (
@@ -187,10 +193,10 @@ export default function Home() {
                 />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.suggestTitle}>
-                    Follow other dancers
+                    {t("home.feed_empty_title")}
                   </Text>
                   <Text style={styles.suggestSub}>
-                    Their completions, badges, and streaks will show up here.
+                    {t("home.feed_empty_sub")}
                   </Text>
                 </View>
                 <Ionicons
@@ -211,10 +217,10 @@ export default function Home() {
               style={[styles.sectionTitle, styles.sectionTitleFlex]}
               numberOfLines={1}
             >
-              Fresh on the Floor
+              {t("home.fresh_on_floor")}
             </Text>
             <Pressable onPress={() => router.push("/(tabs)/library")} testID="home-see-all">
-              <Text style={styles.link}>See all</Text>
+              <Text style={styles.link}>{t("common.see_all")}</Text>
             </Pressable>
           </View>
 
@@ -224,7 +230,7 @@ export default function Home() {
                 <View style={styles.practicedTitleRow}>
                   <Ionicons name="time" size={16} color={colors.brandPrimary} />
                   <Text style={styles.practicedTitle} numberOfLines={1}>
-                    Recently Practiced
+                    {t("home.recently_practiced")}
                   </Text>
                 </View>
                 <Text
@@ -233,7 +239,7 @@ export default function Home() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.85}
                 >
-                  Pick up where you left off
+                  {t("home.pick_up")}
                 </Text>
               </View>
               <ScrollView
@@ -277,7 +283,7 @@ export default function Home() {
               <Ionicons name="trophy" size={22} color={colors.brandTertiary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.suggestTitle}>Boot Scoot Board</Text>
+              <Text style={styles.suggestTitle}>{t("home.leaderboard_title")}</Text>
               {topDancers.length > 0 ? (
                 <Text style={styles.suggestSub} numberOfLines={1}>
                   {topDancers
@@ -286,7 +292,7 @@ export default function Home() {
                 </Text>
               ) : (
                 <Text style={styles.suggestSub}>
-                  See who&apos;s topping the floor — join in.
+                  {t("home.leaderboard_default_sub")}
                 </Text>
               )}
             </View>
@@ -302,9 +308,9 @@ export default function Home() {
               <Ionicons name="compass" size={22} color={colors.brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.suggestTitle}>Find Events Near You</Text>
+              <Text style={styles.suggestTitle}>{t("home.events_title")}</Text>
               <Text style={styles.suggestSub}>
-                Workshops, socials, and classes wherever your boots land.
+                {t("home.events_sub")}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.muted} />
@@ -319,9 +325,9 @@ export default function Home() {
               <Ionicons name="calendar" size={22} color={colors.brandSecondary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.suggestTitle}>Recent Class Recap</Text>
+              <Text style={styles.suggestTitle}>{t("home.classes_title")}</Text>
               <Text style={styles.suggestSub}>
-                See which dances were taught in recent classes.
+                {t("home.classes_sub")}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.muted} />
@@ -338,13 +344,13 @@ export default function Home() {
             <View style={{ flex: 1 }}>
               <Text style={styles.suggestTitle}>
                 {mainInstructorName
-                  ? `Suggest a Dance for ${mainInstructorName.split(" ")[0]}`
-                  : "Suggest a Dance"}
+                  ? t("home.suggest_title_for", { name: mainInstructorName.split(" ")[0] })
+                  : t("home.suggest_title")}
               </Text>
               <Text style={styles.suggestSub}>
                 {mainInstructorName
-                  ? `Got an idea? Send it to ${mainInstructorName}.`
-                  : "Pick your main instructor and send them your ideas."}
+                  ? t("home.suggest_sub_for", { name: mainInstructorName })
+                  : t("home.suggest_sub_default")}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.muted} />
@@ -352,13 +358,11 @@ export default function Home() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About the Venue</Text>
+          <Text style={styles.sectionTitle}>{t("home.about_title")}</Text>
           <View style={styles.aboutCard}>
             <Ionicons name="location" size={18} color={colors.brandPrimary} />
             <Text style={styles.aboutText}>
-              Stompin&apos; Ground Yuma is a friendly community where dancers of every age and
-              skill level come together to learn, laugh, and boot-scoot the night away.
-              Grab your boots and let&apos;s dance.
+              {t("home.about_text")}
             </Text>
           </View>
           <View style={styles.rowIcons}>
@@ -372,7 +376,7 @@ export default function Home() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.85}
               >
-                All ages
+                {t("home.icon_all_ages")}
               </Text>
             </View>
             <View style={styles.iconItem}>
@@ -385,7 +389,7 @@ export default function Home() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.85}
               >
-                Beginners welcome
+                {t("home.icon_beginners")}
               </Text>
             </View>
             <View style={styles.iconItem}>
@@ -398,7 +402,7 @@ export default function Home() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.85}
               >
-                Family friendly
+                {t("home.icon_family")}
               </Text>
             </View>
           </View>
@@ -417,7 +421,7 @@ export default function Home() {
             style={styles.websiteBtn}
           >
             <Ionicons name="globe-outline" size={18} color={colors.onBrandPrimary} />
-            <Text style={styles.websiteBtnText}>Visit stompingroundyuma.org</Text>
+            <Text style={styles.websiteBtnText}>{t("home.website_cta")}</Text>
             <Ionicons name="open-outline" size={16} color={colors.onBrandPrimary} />
           </Pressable>
         </View>

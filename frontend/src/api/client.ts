@@ -38,6 +38,9 @@ export type User = {
   email_is_synthetic?: boolean;
   main_instructor_id?: string;
   instructor_ids?: string[];
+  // BCP-47 short code chosen by the user, or "" to follow device
+  // locale. Server enforces membership in the supported set.
+  preferred_language?: string;
 };
 
 // ---------------- Badges / Achievements ----------------
@@ -834,6 +837,12 @@ export const api = {
       token,
     ),
   me: (token: string) => req<User>("/auth/me", {}, token),
+  setPreferredLanguage: (language: string, token: string) =>
+    req<{ ok: boolean; user: User }>(
+      "/auth/me/language",
+      { method: "PATCH", body: JSON.stringify({ language }) },
+      token,
+    ),
   setInstructor: (instructor_code: string, token: string) =>
     req<{ ok: boolean; user: User }>(
       "/auth/set-instructor",

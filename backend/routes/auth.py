@@ -38,6 +38,7 @@ from models.schemas import (
     ForgotPasswordIn,
     GoogleSessionIn,
     LoginIn,
+    PreferredLanguageIn,
     RegisterIn,
     ResetPasswordIn,
     SetInstructorIn,
@@ -192,6 +193,38 @@ async def google_session(inp: GoogleSessionIn):
 @router.get("/auth/me")
 async def me(user: dict = Depends(get_current_user)):
     return user_to_out(user)
+
+
+@router.patch("/auth/me/language")
+async def set_preferred_language(
+    inp: PreferredLanguageIn,
+    user: dict = Depends(get_current_user),
+):
+    """Persist the caller's preferred UI / notification language.
+
+    Empty ``language`` clears the override so the client falls back to
+    the device locale (matches the "System default" pill in Settings).
+    Non-empty must be one of ``SUPPORTED_LANGUAGES`` — anything else
+    is rejected 400 so a client bug can't smuggle in an unsupported
+    tag and end up on the English fallback silently.
+    """
+    from core.i18n import SUPPORTED_LANGUAGES, _normalise_lang, is_supported
+
+    raw = (inp.language or "").strip()
+    if raw and not is_supported(raw):
+        raise HTTPException(
+            400,
+            f"Unsupported language. Choose one of: {', '.join(SUPPORTED_LANGUAGES)}",
+        )
+    canonical = _normalise_lang(raw) if raw else ""
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"preferred_language": canonical}},
+    )
+    fresh = await db.users.find_one(
+        {"user_id": user["user_id"]}, {"_id": 0, "password_hash": 0}
+    )
+    return {"ok": True, "user": user_to_out(fresh)}
 
 
 # ---------------- Sign in with Apple ----------------
@@ -440,37 +473,38 @@ async def forgot_password(inp: ForgotPasswordIn, request: Request):
     reset_url = f"{APP_PUBLIC_URL}/reset-password?token={raw}"
     display_name = user.get("name") or email.split("@")[0]
 
+    # Translate to the user's preferred language. Users who never set
+    # an override see English (the DEFAULT_LANGUAGE fallback).
+    from core.i18n import preferred_language_for, t as _t
+
+    lang = preferred_language_for(user)
+    subject = _t("email.reset.subject", lang)
+
     text_body = (
-        f"Hi {display_name},\n\n"
-        f"We received a request to reset your Stompin' Ground Yuma password.\n"
-        f"Open the link below to set a new password. This link expires in "
-        f"{RESET_TOKEN_TTL_MIN} minutes and can only be used once.\n\n"
+        f"{_t('email.reset.greeting', lang, name=display_name)}\n\n"
+        f"{_t('email.reset.intro', lang, minutes=RESET_TOKEN_TTL_MIN)}\n\n"
         f"{reset_url}\n\n"
-        f"If you didn't request this, you can safely ignore this email — "
-        f"your password will stay the same.\n\n"
-        f"— Stompin' Ground Yuma"
+        f"{_t('email.reset.ignore', lang)}\n\n"
+        f"{_t('email.reset.signoff', lang)}"
     )
     html_body = f"""
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;color:#2a1f18">
-        <h2 style="color:#8B2E1E">Reset your password</h2>
-        <p>Hi {display_name},</p>
-        <p>We received a request to reset your <strong>Stompin' Ground Yuma</strong> password.
-        Tap the button below to set a new password. This link expires in
-        <strong>{RESET_TOKEN_TTL_MIN} minutes</strong> and can only be used once.</p>
+        <h2 style="color:#8B2E1E">{subject}</h2>
+        <p>{_t('email.reset.greeting', lang, name=display_name)}</p>
+        <p>{_t('email.reset.intro', lang, minutes=RESET_TOKEN_TTL_MIN)}</p>
         <p style="text-align:center;margin:24px 0">
           <a href="{reset_url}"
              style="background:#8B2E1E;color:#fff;padding:12px 22px;border-radius:8px;
-                    text-decoration:none;font-weight:700">Reset password</a>
+                    text-decoration:none;font-weight:700">{_t('email.reset.button', lang)}</a>
         </p>
-        <p style="font-size:12px;color:#666">Or copy this link into your browser:<br/>
+        <p style="font-size:12px;color:#666">{_t('email.reset.copy_hint', lang)}<br/>
           <span style="word-break:break-all">{reset_url}</span></p>
-        <p>If you didn't request this, you can safely ignore this email — your
-        password will stay the same.</p>
-        <p>— Stompin' Ground Yuma</p>
+        <p>{_t('email.reset.ignore', lang)}</p>
+        <p>{_t('email.reset.signoff', lang)}</p>
       </div>
     """.strip()
 
-    await send_email(email, "Reset your Stompin' Ground Yuma password", text_body, html_body)
+    await send_email(email, subject, text_body, html_body)
     return generic_ok
 
 

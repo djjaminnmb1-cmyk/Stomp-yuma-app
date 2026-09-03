@@ -101,6 +101,7 @@ module.exports = {
     plugins: [
       "expo-router",
       "expo-notifications",
+      "expo-localization",
       [
         "expo-splash-screen",
         {

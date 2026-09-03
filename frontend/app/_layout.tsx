@@ -12,8 +12,10 @@ import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { AuthProvider } from "@/src/context/auth-context";
 import { DraftCountProvider } from "@/src/context/draft-count-context";
 import { AgeGateModal } from "@/src/components/AgeGateModal";
+import { LanguagePickerModal } from "@/src/components/LanguagePickerModal";
 import { UpdateBanner } from "@/src/components/UpdateBanner";
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
+import { useI18nBootstrap } from "@/src/i18n";
 
 LogBox.ignoreAllLogs(true);
 SplashScreen.preventAutoHideAsync();
@@ -70,6 +72,11 @@ if (Platform.OS !== "web") {
 export default function RootLayout() {
   const [loaded, error] = useIconFonts();
   const router = useRouter();
+
+  // Load persisted language override + set the effective i18n locale.
+  // Fires once on mount; every ``useTranslation`` subscriber re-renders
+  // when bootstrap completes.
+  useI18nBootstrap();
 
   useEffect(() => {
     if (loaded || error) {
@@ -145,6 +152,11 @@ export default function RootLayout() {
                 <StatusBar barStyle="dark-content" />
                 <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#FDFBF7" } }} />
                 <AgeGateModal />
+                {/* First-open language picker — auto-detects the
+                    device locale and shows a one-time picker so the
+                    user can confirm or override. Silently no-ops once
+                    the user has made a choice. */}
+                <LanguagePickerModal />
                 {/* Sticks to the top of the app; only renders on native
                     when expo-updates has a bundle ready. Hidden on web. */}
                 <UpdateBanner />

@@ -28,12 +28,14 @@ import { useBlockUser } from "@/src/hooks/useBlockUser";
 import { MentionAutocomplete } from "@/src/components/MentionAutocomplete";
 import { useDraftCount } from "@/src/context/draft-count-context";
 import { parseCsv } from "@/src/lib/csv";
+import { useTranslation } from "@/src/i18n";
 
 const DIFFICULTIES = ["Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"];
 
 export default function InstructorTab() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { t } = useTranslation();
   const { refresh: refreshDrafts } = useDraftCount();
   const [tab, setTab] = useState<"dances" | "classes" | "events" | "chat">("dances");
   const [myClasses, setMyClasses] = useState<ClassSession[]>([]);
@@ -99,7 +101,7 @@ export default function InstructorTab() {
       <SafeAreaView style={styles.c}>
         <View style={styles.blocked}>
           <Ionicons name="lock-closed" size={40} color={colors.muted} />
-          <Text style={styles.blockedText}>Instructors only.</Text>
+          <Text style={styles.blockedText}>{t("instructor.only")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -109,8 +111,8 @@ export default function InstructorTab() {
     <SafeAreaView style={styles.c} edges={["top"]}>
       <View style={styles.headerBar}>
         <View style={styles.titleWrap}>
-          <Text style={styles.title} numberOfLines={1}>Instructor</Text>
-          <Text style={styles.subtitle} numberOfLines={1}>Dances · Classes · Events · Chat</Text>
+          <Text style={styles.title} numberOfLines={1}>{t("instructor.title")}</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>{t("instructor.subtitle")}</Text>
         </View>
         <Pressable
           testID="open-dashboard"
@@ -129,7 +131,7 @@ export default function InstructorTab() {
                 style={styles.importBtn}
               >
                 <Ionicons name="arrow-undo" size={16} color={colors.brandPrimary} />
-                <Text style={styles.importBtnText}>Restore</Text>
+                <Text style={styles.importBtnText}>{t("instructor.restore")}</Text>
               </Pressable>
             ) : null}
             <Pressable
@@ -138,7 +140,7 @@ export default function InstructorTab() {
               style={styles.importBtn}
             >
               <Ionicons name="cloud-upload" size={16} color={colors.brandPrimary} />
-              <Text style={styles.importBtnText}>CSV</Text>
+              <Text style={styles.importBtnText}>{t("instructor.csv")}</Text>
             </Pressable>
             <Pressable
               testID="new-dance-btn"
@@ -146,7 +148,7 @@ export default function InstructorTab() {
               style={styles.newBtn}
             >
               <Ionicons name="add" size={18} color={colors.onBrandPrimary} />
-              <Text style={styles.newBtnText}>New</Text>
+              <Text style={styles.newBtnText}>{t("instructor.new")}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -154,28 +156,28 @@ export default function InstructorTab() {
 
       <View style={styles.tabs}>
         <TabBtn
-          label="Dances"
+          label={t("instructor.tab_dances")}
           icon="musical-notes"
           active={tab === "dances"}
           onPress={() => setTab("dances")}
           testID="instr-tab-dances"
         />
         <TabBtn
-          label="Classes"
+          label={t("instructor.tab_classes")}
           icon="calendar"
           active={tab === "classes"}
           onPress={() => setTab("classes")}
           testID="instr-tab-classes"
         />
         <TabBtn
-          label="Events"
+          label={t("instructor.tab_events")}
           icon="compass"
           active={tab === "events"}
           onPress={() => setTab("events")}
           testID="instr-tab-events"
         />
         <TabBtn
-          label="Chat"
+          label={t("instructor.tab_chat")}
           icon="chatbubbles"
           active={tab === "chat"}
           onPress={() => setTab("chat")}
@@ -193,14 +195,26 @@ export default function InstructorTab() {
             <View style={styles.legend}>
               <Ionicons name="information-circle" size={16} color={colors.brandSecondary} />
               <Text style={styles.legendText}>
-                New dances start as <Text style={{ fontWeight: "700" }}>Drafts</Text> — only you can see them. Tap <Text style={{ fontWeight: "700" }}>Publish</Text> to share with everyone in the app.
+                {(() => {
+                  const raw = t("instructor.legend_new_dance");
+                  const parts = raw.split(/\*\*/g);
+                  return parts.map((p, i) =>
+                    i % 2 === 1 ? (
+                      <Text key={i} style={{ fontWeight: "700" }}>
+                        {p}
+                      </Text>
+                    ) : (
+                      <Text key={i}>{p}</Text>
+                    )
+                  );
+                })()}
               </Text>
             </View>
             {myDances.length === 0 ? (
               <View style={styles.empty}>
                 <Ionicons name="musical-notes-outline" size={44} color={colors.muted} />
                 <Text style={styles.emptyText}>
-                  No dances yet. Tap "+ New" to upload a dance with its step sheet, or log a class in the Classes tab.
+                  {t("instructor.no_dances")}
                 </Text>
               </View>
             ) : (
@@ -349,10 +363,10 @@ export default function InstructorTab() {
               <View style={styles.empty}>
                 <Ionicons name="calendar-outline" size={44} color={colors.muted} />
                 <Text style={styles.emptyText}>
-                  You haven't logged any classes yet.
+                  {t("instructor.no_classes_yet")}
                 </Text>
                 <Pressable onPress={() => router.push("/classes")} style={styles.emptyBtn}>
-                  <Text style={styles.emptyBtnText}>Go to Classes</Text>
+                  <Text style={styles.emptyBtnText}>{t("instructor.go_to_classes")}</Text>
                 </Pressable>
               </View>
             ) : (
@@ -368,10 +382,12 @@ export default function InstructorTab() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.classTitle}>
-                      {c.session_label || "Class session"}
+                      {c.session_label || t("instructor.class_session_default")}
                     </Text>
                     <Text style={styles.classMeta} numberOfLines={2}>
-                      {c.dances.length} dance{c.dances.length === 1 ? "" : "s"} · {c.dances.map((d) => d.name).join(", ")}
+                      {c.dances.length === 1
+                        ? t("instructor.dance_count_one", { names: c.dances.map((d) => d.name).join(", ") })
+                        : t("instructor.dance_count", { count: c.dances.length, names: c.dances.map((d) => d.name).join(", ") })}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={colors.muted} />
