@@ -31,6 +31,7 @@ from . import (
     feedback,
     instructors,
     leaderboard,
+    legal,
     misc,
     notification_prefs,
     prizes,
@@ -77,6 +78,7 @@ api_router.include_router(song_preview.router)
 api_router.include_router(push.router)
 api_router.include_router(notification_prefs.router)
 api_router.include_router(weekly_recap.router)
+api_router.include_router(legal.router)
 api_router.include_router(misc.router)
 
 __all__ = ["api_router"]

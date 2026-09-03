@@ -699,3 +699,61 @@ Remaining non-blocking WARN/INFO items (user action):
 - iOS push registration disabled — needs `GoogleService-Info.plist`
   under `frontend/` + `expo.ios.googleServicesFile` in `app.json`
 
+
+
+## Session (June 2026) — Stable Privacy URL + iOS Push Audit
+
+### Privacy policy — moved to a stable backend endpoint
+
+**Why**: App Store / Play review require a public, permanent privacy
+URL. Serving from the Metro-bundled Expo web route was brittle (blank
+page on cold-start) and the preview domain flagged as ephemeral.
+
+**Fix**:
+
+1. New backend route `backend/routes/legal.py` mounts
+   `GET /api/legal/privacy` returning a fully self-contained HTML
+   page (no external CSS/CDN). Cache-Control: public, max-age=3600.
+2. Converted `frontend/app.json` → `frontend/app.config.js` so the
+   URL can be derived from env vars at build time.
+3. `privacyPolicyUrl` now resolves as
+   `${EXPO_PUBLIC_BACKEND_URL}/api/legal/privacy` — inherits the
+   production domain automatically when the deploy pipeline sets
+   `EXPO_PUBLIC_BACKEND_URL`. Both preview and production land on the
+   SAME backend page.
+4. Kept `expo.extra.privacyPolicyUrl` for backward-compat with any
+   component reading `Constants.expoConfig.extra.privacyPolicyUrl`.
+
+### iOS push notifications — Firebase requirements documented
+
+Confirmed: Emergent-managed push uses Firebase Cloud Messaging (FCM).
+On iOS FCM proxies through Apple's APNs — so BOTH Firebase config
+and Apple credentials are required.
+
+**Currently in place**:
+
+- `frontend/google-services.json` — Firebase Android config ✅
+- `expo-notifications` plugin — installed ✅
+- `expo.android.googleServicesFile` — wired ✅
+
+**What the operator still owes for iOS push** (documented in the
+finish summary — not blockers for Android launch):
+
+1. `frontend/GoogleService-Info.plist` — Firebase iOS config (add an
+   iOS app to the existing Firebase project, download)
+2. APNs authentication key (.p8) — NEW key with "Apple Push
+   Notifications service" checkbox, downloaded from Apple Developer
+   Portal → Keys. Different from the existing Sign-in-with-Apple key
+   (`AuthKey_KGNZBJ85K4.p8`).
+3. APNs Key ID (10-char) — shown once during key creation
+4. Team ID — `5RVKA62THW` (already known)
+5. "Push Notifications" capability enabled on App ID
+   `com.emergent.stompinyumaapp.uyr5zg`
+6. Upload (2)+(3)+(4) to Firebase Console → Project Settings →
+   Cloud Messaging → Apple app configuration
+
+Once (1) is in the repo, we:
+- Add `expo.ios.googleServicesFile` to `app.config.js`
+- Remove the `Platform.OS === "ios"` early-return in
+  `frontend/src/lib/push.ts`
+
