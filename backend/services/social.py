@@ -430,6 +430,22 @@ async def get_public_user(
         **await follow_counts(user_id),
     }
 
+    # Instructor-follow state: is the viewer subscribed to this
+    # instructor's class / event push alerts? Different from the
+    # "is_following" social graph flag above — that's the activity
+    # feed relationship. Both can be True / False independently.
+    is_following_as_instructor = False
+    if viewer_id and (u.get("is_admin") or u.get("is_instructor")):
+        viewer = await db.users.find_one(
+            {"user_id": viewer_id},
+            {"_id": 0, "instructor_ids": 1},
+        )
+        instructor_ids = (viewer or {}).get("instructor_ids") or []
+        is_following_as_instructor = user_id in instructor_ids
+    instructor_follower_count = int(
+        await db.users.count_documents({"instructor_ids": user_id})
+    )
+
     return {
         "user_id": u["user_id"],
         "name": u.get("name", "") or "",
@@ -445,6 +461,8 @@ async def get_public_user(
         "is_following": (
             await is_following(viewer_id, user_id) if viewer_id else False
         ),
+        "is_following_as_instructor": is_following_as_instructor,
+        "instructor_follower_count": instructor_follower_count,
         "is_self": bool(viewer_id and viewer_id == user_id),
     }
 

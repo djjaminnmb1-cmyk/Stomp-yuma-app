@@ -255,3 +255,76 @@ async def clear_main_instructor(user: dict = Depends(get_current_user)):
         {"$unset": {"main_instructor_id": ""}},
     )
     return {"ok": True}
+
+
+# ---------------- One-tap follow/unfollow (from public profile) ----------------
+@router.post("/instructors/{instructor_id}/follow")
+async def follow_instructor(
+    instructor_id: str, user: dict = Depends(get_current_user)
+):
+    """Add ``instructor_id`` to the caller's ``instructor_ids`` list so
+    they start receiving class/event push alerts from that instructor.
+
+    This is the "one-tap" companion to the picker at Profile → Choose
+    your instructors. The two paths write to the SAME collection field
+    so a follow made here shows up as a checkmark next time the picker
+    opens, and vice-versa.
+    """
+    if not instructor_id or instructor_id == user["user_id"]:
+        raise HTTPException(400, "Invalid instructor id.")
+    target = await db.users.find_one(
+        {"user_id": instructor_id},
+        {"_id": 0, "is_instructor": 1, "is_admin": 1, "name": 1},
+    )
+    if not target:
+        raise HTTPException(404, "Instructor not found.")
+    if not (target.get("is_instructor") or target.get("is_admin")):
+        raise HTTPException(
+            400,
+            "That user isn't an instructor.",
+        )
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$addToSet": {"instructor_ids": instructor_id}},
+    )
+    # Follower count is derived — count users whose instructor_ids
+    # contains this id. Cheap enough to compute inline.
+    follower_count = await db.users.count_documents(
+        {"instructor_ids": instructor_id}
+    )
+    return {
+        "ok": True,
+        "is_following": True,
+        "follower_count": int(follower_count),
+    }
+
+
+@router.delete("/instructors/{instructor_id}/follow")
+async def unfollow_instructor(
+    instructor_id: str, user: dict = Depends(get_current_user)
+):
+    """Remove ``instructor_id`` from the caller's ``instructor_ids`` list.
+
+    If the target was ALSO the caller's ``main_instructor_id``, we unset
+    it — otherwise the Suggest-a-Dance picker would still route to a
+    non-followed instructor. Users can re-select from the picker any
+    time.
+    """
+    if not instructor_id:
+        raise HTTPException(400, "Invalid instructor id.")
+    updates: dict = {"$pull": {"instructor_ids": instructor_id}}
+    caller = await db.users.find_one(
+        {"user_id": user["user_id"]},
+        {"_id": 0, "main_instructor_id": 1},
+    )
+    if caller and caller.get("main_instructor_id") == instructor_id:
+        updates["$unset"] = {"main_instructor_id": ""}
+    await db.users.update_one({"user_id": user["user_id"]}, updates)
+    follower_count = await db.users.count_documents(
+        {"instructor_ids": instructor_id}
+    )
+    return {
+        "ok": True,
+        "is_following": False,
+        "follower_count": int(follower_count),
+    }

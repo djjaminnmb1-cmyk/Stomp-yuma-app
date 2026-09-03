@@ -325,6 +325,13 @@ async def notify_followers_of_new_dance(dance: dict) -> int:
     followers = [u for u in followers if u and u != creator]
     if not followers:
         return 0
+    # Respect notification prefs — dancers who muted "choreographer_alerts"
+    # get skipped. The ledger row is skipped too so re-enabling in prefs
+    # applies to future drops (not back-fill).
+    from services.notification_prefs import filter_recipients
+    followers = await filter_recipients(followers, "choreographer_alerts")
+    if not followers:
+        return 0
 
     # Idempotency ledger — one row per (user, dance) pair. Any
     # follower that already has a row is skipped.

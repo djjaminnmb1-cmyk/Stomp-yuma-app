@@ -38,6 +38,15 @@ async def send_24h_class_reminders():
             if not recipients:
                 continue
 
+            # Respect per-user notification preferences — dancers who
+            # muted "reminder_alerts" are skipped. Their ledger row
+            # (below) is skipped too so muting applies to future
+            # reminders too, not just the current one.
+            from services.notification_prefs import filter_recipients
+            recipients = await filter_recipients(recipients, "reminder_alerts")
+            if not recipients:
+                continue
+
             # Have we already sent this reminder?
             key = f"reminder-24h-{klass['id']}"
             already = await db.sent_reminders.find_one({"key": key})
@@ -105,9 +114,25 @@ def start_scheduler() -> None:
             replace_existing=True,
             next_run_time=datetime.now(timezone.utc) + timedelta(minutes=5),
         )
+        # Monthly full library verification against CopperKnob +
+        # BootStepper. Auto-applies high-confidence corrections and
+        # queues medium-confidence flags for admin review. First run
+        # is scheduled 30 days after boot — the one-off sweep is
+        # kicked manually via ``scripts/full_verify_and_sync.py`` at
+        # deploy time. See ``services/dance_library_sync.py`` for the
+        # match / confidence / diff rules.
+        from services.dance_library_sync import sync_library
+        scheduler.add_job(
+            lambda: sync_library(dry_run=False),
+            "interval",
+            days=30,
+            id="dance_library_monthly_sync",
+            replace_existing=True,
+            next_run_time=datetime.now(timezone.utc) + timedelta(days=30),
+        )
         if not scheduler.running:
             scheduler.start()
-        logger.info("Reminder scheduler started (hourly + daily drift scan)")
+        logger.info("Reminder scheduler started (hourly + daily drift scan + monthly library sync)")
     except Exception as e:
         logger.warning(f"Could not start scheduler: {e}")
 

@@ -26,6 +26,7 @@ import { useAuth } from "@/src/context/auth-context";
 import { api, PublicProfile } from "@/src/api/client";
 import { FollowButton } from "@/src/components/FollowButton";
 import { InstructorBadge } from "@/src/components/InstructorBadge";
+import { InstructorFollowButton } from "@/src/components/InstructorFollowButton";
 
 export default function PublicProfileScreen() {
   const router = useRouter();
@@ -139,13 +140,26 @@ export default function PublicProfileScreen() {
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
         {/* Follow button (hidden if this is the caller's own profile) */}
         {!profile.is_self ? (
-          <FollowButton
-            userId={profile.user_id}
-            isFollowing={profile.is_following}
-            onFollowChange={(_now, delta) =>
-              setFollowers((n) => Math.max(0, n + delta))
-            }
-          />
+          <View style={styles.followRow}>
+            <FollowButton
+              userId={profile.user_id}
+              isFollowing={profile.is_following}
+              onFollowChange={(_now, delta) =>
+                setFollowers((n) => Math.max(0, n + delta))
+              }
+            />
+            {/* Push-alert follow — only shown for instructors. Sits
+                alongside the social follow so dancers can opt into
+                class/event pings without following the activity feed
+                (or vice-versa). */}
+            {profile.is_instructor ? (
+              <InstructorFollowButton
+                instructorId={profile.user_id}
+                instructorName={profile.name}
+                initialFollowing={!!profile.is_following_as_instructor}
+              />
+            ) : null}
+          </View>
         ) : (
           <View style={styles.selfNote}>
             <Ionicons name="person" size={14} color={colors.muted} />
@@ -397,6 +411,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignSelf: "center",
     paddingHorizontal: spacing.md,
+  },
+  followRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+    // The social FollowButton is flex:1 internally, so we let it take
+    // most of the row; instructor pill only needs its intrinsic width.
+    flexWrap: "wrap",
   },
   selfNoteText: {
     fontSize: 12,

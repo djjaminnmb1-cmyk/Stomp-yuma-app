@@ -26,6 +26,7 @@ import { colors, radius, spacing, difficultyColor } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
 import { api, EventItem } from "@/src/api/client";
 import { InstructorBadge } from "@/src/components/InstructorBadge";
+import { RsvpSection } from "@/src/components/RsvpSection";
 
 const TYPE_LABEL: Record<string, string> = {
   class: "Class",
@@ -308,6 +309,9 @@ export default function EventDetail() {
             <Text style={styles.priceText}>{event.price}</Text>
           </View>
         ) : null}
+
+        <RsvpSection eventId={String(id)} />
+
         {event.registration_url ? (
           <Pressable
             style={styles.registerBtn}

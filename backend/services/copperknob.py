@@ -22,6 +22,7 @@ contract we control.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
@@ -143,16 +144,47 @@ def _normalise(item: dict) -> dict:
 
 async def _request(path: str, params: Optional[dict] = None) -> Any:
     """Single point of network egress. Every non-2xx becomes a
-    ``CopperKnobError`` with an appropriate HTTP status hint."""
+    ``CopperKnobError`` with an appropriate HTTP status hint.
+
+    Retries transparent on 429 (rate limit) and 503 (service unavailable)
+    with exponential backoff — 3 attempts total, 1s → 2s → 4s. Any other
+    non-2xx or transport error surfaces immediately. Rate-limiting is the
+    only expected transient failure for our workload (batch sync sweeps),
+    so this keeps the monthly job resilient without ballooning latency
+    for interactive callers.
+    """
     url = f"{BASE_URL}{path}"
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as http:
-            r = await http.get(url, params=params or {}, headers=_headers())
-    except httpx.TimeoutException:
-        raise CopperKnobError("CopperKnob timed out", status=504)
-    except httpx.RequestError as e:
-        logger.info("CopperKnob transport error: %s", e)
-        raise CopperKnobError("CopperKnob is unreachable", status=502)
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as http:
+                r = await http.get(url, params=params or {}, headers=_headers())
+        except httpx.TimeoutException:
+            raise CopperKnobError("CopperKnob timed out", status=504)
+        except httpx.RequestError as e:
+            logger.info("CopperKnob transport error: %s", e)
+            raise CopperKnobError("CopperKnob is unreachable", status=502)
+
+        if r.status_code == 200:
+            return r.json()
+        if r.status_code in (429, 503) and attempt < max_retries:
+            # Honour Retry-After if provided (seconds); otherwise
+            # exponential backoff — 1s, 2s, 4s.
+            retry_after_hdr = r.headers.get("Retry-After", "").strip()
+            wait_s: float
+            if retry_after_hdr.isdigit():
+                wait_s = min(int(retry_after_hdr), 30)
+            else:
+                wait_s = 2 ** (attempt - 1)
+            logger.info(
+                "CopperKnob %s → %s, sleeping %.1fs (attempt %d/%d)",
+                path, r.status_code, wait_s, attempt, max_retries,
+            )
+            await asyncio.sleep(wait_s)
+            continue
+        # Non-retryable / retries exhausted — fall through to error
+        # mapping below.
+        break
 
     if r.status_code == 200:
         return r.json()

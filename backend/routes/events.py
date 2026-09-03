@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from core.database import db
 from core.security import get_current_user, require_instructor
+from core.time_helpers import now_iso
 from models.schemas import EVENT_SKILL_LEVELS, EVENT_TYPES, EventIn
 from services import events as events_svc
 from services.geocoding import geocode_address
@@ -209,3 +210,84 @@ async def do_geocode(
             "Couldn't find that address — please double-check it or try a nearby cross-street.",
         )
     return geo
+
+
+# ---------------- RSVP ----------------
+class RsvpBody(BaseModel):
+    """RSVP status. ``going`` shows up in event stats + gets a
+    reminder; ``maybe`` is soft interest; ``declined`` explicitly
+    counts the user OUT so a "Not this time" tap can be undone.
+
+    ``declined`` also mutes any follow-on reminders for this event so
+    a user who explicitly declined isn't nagged the day-of.
+    """
+    status: str  # "going" | "maybe" | "declined"
+
+
+_RSVP_STATUSES = ("going", "maybe", "declined")
+
+
+@router.post("/events/{event_id}/rsvp")
+async def rsvp_event(
+    event_id: str,
+    body: RsvpBody,
+    user: dict = Depends(get_current_user),
+):
+    status = (body.status or "").strip().lower()
+    if status not in _RSVP_STATUSES:
+        raise HTTPException(400, "Invalid RSVP status.")
+    event = await db.events.find_one({"id": event_id}, {"_id": 0, "id": 1})
+    if not event:
+        raise HTTPException(404, "Event not found.")
+    now = now_iso()
+    await db.event_rsvps.update_one(
+        {"event_id": event_id, "user_id": user["user_id"]},
+        {
+            "$set": {"status": status, "updated_at": now},
+            "$setOnInsert": {"created_at": now},
+        },
+        upsert=True,
+    )
+    counts = await _rsvp_counts(event_id)
+    return {"ok": True, "status": status, "counts": counts}
+
+
+@router.delete("/events/{event_id}/rsvp")
+async def clear_rsvp(
+    event_id: str, user: dict = Depends(get_current_user)
+):
+    """Clear the caller's RSVP row entirely — differs from
+    ``status=declined`` which is an active NO. Removes the row so
+    subsequent "How many are going?" counts don't include a stale
+    entry."""
+    await db.event_rsvps.delete_one(
+        {"event_id": event_id, "user_id": user["user_id"]}
+    )
+    counts = await _rsvp_counts(event_id)
+    return {"ok": True, "counts": counts}
+
+
+@router.get("/events/{event_id}/rsvp/me")
+async def get_my_rsvp(
+    event_id: str, user: dict = Depends(get_current_user)
+):
+    row = await db.event_rsvps.find_one(
+        {"event_id": event_id, "user_id": user["user_id"]},
+        {"_id": 0, "status": 1},
+    )
+    counts = await _rsvp_counts(event_id)
+    return {"status": (row or {}).get("status", ""), "counts": counts}
+
+
+async def _rsvp_counts(event_id: str) -> dict:
+    """Return a small counts payload for the event detail screen."""
+    out = {"going": 0, "maybe": 0, "declined": 0}
+    pipeline = [
+        {"$match": {"event_id": event_id}},
+        {"$group": {"_id": "$status", "n": {"$sum": 1}}},
+    ]
+    async for row in db.event_rsvps.aggregate(pipeline):
+        s = row.get("_id")
+        if s in out:
+            out[s] = int(row.get("n") or 0)
+    return out

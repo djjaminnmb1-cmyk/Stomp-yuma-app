@@ -202,19 +202,23 @@ async def fan_out_mentions(
             continue
 
     if notified:
-        try:
-            await send_push(
-                recipients=notified,
-                data={
-                    "title": f"{mentioner_name or 'An instructor'} mentioned you",
-                    "message": snippet or "Tap to view",
-                    "deeplink": "/mentions",
-                    "action_url": "/mentions",
-                },
-                idempotency_key=f"chat-mention-{message_id}",
-            )
-        except Exception as e:
-            logger.warning(f"mention push failed: {e}")
+        # Respect notification prefs — mentions can be noisy.
+        from services.notification_prefs import filter_recipients
+        push_recipients = await filter_recipients(notified, "mention_alerts")
+        if push_recipients:
+            try:
+                await send_push(
+                    recipients=push_recipients,
+                    data={
+                        "title": f"{mentioner_name or 'An instructor'} mentioned you",
+                        "message": snippet or "Tap to view",
+                        "deeplink": "/mentions",
+                        "action_url": "/mentions",
+                    },
+                    idempotency_key=f"chat-mention-{message_id}",
+                )
+            except Exception as e:
+                logger.warning(f"mention push failed: {e}")
 
     return notified
 

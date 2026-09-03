@@ -136,6 +136,25 @@ async def _ensure_indexes() -> None:
         await ensure_inst_notif_indexes()
     except Exception as e:
         logger.warning(f"instructor_notifications index issue: {e}")
+    try:
+        # Event RSVPs — one row per (event, user); upsert-based.
+        await db.event_rsvps.create_index(
+            [("event_id", 1), ("user_id", 1)],
+            unique=True,
+            name="uniq_event_user_rsvp",
+        )
+        await db.event_rsvps.create_index(
+            [("user_id", 1)], name="rsvp_by_user"
+        )
+    except Exception as e:
+        logger.warning(f"event_rsvps index issue: {e}")
+    try:
+        from services.dance_library_sync import (
+            ensure_indexes as ensure_sync_indexes,
+        )
+        await ensure_sync_indexes()
+    except Exception as e:
+        logger.warning(f"dance_sync_log index issue: {e}")
 
     # De-dupe any historical follow rows that slipped in before the
     # unique index existed — otherwise the new index creation will

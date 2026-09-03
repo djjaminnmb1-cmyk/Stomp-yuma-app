@@ -658,6 +658,28 @@ export default function Profile() {
               the same endpoint. */}
           <MentionsProfileRow />
 
+          {/* Notification preferences — per-category push mutes */}
+          <Pressable
+            testID="profile-notification-prefs-row"
+            style={styles.row}
+            onPress={() => router.push("/settings/notifications")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="notifications-circle-outline"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>Notification preferences</Text>
+                <Text style={styles.deleteSub}>
+                  Mute event, class, or mention pings independently
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
           <Pressable
             testID="profile-leaderboard-row"
             style={styles.row}

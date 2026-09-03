@@ -135,6 +135,12 @@ async def notify_followers_of_new_class(class_doc: dict) -> int:
         return 0
 
     followers = await _follower_ids(instructor_id)
+    # Respect per-user push preferences — a dancer who muted "class
+    # alerts" won't get a ping. Their ledger row is ALSO skipped so
+    # a later prefs flip immediately re-enables notifications for
+    # future classes rather than back-filling stale ones.
+    from services.notification_prefs import filter_recipients
+    followers = await filter_recipients(followers, "class_alerts")
     fresh = await _dedupe_fresh(followers, "class", class_id)
     if not fresh:
         return 0
@@ -183,6 +189,8 @@ async def notify_followers_of_new_event(event_doc: dict) -> int:
         return 0
 
     followers = await _follower_ids(instructor_id)
+    from services.notification_prefs import filter_recipients
+    followers = await filter_recipients(followers, "event_alerts")
     fresh = await _dedupe_fresh(followers, "event", event_id)
     if not fresh:
         return 0
@@ -208,6 +216,14 @@ async def notify_followers_of_new_event(event_doc: dict) -> int:
                 "message": f"{when} @ {where}",
                 "deeplink": f"/events/{event_id}",
                 "action_url": f"/events/{event_id}",
+                # Interactive push category — the mobile app registers
+                # an "event_new" category with a single "I'm going"
+                # action at boot. Tapping that button hits
+                # /events/{id}/rsvp in the background so the user can
+                # confirm attendance without opening the app.
+                "categoryIdentifier": "event_new",
+                "category_identifier": "event_new",
+                "event_id": event_id,
             },
             idempotency_key=f"event-new-{event_id}",
         )

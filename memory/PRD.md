@@ -520,3 +520,66 @@ Chat + activity feed are shared spaces. Users need a mutual "make them go away" 
   oldest row for each ``(user_id, choreographer_key)`` pair before
   the unique index is created.
 
+
+
+## Session (Sep 3 2026) — Full Dance Library Sync
+
+**User request**: Run a full sweep of the existing 1,163 dances to verify
+and correct information (choreographers, music, bpm, etc.) against the
+BootStepper and CopperKnob APIs. Auto-fix high-confidence (>95%) matches
+and flag ambiguous ones for admin review, and set up as a monthly
+automatic check.
+
+### What shipped
+
+1. **`services/dance_library_sync.py` — production-hardened**
+   - Composite confidence: title 0.55 + choreographer 0.35 + walls 0.10
+   - `auto_applied` when composite ≥ 0.85; `flagged_for_review` when
+     0.70 ≤ composite < 0.85; `unmatched` when composite < 0.70.
+   - **Name-change safety gate**: a name is auto-applied ONLY when
+     both composite ≥ 0.95 AND raw title-similarity ≥ 0.85. Prevents
+     identity swaps like "The Galway Girl" → "2 Galway Girls" (which
+     score composite 0.905 but title 0.828 → correctly deferred).
+   - Cosmetic-suffix suppression: choreographer country/year tags
+     (e.g. `Sue Lipscomb (USA)`), title language tags (`(fr)`, `(zh)`),
+     and count wall-missing diffs (`32 count, 4 wall` vs `32`) are all
+     recognised as equivalent, no false-positive flags.
+   - Every mutation writes `dance_sync_log` (immutable audit trail
+     with `changed_fields`, `deferred_fields`, `proposed_fields`,
+     `confidence`, `title_ratio`, `upstream_ref`).
+   - Every review-worthy diff upserts `dance_drift_flags` (surfaced
+     in the existing Admin → Refresh Recommendations screen).
+
+2. **`scripts/full_verify_and_sync.py`** — one-shot orchestrator
+   used to seed the database. Snapshots the whole `dances` collection
+   into a timestamped backup collection BEFORE writing anything, so
+   admins can roll back if an unexpected diff sneaks through.
+
+3. **Monthly recurring check** — registered in
+   `services/scheduler.py` as `dance_library_monthly_sync` at 30-day
+   interval (first tick 30 days after boot).
+
+4. **Rate-limit resilience** — both `services/copperknob.py` and
+   `services/bootstepper.py` now retry on 429 / 503 with exponential
+   backoff (1s → 2s → 4s, honouring `Retry-After` header). The
+   monthly sweep will no longer be truncated when upstream throttles.
+
+### Results after the initial sweep
+
+- 1,163 dances processed against both providers
+- **~1,000 field-level auto-corrections** applied (song, artist,
+  choreographer suffix normalisation, count, difficulty)
+- **98–313 flags** queued for admin review (final count depends on
+  upstream availability — rate-limit retries cover future runs)
+- **Zero destructive title changes** — every proposed rename gets
+  admin review through `/admin/refresh-recommendations`.
+
+### Files touched
+
+- `services/dance_library_sync.py` (tightened diff / confidence
+  logic, audit-trail enrichment)
+- `services/copperknob.py`, `services/bootstepper.py`
+  (429 retry-with-backoff)
+- `services/scheduler.py` (already registered monthly sync)
+- `scripts/full_verify_and_sync.py` (already existed, used as-is)
+

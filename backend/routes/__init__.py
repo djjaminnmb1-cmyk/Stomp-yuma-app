@@ -32,6 +32,7 @@ from . import (
     instructors,
     leaderboard,
     misc,
+    notification_prefs,
     prizes,
     push,
     social,
@@ -74,6 +75,7 @@ api_router.include_router(events.router)
 api_router.include_router(instructors.router)
 api_router.include_router(song_preview.router)
 api_router.include_router(push.router)
+api_router.include_router(notification_prefs.router)
 api_router.include_router(weekly_recap.router)
 api_router.include_router(misc.router)
 

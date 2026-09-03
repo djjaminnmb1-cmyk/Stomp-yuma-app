@@ -1,0 +1,30 @@
+{
+  "summary": "Backend testing of 3 new features (notification prefs, instructor follow toggle, event RSVP) + fan-out prefs integration. All 17 tests passed across 4 test classes. Endpoints behave per spec: prefs default to True on first read, PATCH merges only supplied keys, unknown keys silently dropped; follow/unfollow is idempotent via $addToSet/$pull, unfollow $unsets main_instructor_id when it matched, public profile exposes is_following_as_instructor + instructor_follower_count; RSVP upsert works across going/maybe/declined with accurate counts, invalid status returns 400, unknown event 404, DELETE clears row; class fan-out ledger correctly respects class_alerts=False (skips row) and re-enables after flipping back to True.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_new_prefs_follow_rsvp.py",
+    "/app/test_reports/pytest/new_prefs_follow_rsvp.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/instructors.py POST /instructors/{id}/follow: nice — writes to $addToSet on users.instructor_ids AND recomputes follower_count via count_documents on every call. Fine for current scale (~dozens of instructors); consider caching if it grows.",
+    "routes/events.py RsvpBody uses raw str for status. Pydantic Literal['going','maybe','declined'] would give a cleaner 422 instead of the manual 400 branch, but current behaviour matches the spec.",
+    "services/notification_prefs.filter_recipients returns all users on unknown category — safe default but silently hides typos. Consider a debug log."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "not tested (backend-only run)"},
+  "seed_data_creation": "3 TEST_dancer_* users + 1 TEST RSVP Event + 2 TEST classes created and cleaned up in module teardown (users, events, classes, instructor_notifications ledger rows, event_rsvps rows all deleted).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_new_prefs_follow_rsvp.py exercises all three new backlog features. Reuses same seed/cleanup pattern as test_instructor_notifications.py. Requires live Erin admin account + dance seed. Cleans up after itself via autouse module fixture.",
+  "rca_of_issue": "N/A — all specified endpoints behave correctly. No bugs found."
+}

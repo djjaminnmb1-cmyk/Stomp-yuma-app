@@ -125,6 +125,8 @@ export type PublicProfile = {
     followers: number;
   };
   is_following: boolean;
+  is_following_as_instructor?: boolean;
+  instructor_follower_count?: number;
   is_self: boolean;
 };
 
@@ -608,6 +610,20 @@ export type ChoreographerDetail = {
     count?: string;
     created_at: string;
   }>;
+};
+
+export type NotificationPrefs = {
+  class_alerts: boolean;
+  event_alerts: boolean;
+  choreographer_alerts: boolean;
+  mention_alerts: boolean;
+  reminder_alerts: boolean;
+};
+
+export type RsvpCounts = {
+  going: number;
+  maybe: number;
+  declined: number;
 };
 
 export type RefreshRecommendationFlag = {
@@ -1295,6 +1311,61 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ mention_ids: mention_ids || null }),
       },
+      token
+    ),
+
+  // ---------------- Notification preferences ----------------
+  getNotificationPrefs: (token: string) =>
+    req<{ prefs: NotificationPrefs; categories: string[] }>(
+      "/users/me/notification-prefs",
+      {},
+      token
+    ),
+  updateNotificationPrefs: (
+    token: string,
+    prefs: Partial<NotificationPrefs>
+  ) =>
+    req<{ prefs: NotificationPrefs }>(
+      "/users/me/notification-prefs",
+      { method: "PATCH", body: JSON.stringify(prefs) },
+      token
+    ),
+
+  // ---------------- Instructor follow (push-alert graph) ----------------
+  followInstructor: (instructor_id: string, token: string) =>
+    req<{ ok: boolean; is_following: boolean; follower_count: number }>(
+      `/instructors/${encodeURIComponent(instructor_id)}/follow`,
+      { method: "POST" },
+      token
+    ),
+  unfollowInstructor: (instructor_id: string, token: string) =>
+    req<{ ok: boolean; is_following: boolean; follower_count: number }>(
+      `/instructors/${encodeURIComponent(instructor_id)}/follow`,
+      { method: "DELETE" },
+      token
+    ),
+
+  // ---------------- Event RSVP ----------------
+  getMyRsvp: (token: string, event_id: string) =>
+    req<{ status: string; counts: RsvpCounts }>(
+      `/events/${encodeURIComponent(event_id)}/rsvp/me`,
+      {},
+      token
+    ),
+  setRsvp: (
+    token: string,
+    event_id: string,
+    status: "going" | "maybe" | "declined"
+  ) =>
+    req<{ ok: boolean; status: string; counts: RsvpCounts }>(
+      `/events/${encodeURIComponent(event_id)}/rsvp`,
+      { method: "POST", body: JSON.stringify({ status }) },
+      token
+    ),
+  clearRsvp: (token: string, event_id: string) =>
+    req<{ ok: boolean; counts: RsvpCounts }>(
+      `/events/${encodeURIComponent(event_id)}/rsvp`,
+      { method: "DELETE" },
       token
     ),
 

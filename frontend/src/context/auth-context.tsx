@@ -43,6 +43,14 @@ async function readToken(): Promise<string | null> {
   return await SecureStore.getItemAsync(TOKEN_KEY);
 }
 
+/** Public helper for background handlers (e.g. notification response
+ *  RSVP fan-out in ``_layout.tsx``) that need the token without
+ *  touching the React context. Safe to call outside a component tree.
+ */
+export async function getStoredToken(): Promise<string | null> {
+  return await readToken();
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
