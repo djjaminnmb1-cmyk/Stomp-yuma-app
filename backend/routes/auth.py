@@ -357,10 +357,16 @@ async def apple_unlink(user: dict = Depends(get_current_user)):
     to unlink since they can still get in via Google.
     """
     has_password = bool(user.get("password_hash"))
+    # Parenthesise the second branch so short-circuit evaluation can't
+    # mask a synthetic-email account. Without the parens, ``and`` binds
+    # tighter than ``or``, so a Google user with an empty email would
+    # slip through. See SEC hygiene note in June 2026 audit.
     has_google_or_email = (
         user.get("auth_provider") in {"google"}
-        or bool(user.get("email"))
-        and not user.get("email_is_synthetic")
+        or (
+            bool(user.get("email"))
+            and not user.get("email_is_synthetic")
+        )
     )
     if not has_password and not has_google_or_email:
         raise HTTPException(

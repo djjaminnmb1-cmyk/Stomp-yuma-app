@@ -312,28 +312,37 @@ def _demote_low_confidence_name_changes(
     confidence: float,
     title_ratio: float,
 ) -> tuple[list[dict], list[dict]]:
-    """Split a diff into (auto_applicable, review_only) based on the
-    per-field confidence rules. Currently ONLY ``name`` has a stricter
-    threshold — the other fields all use ``AUTO_APPLY_THRESHOLD``.
+    """Split a diff into (auto_applicable, review_only) based on per-
+    field confidence rules.
 
-    A name change is auto-applied ONLY when BOTH gates clear:
+    IDENTITY fields (``name`` and ``choreographer``) auto-apply ONLY
+    when the match is essentially certain:
 
       * composite ``confidence >= NAME_AUTO_APPLY_THRESHOLD`` (0.95), AND
       * raw title-similarity ``title_ratio >= AUTO_APPLY_TITLE_MIN`` (0.85).
 
-    Rationale: renaming a dance the studio calls "The Galway Girl"
-    to "2 Galway Girls" at 0.85 composite confidence is unacceptable
-    (composite gets carried by a strong chor / walls match despite a
-    fuzzy title). Requiring the raw title to also clear a floor stops
-    that identity-swap while still allowing safe cosmetic fixes.
+    All other fields (song, artist, count, difficulty) use the looser
+    ``AUTO_APPLY_THRESHOLD`` (0.85) that gates the whole write path.
+
+    Rationale (SEC-003): a compromised or wrong upstream response could
+    silently rewrite the dance's identity if we auto-applied identity
+    fields at the same 0.85 threshold used for metadata polish. Requiring
+    a 0.95 + title-floor double gate for identity fields caps the blast
+    radius: the worst-case is a misspelled song title or difficulty
+    label, never a mis-attributed dance.
+
+    Previously we only demoted ``name``. Extended to ``choreographer``
+    after the June 2026 security audit — see /app/memory/PRD.md.
     """
-    if (
+    identity_confidence_ok = (
         confidence >= NAME_AUTO_APPLY_THRESHOLD
         and title_ratio >= AUTO_APPLY_TITLE_MIN
-    ):
+    )
+    if identity_confidence_ok:
         return diff, []
-    apply_now = [d for d in diff if d["field"] != "name"]
-    defer = [d for d in diff if d["field"] == "name"]
+    identity_fields = {"name", "choreographer"}
+    apply_now = [d for d in diff if d["field"] not in identity_fields]
+    defer = [d for d in diff if d["field"] in identity_fields]
     return apply_now, defer
 
 

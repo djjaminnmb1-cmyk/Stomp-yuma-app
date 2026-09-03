@@ -17,7 +17,7 @@ from typing import Optional
 from core.config import ADMIN_EMAILS, INSTRUCTOR_EMAILS
 from core.database import db
 from core.reset_tokens import ensure_reset_indexes
-from core.security import hash_password, upsert_user, verify_password
+from core.security import hash_password, upsert_user
 from core.time_helpers import now_iso
 
 logger = logging.getLogger(__name__)
@@ -253,52 +253,52 @@ async def _seed_account(
 ) -> None:
     """Ensure a user record exists for a whitelisted email.
 
-    No passwords are hard-coded here. For each seeded email:
-    - If the account already has a ``password_hash``, DO NOT touch it,
-      unless a matching ``SEED_PW_*`` env var is set (in which case sync it).
-    - Otherwise generate a random one-time password and log it ONCE so the
-      operator can hand it to the owner. The user should reset on first login.
+    Passwords are ONLY set at FIRST CREATION — never overwritten on
+    subsequent boots. This lets an operator rotate any seeded admin's
+    password via the app (or a one-off admin tool) and have that change
+    stick across restarts. ``SEED_PW_*`` env vars still seed a fresh
+    install, but after that they're advisory only.
+
+    If a brand-new account is being seeded and no ``SEED_PW_*`` env var
+    is provided, a random 16-char one-time password is generated and
+    written to the DB — but NEVER logged in plaintext. The operator
+    must trigger a password-reset flow to obtain a working credential.
+    That way, boot logs are safe to share for debugging.
     """
     env_pw = _env_password_for(email)
     existing = await db.users.find_one({"email": email})
     if existing:
-        updates = {}
+        updates: dict = {}
         if want_admin and not existing.get("is_admin"):
             updates["is_admin"] = True
         if want_instructor and not existing.get("is_instructor"):
             updates["is_instructor"] = True
-        # If an operator has explicitly pinned a SEED_PW_* env var for this
-        # account, always keep the on-disk hash in sync with it. This lets
-        # /app/memory/test_credentials.md be the single source of truth in
-        # dev/preview and never drift from what's actually stored.
-        needs_hash = not existing.get("password_hash")
-        if needs_hash or env_pw:
-            pw = env_pw or _secrets.token_urlsafe(12)
-            # Skip the rehash if the hash already matches the env pw
-            if not (
-                env_pw
-                and existing.get("password_hash")
-                and verify_password(env_pw, existing["password_hash"])
-            ):
-                updates["password_hash"] = hash_password(pw)
-                if not env_pw:
-                    logger.warning(
-                        "One-time password generated for %s: %s "
-                        "(share securely, force reset on first login)",
-                        email, pw,
-                    )
+        # Only seed a password if the account was migrated from an
+        # OAuth-only sign-up and never got a local hash. Never overwrite
+        # an existing password — that's the operator's to manage.
+        if not existing.get("password_hash"):
+            pw = env_pw or _secrets.token_urlsafe(16)
+            updates["password_hash"] = hash_password(pw)
+            if not env_pw:
+                logger.warning(
+                    "Seeded account %s had no local password; issued a "
+                    "random one. Use the forgot-password flow to set a "
+                    "new one — the plaintext is NOT logged.",
+                    email,
+                )
         if not existing.get("name") and display:
             updates["name"] = display
         if updates:
             await db.users.update_one({"email": email}, {"$set": updates})
         return
     # No existing record -> create one
-    pw = env_pw or _secrets.token_urlsafe(12)
+    pw = env_pw or _secrets.token_urlsafe(16)
     if not env_pw:
         logger.warning(
-            "One-time password generated for %s: %s "
-            "(share securely, force reset on first login)",
-            email, pw,
+            "Seeded new account %s with a random password. Use the "
+            "forgot-password flow to set a new one — the plaintext "
+            "is NOT logged.",
+            email,
         )
     await upsert_user(email, display, provider="email", password_hash=hash_password(pw))
     # upsert_user already applies admin/instructor flags based on env lists;

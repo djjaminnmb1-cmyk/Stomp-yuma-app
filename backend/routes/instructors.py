@@ -15,6 +15,7 @@ Two closely-related preferences live here:
 """
 from __future__ import annotations
 
+import re
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -115,11 +116,14 @@ async def list_instructors(
     if q:
         needle = q.strip()
         if needle:
-            filt["name"] = {"$regex": needle, "$options": "i"}
+            # Escape user input — raw regex on the user directory would
+            # let any authenticated caller pin a worker's CPU with a
+            # catastrophic-backtracking pattern. See SEC-002.
+            filt["name"] = {"$regex": re.escape(needle), "$options": "i"}
     if city:
         c = city.strip()
         if c:
-            filt["city"] = {"$regex": f"^{c}", "$options": "i"}
+            filt["city"] = {"$regex": f"^{re.escape(c)}", "$options": "i"}
     rows: list[dict] = []
     async for u in db.users.find(
         filt,

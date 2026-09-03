@@ -583,3 +583,51 @@ automatic check.
 - `services/scheduler.py` (already registered monthly sync)
 - `scripts/full_verify_and_sync.py` (already existed, used as-is)
 
+
+
+## Session (June 2026) — Security Audit Remediation
+
+Full read-only audit run via `security_audit_agent`. Three findings
+were fixed; 23/23 regression tests passed via `testing_agent`.
+
+### SEC-001 (CRITICAL) — Admin password self-restore & weak defaults
+- **Root cause**: `services/startup.py::_seed_account` force-reset any
+  existing `password_hash` back to `SEED_PW_*` on every boot. Combined
+  with a weak default (`Admin123!` for `admin@stompinground.com`), an
+  operator who rotated the password in-app would silently lose the
+  rotation after the next restart.
+- **Fix**: seed logic now only writes `password_hash` when the account
+  has no hash (first-create only). `SEED_PW_*` env vars are advisory
+  for fresh installs — they never overwrite existing hashes.
+- **Rotation**: `admin@stompinground.com` rotated from `Admin123!` to
+  a 24-char strong random value. Erin's + Jamin's passwords preserved
+  (already reasonable + owner needs continuity).
+- **Log hygiene**: removed the plaintext-password log line in
+  `_seed_account`. Boot logs are now safe to share.
+- **Verified**: (a) old password 401s, (b) new password 200s + JWT
+  works, (c) a user-rotated hash survives a restart, (d) pwd_ver bump
+  invalidates old JWTs.
+
+### SEC-002 (MEDIUM) — ReDoS in `/api/instructors` search
+- **Root cause**: `routes/instructors.py` passed raw `q` and `city`
+  into `{"$regex": ...}`.
+- **Fix**: wrapped both with `re.escape(...)` (same pattern as
+  `routes/dances.py`, `services/social.py`, `services/events.py`).
+- **Verified**: pathological pattern `(a+)++$` returns 200 in ~12ms
+  instead of pinning a worker; normal search unaffected.
+
+### SEC-003 (MEDIUM) — Identity-field auto-apply defense
+- **Root cause**: `services/dance_library_sync.py` auto-applied
+  `choreographer` at composite ≥ 0.85, meaning a compromised upstream
+  could rewrite the dance's identity.
+- **Fix**: extended `_demote_low_confidence_name_changes` to demote
+  BOTH `name` AND `choreographer` to review-only unless composite ≥
+  0.95 AND title_ratio ≥ 0.85. Other fields (song, artist, count,
+  difficulty) still auto-apply at composite ≥ 0.85 — those are polish,
+  not identity.
+
+### P3 hygiene — apple_unlink precedence
+- Parenthesised the `or` / `and` guard in `routes/auth.py::apple_unlink`
+  so short-circuit evaluation can no longer bypass the synthetic-email
+  check for accounts with no password.
+

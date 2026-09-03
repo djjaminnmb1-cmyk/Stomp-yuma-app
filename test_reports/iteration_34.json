@@ -1,0 +1,37 @@
+{
+  "summary": "Full regression pass on the SEC-001/002/003 security-audit remediation + broad auth/instructor regression. 23/23 tests passed. Confirmed: (1) rotated admin password 'C^c+9$ii4y@_L1mU4sl5BTOd' logs in with valid JWT; old 'Admin123!' returns 401; Erin & Jamin credentials still work. (2) Seed non-restore guard is in place in services/startup.py::_seed_account (password_hash only set when missing). (3) /api/instructors?q=(a+)++$ returns 200 in <1s (regex escape works); normal search still matches Erin; dot metachar treated as literal (no false matches). (4) _demote_low_confidence_name_changes demotes BOTH name AND choreographer unless composite>=0.95 AND title_ratio>=0.85; other fields auto-apply at composite>=0.85. (5) Apple unlink parenthesised guard still present in routes/auth.py. (6) Broad regression clean: register/me/forgot/reset/logout + instructor list/follow/main-instructor.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_sec_audit_regression.py",
+    "/app/test_reports/pytest/sec_audit_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/startup.py::_seed_account correctly guards password_hash write behind `if not existing.get('password_hash')` — operator rotations survive restart.",
+    "routes/instructors.py line 122 uses re.escape() on `needle` — SEC-002 ReDoS closed. Also escapes city needle (line 126).",
+    "services/dance_library_sync.py::_demote_low_confidence_name_changes correctly extends identity-field defense to both `name` and `choreographer` (identity_fields = {'name','choreographer'} at line 343) — SEC-003 audit fix verified.",
+    "routes/auth.py::apple_unlink lines 364-370: `or` guard is parenthesised, so a synthetic-email Apple-only account cannot slip through the has_google_or_email branch.",
+    "Test used lowercased emails to match server-side normalisation (LoginIn/RegisterIn lower() the email)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_sec_audit_regression.py (new file — 23 pytest cases)"
+  ],
+  "success_rate": {
+    "backend": "100% (23/23)",
+    "frontend": "skipped per request"
+  },
+  "seed_data_creation": "Two throwaway 'test_reg_*' and 'test_dancer_*' accounts registered via /api/auth/register per run. No cleanup — email prefix is unique per uuid so no collisions. Consider a nightly cleanup query for `test_*@example.com` if operator noise is a concern.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "SEC-001/002/003 remediation is verified. If regression is re-run, reuse /app/backend/tests/test_sec_audit_regression.py. Note: BASE_URL is read from EXPO_PUBLIC_BACKEND_URL (frontend/.env). The suite creates ~2 disposable test_*@example.com accounts per full run.",
+  "rca_of_issue": "N/A — no bugs found. Independent confirmation of the main agent's curl-based verification: old admin pw 401s, new admin pw returns valid JWT, Erin/Jamin unaffected, catastrophic-regex pattern returns in ~milliseconds (measured <1s round-trip including HTTPS), seed code path only writes password_hash when the account has no hash, and _demote_low_confidence_name_changes correctly demotes both identity fields at all tested threshold edges (0.90/0.95, 0.949/0.99, 0.97/0.80, 0.97/0.90, 0.95/0.85)."
+}
