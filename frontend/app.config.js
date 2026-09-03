@@ -123,6 +123,26 @@ module.exports = {
         },
       ],
       "@react-native-community/datetimepicker",
+      // Pin Kotlin to 2.1.20 for the whole Android build. This is
+      // the officially supported way to override the Kotlin version
+      // (Expo docs / config-plugins) and it complements the
+      // patch-package fix in patches/expo-updates+29.0.20.patch —
+      // both together guarantee expo-updates's Gradle plugin (which
+      // pins to 2.0.21 by default) compiles against the same
+      // Kotlin runtime that the rest of the Android graph uses.
+      [
+        "expo-build-properties",
+        {
+          android: {
+            kotlinVersion: "2.1.20",
+          },
+        },
+      ],
+      // Raise the Gradle daemon's heap to 4 GiB so the Kotlin 2.1.20
+      // compile pass in expo-updates + Reanimated + Screens doesn't
+      // OOM the default 2 GiB EAS worker allotment. Ships as a tiny
+      // local config plugin — see plugins/with-gradle-heap.js.
+      "./plugins/with-gradle-heap.js",
     ],
     experiments: {
       typedRoutes: true,
