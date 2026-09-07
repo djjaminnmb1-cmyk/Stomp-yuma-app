@@ -1,0 +1,2234 @@
+[
+  {
+    "_id": {
+      "$oid": "6a998cb06cb23e06192025df"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_e558187ba6",
+    "checked_at": "2026-09-03T15:10:59.785544+00:00",
+    "confidence": 0.783,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Brandon Zahorsky; Trevor Thornton",
+        "theirs": "Brandon Zahorsky"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cb16cb23e06192025e3"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_56e3745ab4",
+    "checked_at": "2026-09-03T15:10:59.419850+00:00",
+    "confidence": 0.733,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Dick Matteis; Geneva Owsley Matteis",
+        "theirs": "Dick Matteis"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cbe6cb23e0619202616"
+    },
+    "dance_id": "dance_0ede2177fc",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:05:34.510858+00:00",
+    "confidence": 0.83,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "John Read",
+        "theirs": "John Read (IRE) - October 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cd26cb23e0619202648"
+    },
+    "dance_id": "dance_460f1734d6",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:05:54.707008+00:00",
+    "confidence": 0.845,
+    "differs_count": 2,
+    "drift_summary": "choreographer, song",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Mark Paulino",
+        "theirs": "Mark Paulino (USA) - September 2020"
+      },
+      {
+        "field": "song",
+        "ours": "Church (feat. Teddy Verseti)",
+        "theirs": "Church (feat. Teddy Verseti) (Shortened Version)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cd46cb23e0619202652"
+    },
+    "dance_id": "dance_0f7976c78a",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:05:56.209544+00:00",
+    "confidence": 0.844,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Rob Fowler",
+        "theirs": "Rob Fowler (ES) - October 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cd46cb23e0619202655"
+    },
+    "dance_id": "dance_57265be54b",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:05:56.283540+00:00",
+    "differs_count": 2,
+    "drift_summary": "Choreographer \u00b7 Count",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maggie Gallagher",
+        "theirs": "Maggie Gallagher (UK) & Chris Hodgson (UK) - March 2013"
+      },
+      {
+        "field": "count",
+        "ours": "64 count, 2 wall",
+        "theirs": "64"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cd46cb23e061920265b"
+    },
+    "dance_id": "dance_bbdaf08cd6",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:05:56.796678+00:00",
+    "confidence": 0.83,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Raymond Sarlemijn",
+        "theirs": "Raymond Sarlemijn (NL) & Roy Verdonk (NL) - February 2023"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cd56cb23e0619202665"
+    },
+    "dance_id": "dance_f445d51105",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:05:57.793524+00:00",
+    "confidence": 0.825,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "John Read",
+        "theirs": "John Read (IRE) - November 2025"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cd76cb23e0619202670"
+    },
+    "dance_id": "dance_ceaa63c9f2",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:11:05.883322+00:00",
+    "confidence": 0.761,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Niels Poulsen; Shane McKeever; Fiona Murray Hadisubroto; Roy Hadisubroto",
+        "theirs": "Niels Poulsen"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cda6cb23e061920268b"
+    },
+    "dance_id": "dance_76c97b9a30",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:02.304859+00:00",
+    "confidence": 0.841,
+    "differs_count": 2,
+    "drift_summary": "choreographer, song",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Tim Gauci",
+        "theirs": "Tim Gauci (AUS) - April 2026"
+      },
+      {
+        "field": "song",
+        "ours": "I Love That Dance",
+        "theirs": "I Love That Dance (how does it start?)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cda6cb23e061920268f"
+    },
+    "dance_id": "dance_9dcbe5cf93",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:02.359730+00:00",
+    "confidence": 0.803,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Paige Glickman",
+        "theirs": "Paige Glickman (USA) & Kiley Faulkner (USA) - January 2026"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Advanced",
+        "theirs": "Advanced Phrased"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cdb6cb23e0619202698"
+    },
+    "dance_id": "dance_e132124e9d",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:11:07.058663+00:00",
+    "confidence": 0.813,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Simon Ward; Rachael McEnaney-White",
+        "theirs": "Simon Ward"
+      },
+      {
+        "field": "artist",
+        "ours": "Nikki Blonsky, Zac Efron, Amanda Bynes, Elijah Kelley, John Travolta & Queen Latifah",
+        "theirs": "Elijah Kelley, John Travolta, Queen Latifah, Nikki Blonsky, Zac Efron, Amanda Bynes, Motion Picture Cast of Hairspray"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cdb6cb23e061920269c"
+    },
+    "dance_id": "dance_a5933c6ce3",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:03.273135+00:00",
+    "confidence": 0.831,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Dustin Valcalda",
+        "theirs": "Dustin Valcalda (USA) & Sierra Gil (USA) - May 2024"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cdc6cb23e06192026a7"
+    },
+    "dance_id": "dance_75dedb31d4",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:04.753656+00:00",
+    "confidence": 0.798,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Shane McKeever",
+        "theirs": "Shane McKeever (IRE) & Fred Whitehouse (IRE) - December 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cde6cb23e06192026b4"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_a25414fe27",
+    "checked_at": "2026-09-03T15:06:06.295527+00:00",
+    "confidence": 0.815,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Lu Olsen",
+        "theirs": "Lu Olsen (AUS) - February 2021"
+      },
+      {
+        "field": "artist",
+        "ours": "Tim McGraw",
+        "theirs": "Tim McGraw : (iTunes)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cdf6cb23e06192026bf"
+    },
+    "dance_id": "dance_f0774a815a",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:07.278851+00:00",
+    "confidence": 0.834,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Rob Holley",
+        "theirs": "Rob Holley (USA) - November 2023"
+      },
+      {
+        "field": "artist",
+        "ours": "Kaylee Bell",
+        "theirs": "Kaylee Bell : (Single - iTunes)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cdf6cb23e06192026c3"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_3c6ae3eb8c",
+    "checked_at": "2026-09-03T15:06:07.721749+00:00",
+    "confidence": 0.84,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Cheri Litzenburg",
+        "theirs": "Cheri Litzenburg (USA) & Renae Filiou - June 2011"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce16cb23e06192026d1"
+    },
+    "dance_id": "dance_cd4aa2f092",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:09.352154+00:00",
+    "confidence": 0.815,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Kaylee Dzikowski",
+        "theirs": "Kaylee Dzikowski (USA) & Natalie Foret (USA) - November 2024"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Improver",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce26cb23e06192026e7"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_8eb63134cb",
+    "checked_at": "2026-09-03T15:06:10.452155+00:00",
+    "confidence": 0.819,
+    "differs_count": 3,
+    "drift_summary": "choreographer, song, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Jamie Barnfield",
+        "theirs": "Jamie Barnfield (UK) & Michelle Risley (UK) - July 2025"
+      },
+      {
+        "field": "song",
+        "ours": "Fast Cars & Superstars",
+        "theirs": "Fast Cars & Superstars (feat. Reverend Haus)"
+      },
+      {
+        "field": "artist",
+        "ours": "Cristian Marchi, Reverend Haus",
+        "theirs": "Cristian Marchi : (Single)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce36cb23e06192026f2"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_4753a17b59",
+    "checked_at": "2026-09-03T15:06:11.132675+00:00",
+    "confidence": 0.822,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maggie Gallagher",
+        "theirs": "Maggie Gallagher (UK) & Colin Ghys (BEL) - September 2025"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce36cb23e06192026f6"
+    },
+    "dance_id": "dance_e7bd7ac8f5",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:11.276310+00:00",
+    "confidence": 0.804,
+    "differs_count": 3,
+    "drift_summary": "choreographer, song, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Gary O'Reilly",
+        "theirs": "Gary O'Reilly (IRE) & Maggie Gallagher (UK) - May 2026"
+      },
+      {
+        "field": "song",
+        "ours": "Superstar",
+        "theirs": "Superstar (feat. Boy George)"
+      },
+      {
+        "field": "artist",
+        "ours": "Senhit, Boy George",
+        "theirs": "Senhit"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce46cb23e0619202708"
+    },
+    "dance_id": "dance_4f7537d322",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:12.405630+00:00",
+    "confidence": 0.801,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "J\u00e9r\u00e9my Quirion",
+        "theirs": "J\u00e9r\u00e9my Quirion (CAN) & Zachary Gauvin (CAN) - February 2022"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce56cb23e0619202716"
+    },
+    "dance_id": "dance_d5a2a13461",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:13.132648+00:00",
+    "confidence": 0.844,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Colin Ghys",
+        "theirs": "Colin Ghys (BEL) - August 2024"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce56cb23e061920271e"
+    },
+    "dance_id": "dance_ffa2a3dd31",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:13.763484+00:00",
+    "confidence": 0.831,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maggie Gallagher",
+        "theirs": "Maggie Gallagher (UK) & Gary O'Reilly (IRE) - May 2024"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce66cb23e0619202728"
+    },
+    "dance_id": "dance_c5ef9543c3",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:14.645393+00:00",
+    "confidence": 0.794,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Gary O'Reilly",
+        "theirs": "Gary O'Reilly (IRE) & Maggie Gallagher (UK) - January 2025"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce76cb23e061920272c"
+    },
+    "dance_id": "dance_4ebd807eaf",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:15.036169+00:00",
+    "confidence": 0.829,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Simon Ward",
+        "theirs": "Simon Ward (AUS) - September 2025"
+      },
+      {
+        "field": "artist",
+        "ours": "Jessie Ware",
+        "theirs": "Jessie Ware : (Album: What's Your Pleasure, Available on all music streaming platforms.)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ce76cb23e0619202730"
+    },
+    "dance_id": "dance_aab94e4b27",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:15.064778+00:00",
+    "confidence": 0.78,
+    "differs_count": 3,
+    "drift_summary": "choreographer, artist, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Simon Ward",
+        "theirs": "Simon Ward (AUS) & Roxanne Moates (AUS) - April 2026"
+      },
+      {
+        "field": "artist",
+        "ours": "Griff",
+        "theirs": "Griff : (Album: Vertigo)"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Advanced",
+        "theirs": "Advanced Rolling Count"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cea6cb23e061920275e"
+    },
+    "dance_id": "dance_dae6a507f5",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:18.832410+00:00",
+    "confidence": 0.826,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Fred Whitehouse; Tim Johnson; Jean-Pierre Madge",
+        "theirs": "Fred Whitehouse (IRE), Tim Johnson (UK) & Jean-Pierre Madge (CH) - February 2026"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Intermediate",
+        "theirs": "Easy Intermediate"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ceb6cb23e0619202766"
+    },
+    "dance_id": "dance_1c1fa641d1",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:19.236684+00:00",
+    "confidence": 0.812,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Kevin Formosa",
+        "theirs": "Kevin Formosa (AUS) & Lu Olsen (AUS) - January 2026"
+      },
+      {
+        "field": "artist",
+        "ours": "Guy Sebastian",
+        "theirs": "Guy Sebastian : (iTunes)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cec6cb23e0619202771"
+    },
+    "dance_id": "dance_64a99dd26b",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:06:20.296938+00:00",
+    "confidence": 0.742,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Rachael McEnaney-White",
+        "theirs": "Alison Johnstone"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Improver",
+        "theirs": "Intermediate"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ced6cb23e061920277d"
+    },
+    "dance_id": "dance_8efbcf5cc6",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:21.244967+00:00",
+    "confidence": 0.809,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Gregory Danvoie",
+        "theirs": "Gregory Danvoie (BEL) & Guillaume Richard (FR) - March 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ced6cb23e0619202781"
+    },
+    "dance_id": "dance_7f81111db8",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:21.267556+00:00",
+    "confidence": 0.792,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Matt Thomson",
+        "theirs": "Matt Thomson (USA) & Mishi Ziminski (USA) - August 2011"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998ced6cb23e0619202785"
+    },
+    "dance_id": "dance_2cd5898317",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:11:16.527677+00:00",
+    "confidence": 0.807,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Gianmarco Rossato Johnny; Astrid Kaeswurm; Julia Kroll; Daniela Seidel; Ivonne Verhagen",
+        "theirs": "Gianmarco Rossato Johnny"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cee6cb23e0619202793"
+    },
+    "dance_id": "dance_92724480fe",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:22.179987+00:00",
+    "confidence": 0.83,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Karl-Harry Winson",
+        "theirs": "Gary Lafferty (SCO) & Karl-Harry Winson (UK) - April 2026"
+      },
+      {
+        "field": "artist",
+        "ours": "Midland",
+        "theirs": "Midland : (Amazon)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cee6cb23e061920279c"
+    },
+    "dance_id": "dance_f299b34f0d",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:22.442788+00:00",
+    "confidence": 0.845,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Barbara Hile",
+        "theirs": "Barbara Hile (AUS) - September 2008"
+      },
+      {
+        "field": "artist",
+        "ours": "Jill Johnson",
+        "theirs": "Jill Johnson : (CD: The Woman I've Become)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cef6cb23e06192027af"
+    },
+    "dance_id": "dance_df767b291d",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:23.326827+00:00",
+    "confidence": 0.809,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Adrian Lefebour",
+        "theirs": "Adrian Lefebour (AUS) & Jessica Lamb (AUS) - September 2025"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cef6cb23e06192027b3"
+    },
+    "dance_id": "dance_877df268a9",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:23.610282+00:00",
+    "confidence": 0.795,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Steve Rutter",
+        "theirs": "Steve Rutter (UK) & Claire Rutter (UK) - February 2017"
+      },
+      {
+        "field": "artist",
+        "ours": "The Overtones",
+        "theirs": "The Overtones : (Album: Higher)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cf16cb23e06192027c8"
+    },
+    "dance_id": "dance_519a09283a",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:25.843225+00:00",
+    "confidence": 0.835,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Ryan Hunt",
+        "theirs": "Ryan Hunt (UK) - October 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cf26cb23e06192027cf"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_323f133026",
+    "checked_at": "2026-09-03T15:06:26.648605+00:00",
+    "confidence": 0.844,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Rob Fowler",
+        "theirs": "Rob Fowler (ES) - January 2026"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cf26cb23e06192027d2"
+    },
+    "dance_id": "dance_54df6843b5",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:06:26.731374+00:00",
+    "differs_count": 1,
+    "drift_summary": "Count",
+    "fields": [
+      {
+        "field": "count",
+        "ours": "32 count, 2 wall",
+        "theirs": "32"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cf46cb23e06192027dd"
+    },
+    "dance_id": "dance_efc1be4e9c",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:28.109920+00:00",
+    "confidence": 0.822,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Chelsea Gillum",
+        "theirs": "Chelsea Gillum (AUS) & Amy Davis (AUS) - March 2026"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cf66cb23e06192027f5"
+    },
+    "dance_id": "dance_92fc445175",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:30.260342+00:00",
+    "confidence": 0.84,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Alexis Strong",
+        "theirs": "Alexis (Strong) Williams (UK) - June 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cf76cb23e0619202809"
+    },
+    "dance_id": "dance_50fec7acd8",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:06:31.674580+00:00",
+    "confidence": 0.802,
+    "differs_count": 3,
+    "drift_summary": "name, count, difficulty",
+    "fields": [
+      {
+        "field": "name",
+        "ours": "Something in the Water",
+        "theirs": "Washed In The Water"
+      },
+      {
+        "field": "count",
+        "ours": "32 count, 4 wall",
+        "theirs": "64 count, 2 wall"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Improver",
+        "theirs": "Intermediate"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cfa6cb23e0619202824"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_e7b977f44a",
+    "checked_at": "2026-09-03T15:06:34.270240+00:00",
+    "confidence": 0.783,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Caterina Natale",
+        "theirs": "Caterina Natale (USA) - March 2026"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cfa6cb23e061920282f"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_f9eb78403e",
+    "checked_at": "2026-09-03T15:06:34.912923+00:00",
+    "confidence": 0.788,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Michael Barr",
+        "theirs": "Michael Barr (USA) & Michele Burton (USA) - February 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cfc6cb23e0619202847"
+    },
+    "dance_id": "dance_cbbd24f4c6",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:36.925039+00:00",
+    "confidence": 0.799,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Gary O'Reilly",
+        "theirs": "Gary O'Reilly (IRE) & Maggie Gallagher (UK) - April 2024"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cfd6cb23e061920284b"
+    },
+    "dance_id": "dance_b4ffce0bbb",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:37.204786+00:00",
+    "confidence": 0.82,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Jenn Mul\u00e9",
+        "theirs": "Jenn Mul\u00e9 (USA) - October 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cff6cb23e061920285f"
+    },
+    "dance_id": "dance_54f062939f",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:39.217066+00:00",
+    "confidence": 0.844,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Mark Furnell; Rebecca Lee; Chris Godden",
+        "theirs": "Mark Furnell (UK), Chris Godden (UK) & Rebecca Lee (MY) - March 2026"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Advanced",
+        "theirs": "Advanced Phrased"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998cff6cb23e0619202866"
+    },
+    "dance_id": "dance_6b11fb133b",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:39.370112+00:00",
+    "confidence": 0.811,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maggie Shipley",
+        "theirs": "Maggie Shipley (USA) & Cathy Garland (USA) - March 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d016cb23e0619202873"
+    },
+    "dance_id": "dance_cfd1b3b0e5",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:41.119283+00:00",
+    "confidence": 0.795,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Mark Paulino",
+        "theirs": "Mark Paulino (USA) & Victoria Nicholls (UK) - May 2026"
+      },
+      {
+        "field": "artist",
+        "ours": "Macklemore, Collett",
+        "theirs": "Macklemore"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d056cb23e06192028a2"
+    },
+    "dance_id": "dance_d97173bdda",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:45.337055+00:00",
+    "confidence": 0.843,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Lisa Bodnar",
+        "theirs": "Lisa Bodnar (USA) - December 2019"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d056cb23e06192028a6"
+    },
+    "dance_id": "dance_740e769950",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:45.394716+00:00",
+    "confidence": 0.787,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Rene Duguay",
+        "theirs": "Rene Duguay (CAN) & Patrick Lisi (CAN) - January 2026"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d056cb23e06192028a9"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_2896ec4268",
+    "checked_at": "2026-09-03T15:06:45.459185+00:00",
+    "differs_count": 1,
+    "drift_summary": "Count",
+    "fields": [
+      {
+        "field": "count",
+        "ours": "40 count, 4 wall",
+        "theirs": "40"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d096cb23e06192028d6"
+    },
+    "dance_id": "dance_724099c494",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:49.439349+00:00",
+    "confidence": 0.814,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Jamie Barnfield",
+        "theirs": "Jamie Barnfield (UK) & Karl-Harry Winson (UK) - June 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d096cb23e06192028da"
+    },
+    "dance_id": "dance_08b9eab2c6",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:49.660461+00:00",
+    "confidence": 0.842,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Sue Wellesley-Davies",
+        "theirs": "Sue Wellesley-Davies (NZ) & Kirston Cox (NZ) - September 2023"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d096cb23e06192028e0"
+    },
+    "dance_id": "dance_14d9e968bf",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:49.976643+00:00",
+    "confidence": 0.812,
+    "differs_count": 4,
+    "drift_summary": "choreographer, song, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Jo Thompson Szymanski",
+        "theirs": "Jo Thompson Szymanski (USA) - September 2014"
+      },
+      {
+        "field": "song",
+        "ours": "Somebody Loves You",
+        "theirs": "Scooter Lee"
+      },
+      {
+        "field": "artist",
+        "ours": "Scooter Lee",
+        "theirs": "Somebody Loves You"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Unknown",
+        "theirs": "Line/partner Waltz"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d0b6cb23e06192028ed"
+    },
+    "dance_id": "dance_92c6b92f6b",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:51.458361+00:00",
+    "confidence": 0.825,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Suzi Beau",
+        "theirs": "Suzi Beau (ENG) - February 2018"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d0c6cb23e06192028fc"
+    },
+    "dance_id": "dance_bc50028143",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:52.572890+00:00",
+    "confidence": 0.797,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Linda Burgess",
+        "theirs": "Linda Burgess (AUS) & Travis Taylor (AUS) - February 2008"
+      },
+      {
+        "field": "artist",
+        "ours": "Texas Lightning",
+        "theirs": "Texas Lightning : (CD: Meanwhile Back On The Ranch)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d0e6cb23e0619202918"
+    },
+    "dance_id": "dance_52efaedf88",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:54.582196+00:00",
+    "confidence": 0.829,
+    "differs_count": 3,
+    "drift_summary": "choreographer, artist, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Rob Holley",
+        "theirs": "Rob Holley (USA) - September 2024"
+      },
+      {
+        "field": "artist",
+        "ours": "James Johnston",
+        "theirs": "James Johnston : (Single - iTunes)"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Improver",
+        "theirs": "High Improver"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d0e6cb23e061920291e"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_4a784eeb26",
+    "checked_at": "2026-09-03T15:06:54.958415+00:00",
+    "confidence": 0.834,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Dee Palmer",
+        "theirs": "Dee Palmer (USA) - December 2023"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d106cb23e061920292f"
+    },
+    "dance_id": "dance_60de1ddf17",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:56.289574+00:00",
+    "confidence": 0.841,
+    "differs_count": 2,
+    "drift_summary": "choreographer, artist",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Big Mucci",
+        "theirs": "Big Mucci (USA) - March 2012"
+      },
+      {
+        "field": "artist",
+        "ours": "Big Mucci",
+        "theirs": "Big Mucci : (CD: Cleveland Slide - EP)"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d126cb23e061920294f"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_e65d8c80b4",
+    "checked_at": "2026-09-03T15:06:58.584636+00:00",
+    "confidence": 0.814,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Fred Whitehouse",
+        "theirs": "Fred Whitehouse (IRE) & Shane McKeever (IRE) - April 2023"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d126cb23e0619202953"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_90c7210c7c",
+    "checked_at": "2026-09-03T15:06:58.608099+00:00",
+    "confidence": 0.759,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maz Zahedi; Katie Dallas; Honkytonk Highway Line Dancing",
+        "theirs": "Maz Zahedi"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d136cb23e0619202961"
+    },
+    "dance_id": "dance_e33256af3a",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:06:59.590894+00:00",
+    "confidence": 0.828,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Shane McKeever",
+        "theirs": "Shane McKeever (IRE) & Ryan Hunt (UK) - June 2026"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d156cb23e061920297a"
+    },
+    "dance_id": "dance_0d7a28e474",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:07:01.623766+00:00",
+    "confidence": 0.802,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Tayla Kennedy",
+        "theirs": "Tayla Kennedy (AUS) & Travis Taylor (AUS) - August 2025"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Intermediate",
+        "theirs": "Easy Intermediate Waltz"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d176cb23e0619202990"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_92d58370fb",
+    "checked_at": "2026-09-03T15:07:03.761631+00:00",
+    "confidence": 0.841,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maddison Glover; Simon Ward; Niels Poulsen",
+        "theirs": "Maddison Glover"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d186cb23e0619202995"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_fe3fd288e6",
+    "checked_at": "2026-09-03T15:07:04.246173+00:00",
+    "differs_count": 1,
+    "drift_summary": "Count",
+    "fields": [
+      {
+        "field": "count",
+        "ours": "18 count, 4 wall",
+        "theirs": "18"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d1a6cb23e06192029b1"
+    },
+    "dance_id": "dance_bf5199d789",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:07:06.503301+00:00",
+    "confidence": 0.758,
+    "differs_count": 3,
+    "drift_summary": "choreographer, artist, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Cathy Snow",
+        "theirs": "Cathy Snow (USA) & Brooke Manning Tidball (USA) - December 2024"
+      },
+      {
+        "field": "artist",
+        "ours": "Brooks & Dunn, Lainey Wilson",
+        "theirs": "Brooks & Dunn"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d1b6cb23e06192029c4"
+    },
+    "dance_id": "dance_d2ba6e5d93",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:07:07.462020+00:00",
+    "confidence": 0.839,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Colin Ghys",
+        "theirs": "Colin Ghys (BEL) - January 2026"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Beginner",
+        "theirs": "High Beginner"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d1d6cb23e06192029da"
+    },
+    "dance_id": "dance_feea470110",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:07:09.676622+00:00",
+    "confidence": 0.828,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maggie Gallagher",
+        "theirs": "Maggie Gallagher (UK) & Gary O'Reilly (IRE) - July 2025"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d1e6cb23e06192029ef"
+    },
+    "dance_id": "dance_711a4b7fbc",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:11:49.286465+00:00",
+    "confidence": 0.905,
+    "differs_count": 1,
+    "drift_summary": "name",
+    "fields": [
+      {
+        "field": "name",
+        "ours": "The Galway Girl",
+        "theirs": "2 Galway Girls"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d1f6cb23e06192029f6"
+    },
+    "source": "copperknob",
+    "dance_id": "dance_96ad8f50e6",
+    "checked_at": "2026-09-03T15:07:11.664542+00:00",
+    "confidence": 0.802,
+    "differs_count": 2,
+    "drift_summary": "choreographer, difficulty",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Linda Burgess",
+        "theirs": "Linda Burgess (AUS) & Joshua Talbot (AUS) - August 2025"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Intermediate",
+        "theirs": "Intermediate Rolling Count"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d1f6cb23e06192029fa"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_380af5aeff",
+    "checked_at": "2026-09-03T15:07:11.705981+00:00",
+    "confidence": 0.743,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Tizian Kr\u00e4mer; Hannah Schwan; Daniel Schwan; Susanne Schwan; Anna Grajner; Vanessa Grajner",
+        "theirs": "Tizian Kr\u00e4mer"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d1f6cb23e06192029fe"
+    },
+    "dance_id": "dance_711a4b7fbc",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:07:11.729068+00:00",
+    "confidence": 0.733,
+    "differs_count": 2,
+    "drift_summary": "name, choreographer",
+    "fields": [
+      {
+        "field": "name",
+        "ours": "The Galway Girl",
+        "theirs": "2 Galway Girls"
+      },
+      {
+        "field": "choreographer",
+        "ours": "Maggie Gallagher",
+        "theirs": "Maggie Gallagher (UK) & Chris Hodgson (UK) - March 2013"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d206cb23e0619202a01"
+    },
+    "dance_id": "dance_57265be54b",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:07:12.161364+00:00",
+    "differs_count": 1,
+    "drift_summary": "Count",
+    "fields": [
+      {
+        "field": "count",
+        "ours": "64 count, 2 wall",
+        "theirs": "64"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d226cb23e0619202a08"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_6114953c5b",
+    "checked_at": "2026-09-03T15:07:14.054085+00:00",
+    "differs_count": 1,
+    "drift_summary": "Count",
+    "fields": [
+      {
+        "field": "count",
+        "ours": "64 count, 2 wall",
+        "theirs": "64"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d246cb23e0619202a17"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_a7c26f070b",
+    "checked_at": "2026-09-03T15:07:16.120735+00:00",
+    "confidence": 0.759,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maz Zahedi; Katie Dallas; Honkytonk Highway Line Dancing",
+        "theirs": "Maz Zahedi"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d256cb23e0619202a1f"
+    },
+    "dance_id": "dance_11b28a5078",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:07:17.528602+00:00",
+    "confidence": 0.848,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maddison Glover; Rachael McEnaney-White",
+        "theirs": "Maddison Glover"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d266cb23e0619202a2b"
+    },
+    "dance_id": "dance_c5298c5f93",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:07:18.951512+00:00",
+    "confidence": 0.839,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Simon Ward; Maggie Gallagher",
+        "theirs": "Simon Ward"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d2a6cb23e0619202a3a"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_23820d80f7",
+    "checked_at": "2026-09-03T15:07:22.465648+00:00",
+    "differs_count": 1,
+    "drift_summary": "Count",
+    "fields": [
+      {
+        "field": "count",
+        "ours": "40 count, 4 wall",
+        "theirs": "40"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d2c6cb23e0619202a45"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_a8cdc7388d",
+    "checked_at": "2026-09-03T15:07:24.369918+00:00",
+    "differs_count": 1,
+    "drift_summary": "Count",
+    "fields": [
+      {
+        "field": "count",
+        "ours": "32 count, 4 wall",
+        "theirs": "32"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d306cb23e0619202a5a"
+    },
+    "dance_id": "dance_90caa8d92f",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:07:28.231045+00:00",
+    "confidence": 0.744,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Niels Poulsen; Amy Glass Bailey; Guyton Mundy; Jean-Pierre Madge; Simon Ward; Rebecca Lee",
+        "theirs": "Niels Poulsen"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d496cb23e0619202abe"
+    },
+    "dance_id": "dance_f180af7d23",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:07:53.742517+00:00",
+    "confidence": 0.789,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Honkytonk Highway Line Dancing; Katie Dallas; Maz Zahedi; Maggie Stevenson; Victoria Nicholls; Louise Hamilton; Charlie Bowring",
+        "theirs": "Honkytonk Highway Line Dancing"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d4d6cb23e0619202ac8"
+    },
+    "dance_id": "dance_2ca0d33f85",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:07:57.039079+00:00",
+    "confidence": 0.759,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Maz Zahedi; Katie Dallas; Honkytonk Highway Line Dancing",
+        "theirs": "Maz Zahedi"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d676cb23e0619202b30"
+    },
+    "dance_id": "dance_995fc1e466",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:08:23.494722+00:00",
+    "confidence": 0.749,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Amy Glass Bailey; Dustin Betts; Jean-Pierre Madge; Jos\u00e9 Miguel Belloque Vane; Simon Ward; Niels Poulsen",
+        "theirs": "Amy Glass Bailey"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d6b6cb23e0619202b42"
+    },
+    "dance_id": "dance_dae6a507f5",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:08:27.411489+00:00",
+    "confidence": 0.825,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Fred Whitehouse; Tim Johnson; Jean-Pierre Madge",
+        "theirs": "Fred Whitehouse"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d806cb23e0619202b87"
+    },
+    "dance_id": "dance_24254d379a",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:08:48.009747+00:00",
+    "confidence": 0.822,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Joshua Talbot; Alison Johnstone; Jo Kinser",
+        "theirs": "Joshua Talbot"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d816cb23e0619202b8f"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_8fb96939b6",
+    "checked_at": "2026-09-03T15:08:49.535279+00:00",
+    "confidence": 0.841,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Ryan Hunt; Debbie Rushton",
+        "theirs": "Ryan Hunt"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d826cb23e0619202b97"
+    },
+    "dance_id": "dance_436b66475f",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:08:50.681763+00:00",
+    "confidence": 0.835,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Daniela Seidel; Gianmarco Rossato Johnny",
+        "theirs": "Daniela Seidel"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998d9c6cb23e0619202bef"
+    },
+    "dance_id": "dance_8436bea7b2",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:09:16.793559+00:00",
+    "confidence": 0.802,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Ivonne Verhagen; Gianmarco Rossato Johnny; Fabian M\u00fcller",
+        "theirs": "Ivonne Verhagen"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998da06cb23e0619202c02"
+    },
+    "dance_id": "dance_aa0b3d030e",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:09:20.643369+00:00",
+    "confidence": 0.842,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Shane McKeever; Rachael McEnaney-White",
+        "theirs": "Shane McKeever"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998dad6cb23e0619202c32"
+    },
+    "source": "bootstepper",
+    "dance_id": "dance_fa7b192eed",
+    "checked_at": "2026-09-03T15:09:33.206993+00:00",
+    "confidence": 0.842,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Shane McKeever; Rachael McEnaney-White",
+        "theirs": "Shane McKeever"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998db86cb23e0619202c66"
+    },
+    "dance_id": "dance_bac5c42987",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:09:44.750458+00:00",
+    "confidence": 0.756,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Andrew Hayes; Katie Dallas; Maz Zahedi; Honkytonk Highway Line Dancing",
+        "theirs": "Andrew Hayes"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998db96cb23e0619202c6e"
+    },
+    "dance_id": "dance_e3d7dbf4ac",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:09:45.483690+00:00",
+    "confidence": 0.849,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Dust & Denim Line Dancing; Jade Buddle; Amy May; Danielle Sharp",
+        "theirs": "Dust & Denim Line Dancing"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998dbd6cb23e0619202c7c"
+    },
+    "dance_id": "dance_d129819c4e",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:09:49.018200+00:00",
+    "confidence": 0.77,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Gary Lafferty; Crazy Chris Adams; Jamie Barnfield; Michelle Risley",
+        "theirs": "Gary Lafferty"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998dbd6cb23e0619202c82"
+    },
+    "dance_id": "dance_0430c8629f",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:09:49.388642+00:00",
+    "confidence": 0.835,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Daniela Seidel; Gianmarco Rossato Johnny",
+        "theirs": "Daniela Seidel"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998dc16cb23e0619202c95"
+    },
+    "dance_id": "dance_54f062939f",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:09:53.949893+00:00",
+    "confidence": 0.821,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Mark Furnell; Rebecca Lee; Chris Godden",
+        "theirs": "Mark Furnell"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998dc56cb23e0619202ca6"
+    },
+    "dance_id": "dance_be2cbfbba7",
+    "source": "bootstepper",
+    "checked_at": "2026-09-03T15:09:57.891419+00:00",
+    "confidence": 0.783,
+    "differs_count": 1,
+    "drift_summary": "choreographer",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Guyton Mundy; Jo Thompson Szymanski; Amy Glass Bailey",
+        "theirs": "Guyton Mundy"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998fdc6cb23e0619202f6e"
+    },
+    "dance_id": "dance_54df6843b5",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:18:52.359818+00:00",
+    "differs_count": 2,
+    "drift_summary": "Choreographer \u00b7 Count",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Elizabeth Banescu",
+        "theirs": "Elizabeth Banescu (USA) & Katie Robinson (USA) - October 2023"
+      },
+      {
+        "field": "count",
+        "ours": "32 count, 2 wall",
+        "theirs": "32"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a998fee6cb23e0619202f91"
+    },
+    "dance_id": "dance_2896ec4268",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:19:10.600408+00:00",
+    "differs_count": 2,
+    "drift_summary": "Choreographer \u00b7 Count",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Sue Lipscomb",
+        "theirs": "Sue Lipscomb (USA)"
+      },
+      {
+        "field": "count",
+        "ours": "40 count, 4 wall",
+        "theirs": "40"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a9990006cb23e0619202fb4"
+    },
+    "dance_id": "dance_fe3fd288e6",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:19:28.868229+00:00",
+    "differs_count": 2,
+    "drift_summary": "Choreographer \u00b7 Count",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Ric Silver",
+        "theirs": "Ric Silver (USA) - 1976"
+      },
+      {
+        "field": "count",
+        "ours": "18 count, 4 wall",
+        "theirs": "18"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a9990096cb23e0619202fc3"
+    },
+    "dance_id": "dance_6114953c5b",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:19:37.483209+00:00",
+    "differs_count": 4,
+    "drift_summary": "Choreographer \u00b7 Artist \u00b7 Count +1",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Rachael McEnaney-White",
+        "theirs": "Rachael McEnaney (USA) & Arjay Centeno (USA) - April 2013"
+      },
+      {
+        "field": "artist",
+        "ours": "Robin Thicke",
+        "theirs": "Robin Thicke : (iTunes)"
+      },
+      {
+        "field": "count",
+        "ours": "64 count, 2 wall",
+        "theirs": "64"
+      },
+      {
+        "field": "difficulty",
+        "ours": "Advanced",
+        "theirs": "Advanced WCS"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a99900a6cb23e0619202fc8"
+    },
+    "dance_id": "dance_a8cdc7388d",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:19:38.821195+00:00",
+    "differs_count": 2,
+    "drift_summary": "Choreographer \u00b7 Count",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Bill Bader",
+        "theirs": "Bill Bader (CAN)"
+      },
+      {
+        "field": "count",
+        "ours": "32 count, 4 wall",
+        "theirs": "32"
+      }
+    ],
+    "seen": false
+  },
+  {
+    "_id": {
+      "$oid": "6a9990136cb23e0619202fd7"
+    },
+    "dance_id": "dance_23820d80f7",
+    "source": "copperknob",
+    "checked_at": "2026-09-03T15:19:47.235734+00:00",
+    "differs_count": 2,
+    "drift_summary": "Choreographer \u00b7 Count",
+    "fields": [
+      {
+        "field": "choreographer",
+        "ours": "Sue Lipscomb",
+        "theirs": "Sue Lipscomb (USA)"
+      },
+      {
+        "field": "count",
+        "ours": "40 count, 4 wall",
+        "theirs": "40"
+      }
+    ],
+    "seen": false
+  }
+]

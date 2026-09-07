@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"range":{"$numberInt":"1"},"rank":{"$numberInt":"1"}},"name":"range_1_rank_1","unique":true}],"uuid":"910630fa0bee41ab8eab639f9414032a","collectionName":"leaderboard_prizes","type":"collection"}

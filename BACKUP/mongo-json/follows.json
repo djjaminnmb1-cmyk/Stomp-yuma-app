@@ -1,0 +1,114 @@
+[
+  {
+    "_id": {
+      "$oid": "6a8a8a897bde5a10776da2ae"
+    },
+    "follower_id": "user_577a461b0e52",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T05:52:09.993137+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a8aa5ab4e2e3f57a8a842"
+    },
+    "follower_id": "user_848698b0fef2",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T05:52:37.329841+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a90365abcf7c0da72ae40"
+    },
+    "follower_id": "user_f6f3b6a3834a",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T06:16:22.880998+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a908f5abcf7c0da72ae42"
+    },
+    "follower_id": "user_450a8bedf19b",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T06:17:51.886655+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a90ea5abcf7c0da72ae44"
+    },
+    "follower_id": "user_60e970ba1831",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T06:19:22.880806+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38d49c4c0226df04734d"
+    },
+    "follower_id": "user_31b307e4ccc8",
+    "followee_id": "user_1e5eaeb6c03f",
+    "created_at": "2026-08-23T18:15:48.779089+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38ef9c4c0226df047351"
+    },
+    "follower_id": "user_1cdb5b6ed842",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T18:16:15.868838+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38ef9c4c0226df047352"
+    },
+    "follower_id": "user_1cdb5b6ed842",
+    "followee_id": "user_e705a4f01833",
+    "created_at": "2026-08-23T18:16:15.869203+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f09c4c0226df047354"
+    },
+    "follower_id": "user_34888474933d",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T18:16:16.103455+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f09c4c0226df047355"
+    },
+    "follower_id": "user_34888474933d",
+    "followee_id": "user_e705a4f01833",
+    "created_at": "2026-08-23T18:16:16.103801+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b39049c4c0226df047364"
+    },
+    "follower_id": "user_b27e7fe4f7ca",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T18:16:36.153029+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b39049c4c0226df047365"
+    },
+    "follower_id": "user_b27e7fe4f7ca",
+    "followee_id": "user_e705a4f01833",
+    "created_at": "2026-08-23T18:16:36.153395+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b3fe244e2f389dd2709a7"
+    },
+    "follower_id": "user_5c3891e44d86",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-08-23T18:45:54.507297+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a986d4be07c7c6adafe94e7"
+    },
+    "follower_id": "user_883b037a435f",
+    "followee_id": "user_31b307e4ccc8",
+    "created_at": "2026-09-02T18:39:07.896847+00:00"
+  }
+]

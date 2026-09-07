@@ -1,0 +1,24 @@
+[
+  {
+    "_id": "full_sync",
+    "bootstepper": {
+      "auto_applied": 389,
+      "flagged": 30,
+      "unmatched": 744,
+      "processed": 1163
+    },
+    "copperknob": {
+      "auto_applied": 139,
+      "flagged": 59,
+      "unmatched": 965,
+      "processed": 1163
+    },
+    "started_at": 1788447912.1871054,
+    "state": "done",
+    "total": 1163,
+    "updated_at": "2026-09-03T15:11:46.003732+00:00",
+    "dry_run": false,
+    "elapsed_sec": 397,
+    "finished_at": "2026-09-03T15:11:49.287818+00:00"
+  }
+]

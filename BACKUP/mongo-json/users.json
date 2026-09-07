@@ -1,0 +1,1234 @@
+[
+  {
+    "_id": {
+      "$oid": "6a58259182dc1fc8f018c384"
+    },
+    "user_id": "user_9e09e08e5e0e",
+    "email": "admin@stompinground.com",
+    "name": "Stompin' Admin",
+    "picture": "",
+    "is_admin": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$T3HWCLy9OQFTJD.5/YplKO2PdNgSyLOx/XrcfxAS5TJp6tmU4QQqi",
+    "created_at": "2026-07-16T00:28:01.435863+00:00",
+    "is_instructor": true,
+    "pwd_ver": 1,
+    "show_on_leaderboard": true,
+    "leaderboard_hidden_by_admin": false,
+    "current_streak": 1,
+    "last_streak_date": "2026-08-15",
+    "longest_streak": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a58ec72c67661bdf38ed1ec"
+    },
+    "user_id": "user_05927d08c294",
+    "email": "wowme247@gmail.com",
+    "name": "Jamin Brown",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$M6ikfPBENt6TsB2Vje3EWux5CQ5Xf/EMt1Am0USt9EQiDSt/XbEGy",
+    "created_at": "2026-07-16T14:36:34.746483+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62a4dfc83e940ab5be1ee1"
+    },
+    "user_id": "user_e705a4f01833",
+    "email": "luvtowork247@yahoo.com",
+    "name": "Jamin Brown",
+    "picture": "",
+    "is_admin": true,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$89Utlyk./y71VIIvSdO51eHvJNTaf3p.lCRjl5nxROogshjiMc9zW",
+    "created_at": "2026-07-23T23:33:51.354170+00:00",
+    "show_on_leaderboard": true,
+    "pwd_ver": 3,
+    "current_streak": 1,
+    "last_streak_date": "2026-08-23",
+    "longest_streak": 1,
+    "certificate_theme": "classic"
+  },
+  {
+    "_id": {
+      "$oid": "6a62bfe71fe0f4dbd40eb14e"
+    },
+    "user_id": "user_31b307e4ccc8",
+    "email": "erinboroughs@gmail.com",
+    "name": "Erin Brown",
+    "picture": "",
+    "is_admin": true,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$5AOcWSuc6U81/UOyZtym2ulUmS3Hqv6DUPs9T0Npp3bwAzKLeuO1G",
+    "created_at": "2026-07-24T01:29:11.355121+00:00",
+    "show_on_leaderboard": true,
+    "certificate_theme": "classic",
+    "current_streak": 2,
+    "last_streak_date": "2026-08-24",
+    "longest_streak": 2,
+    "main_instructor_id": "user_e705a4f01833",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833",
+      "user_1e5eaeb6c03f"
+    ],
+    "pwd_ver": 3,
+    "pwd_hash": "$2b$12$nzSB.oTgSif9GzLQj5W0weD497LooIagLLPmQ4ia36Owe1Whm.gMe",
+    "preferred_language": ""
+  },
+  {
+    "_id": {
+      "$oid": "6a62c27803200db7d0e36341"
+    },
+    "user_id": "user_d57cb26d7947",
+    "email": "test1784857208@example.com",
+    "name": "Test User",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$bYobK/Tpm83it/LJGAMrdu/NyW9PVBoFjcCOT244KxScf1xzVNMmG",
+    "created_at": "2026-07-24T01:40:08.379035+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62c27803200db7d0e36342"
+    },
+    "user_id": "user_48090ecdc10e",
+    "email": "test1784857208b@example.com",
+    "name": "Test Instructor",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$oYeU2i9oSDpTIl.Cie25GOGLHQo4jNYDTmD1iA0jPKhG50MU3Zfua",
+    "created_at": "2026-07-24T01:40:08.616602+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62c27803200db7d0e36343"
+    },
+    "user_id": "user_455ceed1ee7d",
+    "email": "test1784857208c@example.com",
+    "name": "Wrong Code",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$.6gVwcRyt.sEeRcS2gInZea5vX8.1Pvpc4FAn./NrcFbAtrhK0AK.",
+    "created_at": "2026-07-24T01:40:08.891344+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62c2a903200db7d0e36344"
+    },
+    "user_id": "user_b4cb41bb942d",
+    "email": "member8579@ex.com",
+    "name": "Member User",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$REo/K7cwjQgvLAHy8wUIF.yDGULdfw9TB/TSi3QjGMxw07v6jtL5K",
+    "created_at": "2026-07-24T01:40:57.203124+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62c3473075684f8f47d473"
+    },
+    "user_id": "user_1f7f23ffa49b",
+    "email": "testwrong_1784857414@example.com",
+    "name": "Wrong Code User",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$Ab8UBNDs4J5u7O2jsotJNex5KufLSuXB5ew2tpbvPYrX6uzPc1wbu",
+    "created_at": "2026-07-24T01:43:35.147021+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62c35c3075684f8f47d474"
+    },
+    "user_id": "user_1e5eaeb6c03f",
+    "email": "lostngames@gmail.com",
+    "name": "Marco",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$7pWTaz7hVMhuqtiQZQojpO5HsyE1g2/ZeTQ5.DcdaE2E1uINBVY5m",
+    "created_at": "2026-07-24T01:43:56.589571+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62c46e3075684f8f47d475"
+    },
+    "user_id": "user_d7230a440c3f",
+    "email": "member79237@ex.com",
+    "name": "Member User",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$lUm.YlOzKGZ8QHEwoqQ.jOx9oTZ4JUF43ziHXDded23fq0pLoZbCy",
+    "created_at": "2026-07-24T01:48:30.532929+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62c8373075684f8f47d476"
+    },
+    "user_id": "user_b9cc0405fe9a",
+    "email": "b.deandre1@icloud.com",
+    "name": "Deandre Robert Brown",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$lt6eDrSP5EKJtso0Mg5JE.ujb.yHgkwA/7i.4KydYWn2plMaiTNYm",
+    "created_at": "2026-07-24T02:04:39.707342+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62ccbb3075684f8f47d477"
+    },
+    "user_id": "user_0d4005c74ec8",
+    "email": "shayden.estencion@gmail.com",
+    "name": "Shayden Estencion",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$ItAH7NoZrGx27X08vbVFp.ndWLPozNOCNNcj9kpP75g90tZysSyOa",
+    "created_at": "2026-07-24T02:23:55.134860+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62ecff0da9646841db7629"
+    },
+    "user_id": "user_a3fab5783ae9",
+    "email": "test1784868094@ex.com",
+    "name": "Rogue Instructor",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$l85o6Dwfme9panrp06lyOeNlesIMxGGGPdtRNaz/owVAj8TE4B5gu",
+    "created_at": "2026-07-24T04:41:35.021868+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a62ed7b7bd9938171ddec5a"
+    },
+    "user_id": "user_70e0bdbe7612",
+    "email": "rogue1784868219@ex.com",
+    "name": "Rogue",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$QicRWwmBtbGs9S0xOuaOY.4UeXZoDaBTwnc/dtGTt0BpySTFBdZu2",
+    "created_at": "2026-07-24T04:43:39.433526+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a63d61dd7a3ba79f590eb46"
+    },
+    "user_id": "user_802a71eee53a",
+    "email": "member159529@ex.com",
+    "name": "Regular Member",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$GpfaGJZoHs4kB3qAFwf98egNgdx1ZYjuH2Ord0JhUgd3ys2KXoiKq",
+    "created_at": "2026-07-24T21:16:13.742599+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a63ddca34516a8d487d8d3e"
+    },
+    "user_id": "user_95d9a1c449bf",
+    "email": "rogue1784929737@ex.com",
+    "name": "Rogue",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$89LS4EiZ1VjmOoQUSinDjeWuCOnAr/LiijYquCFhlah9NJTa8dCfe",
+    "created_at": "2026-07-24T21:48:58.290192+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a6427a21cc88f238a52c1c7"
+    },
+    "user_id": "user_ddd3a0384c25",
+    "email": "lostngames2@gmail.com",
+    "name": "Rick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$/vzYXQrFBirdvOeXZ.uh/uMnAsFDcthVdL6r4jyQzR0kg6UKm9ovu",
+    "created_at": "2026-07-25T03:04:02.421001+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a6427e81cc88f238a52c1c8"
+    },
+    "user_id": "user_2ddc8d92ff21",
+    "email": "mike@gmail.com",
+    "name": "Mike",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$A4q2sBN6D1jp/CLGRiT6UeV8n4MHm91W9wn50W7OhJJoz63y4C7BS",
+    "created_at": "2026-07-25T03:05:12.745249+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a642a881cc88f238a52c1ca"
+    },
+    "user_id": "user_deccfda19dbe",
+    "email": "lol@gmail.com",
+    "name": "Daryl",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$rA.4JG/CAXNB/ePu54TOz.3C347CWocfzHU2JbflMjhcgm/U98Yme",
+    "created_at": "2026-07-25T03:16:24.078480+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a642bf51cc88f238a52c1cb"
+    },
+    "user_id": "user_4b15e809f1d3",
+    "email": "g@gnail.com",
+    "name": "Jim",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$ZUsR0i79HYDPL0bORURFv.CMHcQouAyaCsiWkzWI6sapoaHpLstGK",
+    "created_at": "2026-07-25T03:22:29.214820+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a642c1a1cc88f238a52c1cc"
+    },
+    "user_id": "user_7267f2af5e6f",
+    "email": "d@gmail.com",
+    "name": "Jimm",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$sZ.yvXepMARhlj0OIOFkfutQIqFosNA4x9dN5erZ0JXlFkxPrwv6u",
+    "created_at": "2026-07-25T03:23:06.917681+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a6657bcdbb20678ce3ba1bf"
+    },
+    "user_id": "user_68e7a18770b3",
+    "email": "fireworks-test-1785092027@example.com",
+    "name": "Firework Fan",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$N1rmEI1XOhiehrJpJTnM2eX3wEk9T4aUkpTn1ZWir7oY0ZxKP8/vC",
+    "created_at": "2026-07-26T18:53:48.142418+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a66585ddbb20678ce3ba1c0"
+    },
+    "user_id": "user_721cef579694",
+    "email": "fw1785092188@example.com",
+    "name": "Firework Fan",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$D7IAeJHPQkU/kL5jh/mmoe5LBSh017wR52hk/oic8.REQap1xe9SC",
+    "created_at": "2026-07-26T18:56:29.207418+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a66588cdbb20678ce3ba1c1"
+    },
+    "user_id": "user_65e1f34d754b",
+    "email": "fw2-1785092235@example.com",
+    "name": "Firework Two",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$1E6qRFwLVvgVob0VQBuFJuqrFntgepbI9YWF.J8aR70iMODgDPBYq",
+    "created_at": "2026-07-26T18:57:16.419443+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a6658d5dbb20678ce3ba1c2"
+    },
+    "user_id": "user_9949ad8bdab8",
+    "email": "fw3-1785092308@example.com",
+    "name": "Firework Three",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$ADgPlxALanZRrsrjLltS9.gBz2TANoHv0L1m7gxjkg5uLORmgTjq6",
+    "created_at": "2026-07-26T18:58:29.769948+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a66590fdbb20678ce3ba1c3"
+    },
+    "user_id": "user_6b2dc50d8f53",
+    "email": "wc-1785092366@example.com",
+    "name": "Welcome Test",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$0MdYwpA19lmNN9d5SmQE1.JCD7pFJq.ljDXZ88fZ93reEXEHh2s5S",
+    "created_at": "2026-07-26T18:59:27.346484+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a854cf1ee80508dcb1407"
+    },
+    "user_id": "user_6e2a36edf4dc",
+    "email": "test_regular_35d095db@example.com",
+    "name": "TEST Regular",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$YqeIFhk13.tDY8JWMWECQ.uB5esCY0.rS0xT3IFc0L0Eipp6vDi9S",
+    "created_at": "2026-08-23T05:29:48.552232+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a8a679b48dc5afe3050ed"
+    },
+    "user_id": "user_005fe0311dcb",
+    "email": "test_reactor_70186359@example.com",
+    "name": "TEST Reactor 70186359",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$gEoPfkGHmCj1S/lGRtw6XugM/TJ0KTkqnZTqmd0clGGwLu6ttPt2m",
+    "created_at": "2026-08-23T05:51:35.831310+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a8a74f89d3c7e4be67d83"
+    },
+    "user_id": "user_a3b1c385081a",
+    "email": "test_reactor_d148e605@example.com",
+    "name": "TEST Reactor d148e605",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$tBOmncv3bxt281FtIhbLp.MgRP8NRXkptxViq3R57R9Rxa7KCYmQ.",
+    "created_at": "2026-08-23T05:51:48.379763+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a8a897bde5a10776da2ad"
+    },
+    "user_id": "user_577a461b0e52",
+    "email": "test_reactor_db6e0c16@example.com",
+    "name": "TEST Reactor db6e0c16",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$72oqJ7lrHh1tnBnfkz7rgeiQzrBgq77Bh/e7uBdlcE7I/HnjgCyx6",
+    "created_at": "2026-08-23T05:52:09.853523+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a8aa5ab4e2e3f57a8a841"
+    },
+    "user_id": "user_848698b0fef2",
+    "email": "test_reactor_0c526b21@example.com",
+    "name": "TEST Reactor 0c526b21",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$uq/jvCWFwlrdd7XTdvszy.Ua506DiMqZl2a.Fz7MqJkx7qGBZJy6K",
+    "created_at": "2026-08-23T05:52:37.163057+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a902e5abcf7c0da72ae3a"
+    },
+    "user_id": "user_e56ba51bb780",
+    "email": "test_reporter_158f5e37@example.com",
+    "name": "TEST Reporter 158f5e37",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$x9dRZ6WKMAnGmUA8qkstpOFOkYnNIX75iOC0IrbwXeyiq19kt.8A6",
+    "created_at": "2026-08-23T06:16:14.854628+00:00",
+    "current_streak": 1,
+    "last_streak_date": "2026-08-23",
+    "longest_streak": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a90365abcf7c0da72ae3f"
+    },
+    "user_id": "user_f6f3b6a3834a",
+    "email": "test_reactor_aac62cb4@example.com",
+    "name": "TEST Reactor aac62cb4",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$ztQMITDuzCLJplBND/J8uO.kcxjMkY0tF07cLgFhDZ14uKGkX.C3C",
+    "created_at": "2026-08-23T06:16:22.710906+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a908f5abcf7c0da72ae41"
+    },
+    "user_id": "user_450a8bedf19b",
+    "email": "test_uifr_5b5b6a2b@example.com",
+    "name": "TEST UI Fresh 5b5b6a2b",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$9l/U0gESf9fwzkc0LCMnaeNAQtHjYGJ/pRiHHYrxJAWMZ8yS7ULoy",
+    "created_at": "2026-08-23T06:17:51.523113+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a90ea5abcf7c0da72ae43"
+    },
+    "user_id": "user_60e970ba1831",
+    "email": "test_uifr_2af7babb@example.com",
+    "name": "TEST UI 2af7babb",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$hUg.rlwghkXX4vgw7EAeAeSrjHM7ZWZ98eYU7mEJVaJp7h6iJcrRS",
+    "created_at": "2026-08-23T06:19:22.522664+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b25d6efb3b46c3ee977da"
+    },
+    "user_id": "user_c97e654465f7",
+    "email": "test_backlog_5005139e@example.com",
+    "name": "TEST Backlog 5005139e",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$1XB3.HcnJbdJU.WWb1RreuaoFQQdWv13dRLUWH6Lj3.NaWSRgoGKK",
+    "created_at": "2026-08-23T16:54:46.628103+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b25e2efb3b46c3ee977db"
+    },
+    "user_id": "user_67df9c865e12",
+    "email": "test_regular_1317e695@example.com",
+    "name": "TEST Regular",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$6eQmI92UIxwlZvcRadNNrOI1TbADdgDMcqtc50pzl8lv958IbPBYm",
+    "created_at": "2026-08-23T16:54:58.164974+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b25e4efb3b46c3ee977e0"
+    },
+    "user_id": "user_80aff6c2af50",
+    "email": "test_reporter_79492efa@example.com",
+    "name": "TEST Reporter 79492efa",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$kJjoaOuAqdu8jH6f0ndJnOKpewrq2ggd3SyuToRlQDKYLbr/yLq9i",
+    "created_at": "2026-08-23T16:55:00.894748+00:00",
+    "current_streak": 1,
+    "last_streak_date": "2026-08-23",
+    "longest_streak": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8b34f57bafdd8e90bb5a10"
+    },
+    "user_id": "user_175d2c8f70de",
+    "email": "test_pi_53d49a23@test.example",
+    "name": "TEST Fresh User",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$z5KIDqqnFfc7SPrPPPo49ulbuN7zhsN0kwwd2DJQApZmDRx6ygkOu",
+    "created_at": "2026-08-23T17:59:17.932270+00:00",
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e36fb87252627cac65"
+    },
+    "user_id": "user_059666c6a97c",
+    "email": "test_mip_8f0f238f@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$.MVNQKxvezuk5BU17mXQWuiYQPCkJ1sHI43yWpCsdkfNbPjVTcjCO",
+    "created_at": "2026-08-23T18:11:47.835014+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e46fb87252627cac66"
+    },
+    "user_id": "user_55014dc835a7",
+    "email": "test_mip_6d2b6b29@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$Bz2TD7hOtmibgLsFoLTJi.1CXYD6dN.PSmbCxPW3QJHKxDNmekN2a",
+    "created_at": "2026-08-23T18:11:48.083842+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e46fb87252627cac67"
+    },
+    "user_id": "user_292fe0f023ac",
+    "email": "test_mip_d23c8115@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$2EaTmuWuLx4e3zJwaOnSs.sla5OTTNDm7Cql0JkIf2aAJNS3ayWq6",
+    "created_at": "2026-08-23T18:11:48.320072+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e46fb87252627cac68"
+    },
+    "user_id": "user_f8cb371e97ec",
+    "email": "test_mip_19bf0d2e@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$QmoaCuOyBalWwkLtDmYLke.WOzlrSc0k.Lc201ljvI6HhtdZK9vP6",
+    "created_at": "2026-08-23T18:11:48.550853+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e46fb87252627cac69"
+    },
+    "user_id": "user_110bb5ee17e5",
+    "email": "test_mip_0d8c5fd0@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$MaBC9SUzYuy5pdh9amt5tuFrSNcgzH046oj/.HrNlEncTcpsg98M2",
+    "created_at": "2026-08-23T18:11:48.784082+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e56fb87252627cac6a"
+    },
+    "user_id": "user_779a4728288b",
+    "email": "test_mip_b13f0f3a@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$d28.o0x.4t4ebY4U1tgXJeBkuBn.8WuzNiljIKg53RyPz4.bMRfv.",
+    "created_at": "2026-08-23T18:11:49.017630+00:00",
+    "instructor_ids": []
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e56fb87252627cac6b"
+    },
+    "user_id": "user_82ca6ed20860",
+    "email": "test_mip_71a49bdb@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$hxo6EBM9N7jpufKaw9AXNeSP2xwIHN4OHiN9ULIo6b2JibN6CGVeq",
+    "created_at": "2026-08-23T18:11:49.252517+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e56fb87252627cac6c"
+    },
+    "user_id": "user_758d871b2b5a",
+    "email": "test_mip_d949370c@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$/HGQwsSRxOTkE1wJ0xRxxOLvRtY5H0SfkeaOc08AKk3znNra2MbXy",
+    "created_at": "2026-08-23T18:11:49.483263+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e56fb87252627cac6d"
+    },
+    "user_id": "user_8c880c3b053b",
+    "email": "test_mip_3f724434@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$bWBAz7cFv3TWTu4Tor3sTeKOlWrW.CXKJ/khPO0J4vrt9SYVkZID6",
+    "created_at": "2026-08-23T18:11:49.716471+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e56fb87252627cac6e"
+    },
+    "user_id": "user_e8517e18bfc9",
+    "email": "test_mip_54161a0e@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$LUjGsE31NEfI6b5w4iYIm.XNJjEL5vhrC9egyOdm2iAPrbj8UV1ki",
+    "created_at": "2026-08-23T18:11:49.951527+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e66fb87252627cac6f"
+    },
+    "user_id": "user_424846ec1ff4",
+    "email": "test_mip_8d0efbcf@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$E3SSvBXFjIgER1nn8oZ1M.Xzf9S4y7s0cd9OcQgSSO4/OQVb/Y95e",
+    "created_at": "2026-08-23T18:11:50.185724+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e66fb87252627cac70"
+    },
+    "user_id": "user_9cd0b8b8f29e",
+    "email": "test_mip_7ac8152f@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$.tPcZWkAb0vifpuShY9KY.EmZMn/.7ckT0hknVXaOmhbb44HGlQ7i",
+    "created_at": "2026-08-23T18:11:50.418058+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38ef9c4c0226df047350"
+    },
+    "user_id": "user_1cdb5b6ed842",
+    "email": "test_mip_851224ca@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$fYkdYExmwkCl3Eko1zM5MODRpf/1d386cYzM7GNwlAD71Q5AE8lSi",
+    "created_at": "2026-08-23T18:16:15.861588+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f09c4c0226df047353"
+    },
+    "user_id": "user_34888474933d",
+    "email": "test_mip_fda1b294@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$XVehWSmnPPOUpapczl5rJem1gE5AP7mF8vj//INxh47VnkUy8FL26",
+    "created_at": "2026-08-23T18:16:16.096757+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f09c4c0226df047358"
+    },
+    "user_id": "user_f2b5159635be",
+    "email": "test_mip_2d94a5de@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$kYReCFyf4Yc30Me5xOnrGuojbYK9FPw.6VyMH4NGj8iUUhvCgkx9i",
+    "created_at": "2026-08-23T18:16:16.334540+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f09c4c0226df047359"
+    },
+    "user_id": "user_71144946a93c",
+    "email": "test_mip_a484ff68@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$SuB.mXQa2Aja5yJqw/asYet1w96vLVSweLfb1Ge4TfNGGiZ48w5we",
+    "created_at": "2026-08-23T18:16:16.566419+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f09c4c0226df04735a"
+    },
+    "user_id": "user_be0419ef5f0f",
+    "email": "test_mip_b0cc38be@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$cyD9WdtPVD.jn5bzZmYrgeeqPwGeEnjosqdKIWLD08J6jdXjyiRKG",
+    "created_at": "2026-08-23T18:16:16.801493+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f19c4c0226df04735b"
+    },
+    "user_id": "user_230dea462aed",
+    "email": "test_mip_109105d1@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$ze.88/nLCE4g445JM05FCeaaLWthjVdlsWdVnLFbKayK7ILfxSkM6",
+    "created_at": "2026-08-23T18:16:17.036162+00:00",
+    "instructor_ids": []
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f19c4c0226df04735c"
+    },
+    "user_id": "user_07e9bc1e7552",
+    "email": "test_mip_28f8df91@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$Y4j1psPqTo1Ua2./0gysXucdiV3kKKU6P23/JAcoA0q7PuUxBJjXm",
+    "created_at": "2026-08-23T18:16:17.272741+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f19c4c0226df04735d"
+    },
+    "user_id": "user_2fa111fbb2b5",
+    "email": "test_mip_312479c4@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$amvXCqNK0IgEIpFXMjRbKuqYV4i7oFqtDtbVBeVvuyu1I6GTIRNk2",
+    "created_at": "2026-08-23T18:16:17.504722+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f19c4c0226df04735e"
+    },
+    "user_id": "user_df574505c315",
+    "email": "test_mip_54c94603@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$wW7OkwJSCmb6/5bHBeRqoeihZT5zaGOgaaExM7mtm9mmReAVePLw2",
+    "created_at": "2026-08-23T18:16:17.738419+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f19c4c0226df04735f"
+    },
+    "user_id": "user_9ef51b891b56",
+    "email": "test_mip_fb14c6ab@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$57MFczi4rjz/c./sT7VkreUw9uYdiMu6s64A.eCa9CsHJHKUIPfoG",
+    "created_at": "2026-08-23T18:16:17.974742+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f29c4c0226df047360"
+    },
+    "user_id": "user_eb5e253c9d47",
+    "email": "test_mip_08e53c63@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$G8U0d6xAUOMMDo4HkV6JR.9DROL5Eu/MsYpXp8sq7/x4MHfwmkZ0u",
+    "created_at": "2026-08-23T18:16:18.210461+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f29c4c0226df047361"
+    },
+    "user_id": "user_9a0180ee4307",
+    "email": "test_mip_0a647cd5@test.example",
+    "name": "TEST Multi Pick",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$ELiP6RKmfmNuNHcIYdYxje/.uBFurmyDnV2i/SO.2A15fmVKN3S4K",
+    "created_at": "2026-08-23T18:16:18.444957+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b39049c4c0226df047363"
+    },
+    "user_id": "user_b27e7fe4f7ca",
+    "email": "test_regression_8f4499@test.example",
+    "name": "TEST Reg",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$Vlkm3h1W1tX6kS2bafpk9.fA3hanxO91q9Xy8OEAW9iL5LDP6.Uk.",
+    "created_at": "2026-08-23T18:16:36.147450+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8",
+      "user_e705a4f01833"
+    ],
+    "main_instructor_id": "user_e705a4f01833"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b3fe244e2f389dd2709a6"
+    },
+    "user_id": "user_5c3891e44d86",
+    "email": "test_reactor_42a98bb8@example.com",
+    "name": "TEST Reactor 42a98bb8",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$d/SDw2l6TLeXAR6VZMBNZOIAQFmCHBN6FDCCk2IcG7LxviMKHYTNy",
+    "created_at": "2026-08-23T18:45:54.374439+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8e532e6bba0ce1b8aae4e0"
+    },
+    "user_id": "user_16de2aab2951",
+    "email": "applereview@stompingroundyuma.org",
+    "name": "Apple Review",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": true,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$iby5sZL9i586OUBaSfDYJuTPrAkx8aBGCfgaqXP9HKHMd4Mo2wZg6",
+    "created_at": "2026-08-26T02:45:02.763174+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8f991cdc5f32e3b5444fc9"
+    },
+    "user_id": "user_143d4e058dd8",
+    "email": "randomuser7540@test.com",
+    "name": "Rando",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$3OcQDPpvVz6TIPeEyknnbOS02V9ycm5yWCm8sAPB5CHw.m02F9cOe",
+    "created_at": "2026-08-27T01:55:40.172796+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a9435c65ea57bb88f799498"
+    },
+    "user_id": "user_3e62df686826",
+    "email": "dancer_ck30608@test.com",
+    "name": "Regular Dancer",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$1w/oNX9ByDx27whH8XayPuMknapRtp/SiS2u1bR6yHWA3XJADo/vy",
+    "created_at": "2026-08-30T13:53:10.668531+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a944c43478753d445e614e1"
+    },
+    "user_id": "user_aeef5740e4d2",
+    "email": "test_bs_feb40a32@example.com",
+    "name": "TEST BS User",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$WuRLxvGLRXHrozSa/Ke2ZOa8ND/PvzP1Lz7CAmDycDA2tlowdJVnq",
+    "created_at": "2026-08-30T15:29:07.086529+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a945c755fc685fe62f9f611"
+    },
+    "user_id": "user_d64419f41e67",
+    "email": "test_regression_a7c22f22@example.com",
+    "name": "TEST Regression",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$9B7S/fZUAi/Eg93Ir8Y9XeFRWLUMCXZjgo5R9w7zKzmV2DJqM.NTe",
+    "created_at": "2026-08-30T16:38:13.970054+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a945ca73c5ebadb93b525c3"
+    },
+    "user_id": "user_906ab8e7bc2d",
+    "email": "test_regression_18fed02a@example.com",
+    "name": "TEST Regression",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$6C4N2TF5q4m/hkznHVVFOOnnuH8b9xUg3BB3ZKmQ8LKoAUD5YXHNS",
+    "created_at": "2026-08-30T16:39:03.349207+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a945d32880e36583723981b"
+    },
+    "user_id": "user_33550f7176de",
+    "email": "test_regression_a091aea4@example.com",
+    "name": "TEST Regression",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$tpETdGqE92YzScNwnksO0OdYybL5O9TkMvo.Ob7pRGNXnD5KA3W7y",
+    "created_at": "2026-08-30T16:41:22.583681+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a945d5a45084c1dfac3ca5c"
+    },
+    "user_id": "user_b72482d9505a",
+    "email": "test_regression_85e846c3@example.com",
+    "name": "TEST Regression",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$9DoMQ8mEdRuKpfsLVJQyJu1kGCTZ4VguyjfXaEp06i5N7NLEUN7VO",
+    "created_at": "2026-08-30T16:42:02.243367+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a99931d2b232ceaf7f2cae5"
+    },
+    "user_id": "user_20f8c2c5f176",
+    "email": "test_reg_ce465e0f@example.com",
+    "name": "Test",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$WpTi14/lZYaaAw5smu9ayO1atmjo80k17yIwOdpCqTn5nD1VR77ti",
+    "created_at": "2026-09-03T15:32:45.010680+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a99931e2b232ceaf7f2cae6"
+    },
+    "user_id": "user_edb4bdbcb514",
+    "email": "test_dancer_6df2bde9@example.com",
+    "name": "TestDancer",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$U5ZgLkmgMSBd/73gw8DGD.0T75Usf1zXddXH.0MMIEnEbVy4j5.7S",
+    "created_at": "2026-09-03T15:32:46.373124+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  },
+  {
+    "_id": {
+      "$oid": "6a99933c3d98f3ff18e9fa62"
+    },
+    "user_id": "user_f6473fc3ff2b",
+    "email": "test_reg_91424923@example.com",
+    "name": "Test",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$GtNrLgcsTwUfu4PByBNkI.VxW6IWkdBCsIdlvv.GZDisYjcsGOaWm",
+    "created_at": "2026-09-03T15:33:16.703985+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a99933e3d98f3ff18e9fa63"
+    },
+    "user_id": "user_337a8b77a4c5",
+    "email": "test_dancer_fb3a7beb@example.com",
+    "name": "TestDancer",
+    "picture": "",
+    "is_admin": false,
+    "is_instructor": false,
+    "auth_provider": "email",
+    "password_hash": "$2b$12$jFXzobuwttF0nHwkn1DfmOWZ5mStaLqO7j70fQ/1RzKwI17sZqdaq",
+    "created_at": "2026-09-03T15:33:18.150995+00:00",
+    "instructor_ids": [
+      "user_31b307e4ccc8"
+    ],
+    "main_instructor_id": "user_31b307e4ccc8"
+  }
+]

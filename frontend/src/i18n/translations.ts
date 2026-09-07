@@ -10,21 +10,74 @@
  * (dance names, chat, choreographers) stays in whatever language the
  * user typed it in.
  *
- * When you add a new key, add it to ALL THREE locales; the missing-
+ * When you add a new key, add it to ALL EIGHT locales; the missing-
  * translations helper below only fires in dev and complains loudly.
+ *
+ * ── CJK NOTE ───────────────────────────────────────────────────
+ * React Native falls back to the OS's system font family whenever a
+ * glyph isn't found in the current typeface. That means our custom
+ * ``Rye`` display font (only used on the login hero title, which we
+ * treat as brand and never translate) does NOT bottleneck CJK
+ * rendering — every non-brand ``<Text>`` uses the platform default
+ * (PingFang SC/TC on iOS, Noto Sans CJK on Android, both of which
+ * ship with the OS since ~2015). Do not add ``fontFamily`` to
+ * translated text.
+ * ─────────────────────────────────────────────────────────────
  */
-export type Locale = "en" | "es" | "fr";
+export type Locale =
+  | "en"
+  | "es"
+  | "fr"
+  | "de"
+  | "nl"
+  | "ko"
+  | "zh-Hans"
+  | "zh-Hant";
 
-export const SUPPORTED_LOCALES: Locale[] = ["en", "es", "fr"];
+export const SUPPORTED_LOCALES: Locale[] = [
+  "en",
+  "es",
+  "fr",
+  "de",
+  "nl",
+  "ko",
+  "zh-Hans",
+  "zh-Hant",
+];
 
+// Label rendered in the picker + settings screen. Kept in the
+// language's own script so a Korean user recognises their option
+// even when the surrounding UI is still in English on first launch.
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
   es: "Español",
   fr: "Français",
+  de: "Deutsch",
+  nl: "Nederlands",
+  ko: "한국어",
+  "zh-Hans": "简体中文",
+  "zh-Hant": "繁體中文",
 };
 
 // Fallback locale used by i18n-js when a key is missing.
 export const DEFAULT_LOCALE: Locale = "en";
+
+/**
+ * Locales whose bulk translations were machine-drafted and would
+ * benefit from a pass by a fluent speaker before store release.
+ *
+ * We surface this array (never used at runtime) so QA can produce a
+ * simple "still-needs-review" report:
+ *
+ *   ``import { LOCALES_NEEDING_NATIVE_REVIEW } from "@/src/i18n/translations";``
+ *
+ * Once a locale gets a native review, drop it from this list.
+ */
+export const LOCALES_NEEDING_NATIVE_REVIEW: Locale[] = [
+  "ko",
+  "zh-Hans",
+  "zh-Hant",
+];
 
 export const translations: Record<Locale, Record<string, string>> = {
   en: {
@@ -1278,4 +1331,2151 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Une erreur s'est produite. Réessayez dans un instant.",
     "error.offline": "Vous semblez hors ligne.",
   },
+
+  de: {
+    // ---------- Onboarding ----------
+    "onboarding.language.title": "Wähle deine Sprache",
+    "onboarding.language.subtitle":
+      "Du kannst das jederzeit unter Profil → Einstellungen ändern.",
+    "onboarding.language.continue": "Weiter",
+    "onboarding.language.system_default": "Systemsprache",
+
+    // ---------- Age gate ----------
+    "age_gate.hero_title": "Altersprüfung",
+    "age_gate.hero_sub":
+      "Schnür deine Stiefel – kurz ein Schritt zurück.",
+    "age_gate.title_line1":
+      "Für Stompin' Ground Yuma musst du mindestens",
+    "age_gate.title_years": "13 Jahre alt",
+    "age_gate.body_copy":
+      "Jüngere Tänzer sind mit einem Elternteil oder Erziehungsberechtigten herzlich willkommen – der- oder diejenige legt einfach das Konto an.",
+    "age_gate.adult_button": "Ich bin 13 oder älter",
+    "age_gate.child_button": "Ich bin unter 13",
+    "age_gate.legal":
+      "Mit dem Tippen auf {emph} akzeptierst du unsere {terms} und {privacy}.",
+    "age_gate.legal_emph": "Ich bin 13 oder älter",
+    "age_gate.under13_title":
+      "Bitte einen Erwachsenen, sich anzumelden.",
+    "age_gate.under13_copy":
+      "Stompin' Ground Yuma ist für Tänzer ab 13. Wenn du jünger bist, lass ein Elternteil oder eine erziehungsberechtigte Person das Konto anlegen und sich anmelden – ihr könnt dann jederzeit gemeinsam zum Kurs kommen und tanzen!",
+    "age_gate.back": "Zurück",
+
+    // ---------- Tabs ----------
+    "tabs.home": "Start",
+    "tabs.dances": "Tänze",
+    "tabs.my_dances": "Meine Tänze",
+    "tabs.instructor": "Trainer",
+    "tabs.profile": "Profil",
+
+    // ---------- Auth ----------
+    "auth.tab_signin": "Anmelden",
+    "auth.tab_signup": "Konto erstellen",
+    "auth.subtitle": "Dance Social HQ",
+    "auth.email": "E-Mail",
+    "auth.password": "Passwort",
+    "auth.name": "Vollständiger Name",
+    "auth.instructor_toggle": "Ich bin Trainer:in",
+    "auth.instructor_toggle_sub":
+      "Braucht den Zugangscode des Studios",
+    "auth.instructor_code": "Trainer-Zugangscode",
+    "auth.signin_button": "Anmelden",
+    "auth.signup_button": "Konto erstellen",
+    "auth.continue_with_google": "Mit Google fortfahren",
+    "auth.or": "oder",
+    "auth.forgot_password": "Passwort vergessen?",
+    "auth.legal_signin":
+      "Mit dem Fortfahren akzeptierst du unsere {terms} und {privacy}.",
+    "auth.legal_signup":
+      "Mit dem Anlegen eines Kontos akzeptierst du unsere {terms} und {privacy} und bestätigst, dass Line Dance eine körperliche Aktivität ist, an der du auf eigenes Risiko teilnimmst.",
+    "auth.terms": "AGB",
+    "auth.terms_of_service": "Nutzungsbedingungen",
+    "auth.privacy_policy": "Datenschutzerklärung",
+    "auth.error_fill_all": "Bitte alle Felder ausfüllen",
+    "auth.error_enter_code":
+      "Bitte gib deinen Trainer-Zugangscode ein",
+    "auth.error_generic": "Etwas ist schiefgelaufen",
+    "auth.error_google_no_session": "Keine Sitzung zurückgegeben",
+    "auth.error_google_not_configured":
+      "Google-Login ist für diesen Build nicht konfiguriert.",
+    "auth.error_google_failed":
+      "Google-Anmeldung fehlgeschlagen",
+    "auth.account_created_title": "Konto erstellt",
+    "auth.account_created_msg":
+      "Der Trainer-Zugangscode passte nicht, deshalb bist du als normales Mitglied angemeldet. Du kannst es jederzeit unter Profil → Zum Trainer-Profil wechseln erneut versuchen.",
+    "auth.show_password": "Passwort anzeigen",
+    "auth.hide_password": "Passwort verbergen",
+
+    // ---------- Welcome ----------
+    "welcome.greeting": "Willkommen, {name}!",
+    "welcome.subtitle": "Los geht's aufs Parkett 🥾",
+    "welcome.default_name": "Freund:in",
+
+    // ---------- Common ----------
+    "common.save": "Speichern",
+    "common.cancel": "Abbrechen",
+    "common.done": "Fertig",
+    "common.delete": "Löschen",
+    "common.edit": "Bearbeiten",
+    "common.back": "Zurück",
+    "common.close": "Schließen",
+    "common.retry": "Erneut versuchen",
+    "common.loading": "Wird geladen…",
+    "common.ok": "OK",
+    "common.yes": "Ja",
+    "common.no": "Nein",
+    "common.confirm": "Bestätigen",
+    "common.share": "Teilen",
+    "common.follow": "Folgen",
+    "common.unfollow": "Nicht mehr folgen",
+    "common.following": "Folge ich",
+    "common.search": "Suchen",
+    "common.see_all": "Alle anzeigen",
+    "common.error": "Fehler",
+    "common.new": "Neu",
+    "common.publish": "Veröffentlichen",
+    "common.unpublish": "Zurückziehen",
+    "common.published": "Veröffentlicht",
+    "common.draft": "Entwurf",
+    "common.upload": "Hochladen",
+    "common.remove": "Entfernen",
+    "common.next": "Weiter",
+    "common.skip": "Überspringen",
+    "common.open_settings": "Einstellungen öffnen",
+    "common.permission_needed": "Berechtigung erforderlich",
+
+    // ---------- Home ----------
+    "home.hello": "Hi, {name}!",
+    "home.hello_no_name": "Hi!",
+    "home.subhello": "Bereit für ein paar Steps?",
+    "home.browse_cta": "Tänze durchstöbern",
+    "home.achievements_title": "Erfolge",
+    "home.achievements_sub_unseen":
+      "Du hast {count} neue Abzeichen freigeschaltet!",
+    "home.achievements_sub_unseen_one":
+      "Du hast 1 neues Abzeichen freigeschaltet!",
+    "home.achievements_sub_default":
+      "Verfolge deine Abzeichen und Übungs-Serie.",
+    "home.community_activity": "Community-Aktivität",
+    "home.feed_empty_title": "Folge anderen Tänzer:innen",
+    "home.feed_empty_sub":
+      "Ihre erledigten Tänze, Abzeichen und Serien erscheinen hier.",
+    "home.fresh_on_floor": "Frisch auf der Tanzfläche",
+    "home.recently_practiced": "Kürzlich geübt",
+    "home.pick_up": "Da weitermachen, wo du aufgehört hast",
+    "home.leaderboard_title": "Boot-Scoot-Rangliste",
+    "home.leaderboard_default_sub":
+      "Sieh, wer die Tanzfläche anführt – mach mit.",
+    "home.events_title": "Events in deiner Nähe",
+    "home.events_sub":
+      "Workshops, Socials und Kurse, wo deine Stiefel dich hinbringen.",
+    "home.classes_title": "Letzte Kursübersicht",
+    "home.classes_sub":
+      "Sieh, welche Tänze in den letzten Kursen unterrichtet wurden.",
+    "home.suggest_title": "Tanz vorschlagen",
+    "home.suggest_title_for": "Tanz für {name} vorschlagen",
+    "home.suggest_sub_default":
+      "Wähle deinen Haupttrainer und schick ihm deine Ideen.",
+    "home.suggest_sub_for":
+      "Idee? Schick sie an {name}.",
+    "home.about_title": "Über den Veranstaltungsort",
+    "home.about_text":
+      "Stompin' Ground Yuma ist eine herzliche Community, in der Tänzer:innen jeden Alters und Levels zusammenkommen, lernen, lachen und die Nacht durchtanzen. Schnür deine Stiefel und los geht's.",
+    "home.icon_all_ages": "Alle Altersgruppen",
+    "home.icon_beginners": "Anfänger willkommen",
+    "home.icon_family": "Familienfreundlich",
+    "home.website_cta": "stompingroundyuma.org besuchen",
+
+    // ---------- Library ----------
+    "library.brand_name": "Stompin' Ground Yuma",
+    "library.brand_sub": "Line-Dance-Bibliothek",
+    "library.search_placeholder":
+      "Name, Song, Artist, Choreograf durchsuchen",
+    "library.diff_all": "Alle",
+    "library.diff_absolute_beginner": "Absoluter Anfänger",
+    "library.diff_beginner": "Anfänger",
+    "library.diff_improver": "Improver",
+    "library.diff_high_improver": "High Improver",
+    "library.diff_intermediate": "Fortgeschritten",
+    "library.diff_advanced": "Profi",
+    "library.empty_none": "Keine Tänze passen zu diesen Filtern.",
+    "library.reset_filters": "Filter zurücksetzen",
+    "library.cant_find": "Nichts Passendes gefunden?",
+    "library.external_cta":
+      "In CopperKnob + BootStepper suchen",
+    "library.external_cta_q":
+      'CopperKnob + BootStepper nach „{q}" durchsuchen',
+    "library.single_dir": "Oder ein einzelnes Verzeichnis öffnen",
+    "library.popular_copperknob": "Beliebt auf CopperKnob",
+    "library.popular_bootstepper": "Beliebt auf BootStepper",
+    "library.by": "Von {name}",
+    "library.unknown": "Unbekannt",
+    "library.source_badge": "Tanzbibliothek",
+    "library.bpm": "{bpm} BPM",
+
+    // ---------- My Dances ----------
+    "my_dances.title": "Mein Tracker",
+    "my_dances.subtitle": "Behalte deine Line-Dance-Reise im Blick",
+    "my_dances.tab_completed": "Erledigt ({count})",
+    "my_dances.tab_wishlist": "Wunschliste ({count})",
+    "my_dances.empty_completed_title":
+      "Noch keine Tänze abgeschlossen",
+    "my_dances.empty_wishlist_title": "Wunschliste ist leer",
+    "my_dances.empty_text":
+      "Ab in die Bibliothek und deine nächste Herausforderung finden!",
+    "my_dances.browse_dances": "Tänze durchstöbern",
+    "my_dances.cert_error_title":
+      "Zertifikat konnte nicht heruntergeladen werden",
+    "my_dances.cert_download_label": "Zertifikat herunterladen",
+    "my_dances.cert_download_hint":
+      "Lädt ein PDF-Zertifikat für diesen abgeschlossenen Tanz herunter.",
+
+    // ---------- Instructor ----------
+    "instructor.title": "Trainer",
+    "instructor.subtitle": "Tänze · Kurse · Events · Chat",
+    "instructor.only": "Nur für Trainer:innen.",
+    "instructor.new": "Neu",
+    "instructor.csv": "CSV",
+    "instructor.restore": "Wiederherstellen",
+    "instructor.tab_dances": "Tänze",
+    "instructor.tab_classes": "Kurse",
+    "instructor.tab_events": "Events",
+    "instructor.tab_chat": "Chat",
+    "instructor.legend_new_dance":
+      "Neue Tänze starten als **Entwurf** – nur du siehst sie. Tippe **Veröffentlichen**, um sie mit allen zu teilen.",
+    "instructor.no_dances":
+      'Noch keine Tänze. Tippe "+ Neu", um einen Tanz mit Schrittzettel hochzuladen, oder erfasse einen Kurs im Kurse-Tab.',
+    "instructor.no_classes_yet":
+      "Du hast noch keine Kurse erfasst.",
+    "instructor.go_to_classes": "Zu den Kursen",
+    "instructor.class_session_default": "Kursstunde",
+    "instructor.dance_count": "{count} Tänze · {names}",
+    "instructor.dance_count_one": "1 Tanz · {names}",
+    "instructor.pill_sheet": "Blatt",
+    "instructor.pill_no_sheet": "Kein Blatt",
+    "instructor.pill_published": "Veröffentlicht",
+    "instructor.pill_draft": "Entwurf",
+    "instructor.edit_sheet": "Blatt",
+    "instructor.chat_lounge_hello":
+      "Trainer-Lounge – sag Hallo 👋",
+    "instructor.chat_placeholder":
+      "Nachricht an die Trainer:innen… (mit @Name markieren)",
+    "instructor.events_your_events": "Deine Events",
+    "instructor.events_hero_sub":
+      "Workshops, Socials und Sondertermine, die du veranstaltest.",
+    "instructor.events_add_new": "Neues Event hinzufügen",
+    "instructor.events_browse_all": "Alle ansehen",
+    "instructor.events_empty_title": "Noch keine Events",
+    "instructor.events_empty_sub":
+      "Poste deinen nächsten Workshop, Social oder deine Privatparty, damit Tänzer:innen sie in der App finden.",
+    "instructor.events_upcoming": "Bevorstehend",
+    "instructor.events_past": "Vergangen",
+    "instructor.event_delete_title": "Dieses Event löschen?",
+    "instructor.event_delete_msg":
+      '„{name}" – kann nicht rückgängig gemacht werden.',
+    "instructor.event_delete_error":
+      "Löschen fehlgeschlagen",
+    "instructor.step_sheet_title": "Schrittzettel",
+    "instructor.new_dance_title":
+      "Neuer Tanz + Schrittzettel",
+    "instructor.import_title": "Aus CSV importieren",
+    "instructor.import_sub":
+      "Tänze in Massen zur Bibliothek hinzufügen",
+    "instructor.upload_image": "Bild hochladen",
+    "instructor.text_notation": "Textnotation",
+    "instructor.image_label": "Bild (PNG/JPG)",
+    "instructor.step_sheet_image": "Bild des Schrittzettels",
+    "instructor.step_sheet_text": "Text des Schrittzettels",
+    "instructor.save_step_sheet": "Schrittzettel speichern",
+    "instructor.dance_name": "Name des Tanzes *",
+    "instructor.choreographer": "Choreograf:in *",
+    "instructor.song": "Song *",
+    "instructor.artist": "Künstler:in",
+    "instructor.bpm_field": "BPM",
+    "instructor.count_field": "Counts (z. B. 32 count, 4 wall)",
+    "instructor.youtube_url": "YouTube-URL",
+    "instructor.autofill_youtube":
+      "YouTube-Suche automatisch ausfüllen",
+    "instructor.publish_now": "Sofort für alle veröffentlichen",
+    "instructor.publish_now_on":
+      "Alle sehen diesen Tanz in der öffentlichen Bibliothek.",
+    "instructor.publish_now_off":
+      "Als Entwurf speichern – nur du siehst ihn bis zur Veröffentlichung.",
+    "instructor.save_dance": "Tanz speichern",
+    "instructor.enter_name_first": "Erst einen Namen eingeben",
+    "instructor.enter_name_first_msg":
+      "Gib den Namen des Tanzes ein, damit ich die Suche aufbauen kann.",
+    "instructor.missing_info": "Angaben fehlen",
+    "instructor.missing_info_msg":
+      "Name, Choreograf:in und Song sind Pflichtfelder.",
+    "instructor.permission_photo":
+      "Erlaube Fotozugriff, um einen Schrittzettel hochzuladen.",
+
+    // ---------- Profile ----------
+    "profile.title": "Profil",
+    "profile.dancer_default": "Tänzer:in",
+    "profile.admin": "Admin",
+    "profile.stat_completed": "Erledigt",
+    "profile.stat_wishlist": "Wunschliste",
+    "profile.stat_classes": "Kurse",
+    "profile.stat_avg_rating": "Ø ★",
+    "profile.section_achievements": "Erfolge",
+    "profile.section_practice_history": "Übungsverlauf",
+    "profile.total_sessions": "Sitzungen gesamt",
+    "profile.days_active": "aktive Tage",
+    "profile.peak_day": "bester Tag",
+    "profile.history_foot":
+      "Letzte 30 Tage · Öffne einen Tanz und nutze den Übungsmodus, um eine Sitzung zu erfassen.",
+    "profile.section_account": "Konto",
+    "profile.instructor_tab": "Trainer-Tab",
+    "profile.switch_to_instructor":
+      "Zum Trainer-Profil wechseln",
+    "profile.class_recap": "Kursüberblick",
+    "profile.log_a_class": "Kurs erfassen",
+    "profile.review_suggestions": "Vorschläge prüfen",
+    "profile.suggest_a_dance": "Tanz vorschlagen",
+    "profile.suggest_a_dance_to": "{name} einen Tanz vorschlagen",
+    "profile.my_instructors": "Meine Trainer:innen",
+    "profile.pick_your_instructors": "Wähle deine Trainer:innen",
+    "profile.instructors_hint_none":
+      "Tippen, um festzulegen, wer deine Vorschläge erhält",
+    "profile.instructors_hint_primary_more":
+      "Primär: {name} · +{count} weitere",
+    "profile.instructors_hint_primary": "Primär: {name}",
+    "profile.instructors_hint_no_primary":
+      "{count} gewählt – tippen, um primär zu setzen",
+    "profile.followed_choreographers":
+      "Gefolgte Choreograf:innen",
+    "profile.followed_choreographers_sub":
+      "Erhalte einen Stubs, wenn sie einen neuen Tanz veröffentlichen",
+    "profile.my_mentions": "Meine Erwähnungen",
+    "profile.mentions_unread":
+      "{count} ungelesene Erwähnungen von Trainer:innen",
+    "profile.mentions_unread_one":
+      "1 ungelesene Erwähnung von Trainer:innen",
+    "profile.mentions_default":
+      "Sieh Trainer-Tags in deinem Kurschat",
+    "profile.notification_prefs":
+      "Benachrichtigungseinstellungen",
+    "profile.notification_prefs_sub":
+      "Event, Kurs oder Erwähnungen einzeln stummschalten",
+    "profile.language": "Sprache",
+    "profile.boot_scoot_board": "Boot-Scoot-Rangliste",
+    "profile.boot_scoot_visible":
+      "Du bist in der Rangliste sichtbar.",
+    "profile.boot_scoot_hidden":
+      "Du bist verborgen. Zum Beitreten tippen.",
+    "profile.follows_row": "Folge ich & Follower",
+    "profile.follows_row_sub":
+      "{following} folge ich · {followers} Follower",
+    "profile.follows_row_sub_plural":
+      "{following} folge ich · {followers} Follower",
+    "profile.show_activity":
+      "Mich im Aktivitäts-Feed zeigen",
+    "profile.show_activity_on":
+      "Deine Follower sehen deine erledigten Tänze und Abzeichen.",
+    "profile.show_activity_off":
+      "Deine Aktivität ist für andere verborgen.",
+    "profile.certificate_theme": "Zertifikatsdesign",
+    "profile.certificate_theme_sub":
+      "Legt das Standard-Aussehen der PDF-Zertifikate fest.",
+    "profile.couldnt_save": "Konnte nicht gespeichert werden",
+    "profile.couldnt_update_theme":
+      "Design konnte nicht aktualisiert werden",
+    "profile.please_try_again": "Bitte erneut versuchen.",
+    "profile.sign_out": "Abmelden",
+    "profile.delete_account": "Konto löschen",
+    "profile.delete_account_sub":
+      "Entfernt dein Konto und deine persönlichen Daten dauerhaft.",
+    "profile.section_connect": "Bleib in Verbindung",
+    "profile.connect_sub":
+      "Folge Stompin' Ground Yuma auf deiner Lieblingsplattform – die Links öffnen die native App, wenn installiert.",
+    "profile.share_app": "App teilen",
+    "profile.share_app_sub":
+      "Lade Freunde zu Stompin' Ground Yuma ein",
+    "profile.visit_website": "Website besuchen",
+    "profile.privacy_policy": "Datenschutzerklärung",
+    "profile.terms_of_service": "Nutzungsbedingungen",
+    "profile.community_guidelines": "Community-Regeln",
+    "profile.blocked_users": "Blockierte Nutzer:innen",
+    "profile.blocked_users_sub":
+      "Verwalte, wen du in Chat und Feed stummgeschaltet hast",
+    "profile.send_feedback": "Feedback senden",
+    "profile.send_feedback_sub": "Bugs, Ideen oder ein Gruß",
+    "profile.app_version": "Version {version}",
+    "profile.app_version_with_build":
+      "Version {version} ({build})",
+    "profile.updates_arrive":
+      "Updates kommen mit neuen App-Store-/Play-Store-Releases.",
+    "profile.about_venue": "Über Stompin' Ground Yuma",
+    "profile.about_venue_text":
+      "Country Line Dance für alle Altersgruppen in Yuma, AZ. Komm dazu, lern einen neuen Schritt und finde neue Freunde auf der Tanzfläche.",
+    "profile.instructor_unlock_title": "Du bist Trainer:in!",
+    "profile.instructor_unlock_msg":
+      "Dein Trainer-Tab ist jetzt freigeschaltet.",
+    "profile.instructor_code_placeholder": "Trainer-Zugangscode",
+    "profile.enter_access_code": "Gib deinen Zugangscode ein",
+    "profile.invalid_access_code": "Ungültiger Zugangscode",
+    "profile.instructor_modal_sub":
+      "Gib den Code deines Studios ein, um Trainer-Tools freizuschalten (Kurse erfassen, Schrittzettel hochladen, Tänze bearbeiten, chatten).",
+    "profile.unlock": "Freischalten",
+    "profile.delete_title": "Konto löschen?",
+    "profile.delete_body":
+      'Das entfernt dauerhaft:\n• Deinen Login & dein Profil\n• Dein Tanz-Tracking (erledigt / Wunschliste)\n• Deinen Kursbesuchsverlauf\n• Alle Vorschläge oder Chat-Nachrichten, die du gesendet hast\n\nVon dir erstellte Tänze oder Kurse bleiben für die Community sichtbar, dein Name wird jedoch durch „Gelöschte:r Nutzer:in" ersetzt.',
+    "profile.delete_cant_undone":
+      "Kann nicht rückgängig gemacht werden.",
+    "profile.delete_confirm_label":
+      "Tippe {word}, um zu bestätigen",
+    "profile.delete_type_confirm":
+      'Tippe "DELETE" (Großbuchstaben) zum Bestätigen.',
+    "profile.delete_forever": "Für immer löschen",
+    "profile.deleted_title": "Konto gelöscht",
+    "profile.deleted_msg":
+      "Dein Konto und deine persönlichen Daten wurden entfernt. Danke, dass du mit uns getanzt hast!",
+    "profile.deleted_generic_error":
+      "Konto konnte nicht gelöscht werden. Bitte erneut versuchen.",
+    "profile.sgy_admin": "SGY Admin",
+    "profile.moderation_queue": "Feed-Moderations-Warteschlange",
+    "profile.user_feedback": "Nutzer-Feedback",
+    "profile.refresh_recommendations":
+      "Empfehlungen aktualisieren",
+    "profile.refresh_recommendations_none":
+      "Bibliotheks-Metadaten sind mit den Anbietern synchronisiert",
+    "profile.refresh_recommendations_unseen":
+      "{count} Tänze mit abweichenden Metadaten",
+    "profile.refresh_recommendations_unseen_one":
+      "1 Tanz mit abweichenden Metadaten",
+
+    // ---------- Language ----------
+    "language.title": "Sprache",
+    "language.subtitle":
+      "Wähle die Sprache, in der die App und Benachrichtigungen angezeigt werden.",
+    "language.system_default": "Systemsprache",
+    "language.system_default_hint":
+      "Folgt der Sprache des Telefons ({locale}).",
+    "language.saved_toast": "Sprache aktualisiert.",
+
+    // ---------- Notifications prefs ----------
+    "notifications.title": "Benachrichtigungen",
+    "notifications.classes": "Neue Kurse",
+    "notifications.events": "Neue Events",
+    "notifications.choreographers":
+      "Neue Tänze von gefolgten Choreograf:innen",
+    "notifications.mentions": "@Erwähnungen im Chat",
+    "notifications.reminders": "Kurserinnerungen",
+
+    // ---------- Errors ----------
+    "error.generic":
+      "Etwas ist schiefgelaufen. Bitte in Kürze erneut versuchen.",
+    "error.offline": "Du scheinst offline zu sein.",
+  },
+
+  nl: {
+    // ---------- Onboarding ----------
+    "onboarding.language.title": "Kies je taal",
+    "onboarding.language.subtitle":
+      "Je kunt dit altijd wijzigen via Profiel → Instellingen.",
+    "onboarding.language.continue": "Doorgaan",
+    "onboarding.language.system_default": "Systeemtaal",
+
+    // ---------- Age gate ----------
+    "age_gate.hero_title": "Leeftijdscontrole",
+    "age_gate.hero_sub":
+      "Snoer je laarzen – nog even één stap.",
+    "age_gate.title_line1":
+      "Om Stompin' Ground Yuma te gebruiken moet je minstens",
+    "age_gate.title_years": "13 jaar oud zijn",
+    "age_gate.body_copy":
+      "Jongere dansers zijn met een ouder of voogd van harte welkom – laat hen dan het account aanmaken.",
+    "age_gate.adult_button": "Ik ben 13 of ouder",
+    "age_gate.child_button": "Ik ben jonger dan 13",
+    "age_gate.legal":
+      "Door op {emph} te tikken ga je akkoord met onze {terms} en {privacy}.",
+    "age_gate.legal_emph": "Ik ben 13 of ouder",
+    "age_gate.under13_title":
+      "Vraag een volwassene om in te loggen.",
+    "age_gate.under13_copy":
+      "Stompin' Ground Yuma is voor dansers vanaf 13. Ben je jonger, laat dan een ouder of voogd het account aanmaken en jou inloggen – ze kunnen je meenemen naar de les en jullie kunnen samen dansen wanneer jullie willen!",
+    "age_gate.back": "Terug",
+
+    // ---------- Tabs ----------
+    "tabs.home": "Home",
+    "tabs.dances": "Dansen",
+    "tabs.my_dances": "Mijn dansen",
+    "tabs.instructor": "Instructeur",
+    "tabs.profile": "Profiel",
+
+    // ---------- Auth ----------
+    "auth.tab_signin": "Inloggen",
+    "auth.tab_signup": "Account aanmaken",
+    "auth.subtitle": "Dance Social HQ",
+    "auth.email": "E-mail",
+    "auth.password": "Wachtwoord",
+    "auth.name": "Volledige naam",
+    "auth.instructor_toggle": "Ik ben instructeur",
+    "auth.instructor_toggle_sub":
+      "Vereist de toegangscode van de studio",
+    "auth.instructor_code": "Instructeur-toegangscode",
+    "auth.signin_button": "Inloggen",
+    "auth.signup_button": "Account aanmaken",
+    "auth.continue_with_google": "Doorgaan met Google",
+    "auth.or": "of",
+    "auth.forgot_password": "Wachtwoord vergeten?",
+    "auth.legal_signin":
+      "Door door te gaan ga je akkoord met onze {terms} en {privacy}.",
+    "auth.legal_signup":
+      "Door een account aan te maken ga je akkoord met onze {terms} en {privacy}, en bevestig je dat line dance een fysieke activiteit is waaraan je op eigen risico deelneemt.",
+    "auth.terms": "Voorwaarden",
+    "auth.terms_of_service": "Gebruiksvoorwaarden",
+    "auth.privacy_policy": "Privacybeleid",
+    "auth.error_fill_all": "Vul alle velden in",
+    "auth.error_enter_code":
+      "Voer je instructeur-toegangscode in",
+    "auth.error_generic": "Er ging iets mis",
+    "auth.error_google_no_session":
+      "Geen sessie ontvangen",
+    "auth.error_google_not_configured":
+      "Google-login is niet geconfigureerd voor deze build.",
+    "auth.error_google_failed": "Google-login mislukt",
+    "auth.account_created_title": "Account aangemaakt",
+    "auth.account_created_msg":
+      "De instructeur-toegangscode klopte niet, dus je bent aangemeld als gewoon lid. Je kunt het opnieuw proberen via Profiel → Overschakelen naar instructeur-profiel.",
+    "auth.show_password": "Wachtwoord tonen",
+    "auth.hide_password": "Wachtwoord verbergen",
+
+    // ---------- Welcome ----------
+    "welcome.greeting": "Welkom, {name}!",
+    "welcome.subtitle": "Tijd om te dansen 🥾",
+    "welcome.default_name": "vriend",
+
+    // ---------- Common ----------
+    "common.save": "Opslaan",
+    "common.cancel": "Annuleren",
+    "common.done": "Klaar",
+    "common.delete": "Verwijderen",
+    "common.edit": "Bewerken",
+    "common.back": "Terug",
+    "common.close": "Sluiten",
+    "common.retry": "Opnieuw proberen",
+    "common.loading": "Laden…",
+    "common.ok": "OK",
+    "common.yes": "Ja",
+    "common.no": "Nee",
+    "common.confirm": "Bevestigen",
+    "common.share": "Delen",
+    "common.follow": "Volgen",
+    "common.unfollow": "Ontvolgen",
+    "common.following": "Volgend",
+    "common.search": "Zoeken",
+    "common.see_all": "Alle bekijken",
+    "common.error": "Fout",
+    "common.new": "Nieuw",
+    "common.publish": "Publiceren",
+    "common.unpublish": "Terugtrekken",
+    "common.published": "Gepubliceerd",
+    "common.draft": "Concept",
+    "common.upload": "Uploaden",
+    "common.remove": "Verwijderen",
+    "common.next": "Volgende",
+    "common.skip": "Overslaan",
+    "common.open_settings": "Instellingen openen",
+    "common.permission_needed": "Toestemming vereist",
+
+    // ---------- Home ----------
+    "home.hello": "Hoi, {name}!",
+    "home.hello_no_name": "Hoi!",
+    "home.subhello": "Klaar om te swingen?",
+    "home.browse_cta": "Dansen bekijken",
+    "home.achievements_title": "Prestaties",
+    "home.achievements_sub_unseen":
+      "Je hebt {count} nieuwe badges vrijgespeeld!",
+    "home.achievements_sub_unseen_one":
+      "Je hebt 1 nieuwe badge vrijgespeeld!",
+    "home.achievements_sub_default":
+      "Volg je badges en oefenreeks.",
+    "home.community_activity": "Community-activiteit",
+    "home.feed_empty_title": "Volg andere dansers",
+    "home.feed_empty_sub":
+      "Hun voltooide dansen, badges en reeksen verschijnen hier.",
+    "home.fresh_on_floor": "Vers op de dansvloer",
+    "home.recently_practiced": "Recent geoefend",
+    "home.pick_up": "Ga verder waar je gebleven was",
+    "home.leaderboard_title": "Boot-Scoot-ranglijst",
+    "home.leaderboard_default_sub":
+      "Zie wie de dansvloer aanvoert – doe mee.",
+    "home.events_title": "Events bij jou in de buurt",
+    "home.events_sub":
+      "Workshops, socials en lessen waar je laarzen ook heen gaan.",
+    "home.classes_title": "Recente lessamenvatting",
+    "home.classes_sub":
+      "Zie welke dansen in recente lessen zijn gegeven.",
+    "home.suggest_title": "Dans voorstellen",
+    "home.suggest_title_for":
+      "Dans voorstellen voor {name}",
+    "home.suggest_sub_default":
+      "Kies je hoofdinstructeur en stuur je ideeën door.",
+    "home.suggest_sub_for":
+      "Idee? Stuur het naar {name}.",
+    "home.about_title": "Over de locatie",
+    "home.about_text":
+      "Stompin' Ground Yuma is een vriendelijke community waar dansers van elke leeftijd en niveau samenkomen om te leren, lachen en de nacht door te dansen. Trek je laarzen aan en laten we dansen.",
+    "home.icon_all_ages": "Alle leeftijden",
+    "home.icon_beginners": "Beginners welkom",
+    "home.icon_family": "Gezinsvriendelijk",
+    "home.website_cta": "Bezoek stompingroundyuma.org",
+
+    // ---------- Library ----------
+    "library.brand_name": "Stompin' Ground Yuma",
+    "library.brand_sub": "Line-dance-bibliotheek",
+    "library.search_placeholder":
+      "Zoek op naam, nummer, artiest, choreograaf",
+    "library.diff_all": "Alle",
+    "library.diff_absolute_beginner": "Absolute beginner",
+    "library.diff_beginner": "Beginner",
+    "library.diff_improver": "Improver",
+    "library.diff_high_improver": "High improver",
+    "library.diff_intermediate": "Gemiddeld",
+    "library.diff_advanced": "Gevorderd",
+    "library.empty_none":
+      "Geen dansen die aan deze filters voldoen.",
+    "library.reset_filters": "Filters resetten",
+    "library.cant_find": "Niet gevonden wat je zocht?",
+    "library.external_cta":
+      "Zoek in CopperKnob + BootStepper",
+    "library.external_cta_q":
+      'CopperKnob + BootStepper doorzoeken op "{q}"',
+    "library.single_dir":
+      "Of blader door één directory",
+    "library.popular_copperknob": "Populair op CopperKnob",
+    "library.popular_bootstepper": "Populair op BootStepper",
+    "library.by": "Door {name}",
+    "library.unknown": "Onbekend",
+    "library.source_badge": "Dansbibliotheek",
+    "library.bpm": "{bpm} BPM",
+
+    // ---------- My Dances ----------
+    "my_dances.title": "Mijn tracker",
+    "my_dances.subtitle":
+      "Houd je line-dance-reis in de gaten",
+    "my_dances.tab_completed": "Voltooid ({count})",
+    "my_dances.tab_wishlist": "Verlanglijst ({count})",
+    "my_dances.empty_completed_title":
+      "Nog geen dansen voltooid",
+    "my_dances.empty_wishlist_title":
+      "Verlanglijst is leeg",
+    "my_dances.empty_text":
+      "Ga naar de bibliotheek om je volgende uitdaging te vinden!",
+    "my_dances.browse_dances": "Dansen bekijken",
+    "my_dances.cert_error_title":
+      "Certificaat kon niet worden gedownload",
+    "my_dances.cert_download_label":
+      "Certificaat downloaden",
+    "my_dances.cert_download_hint":
+      "Downloadt een PDF-certificaat voor deze voltooide dans.",
+
+    // ---------- Instructor ----------
+    "instructor.title": "Instructeur",
+    "instructor.subtitle": "Dansen · Lessen · Events · Chat",
+    "instructor.only": "Alleen voor instructeurs.",
+    "instructor.new": "Nieuw",
+    "instructor.csv": "CSV",
+    "instructor.restore": "Herstellen",
+    "instructor.tab_dances": "Dansen",
+    "instructor.tab_classes": "Lessen",
+    "instructor.tab_events": "Events",
+    "instructor.tab_chat": "Chat",
+    "instructor.legend_new_dance":
+      "Nieuwe dansen starten als **Concept** – alleen jij ziet ze. Tik op **Publiceren** om ze met iedereen te delen.",
+    "instructor.no_dances":
+      'Nog geen dansen. Tik op "+ Nieuw" om een dans met stapkaart te uploaden, of registreer een les in het Lessen-tab.',
+    "instructor.no_classes_yet":
+      "Je hebt nog geen lessen geregistreerd.",
+    "instructor.go_to_classes": "Naar Lessen",
+    "instructor.class_session_default": "Lesbijeenkomst",
+    "instructor.dance_count": "{count} dansen · {names}",
+    "instructor.dance_count_one": "1 dans · {names}",
+    "instructor.pill_sheet": "Kaart",
+    "instructor.pill_no_sheet": "Geen kaart",
+    "instructor.pill_published": "Gepubliceerd",
+    "instructor.pill_draft": "Concept",
+    "instructor.edit_sheet": "Kaart",
+    "instructor.chat_lounge_hello":
+      "Instructeurs-lounge – zeg hallo 👋",
+    "instructor.chat_placeholder":
+      "Bericht aan de instructeurs… (tag met @naam)",
+    "instructor.events_your_events": "Jouw events",
+    "instructor.events_hero_sub":
+      "Workshops, socials en avonden die jij organiseert.",
+    "instructor.events_add_new": "Nieuw event toevoegen",
+    "instructor.events_browse_all": "Alle bekijken",
+    "instructor.events_empty_title": "Nog geen events",
+    "instructor.events_empty_sub":
+      "Plaats je volgende workshop, social of privéfeest zodat dansers het in de app kunnen vinden.",
+    "instructor.events_upcoming": "Komende",
+    "instructor.events_past": "Voorbij",
+    "instructor.event_delete_title": "Dit event verwijderen?",
+    "instructor.event_delete_msg":
+      '"{name}" – dit kan niet ongedaan worden gemaakt.',
+    "instructor.event_delete_error":
+      "Verwijderen mislukt",
+    "instructor.step_sheet_title": "Stapkaart",
+    "instructor.new_dance_title":
+      "Nieuwe dans + stapkaart",
+    "instructor.import_title": "Importeren vanuit CSV",
+    "instructor.import_sub":
+      "Voeg dansen in bulk toe aan de bibliotheek",
+    "instructor.upload_image": "Afbeelding uploaden",
+    "instructor.text_notation": "Tekstnotatie",
+    "instructor.image_label": "Afbeelding (PNG/JPG)",
+    "instructor.step_sheet_image": "Afbeelding van stapkaart",
+    "instructor.step_sheet_text": "Tekst van stapkaart",
+    "instructor.save_step_sheet": "Stapkaart opslaan",
+    "instructor.dance_name": "Naam van de dans *",
+    "instructor.choreographer": "Choreograaf *",
+    "instructor.song": "Nummer *",
+    "instructor.artist": "Artiest",
+    "instructor.bpm_field": "BPM",
+    "instructor.count_field":
+      "Aantal (bijv. 32 count, 4 wall)",
+    "instructor.youtube_url": "YouTube-URL",
+    "instructor.autofill_youtube":
+      "YouTube-zoekopdracht automatisch invullen",
+    "instructor.publish_now": "Meteen voor iedereen publiceren",
+    "instructor.publish_now_on":
+      "Iedereen ziet deze dans in de openbare bibliotheek.",
+    "instructor.publish_now_off":
+      "Bewaren als concept – alleen jij ziet hem tot je publiceert.",
+    "instructor.save_dance": "Dans opslaan",
+    "instructor.enter_name_first":
+      "Voer eerst een naam in",
+    "instructor.enter_name_first_msg":
+      "Typ de naam van de dans zodat ik de zoekopdracht kan bouwen.",
+    "instructor.missing_info": "Ontbrekende gegevens",
+    "instructor.missing_info_msg":
+      "Naam, choreograaf en nummer zijn verplicht.",
+    "instructor.permission_photo":
+      "Sta toegang tot foto's toe om een stapkaart te uploaden.",
+
+    // ---------- Profile ----------
+    "profile.title": "Profiel",
+    "profile.dancer_default": "Danser",
+    "profile.admin": "Beheerder",
+    "profile.stat_completed": "Voltooid",
+    "profile.stat_wishlist": "Verlanglijst",
+    "profile.stat_classes": "Lessen",
+    "profile.stat_avg_rating": "Gem. ★",
+    "profile.section_achievements": "Prestaties",
+    "profile.section_practice_history": "Oefengeschiedenis",
+    "profile.total_sessions": "totaal sessies",
+    "profile.days_active": "actieve dagen",
+    "profile.peak_day": "beste dag",
+    "profile.history_foot":
+      "Laatste 30 dagen · Open een dans en gebruik de Oefenmodus om een sessie te loggen.",
+    "profile.section_account": "Account",
+    "profile.instructor_tab": "Instructeur-tab",
+    "profile.switch_to_instructor":
+      "Overschakelen naar instructeur-profiel",
+    "profile.class_recap": "Les-samenvatting",
+    "profile.log_a_class": "Les registreren",
+    "profile.review_suggestions": "Voorstellen bekijken",
+    "profile.suggest_a_dance": "Dans voorstellen",
+    "profile.suggest_a_dance_to":
+      "Een dans voorstellen aan {name}",
+    "profile.my_instructors": "Mijn instructeurs",
+    "profile.pick_your_instructors":
+      "Kies je instructeurs",
+    "profile.instructors_hint_none":
+      "Tik om te kiezen wie jouw voorstellen ontvangt",
+    "profile.instructors_hint_primary_more":
+      "Primair: {name} · +{count} meer",
+    "profile.instructors_hint_primary": "Primair: {name}",
+    "profile.instructors_hint_no_primary":
+      "{count} gekozen – tik om primair in te stellen",
+    "profile.followed_choreographers":
+      "Gevolgde choreografen",
+    "profile.followed_choreographers_sub":
+      "Krijg een tik als ze een nieuwe dans plaatsen",
+    "profile.my_mentions": "Mijn vermeldingen",
+    "profile.mentions_unread":
+      "{count} ongelezen vermeldingen van instructeurs",
+    "profile.mentions_unread_one":
+      "1 ongelezen vermelding van instructeurs",
+    "profile.mentions_default":
+      "Zie instructeur-tags in je les-chat",
+    "profile.notification_prefs":
+      "Meldings­voorkeuren",
+    "profile.notification_prefs_sub":
+      "Zet events, lessen of vermeldingen afzonderlijk uit",
+    "profile.language": "Taal",
+    "profile.boot_scoot_board": "Boot-Scoot-ranglijst",
+    "profile.boot_scoot_visible":
+      "Je bent zichtbaar op de ranglijst.",
+    "profile.boot_scoot_hidden":
+      "Je bent verborgen. Tik om mee te doen.",
+    "profile.follows_row": "Volgend & Volgers",
+    "profile.follows_row_sub":
+      "{following} volgend · {followers} volger",
+    "profile.follows_row_sub_plural":
+      "{following} volgend · {followers} volgers",
+    "profile.show_activity":
+      "Toon mij in activiteitenfeed",
+    "profile.show_activity_on":
+      "Volgers zien je voltooide dansen en badges.",
+    "profile.show_activity_off":
+      "Je activiteit is voor anderen verborgen.",
+    "profile.certificate_theme": "Certificaatthema",
+    "profile.certificate_theme_sub":
+      "Bepaalt het standaard uiterlijk van de gedownloade PDF-certificaten.",
+    "profile.couldnt_save": "Kon niet opslaan",
+    "profile.couldnt_update_theme":
+      "Thema kon niet worden bijgewerkt",
+    "profile.please_try_again": "Probeer het opnieuw.",
+    "profile.sign_out": "Uitloggen",
+    "profile.delete_account": "Account verwijderen",
+    "profile.delete_account_sub":
+      "Verwijdert je account en persoonlijke gegevens definitief.",
+    "profile.section_connect": "Verbinden met ons",
+    "profile.connect_sub":
+      "Volg Stompin' Ground Yuma op je favoriete platform – de links openen de native app als geïnstalleerd.",
+    "profile.share_app": "App delen",
+    "profile.share_app_sub":
+      "Nodig vrienden uit voor Stompin' Ground Yuma",
+    "profile.visit_website": "Bezoek onze website",
+    "profile.privacy_policy": "Privacybeleid",
+    "profile.terms_of_service": "Gebruiksvoorwaarden",
+    "profile.community_guidelines": "Community-richtlijnen",
+    "profile.blocked_users": "Geblokkeerde gebruikers",
+    "profile.blocked_users_sub":
+      "Beheer wie je in chat en feed hebt gedempt",
+    "profile.send_feedback": "Feedback sturen",
+    "profile.send_feedback_sub":
+      "Bugs, ideeën of een groet",
+    "profile.app_version": "Versie {version}",
+    "profile.app_version_with_build":
+      "Versie {version} ({build})",
+    "profile.updates_arrive":
+      "Updates komen met nieuwe App Store / Play Store releases.",
+    "profile.about_venue": "Over Stompin' Ground Yuma",
+    "profile.about_venue_text":
+      "Country line dance voor alle leeftijden in Yuma, AZ. Doe mee, leer een nieuwe stap en maak nieuwe vrienden op de dansvloer.",
+    "profile.instructor_unlock_title": "Je bent instructeur!",
+    "profile.instructor_unlock_msg":
+      "Je instructeur-tab is nu vrijgespeeld.",
+    "profile.instructor_code_placeholder":
+      "Instructeur-toegangscode",
+    "profile.enter_access_code":
+      "Voer je toegangscode in",
+    "profile.invalid_access_code":
+      "Ongeldige toegangscode",
+    "profile.instructor_modal_sub":
+      "Voer de code van je studio in om instructeur-tools vrij te spelen (lessen registreren, stapkaarten uploaden, dansen bewerken, chatten).",
+    "profile.unlock": "Vrijspelen",
+    "profile.delete_title": "Je account verwijderen?",
+    "profile.delete_body":
+      "Dit verwijdert definitief:\n• Je login & profiel\n• Je dans-tracking (voltooid / verlanglijst)\n• Je aanwezigheidsgeschiedenis\n• Alle voorstellen of chatberichten die je hebt gestuurd\n\nDe dansen of lessen die je hebt gemaakt blijven zichtbaar voor de community, maar je naam wordt vervangen door \"Verwijderde gebruiker\".",
+    "profile.delete_cant_undone":
+      "Dit kan niet ongedaan worden gemaakt.",
+    "profile.delete_confirm_label":
+      "Typ {word} om te bevestigen",
+    "profile.delete_type_confirm":
+      'Typ "DELETE" (hoofdletters) om te bevestigen.',
+    "profile.delete_forever": "Voor altijd verwijderen",
+    "profile.deleted_title": "Account verwijderd",
+    "profile.deleted_msg":
+      "Je account en persoonlijke gegevens zijn verwijderd. Bedankt dat je met ons hebt gedanst!",
+    "profile.deleted_generic_error":
+      "Account kon niet worden verwijderd. Probeer het opnieuw.",
+    "profile.sgy_admin": "SGY Beheer",
+    "profile.moderation_queue": "Feed-moderatie­wachtrij",
+    "profile.user_feedback": "Gebruikersfeedback",
+    "profile.refresh_recommendations":
+      "Aanbevelingen vernieuwen",
+    "profile.refresh_recommendations_none":
+      "Bibliotheek-metadata is gesynchroniseerd met providers",
+    "profile.refresh_recommendations_unseen":
+      "{count} dansen met afwijkende metadata",
+    "profile.refresh_recommendations_unseen_one":
+      "1 dans met afwijkende metadata",
+
+    // ---------- Language ----------
+    "language.title": "Taal",
+    "language.subtitle":
+      "Kies de taal voor de app en meldingen.",
+    "language.system_default": "Systeemtaal",
+    "language.system_default_hint":
+      "Volgt de taal van de telefoon ({locale}).",
+    "language.saved_toast": "Taal bijgewerkt.",
+
+    // ---------- Notifications prefs ----------
+    "notifications.title": "Meldingen",
+    "notifications.classes": "Nieuwe lessen",
+    "notifications.events": "Nieuwe events",
+    "notifications.choreographers":
+      "Nieuwe dansen van gevolgde choreografen",
+    "notifications.mentions": "@Vermeldingen in chat",
+    "notifications.reminders": "Lesherinneringen",
+
+    // ---------- Errors ----------
+    "error.generic":
+      "Er ging iets mis. Probeer het zo nog eens.",
+    "error.offline": "Je lijkt offline te zijn.",
+  },
+
+  ko: {
+    // ---------- Onboarding ----------
+    "onboarding.language.title": "언어를 선택하세요",
+    "onboarding.language.subtitle":
+      "프로필 → 설정에서 언제든지 변경할 수 있어요.",
+    "onboarding.language.continue": "계속",
+    "onboarding.language.system_default": "시스템 기본값",
+
+    // ---------- Age gate ----------
+    "age_gate.hero_title": "연령 확인",
+    "age_gate.hero_sub": "부츠를 신고 잠깐 확인할게요.",
+    "age_gate.title_line1":
+      "Stompin' Ground Yuma를 사용하려면",
+    "age_gate.title_years": "만 13세 이상",
+    "age_gate.body_copy":
+      "더 어린 댄서는 부모님이나 보호자가 계정을 만들어 함께 이용하면 언제든 환영해요.",
+    "age_gate.adult_button": "만 13세 이상입니다",
+    "age_gate.child_button": "만 13세 미만입니다",
+    "age_gate.legal":
+      "{emph}을(를) 누르면 {terms} 및 {privacy}에 동의하는 것으로 간주됩니다.",
+    "age_gate.legal_emph": "만 13세 이상입니다",
+    "age_gate.under13_title": "어른에게 로그인을 부탁하세요.",
+    "age_gate.under13_copy":
+      "Stompin' Ground Yuma는 만 13세 이상 댄서를 위한 서비스예요. 만 13세 미만이라면 부모님이나 보호자에게 계정 생성과 로그인을 부탁해 주세요. 함께 수업에 오시면 언제든 같이 춤출 수 있어요!",
+    "age_gate.back": "뒤로",
+
+    // ---------- Tabs ----------
+    "tabs.home": "홈",
+    "tabs.dances": "댄스",
+    "tabs.my_dances": "내 댄스",
+    "tabs.instructor": "강사",
+    "tabs.profile": "프로필",
+
+    // ---------- Auth ----------
+    "auth.tab_signin": "로그인",
+    "auth.tab_signup": "계정 만들기",
+    "auth.subtitle": "Dance Social HQ",
+    "auth.email": "이메일",
+    "auth.password": "비밀번호",
+    "auth.name": "이름",
+    "auth.instructor_toggle": "저는 강사입니다",
+    "auth.instructor_toggle_sub": "스튜디오 접속 코드가 필요해요",
+    "auth.instructor_code": "강사 접속 코드",
+    "auth.signin_button": "로그인",
+    "auth.signup_button": "계정 만들기",
+    "auth.continue_with_google": "Google로 계속하기",
+    "auth.or": "또는",
+    "auth.forgot_password": "비밀번호를 잊으셨나요?",
+    "auth.legal_signin":
+      "계속하면 저희 {terms} 및 {privacy}에 동의하는 것으로 간주됩니다.",
+    "auth.legal_signup":
+      "계정을 만들면 저희 {terms} 및 {privacy}에 동의하며, 라인 댄스는 본인 책임 하에 참여하는 신체 활동임을 인정합니다.",
+    "auth.terms": "약관",
+    "auth.terms_of_service": "이용 약관",
+    "auth.privacy_policy": "개인정보 처리방침",
+    "auth.error_fill_all": "모든 항목을 입력해 주세요",
+    "auth.error_enter_code": "강사 접속 코드를 입력해 주세요",
+    "auth.error_generic": "문제가 발생했어요",
+    "auth.error_google_no_session": "세션이 반환되지 않았어요",
+    "auth.error_google_not_configured":
+      "이 빌드에는 Google 로그인이 구성되어 있지 않아요.",
+    "auth.error_google_failed": "Google 로그인 실패",
+    "auth.account_created_title": "계정이 생성되었어요",
+    "auth.account_created_msg":
+      "강사 접속 코드가 일치하지 않아 일반 회원으로 로그인되었어요. 프로필 → 강사 프로필로 전환에서 다시 시도할 수 있어요.",
+    "auth.show_password": "비밀번호 보기",
+    "auth.hide_password": "비밀번호 숨기기",
+
+    // ---------- Welcome ----------
+    "welcome.greeting": "{name}님, 환영해요!",
+    "welcome.subtitle": "함께 춤춰봐요 🥾",
+    "welcome.default_name": "친구",
+
+    // ---------- Common ----------
+    "common.save": "저장",
+    "common.cancel": "취소",
+    "common.done": "완료",
+    "common.delete": "삭제",
+    "common.edit": "편집",
+    "common.back": "뒤로",
+    "common.close": "닫기",
+    "common.retry": "다시 시도",
+    "common.loading": "불러오는 중…",
+    "common.ok": "확인",
+    "common.yes": "예",
+    "common.no": "아니오",
+    "common.confirm": "확인",
+    "common.share": "공유",
+    "common.follow": "팔로우",
+    "common.unfollow": "팔로우 취소",
+    "common.following": "팔로잉",
+    "common.search": "검색",
+    "common.see_all": "모두 보기",
+    "common.error": "오류",
+    "common.new": "새로 만들기",
+    "common.publish": "게시",
+    "common.unpublish": "게시 취소",
+    "common.published": "게시됨",
+    "common.draft": "초안",
+    "common.upload": "업로드",
+    "common.remove": "제거",
+    "common.next": "다음",
+    "common.skip": "건너뛰기",
+    "common.open_settings": "설정 열기",
+    "common.permission_needed": "권한이 필요합니다",
+
+    // ---------- Home ----------
+    "home.hello": "안녕하세요, {name}님!",
+    "home.hello_no_name": "안녕하세요!",
+    "home.subhello": "춤 출 준비 되셨나요?",
+    "home.browse_cta": "댄스 둘러보기",
+    "home.achievements_title": "업적",
+    "home.achievements_sub_unseen":
+      "새 배지 {count}개를 획득했어요!",
+    "home.achievements_sub_unseen_one":
+      "새 배지 1개를 획득했어요!",
+    "home.achievements_sub_default":
+      "배지와 연습 스트릭을 확인해요.",
+    "home.community_activity": "커뮤니티 활동",
+    "home.feed_empty_title": "다른 댄서를 팔로우해 보세요",
+    "home.feed_empty_sub":
+      "그들의 완료한 댄스, 배지, 스트릭이 여기에 표시돼요.",
+    "home.fresh_on_floor": "새로 올라온 댄스",
+    "home.recently_practiced": "최근 연습한 댄스",
+    "home.pick_up": "이어서 계속하기",
+    "home.leaderboard_title": "부트 스쿠트 랭킹",
+    "home.leaderboard_default_sub":
+      "댄스플로어를 이끄는 사람을 확인하고 도전해 보세요.",
+    "home.events_title": "주변 이벤트 찾기",
+    "home.events_sub":
+      "부츠가 가는 곳마다 워크숍, 소셜, 수업이 있어요.",
+    "home.classes_title": "최근 수업 요약",
+    "home.classes_sub":
+      "최근 수업에서 어떤 댄스를 배웠는지 확인해요.",
+    "home.suggest_title": "댄스 추천하기",
+    "home.suggest_title_for": "{name}님에게 댄스 추천",
+    "home.suggest_sub_default":
+      "주 강사를 선택하고 아이디어를 보내세요.",
+    "home.suggest_sub_for":
+      "아이디어가 있나요? {name}님에게 보내세요.",
+    "home.about_title": "장소 소개",
+    "home.about_text":
+      "Stompin' Ground Yuma는 모든 연령과 실력의 댄서가 함께 배우고 웃고 밤새 춤추는 친절한 커뮤니티예요. 부츠를 챙기고 함께 춤춰요.",
+    "home.icon_all_ages": "모든 연령",
+    "home.icon_beginners": "초보자 환영",
+    "home.icon_family": "가족 친화적",
+    "home.website_cta": "stompingroundyuma.org 방문",
+
+    // ---------- Library ----------
+    "library.brand_name": "Stompin' Ground Yuma",
+    "library.brand_sub": "라인 댄스 라이브러리",
+    "library.search_placeholder":
+      "이름, 곡, 아티스트, 안무가로 검색",
+    "library.diff_all": "전체",
+    "library.diff_absolute_beginner": "완전 초보",
+    "library.diff_beginner": "초급",
+    "library.diff_improver": "향상",
+    "library.diff_high_improver": "고급 향상",
+    "library.diff_intermediate": "중급",
+    "library.diff_advanced": "고급",
+    "library.empty_none": "이 필터에 맞는 댄스가 없어요.",
+    "library.reset_filters": "필터 초기화",
+    "library.cant_find": "찾는 것을 발견하지 못했나요?",
+    "library.external_cta":
+      "CopperKnob + BootStepper에서 검색",
+    "library.external_cta_q":
+      'CopperKnob + BootStepper에서 "{q}" 검색',
+    "library.single_dir": "또는 개별 디렉터리 탐색",
+    "library.popular_copperknob": "CopperKnob 인기 순위",
+    "library.popular_bootstepper": "BootStepper 인기 순위",
+    "library.by": "{name} 안무",
+    "library.unknown": "알 수 없음",
+    "library.source_badge": "댄스 라이브러리",
+    "library.bpm": "{bpm} BPM",
+
+    // ---------- My Dances ----------
+    "my_dances.title": "내 트래커",
+    "my_dances.subtitle":
+      "라인 댄스 여정을 기록하세요",
+    "my_dances.tab_completed": "완료 ({count})",
+    "my_dances.tab_wishlist": "위시리스트 ({count})",
+    "my_dances.empty_completed_title":
+      "아직 완료한 댄스가 없어요",
+    "my_dances.empty_wishlist_title":
+      "위시리스트가 비어 있어요",
+    "my_dances.empty_text":
+      "라이브러리에서 다음 도전 상대를 찾아보세요!",
+    "my_dances.browse_dances": "댄스 둘러보기",
+    "my_dances.cert_error_title":
+      "인증서를 다운로드할 수 없어요",
+    "my_dances.cert_download_label":
+      "인증서 다운로드",
+    "my_dances.cert_download_hint":
+      "완료된 댄스의 PDF 인증서를 다운로드합니다.",
+
+    // ---------- Instructor ----------
+    "instructor.title": "강사",
+    "instructor.subtitle": "댄스 · 수업 · 이벤트 · 채팅",
+    "instructor.only": "강사 전용입니다.",
+    "instructor.new": "새로 만들기",
+    "instructor.csv": "CSV",
+    "instructor.restore": "복원",
+    "instructor.tab_dances": "댄스",
+    "instructor.tab_classes": "수업",
+    "instructor.tab_events": "이벤트",
+    "instructor.tab_chat": "채팅",
+    "instructor.legend_new_dance":
+      "새 댄스는 **초안**으로 시작해요 – 본인만 볼 수 있어요. **게시**를 누르면 모두와 공유돼요.",
+    "instructor.no_dances":
+      '아직 댄스가 없어요. "+ 새로 만들기"를 눌러 스텝시트와 함께 댄스를 업로드하거나 수업 탭에서 수업을 기록하세요.',
+    "instructor.no_classes_yet":
+      "아직 기록한 수업이 없어요.",
+    "instructor.go_to_classes": "수업으로 이동",
+    "instructor.class_session_default": "수업",
+    "instructor.dance_count": "댄스 {count}개 · {names}",
+    "instructor.dance_count_one": "댄스 1개 · {names}",
+    "instructor.pill_sheet": "시트",
+    "instructor.pill_no_sheet": "시트 없음",
+    "instructor.pill_published": "게시됨",
+    "instructor.pill_draft": "초안",
+    "instructor.edit_sheet": "시트",
+    "instructor.chat_lounge_hello":
+      "강사 라운지 – 인사해요 👋",
+    "instructor.chat_placeholder":
+      "강사들에게 메시지… (@이름으로 태그)",
+    "instructor.events_your_events": "내 이벤트",
+    "instructor.events_hero_sub":
+      "당신이 개최하는 워크숍, 소셜, 팝업 나이트.",
+    "instructor.events_add_new": "새 이벤트 추가",
+    "instructor.events_browse_all": "모두 보기",
+    "instructor.events_empty_title": "아직 이벤트가 없어요",
+    "instructor.events_empty_sub":
+      "다음 워크숍, 소셜 또는 프라이빗 파티를 게시하여 앱에서 댄서들이 찾을 수 있게 해주세요.",
+    "instructor.events_upcoming": "예정",
+    "instructor.events_past": "지난",
+    "instructor.event_delete_title": "이 이벤트를 삭제하시겠어요?",
+    "instructor.event_delete_msg":
+      '"{name}" – 되돌릴 수 없어요.',
+    "instructor.event_delete_error": "삭제하지 못했어요",
+    "instructor.step_sheet_title": "스텝시트",
+    "instructor.new_dance_title":
+      "새 댄스 + 스텝시트",
+    "instructor.import_title": "CSV에서 가져오기",
+    "instructor.import_sub":
+      "댄스를 라이브러리에 일괄 추가",
+    "instructor.upload_image": "이미지 업로드",
+    "instructor.text_notation": "텍스트 표기",
+    "instructor.image_label": "이미지 (PNG/JPG)",
+    "instructor.step_sheet_image": "스텝시트 이미지",
+    "instructor.step_sheet_text": "스텝시트 텍스트",
+    "instructor.save_step_sheet": "스텝시트 저장",
+    "instructor.dance_name": "댄스 이름 *",
+    "instructor.choreographer": "안무가 *",
+    "instructor.song": "곡 *",
+    "instructor.artist": "아티스트",
+    "instructor.bpm_field": "BPM",
+    "instructor.count_field": "카운트 (예: 32 count, 4 wall)",
+    "instructor.youtube_url": "YouTube URL",
+    "instructor.autofill_youtube":
+      "YouTube 검색 자동 입력",
+    "instructor.publish_now": "즉시 모두에게 게시",
+    "instructor.publish_now_on":
+      "모두가 공개 라이브러리에서 이 댄스를 볼 수 있어요.",
+    "instructor.publish_now_off":
+      "초안으로 저장 – 게시 전까지 본인만 볼 수 있어요.",
+    "instructor.save_dance": "댄스 저장",
+    "instructor.enter_name_first": "먼저 이름을 입력해 주세요",
+    "instructor.enter_name_first_msg":
+      "검색을 만들기 위해 댄스 이름을 입력해 주세요.",
+    "instructor.missing_info": "필요한 정보가 부족해요",
+    "instructor.missing_info_msg":
+      "이름, 안무가, 곡은 필수입니다.",
+    "instructor.permission_photo":
+      "스텝시트를 업로드하려면 사진 접근을 허용해 주세요.",
+
+    // ---------- Profile ----------
+    "profile.title": "프로필",
+    "profile.dancer_default": "댄서",
+    "profile.admin": "관리자",
+    "profile.stat_completed": "완료",
+    "profile.stat_wishlist": "위시리스트",
+    "profile.stat_classes": "수업",
+    "profile.stat_avg_rating": "평균 ★",
+    "profile.section_achievements": "업적",
+    "profile.section_practice_history": "연습 기록",
+    "profile.total_sessions": "전체 세션",
+    "profile.days_active": "활동 일수",
+    "profile.peak_day": "최고 기록일",
+    "profile.history_foot":
+      "최근 30일 · 댄스를 열고 연습 모드로 세션을 기록하세요.",
+    "profile.section_account": "계정",
+    "profile.instructor_tab": "강사 탭",
+    "profile.switch_to_instructor": "강사 프로필로 전환",
+    "profile.class_recap": "수업 요약",
+    "profile.log_a_class": "수업 기록",
+    "profile.review_suggestions": "제안 검토",
+    "profile.suggest_a_dance": "댄스 추천",
+    "profile.suggest_a_dance_to":
+      "{name}님에게 댄스 추천",
+    "profile.my_instructors": "내 강사",
+    "profile.pick_your_instructors": "강사를 선택하세요",
+    "profile.instructors_hint_none":
+      "제안을 받을 강사를 선택하려면 탭하세요",
+    "profile.instructors_hint_primary_more":
+      "주 강사: {name} · 외 {count}명",
+    "profile.instructors_hint_primary": "주 강사: {name}",
+    "profile.instructors_hint_no_primary":
+      "{count}명 선택됨 – 주 강사를 지정하려면 탭",
+    "profile.followed_choreographers":
+      "팔로우한 안무가",
+    "profile.followed_choreographers_sub":
+      "새 댄스를 올리면 알려드려요",
+    "profile.my_mentions": "받은 언급",
+    "profile.mentions_unread":
+      "강사가 남긴 읽지 않은 언급 {count}개",
+    "profile.mentions_unread_one":
+      "강사가 남긴 읽지 않은 언급 1개",
+    "profile.mentions_default":
+      "수업 채팅에서 강사 태그를 확인해요",
+    "profile.notification_prefs": "알림 설정",
+    "profile.notification_prefs_sub":
+      "이벤트, 수업, 언급 알림을 개별로 음소거",
+    "profile.language": "언어",
+    "profile.boot_scoot_board": "부트 스쿠트 랭킹",
+    "profile.boot_scoot_visible": "랭킹에 표시돼요.",
+    "profile.boot_scoot_hidden":
+      "숨김 상태예요. 참여하려면 탭하세요.",
+    "profile.follows_row": "팔로우 및 팔로워",
+    "profile.follows_row_sub":
+      "팔로잉 {following} · 팔로워 {followers}",
+    "profile.follows_row_sub_plural":
+      "팔로잉 {following} · 팔로워 {followers}",
+    "profile.show_activity": "활동 피드에 표시",
+    "profile.show_activity_on":
+      "팔로워가 당신의 완료 댄스와 배지를 볼 수 있어요.",
+    "profile.show_activity_off":
+      "당신의 활동은 다른 사람에게 숨겨져 있어요.",
+    "profile.certificate_theme": "인증서 테마",
+    "profile.certificate_theme_sub":
+      "다운로드하는 PDF 인증서의 기본 디자인이에요.",
+    "profile.couldnt_save": "저장하지 못했어요",
+    "profile.couldnt_update_theme":
+      "테마를 업데이트하지 못했어요",
+    "profile.please_try_again": "다시 시도해 주세요.",
+    "profile.sign_out": "로그아웃",
+    "profile.delete_account": "계정 삭제",
+    "profile.delete_account_sub":
+      "계정과 개인 데이터를 영구적으로 삭제합니다.",
+    "profile.section_connect": "함께해요",
+    "profile.connect_sub":
+      "좋아하는 플랫폼에서 Stompin' Ground Yuma를 팔로우하세요. 설치되어 있으면 네이티브 앱이 열립니다.",
+    "profile.share_app": "앱 공유",
+    "profile.share_app_sub":
+      "친구를 Stompin' Ground Yuma에 초대해요",
+    "profile.visit_website": "웹사이트 방문",
+    "profile.privacy_policy": "개인정보 처리방침",
+    "profile.terms_of_service": "이용 약관",
+    "profile.community_guidelines": "커뮤니티 가이드라인",
+    "profile.blocked_users": "차단된 사용자",
+    "profile.blocked_users_sub":
+      "채팅과 피드에서 음소거한 사람 관리",
+    "profile.send_feedback": "피드백 보내기",
+    "profile.send_feedback_sub": "버그, 아이디어 또는 인사",
+    "profile.app_version": "버전 {version}",
+    "profile.app_version_with_build": "버전 {version} ({build})",
+    "profile.updates_arrive":
+      "업데이트는 새로운 App Store / Play Store 릴리스와 함께 제공됩니다.",
+    "profile.about_venue": "Stompin' Ground Yuma 소개",
+    "profile.about_venue_text":
+      "애리조나 유마의 모든 연령을 위한 컨트리 라인 댄스. 함께 참여해 새 스텝을 배우고 댄스플로어에서 친구를 사귀세요.",
+    "profile.instructor_unlock_title": "강사가 되셨어요!",
+    "profile.instructor_unlock_msg":
+      "강사 탭이 활성화되었어요.",
+    "profile.instructor_code_placeholder":
+      "강사 접속 코드",
+    "profile.enter_access_code": "접속 코드를 입력해 주세요",
+    "profile.invalid_access_code": "잘못된 접속 코드",
+    "profile.instructor_modal_sub":
+      "스튜디오에서 받은 접속 코드를 입력해 강사 도구(수업 기록, 스텝시트 업로드, 댄스 편집, 채팅)를 활성화하세요.",
+    "profile.unlock": "활성화",
+    "profile.delete_title": "계정을 삭제할까요?",
+    "profile.delete_body":
+      "이 작업은 다음을 영구적으로 제거해요:\n• 로그인 및 프로필\n• 댄스 트래킹 (완료 / 위시리스트)\n• 수업 참여 기록\n• 보낸 모든 제안 및 채팅 메시지\n\n작성한 댄스나 수업은 커뮤니티에 계속 표시되지만 이름은 \"삭제된 사용자\"로 대체돼요.",
+    "profile.delete_cant_undone": "되돌릴 수 없어요.",
+    "profile.delete_confirm_label":
+      "확인하려면 {word}를 입력하세요",
+    "profile.delete_type_confirm":
+      '"DELETE"(대문자)를 입력해 확인하세요.',
+    "profile.delete_forever": "영구 삭제",
+    "profile.deleted_title": "계정 삭제됨",
+    "profile.deleted_msg":
+      "계정과 개인 데이터가 제거되었어요. 함께 춤춰주셔서 감사해요!",
+    "profile.deleted_generic_error":
+      "계정을 삭제하지 못했어요. 다시 시도해 주세요.",
+    "profile.sgy_admin": "SGY 관리자",
+    "profile.moderation_queue": "피드 신고 대기열",
+    "profile.user_feedback": "사용자 피드백",
+    "profile.refresh_recommendations": "추천 새로고침",
+    "profile.refresh_recommendations_none":
+      "라이브러리 메타데이터가 제공자와 동기화되었어요",
+    "profile.refresh_recommendations_unseen":
+      "메타데이터가 어긋난 댄스 {count}개",
+    "profile.refresh_recommendations_unseen_one":
+      "메타데이터가 어긋난 댄스 1개",
+
+    // ---------- Language ----------
+    "language.title": "언어",
+    "language.subtitle":
+      "앱과 알림에 사용할 언어를 선택하세요.",
+    "language.system_default": "시스템 기본값",
+    "language.system_default_hint":
+      "휴대폰 언어를 따라요 ({locale}).",
+    "language.saved_toast": "언어가 업데이트되었어요.",
+
+    // ---------- Notifications prefs ----------
+    "notifications.title": "알림",
+    "notifications.classes": "새 수업",
+    "notifications.events": "새 이벤트",
+    "notifications.choreographers":
+      "팔로우한 안무가의 새 댄스",
+    "notifications.mentions": "채팅에서 @언급",
+    "notifications.reminders": "수업 리마인더",
+
+    // ---------- Errors ----------
+    "error.generic": "문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+    "error.offline": "오프라인 상태로 보여요.",
+  },
+
+  "zh-Hans": {
+    // ---------- Onboarding ----------
+    "onboarding.language.title": "选择您的语言",
+    "onboarding.language.subtitle":
+      "您可以随时在「个人资料 → 设置」中更改。",
+    "onboarding.language.continue": "继续",
+    "onboarding.language.system_default": "系统默认",
+
+    // ---------- Age gate ----------
+    "age_gate.hero_title": "年龄验证",
+    "age_gate.hero_sub": "穿上靴子——先做一步确认。",
+    "age_gate.title_line1":
+      "要使用 Stompin' Ground Yuma,您必须年满",
+    "age_gate.title_years": "13 岁",
+    "age_gate.body_copy":
+      "年幼的舞者欢迎与父母或监护人一起加入,让他们来创建账号即可。",
+    "age_gate.adult_button": "我已满 13 岁",
+    "age_gate.child_button": "我未满 13 岁",
+    "age_gate.legal":
+      "点击「{emph}」即表示您同意我们的{terms}和{privacy}。",
+    "age_gate.legal_emph": "我已满 13 岁",
+    "age_gate.under13_title": "请让成年人登录。",
+    "age_gate.under13_copy":
+      "Stompin' Ground Yuma 面向 13 岁及以上的舞者。如果您未满 13 岁,请让父母或监护人创建账号并登录——他们可以带您来上课,你们随时可以一起跳舞!",
+    "age_gate.back": "返回",
+
+    // ---------- Tabs ----------
+    "tabs.home": "首页",
+    "tabs.dances": "舞蹈",
+    "tabs.my_dances": "我的舞蹈",
+    "tabs.instructor": "教练",
+    "tabs.profile": "我的",
+
+    // ---------- Auth ----------
+    "auth.tab_signin": "登录",
+    "auth.tab_signup": "创建账号",
+    "auth.subtitle": "Dance Social HQ",
+    "auth.email": "邮箱",
+    "auth.password": "密码",
+    "auth.name": "姓名",
+    "auth.instructor_toggle": "我是教练",
+    "auth.instructor_toggle_sub": "需要工作室提供的访问码",
+    "auth.instructor_code": "教练访问码",
+    "auth.signin_button": "登录",
+    "auth.signup_button": "创建账号",
+    "auth.continue_with_google": "使用 Google 继续",
+    "auth.or": "或",
+    "auth.forgot_password": "忘记密码?",
+    "auth.legal_signin":
+      "继续即表示您同意我们的{terms}和{privacy}。",
+    "auth.legal_signup":
+      "创建账号即表示您同意我们的{terms}和{privacy},并知悉排舞是一项体育活动,您需自行承担参与风险。",
+    "auth.terms": "条款",
+    "auth.terms_of_service": "服务条款",
+    "auth.privacy_policy": "隐私政策",
+    "auth.error_fill_all": "请填写所有字段",
+    "auth.error_enter_code": "请输入您的教练访问码",
+    "auth.error_generic": "出错了",
+    "auth.error_google_no_session": "未返回会话",
+    "auth.error_google_not_configured":
+      "此版本未配置 Google 登录。",
+    "auth.error_google_failed": "Google 登录失败",
+    "auth.account_created_title": "账号已创建",
+    "auth.account_created_msg":
+      "教练访问码不匹配,已以普通会员身份登录。您可以从「个人资料 → 切换到教练资料」再次尝试。",
+    "auth.show_password": "显示密码",
+    "auth.hide_password": "隐藏密码",
+
+    // ---------- Welcome ----------
+    "welcome.greeting": "{name},欢迎加入!",
+    "welcome.subtitle": "一起跳舞吧 🥾",
+    "welcome.default_name": "朋友",
+
+    // ---------- Common ----------
+    "common.save": "保存",
+    "common.cancel": "取消",
+    "common.done": "完成",
+    "common.delete": "删除",
+    "common.edit": "编辑",
+    "common.back": "返回",
+    "common.close": "关闭",
+    "common.retry": "重试",
+    "common.loading": "加载中…",
+    "common.ok": "确定",
+    "common.yes": "是",
+    "common.no": "否",
+    "common.confirm": "确认",
+    "common.share": "分享",
+    "common.follow": "关注",
+    "common.unfollow": "取消关注",
+    "common.following": "已关注",
+    "common.search": "搜索",
+    "common.see_all": "查看全部",
+    "common.error": "错误",
+    "common.new": "新建",
+    "common.publish": "发布",
+    "common.unpublish": "撤回",
+    "common.published": "已发布",
+    "common.draft": "草稿",
+    "common.upload": "上传",
+    "common.remove": "移除",
+    "common.next": "下一步",
+    "common.skip": "跳过",
+    "common.open_settings": "打开设置",
+    "common.permission_needed": "需要权限",
+
+    // ---------- Home ----------
+    "home.hello": "你好,{name}!",
+    "home.hello_no_name": "你好!",
+    "home.subhello": "准备好跳一段了吗?",
+    "home.browse_cta": "浏览舞蹈",
+    "home.achievements_title": "成就",
+    "home.achievements_sub_unseen":
+      "您解锁了 {count} 枚新徽章!",
+    "home.achievements_sub_unseen_one":
+      "您解锁了 1 枚新徽章!",
+    "home.achievements_sub_default":
+      "查看您的徽章和练习连击。",
+    "home.community_activity": "社区动态",
+    "home.feed_empty_title": "关注其他舞者",
+    "home.feed_empty_sub":
+      "他们完成的舞蹈、徽章和连击都会显示在这里。",
+    "home.fresh_on_floor": "新鲜出炉",
+    "home.recently_practiced": "最近练习",
+    "home.pick_up": "从上次的位置继续",
+    "home.leaderboard_title": "Boot Scoot 排行榜",
+    "home.leaderboard_default_sub":
+      "看看谁在舞池上领先——加入他们。",
+    "home.events_title": "身边的活动",
+    "home.events_sub":
+      "工作坊、社交活动和课程,靴子到哪都有。",
+    "home.classes_title": "近期课程回顾",
+    "home.classes_sub":
+      "看看最近课程都教了哪些舞蹈。",
+    "home.suggest_title": "推荐舞蹈",
+    "home.suggest_title_for": "向 {name} 推荐舞蹈",
+    "home.suggest_sub_default":
+      "选择您的主教练并把想法发给他们。",
+    "home.suggest_sub_for":
+      "有想法?发给 {name}。",
+    "home.about_title": "关于场地",
+    "home.about_text":
+      "Stompin' Ground Yuma 是一个友好的社区,汇集不同年龄和水平的舞者一起学习、欢笑,并整夜跳舞。穿上靴子,开跳吧。",
+    "home.icon_all_ages": "全年龄段",
+    "home.icon_beginners": "欢迎初学者",
+    "home.icon_family": "适合全家",
+    "home.website_cta": "访问 stompingroundyuma.org",
+
+    // ---------- Library ----------
+    "library.brand_name": "Stompin' Ground Yuma",
+    "library.brand_sub": "排舞资料库",
+    "library.search_placeholder":
+      "搜索名称、歌曲、艺术家、编舞",
+    "library.diff_all": "全部",
+    "library.diff_absolute_beginner": "零基础",
+    "library.diff_beginner": "入门",
+    "library.diff_improver": "进阶",
+    "library.diff_high_improver": "高阶进阶",
+    "library.diff_intermediate": "中级",
+    "library.diff_advanced": "高级",
+    "library.empty_none": "没有符合筛选条件的舞蹈。",
+    "library.reset_filters": "重置筛选",
+    "library.cant_find": "找不到想要的?",
+    "library.external_cta":
+      "在 CopperKnob + BootStepper 中搜索",
+    "library.external_cta_q":
+      '在 CopperKnob + BootStepper 中搜索"{q}"',
+    "library.single_dir": "或浏览单一目录",
+    "library.popular_copperknob": "CopperKnob 热门",
+    "library.popular_bootstepper": "BootStepper 热门",
+    "library.by": "编舞:{name}",
+    "library.unknown": "未知",
+    "library.source_badge": "舞蹈资料库",
+    "library.bpm": "{bpm} BPM",
+
+    // ---------- My Dances ----------
+    "my_dances.title": "我的记录",
+    "my_dances.subtitle": "记录您的排舞旅程",
+    "my_dances.tab_completed": "已完成 ({count})",
+    "my_dances.tab_wishlist": "心愿单 ({count})",
+    "my_dances.empty_completed_title": "还没有完成的舞蹈",
+    "my_dances.empty_wishlist_title": "心愿单是空的",
+    "my_dances.empty_text":
+      "去资料库找到您的下一项挑战吧!",
+    "my_dances.browse_dances": "浏览舞蹈",
+    "my_dances.cert_error_title":
+      "无法下载证书",
+    "my_dances.cert_download_label": "下载证书",
+    "my_dances.cert_download_hint":
+      "为此已完成的舞蹈下载 PDF 证书。",
+
+    // ---------- Instructor ----------
+    "instructor.title": "教练",
+    "instructor.subtitle": "舞蹈 · 课程 · 活动 · 聊天",
+    "instructor.only": "仅限教练使用。",
+    "instructor.new": "新建",
+    "instructor.csv": "CSV",
+    "instructor.restore": "还原",
+    "instructor.tab_dances": "舞蹈",
+    "instructor.tab_classes": "课程",
+    "instructor.tab_events": "活动",
+    "instructor.tab_chat": "聊天",
+    "instructor.legend_new_dance":
+      "新舞蹈会先以**草稿**形式保存——仅您可见。点击**发布**即可与所有人分享。",
+    "instructor.no_dances":
+      '还没有舞蹈。点击"+ 新建"上传舞蹈及其步谱,或在课程标签页记录一节课。',
+    "instructor.no_classes_yet": "您还没有记录任何课程。",
+    "instructor.go_to_classes": "前往课程",
+    "instructor.class_session_default": "课程",
+    "instructor.dance_count": "{count} 支舞蹈 · {names}",
+    "instructor.dance_count_one": "1 支舞蹈 · {names}",
+    "instructor.pill_sheet": "步谱",
+    "instructor.pill_no_sheet": "无步谱",
+    "instructor.pill_published": "已发布",
+    "instructor.pill_draft": "草稿",
+    "instructor.edit_sheet": "步谱",
+    "instructor.chat_lounge_hello":
+      "教练休息室 —— 打个招呼 👋",
+    "instructor.chat_placeholder":
+      "给教练发消息…(用 @姓名 标记)",
+    "instructor.events_your_events": "您的活动",
+    "instructor.events_hero_sub":
+      "您主办的工作坊、社交活动和特别之夜。",
+    "instructor.events_add_new": "新增活动",
+    "instructor.events_browse_all": "查看全部",
+    "instructor.events_empty_title": "还没有活动",
+    "instructor.events_empty_sub":
+      "发布下一场工作坊、社交或私人聚会,让舞者在应用中找到它。",
+    "instructor.events_upcoming": "即将开始",
+    "instructor.events_past": "已结束",
+    "instructor.event_delete_title": "删除此活动?",
+    "instructor.event_delete_msg":
+      '"{name}" —— 此操作无法撤销。',
+    "instructor.event_delete_error": "无法删除",
+    "instructor.step_sheet_title": "步谱",
+    "instructor.new_dance_title": "新舞蹈 + 步谱",
+    "instructor.import_title": "从 CSV 导入",
+    "instructor.import_sub":
+      "批量向资料库添加舞蹈",
+    "instructor.upload_image": "上传图片",
+    "instructor.text_notation": "文字表示",
+    "instructor.image_label": "图片 (PNG/JPG)",
+    "instructor.step_sheet_image": "步谱图片",
+    "instructor.step_sheet_text": "步谱文字",
+    "instructor.save_step_sheet": "保存步谱",
+    "instructor.dance_name": "舞蹈名称 *",
+    "instructor.choreographer": "编舞 *",
+    "instructor.song": "歌曲 *",
+    "instructor.artist": "艺术家",
+    "instructor.bpm_field": "BPM",
+    "instructor.count_field": "拍数(例如 32 count, 4 wall)",
+    "instructor.youtube_url": "YouTube 网址",
+    "instructor.autofill_youtube": "自动填充 YouTube 搜索",
+    "instructor.publish_now": "立即向所有人发布",
+    "instructor.publish_now_on":
+      "所有人都将在公共资料库看到此舞蹈。",
+    "instructor.publish_now_off":
+      "保存为草稿 —— 发布之前仅您可见。",
+    "instructor.save_dance": "保存舞蹈",
+    "instructor.enter_name_first": "请先输入名称",
+    "instructor.enter_name_first_msg":
+      "请输入舞蹈名称以便构建搜索。",
+    "instructor.missing_info": "信息缺失",
+    "instructor.missing_info_msg":
+      "名称、编舞和歌曲均为必填。",
+    "instructor.permission_photo":
+      "请允许访问照片以上传步谱。",
+
+    // ---------- Profile ----------
+    "profile.title": "个人资料",
+    "profile.dancer_default": "舞者",
+    "profile.admin": "管理员",
+    "profile.stat_completed": "已完成",
+    "profile.stat_wishlist": "心愿单",
+    "profile.stat_classes": "课程",
+    "profile.stat_avg_rating": "平均 ★",
+    "profile.section_achievements": "成就",
+    "profile.section_practice_history": "练习记录",
+    "profile.total_sessions": "累计次数",
+    "profile.days_active": "活跃天数",
+    "profile.peak_day": "最佳一天",
+    "profile.history_foot":
+      "最近 30 天 · 打开任意舞蹈并使用练习模式记录一次练习。",
+    "profile.section_account": "账号",
+    "profile.instructor_tab": "教练标签页",
+    "profile.switch_to_instructor": "切换到教练资料",
+    "profile.class_recap": "课程回顾",
+    "profile.log_a_class": "记录一节课",
+    "profile.review_suggestions": "查看建议",
+    "profile.suggest_a_dance": "推荐舞蹈",
+    "profile.suggest_a_dance_to": "向 {name} 推荐舞蹈",
+    "profile.my_instructors": "我的教练",
+    "profile.pick_your_instructors": "选择您的教练",
+    "profile.instructors_hint_none":
+      "点击选择接收您建议的教练",
+    "profile.instructors_hint_primary_more":
+      "主教练:{name} · 另有 {count} 位",
+    "profile.instructors_hint_primary": "主教练:{name}",
+    "profile.instructors_hint_no_primary":
+      "已选择 {count} 位 —— 点击设置主教练",
+    "profile.followed_choreographers": "已关注的编舞",
+    "profile.followed_choreographers_sub":
+      "他们发布新舞蹈时会提醒您",
+    "profile.my_mentions": "@我的提及",
+    "profile.mentions_unread":
+      "来自教练的 {count} 条未读提及",
+    "profile.mentions_unread_one":
+      "来自教练的 1 条未读提及",
+    "profile.mentions_default":
+      "查看课程聊天中的教练标记",
+    "profile.notification_prefs": "通知偏好",
+    "profile.notification_prefs_sub":
+      "分别静音活动、课程或提及通知",
+    "profile.language": "语言",
+    "profile.boot_scoot_board": "Boot Scoot 排行榜",
+    "profile.boot_scoot_visible": "您在排行榜上可见。",
+    "profile.boot_scoot_hidden":
+      "您当前被隐藏。点击加入。",
+    "profile.follows_row": "关注和粉丝",
+    "profile.follows_row_sub":
+      "关注 {following} · 粉丝 {followers}",
+    "profile.follows_row_sub_plural":
+      "关注 {following} · 粉丝 {followers}",
+    "profile.show_activity": "在动态中显示我",
+    "profile.show_activity_on":
+      "粉丝可以看到您的完成记录和徽章。",
+    "profile.show_activity_off": "您的动态对他人隐藏。",
+    "profile.certificate_theme": "证书主题",
+    "profile.certificate_theme_sub":
+      "设置您下载的 PDF 证书的默认外观。",
+    "profile.couldnt_save": "无法保存",
+    "profile.couldnt_update_theme": "无法更新主题",
+    "profile.please_try_again": "请重试。",
+    "profile.sign_out": "退出登录",
+    "profile.delete_account": "删除我的账号",
+    "profile.delete_account_sub":
+      "永久删除您的账号和个人数据。",
+    "profile.section_connect": "与我们保持联系",
+    "profile.connect_sub":
+      "在您喜爱的平台上关注 Stompin' Ground Yuma —— 若已安装原生应用,链接会自动打开。",
+    "profile.share_app": "分享此应用",
+    "profile.share_app_sub":
+      "邀请朋友加入 Stompin' Ground Yuma",
+    "profile.visit_website": "访问我们的网站",
+    "profile.privacy_policy": "隐私政策",
+    "profile.terms_of_service": "服务条款",
+    "profile.community_guidelines": "社区准则",
+    "profile.blocked_users": "已屏蔽的用户",
+    "profile.blocked_users_sub":
+      "管理您在聊天和动态中静音的人",
+    "profile.send_feedback": "发送反馈",
+    "profile.send_feedback_sub": "Bug、建议或问候",
+    "profile.app_version": "版本 {version}",
+    "profile.app_version_with_build": "版本 {version} ({build})",
+    "profile.updates_arrive":
+      "更新将随 App Store / Play Store 新版本一起发布。",
+    "profile.about_venue": "关于 Stompin' Ground Yuma",
+    "profile.about_venue_text":
+      "亚利桑那州尤马市的全年龄段乡村排舞。加入我们,学一支新舞步,在舞池上结交新朋友。",
+    "profile.instructor_unlock_title": "您已成为教练!",
+    "profile.instructor_unlock_msg":
+      "您的教练标签页已解锁。",
+    "profile.instructor_code_placeholder": "教练访问码",
+    "profile.enter_access_code": "请输入您的访问码",
+    "profile.invalid_access_code": "访问码无效",
+    "profile.instructor_modal_sub":
+      "输入工作室提供的访问码即可解锁教练工具(记录课程、上传步谱、编辑舞蹈、聊天)。",
+    "profile.unlock": "解锁",
+    "profile.delete_title": "删除您的账号?",
+    "profile.delete_body":
+      "此操作将永久删除:\n• 您的登录和资料\n• 您的舞蹈记录(已完成 / 心愿单)\n• 您的课程签到记录\n• 您发送过的所有建议或聊天消息\n\n您创建的舞蹈或课程仍会对社区可见,但您的名字会显示为「已删除的用户」。",
+    "profile.delete_cant_undone": "此操作无法撤销。",
+    "profile.delete_confirm_label": "输入 {word} 以确认",
+    "profile.delete_type_confirm":
+      '请输入"DELETE"(全部大写)以确认。',
+    "profile.delete_forever": "永久删除",
+    "profile.deleted_title": "账号已删除",
+    "profile.deleted_msg":
+      "您的账号和个人数据已被移除。感谢与我们共舞!",
+    "profile.deleted_generic_error":
+      "无法删除账号。请重试。",
+    "profile.sgy_admin": "SGY 管理",
+    "profile.moderation_queue": "动态举报队列",
+    "profile.user_feedback": "用户反馈",
+    "profile.refresh_recommendations": "刷新推荐",
+    "profile.refresh_recommendations_none":
+      "资料库元数据已与提供方同步",
+    "profile.refresh_recommendations_unseen":
+      "{count} 支舞蹈元数据不一致",
+    "profile.refresh_recommendations_unseen_one":
+      "1 支舞蹈元数据不一致",
+
+    // ---------- Language ----------
+    "language.title": "语言",
+    "language.subtitle":
+      "选择您希望在应用和通知中显示的语言。",
+    "language.system_default": "系统默认",
+    "language.system_default_hint":
+      "跟随手机语言 ({locale})。",
+    "language.saved_toast": "语言已更新。",
+
+    // ---------- Notifications prefs ----------
+    "notifications.title": "通知",
+    "notifications.classes": "新课程",
+    "notifications.events": "新活动",
+    "notifications.choreographers":
+      "已关注编舞的新舞蹈",
+    "notifications.mentions": "聊天中的 @提及",
+    "notifications.reminders": "课程提醒",
+
+    // ---------- Errors ----------
+    "error.generic": "出错了。请稍后再试。",
+    "error.offline": "您似乎离线了。",
+  },
+
+  "zh-Hant": {
+    // ---------- Onboarding ----------
+    "onboarding.language.title": "選擇您的語言",
+    "onboarding.language.subtitle":
+      "您可以隨時在「個人資料 → 設定」中更改。",
+    "onboarding.language.continue": "繼續",
+    "onboarding.language.system_default": "系統預設",
+
+    // ---------- Age gate ----------
+    "age_gate.hero_title": "年齡驗證",
+    "age_gate.hero_sub": "穿上靴子——先做一步確認。",
+    "age_gate.title_line1":
+      "使用 Stompin' Ground Yuma 需要您年滿",
+    "age_gate.title_years": "13 歲",
+    "age_gate.body_copy":
+      "更年輕的舞者歡迎與父母或監護人一起加入,由他們建立帳號即可。",
+    "age_gate.adult_button": "我已滿 13 歲",
+    "age_gate.child_button": "我未滿 13 歲",
+    "age_gate.legal":
+      "點按「{emph}」即表示您同意我們的{terms}與{privacy}。",
+    "age_gate.legal_emph": "我已滿 13 歲",
+    "age_gate.under13_title": "請讓成年人登入。",
+    "age_gate.under13_copy":
+      "Stompin' Ground Yuma 專為 13 歲以上的舞者設計。若您未滿 13 歲,請由父母或監護人建立帳號並登入——他們可以帶您來上課,大家隨時可以一起跳舞!",
+    "age_gate.back": "返回",
+
+    // ---------- Tabs ----------
+    "tabs.home": "首頁",
+    "tabs.dances": "舞蹈",
+    "tabs.my_dances": "我的舞蹈",
+    "tabs.instructor": "教練",
+    "tabs.profile": "我的",
+
+    // ---------- Auth ----------
+    "auth.tab_signin": "登入",
+    "auth.tab_signup": "建立帳號",
+    "auth.subtitle": "Dance Social HQ",
+    "auth.email": "電子郵件",
+    "auth.password": "密碼",
+    "auth.name": "姓名",
+    "auth.instructor_toggle": "我是教練",
+    "auth.instructor_toggle_sub": "需要工作室提供的存取碼",
+    "auth.instructor_code": "教練存取碼",
+    "auth.signin_button": "登入",
+    "auth.signup_button": "建立帳號",
+    "auth.continue_with_google": "使用 Google 繼續",
+    "auth.or": "或",
+    "auth.forgot_password": "忘記密碼?",
+    "auth.legal_signin":
+      "繼續即表示您同意我們的{terms}與{privacy}。",
+    "auth.legal_signup":
+      "建立帳號即表示您同意我們的{terms}與{privacy},並知悉排舞是一項體能活動,參與風險由您自行承擔。",
+    "auth.terms": "條款",
+    "auth.terms_of_service": "服務條款",
+    "auth.privacy_policy": "隱私權政策",
+    "auth.error_fill_all": "請填寫所有欄位",
+    "auth.error_enter_code": "請輸入您的教練存取碼",
+    "auth.error_generic": "出錯了",
+    "auth.error_google_no_session": "未回傳工作階段",
+    "auth.error_google_not_configured":
+      "此版本尚未設定 Google 登入。",
+    "auth.error_google_failed": "Google 登入失敗",
+    "auth.account_created_title": "帳號已建立",
+    "auth.account_created_msg":
+      "教練存取碼不相符,已以一般會員身分登入。您可以從「個人資料 → 切換到教練資料」再次嘗試。",
+    "auth.show_password": "顯示密碼",
+    "auth.hide_password": "隱藏密碼",
+
+    // ---------- Welcome ----------
+    "welcome.greeting": "{name},歡迎加入!",
+    "welcome.subtitle": "一起跳舞吧 🥾",
+    "welcome.default_name": "朋友",
+
+    // ---------- Common ----------
+    "common.save": "儲存",
+    "common.cancel": "取消",
+    "common.done": "完成",
+    "common.delete": "刪除",
+    "common.edit": "編輯",
+    "common.back": "返回",
+    "common.close": "關閉",
+    "common.retry": "重試",
+    "common.loading": "載入中…",
+    "common.ok": "確定",
+    "common.yes": "是",
+    "common.no": "否",
+    "common.confirm": "確認",
+    "common.share": "分享",
+    "common.follow": "追蹤",
+    "common.unfollow": "取消追蹤",
+    "common.following": "已追蹤",
+    "common.search": "搜尋",
+    "common.see_all": "查看全部",
+    "common.error": "錯誤",
+    "common.new": "新增",
+    "common.publish": "發佈",
+    "common.unpublish": "取消發佈",
+    "common.published": "已發佈",
+    "common.draft": "草稿",
+    "common.upload": "上傳",
+    "common.remove": "移除",
+    "common.next": "下一步",
+    "common.skip": "略過",
+    "common.open_settings": "打開設定",
+    "common.permission_needed": "需要權限",
+
+    // ---------- Home ----------
+    "home.hello": "嗨,{name}!",
+    "home.hello_no_name": "嗨!",
+    "home.subhello": "準備好跳一段了嗎?",
+    "home.browse_cta": "瀏覽舞蹈",
+    "home.achievements_title": "成就",
+    "home.achievements_sub_unseen":
+      "您解鎖了 {count} 枚新徽章!",
+    "home.achievements_sub_unseen_one":
+      "您解鎖了 1 枚新徽章!",
+    "home.achievements_sub_default":
+      "追蹤您的徽章與連續練習。",
+    "home.community_activity": "社群動態",
+    "home.feed_empty_title": "追蹤其他舞者",
+    "home.feed_empty_sub":
+      "他們完成的舞蹈、徽章和連續紀錄會顯示在這裡。",
+    "home.fresh_on_floor": "新鮮出爐",
+    "home.recently_practiced": "最近練習",
+    "home.pick_up": "從上次的位置繼續",
+    "home.leaderboard_title": "Boot Scoot 排行榜",
+    "home.leaderboard_default_sub":
+      "看看誰在舞池上領先——加入他們。",
+    "home.events_title": "附近的活動",
+    "home.events_sub":
+      "工作坊、社交活動與課程,靴子到哪都有。",
+    "home.classes_title": "近期課程回顧",
+    "home.classes_sub":
+      "看看最近課程教了哪些舞蹈。",
+    "home.suggest_title": "推薦舞蹈",
+    "home.suggest_title_for": "向 {name} 推薦舞蹈",
+    "home.suggest_sub_default":
+      "選擇您的主教練並將想法寄給他們。",
+    "home.suggest_sub_for":
+      "有想法?寄給 {name}。",
+    "home.about_title": "關於場地",
+    "home.about_text":
+      "Stompin' Ground Yuma 是一個友善的社群,匯聚不同年齡與程度的舞者一起學習、歡笑,徹夜跳舞。穿上靴子,開跳吧。",
+    "home.icon_all_ages": "全年齡層",
+    "home.icon_beginners": "歡迎初學者",
+    "home.icon_family": "適合闔家",
+    "home.website_cta": "造訪 stompingroundyuma.org",
+
+    // ---------- Library ----------
+    "library.brand_name": "Stompin' Ground Yuma",
+    "library.brand_sub": "排舞資料庫",
+    "library.search_placeholder":
+      "搜尋名稱、歌曲、藝人、編舞",
+    "library.diff_all": "全部",
+    "library.diff_absolute_beginner": "零基礎",
+    "library.diff_beginner": "入門",
+    "library.diff_improver": "進階",
+    "library.diff_high_improver": "高階進階",
+    "library.diff_intermediate": "中級",
+    "library.diff_advanced": "高級",
+    "library.empty_none": "沒有符合篩選條件的舞蹈。",
+    "library.reset_filters": "重設篩選",
+    "library.cant_find": "找不到想要的?",
+    "library.external_cta":
+      "在 CopperKnob + BootStepper 中搜尋",
+    "library.external_cta_q":
+      '在 CopperKnob + BootStepper 中搜尋「{q}」',
+    "library.single_dir": "或瀏覽單一目錄",
+    "library.popular_copperknob": "CopperKnob 熱門",
+    "library.popular_bootstepper": "BootStepper 熱門",
+    "library.by": "編舞:{name}",
+    "library.unknown": "未知",
+    "library.source_badge": "舞蹈資料庫",
+    "library.bpm": "{bpm} BPM",
+
+    // ---------- My Dances ----------
+    "my_dances.title": "我的紀錄",
+    "my_dances.subtitle": "記錄您的排舞旅程",
+    "my_dances.tab_completed": "已完成 ({count})",
+    "my_dances.tab_wishlist": "願望清單 ({count})",
+    "my_dances.empty_completed_title": "還沒有完成的舞蹈",
+    "my_dances.empty_wishlist_title": "願望清單是空的",
+    "my_dances.empty_text":
+      "去資料庫找到下一個挑戰吧!",
+    "my_dances.browse_dances": "瀏覽舞蹈",
+    "my_dances.cert_error_title":
+      "無法下載證書",
+    "my_dances.cert_download_label": "下載證書",
+    "my_dances.cert_download_hint":
+      "為此已完成的舞蹈下載 PDF 證書。",
+
+    // ---------- Instructor ----------
+    "instructor.title": "教練",
+    "instructor.subtitle": "舞蹈 · 課程 · 活動 · 聊天",
+    "instructor.only": "僅限教練使用。",
+    "instructor.new": "新增",
+    "instructor.csv": "CSV",
+    "instructor.restore": "還原",
+    "instructor.tab_dances": "舞蹈",
+    "instructor.tab_classes": "課程",
+    "instructor.tab_events": "活動",
+    "instructor.tab_chat": "聊天",
+    "instructor.legend_new_dance":
+      "新舞蹈會先以**草稿**形式保存——僅您可見。點按**發佈**即可與所有人分享。",
+    "instructor.no_dances":
+      '還沒有舞蹈。點按「+ 新增」上傳舞蹈及其步譜,或在「課程」分頁記錄一堂課。',
+    "instructor.no_classes_yet": "您還沒有記錄任何課程。",
+    "instructor.go_to_classes": "前往課程",
+    "instructor.class_session_default": "課程",
+    "instructor.dance_count": "{count} 支舞蹈 · {names}",
+    "instructor.dance_count_one": "1 支舞蹈 · {names}",
+    "instructor.pill_sheet": "步譜",
+    "instructor.pill_no_sheet": "無步譜",
+    "instructor.pill_published": "已發佈",
+    "instructor.pill_draft": "草稿",
+    "instructor.edit_sheet": "步譜",
+    "instructor.chat_lounge_hello":
+      "教練休息室——打個招呼 👋",
+    "instructor.chat_placeholder":
+      "傳訊息給教練們…(用 @姓名 標註)",
+    "instructor.events_your_events": "您的活動",
+    "instructor.events_hero_sub":
+      "您主辦的工作坊、社交活動和特別之夜。",
+    "instructor.events_add_new": "新增活動",
+    "instructor.events_browse_all": "查看全部",
+    "instructor.events_empty_title": "還沒有活動",
+    "instructor.events_empty_sub":
+      "發佈下一場工作坊、社交或私人聚會,讓舞者能在應用程式中找到它。",
+    "instructor.events_upcoming": "即將舉行",
+    "instructor.events_past": "已結束",
+    "instructor.event_delete_title": "刪除此活動?",
+    "instructor.event_delete_msg":
+      '「{name}」——此操作無法復原。',
+    "instructor.event_delete_error": "無法刪除",
+    "instructor.step_sheet_title": "步譜",
+    "instructor.new_dance_title": "新舞蹈 + 步譜",
+    "instructor.import_title": "從 CSV 匯入",
+    "instructor.import_sub":
+      "批次為資料庫加入舞蹈",
+    "instructor.upload_image": "上傳圖片",
+    "instructor.text_notation": "文字表示",
+    "instructor.image_label": "圖片 (PNG/JPG)",
+    "instructor.step_sheet_image": "步譜圖片",
+    "instructor.step_sheet_text": "步譜文字",
+    "instructor.save_step_sheet": "儲存步譜",
+    "instructor.dance_name": "舞蹈名稱 *",
+    "instructor.choreographer": "編舞 *",
+    "instructor.song": "歌曲 *",
+    "instructor.artist": "藝人",
+    "instructor.bpm_field": "BPM",
+    "instructor.count_field": "拍數(例如 32 count, 4 wall)",
+    "instructor.youtube_url": "YouTube 網址",
+    "instructor.autofill_youtube": "自動填入 YouTube 搜尋",
+    "instructor.publish_now": "立即向所有人發佈",
+    "instructor.publish_now_on":
+      "所有人都將在公開資料庫看到此舞蹈。",
+    "instructor.publish_now_off":
+      "儲存為草稿——發佈前僅您可見。",
+    "instructor.save_dance": "儲存舞蹈",
+    "instructor.enter_name_first": "請先輸入名稱",
+    "instructor.enter_name_first_msg":
+      "請輸入舞蹈名稱以建立搜尋。",
+    "instructor.missing_info": "資訊不足",
+    "instructor.missing_info_msg":
+      "名稱、編舞和歌曲皆為必填。",
+    "instructor.permission_photo":
+      "請允許存取照片以上傳步譜。",
+
+    // ---------- Profile ----------
+    "profile.title": "個人資料",
+    "profile.dancer_default": "舞者",
+    "profile.admin": "管理員",
+    "profile.stat_completed": "已完成",
+    "profile.stat_wishlist": "願望清單",
+    "profile.stat_classes": "課程",
+    "profile.stat_avg_rating": "平均 ★",
+    "profile.section_achievements": "成就",
+    "profile.section_practice_history": "練習紀錄",
+    "profile.total_sessions": "累計次數",
+    "profile.days_active": "活躍天數",
+    "profile.peak_day": "最佳一天",
+    "profile.history_foot":
+      "近 30 天 · 開啟任一支舞蹈並使用練習模式記錄一次練習。",
+    "profile.section_account": "帳號",
+    "profile.instructor_tab": "教練分頁",
+    "profile.switch_to_instructor": "切換到教練資料",
+    "profile.class_recap": "課程回顧",
+    "profile.log_a_class": "記錄一堂課",
+    "profile.review_suggestions": "查看建議",
+    "profile.suggest_a_dance": "推薦舞蹈",
+    "profile.suggest_a_dance_to": "向 {name} 推薦舞蹈",
+    "profile.my_instructors": "我的教練",
+    "profile.pick_your_instructors": "選擇您的教練",
+    "profile.instructors_hint_none":
+      "點按以選擇接收您建議的教練",
+    "profile.instructors_hint_primary_more":
+      "主教練:{name} · 另有 {count} 位",
+    "profile.instructors_hint_primary": "主教練:{name}",
+    "profile.instructors_hint_no_primary":
+      "已選 {count} 位——點按設定主教練",
+    "profile.followed_choreographers": "已追蹤的編舞",
+    "profile.followed_choreographers_sub":
+      "他們發佈新舞蹈時會通知您",
+    "profile.my_mentions": "@我的提及",
+    "profile.mentions_unread":
+      "來自教練的 {count} 則未讀提及",
+    "profile.mentions_unread_one":
+      "來自教練的 1 則未讀提及",
+    "profile.mentions_default":
+      "在課程聊天中查看教練標註",
+    "profile.notification_prefs": "通知偏好",
+    "profile.notification_prefs_sub":
+      "分別靜音活動、課程或提及通知",
+    "profile.language": "語言",
+    "profile.boot_scoot_board": "Boot Scoot 排行榜",
+    "profile.boot_scoot_visible": "您在排行榜上可見。",
+    "profile.boot_scoot_hidden":
+      "您目前被隱藏。點按加入。",
+    "profile.follows_row": "追蹤中與粉絲",
+    "profile.follows_row_sub":
+      "追蹤中 {following} · 粉絲 {followers}",
+    "profile.follows_row_sub_plural":
+      "追蹤中 {following} · 粉絲 {followers}",
+    "profile.show_activity": "在動態中顯示我",
+    "profile.show_activity_on":
+      "追蹤者可以看到您完成的舞蹈與徽章。",
+    "profile.show_activity_off": "您的動態對他人隱藏。",
+    "profile.certificate_theme": "證書主題",
+    "profile.certificate_theme_sub":
+      "設定您下載的 PDF 證書預設外觀。",
+    "profile.couldnt_save": "無法儲存",
+    "profile.couldnt_update_theme": "無法更新主題",
+    "profile.please_try_again": "請再試一次。",
+    "profile.sign_out": "登出",
+    "profile.delete_account": "刪除我的帳號",
+    "profile.delete_account_sub":
+      "永久刪除您的帳號與個人資料。",
+    "profile.section_connect": "與我們保持聯繫",
+    "profile.connect_sub":
+      "在您喜愛的平台上追蹤 Stompin' Ground Yuma——若已安裝原生應用程式,連結會自動開啟。",
+    "profile.share_app": "分享應用程式",
+    "profile.share_app_sub":
+      "邀請朋友加入 Stompin' Ground Yuma",
+    "profile.visit_website": "造訪我們的網站",
+    "profile.privacy_policy": "隱私權政策",
+    "profile.terms_of_service": "服務條款",
+    "profile.community_guidelines": "社群守則",
+    "profile.blocked_users": "已封鎖的使用者",
+    "profile.blocked_users_sub":
+      "管理您在聊天與動態中靜音的人",
+    "profile.send_feedback": "傳送意見回饋",
+    "profile.send_feedback_sub": "問題、想法或問候",
+    "profile.app_version": "版本 {version}",
+    "profile.app_version_with_build": "版本 {version} ({build})",
+    "profile.updates_arrive":
+      "更新會隨新的 App Store / Play Store 版本推送。",
+    "profile.about_venue": "關於 Stompin' Ground Yuma",
+    "profile.about_venue_text":
+      "亞利桑那州尤馬市全年齡層鄉村排舞。加入我們,學一支新舞步,在舞池上結交新朋友。",
+    "profile.instructor_unlock_title": "您已成為教練!",
+    "profile.instructor_unlock_msg":
+      "您的教練分頁已解鎖。",
+    "profile.instructor_code_placeholder": "教練存取碼",
+    "profile.enter_access_code": "請輸入您的存取碼",
+    "profile.invalid_access_code": "存取碼無效",
+    "profile.instructor_modal_sub":
+      "輸入工作室提供的存取碼即可解鎖教練工具(記錄課程、上傳步譜、編輯舞蹈、聊天)。",
+    "profile.unlock": "解鎖",
+    "profile.delete_title": "刪除您的帳號?",
+    "profile.delete_body":
+      "此操作將永久刪除:\n• 您的登入與資料\n• 您的舞蹈紀錄(已完成 / 願望清單)\n• 您的課程出席紀錄\n• 您傳送過的所有建議或聊天訊息\n\n您建立的舞蹈或課程仍會對社群顯示,但您的名字會替換為「已刪除的使用者」。",
+    "profile.delete_cant_undone": "此操作無法復原。",
+    "profile.delete_confirm_label": "輸入 {word} 以確認",
+    "profile.delete_type_confirm":
+      '請輸入「DELETE」(全部大寫)以確認。',
+    "profile.delete_forever": "永久刪除",
+    "profile.deleted_title": "帳號已刪除",
+    "profile.deleted_msg":
+      "您的帳號與個人資料已被移除。感謝與我們共舞!",
+    "profile.deleted_generic_error":
+      "無法刪除帳號。請再試一次。",
+    "profile.sgy_admin": "SGY 管理",
+    "profile.moderation_queue": "動態檢舉佇列",
+    "profile.user_feedback": "使用者意見",
+    "profile.refresh_recommendations": "重新整理推薦",
+    "profile.refresh_recommendations_none":
+      "資料庫中繼資料已與提供者同步",
+    "profile.refresh_recommendations_unseen":
+      "{count} 支舞蹈中繼資料不一致",
+    "profile.refresh_recommendations_unseen_one":
+      "1 支舞蹈中繼資料不一致",
+
+    // ---------- Language ----------
+    "language.title": "語言",
+    "language.subtitle":
+      "選擇要在應用程式與通知中顯示的語言。",
+    "language.system_default": "系統預設",
+    "language.system_default_hint":
+      "依照手機語言 ({locale})。",
+    "language.saved_toast": "語言已更新。",
+
+    // ---------- Notifications prefs ----------
+    "notifications.title": "通知",
+    "notifications.classes": "新課程",
+    "notifications.events": "新活動",
+    "notifications.choreographers":
+      "已追蹤編舞的新舞蹈",
+    "notifications.mentions": "聊天中的 @提及",
+    "notifications.reminders": "課程提醒",
+
+    // ---------- Errors ----------
+    "error.generic": "出錯了。請稍後再試。",
+    "error.offline": "您似乎已離線。",
+  },
 };
+

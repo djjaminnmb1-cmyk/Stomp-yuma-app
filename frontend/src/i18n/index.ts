@@ -97,6 +97,11 @@ const NESTED_TRANSLATIONS: Record<string, unknown> = {
   en: nest(translations.en),
   es: nest(translations.es),
   fr: nest(translations.fr),
+  de: nest(translations.de),
+  nl: nest(translations.nl),
+  ko: nest(translations.ko),
+  "zh-Hans": nest(translations["zh-Hans"]),
+  "zh-Hant": nest(translations["zh-Hant"]),
 };
 
 // Singleton i18n-js instance. Everything (t, hook, provider) reads
@@ -112,15 +117,41 @@ export const i18n = new I18n(NESTED_TRANSLATIONS, {
  * none of the device languages map to a supported one.
  *
  * ``getLocales()`` returns the OS's ordered preference list, so we
- * scan and pick the first supported hit.
+ * scan and pick the first supported hit. For Chinese we additionally
+ * inspect the script tag / regional variant so `zh-Hans-CN` maps to
+ * Simplified and `zh-Hant-TW` (or `zh-TW` / `zh-HK` / `zh-MO`) maps
+ * to Traditional. Anything bare (``zh``) defaults to Simplified —
+ * the larger reader base — and can always be overridden via the
+ * settings screen.
  */
 export function deviceLocale(): Locale {
   try {
     const list = getLocales();
     for (const l of list) {
-      const tag = (l.languageCode || l.languageTag || "").toLowerCase();
-      const base = tag.split("-")[0].split("_")[0] as Locale;
-      if (SUPPORTED_LOCALES.includes(base)) return base;
+      const tag = (l.languageTag || l.languageCode || "").toLowerCase();
+      const scriptCode = ((l as unknown as { languageScriptCode?: string })
+        .languageScriptCode || "").toLowerCase();
+      const regionCode = (l.regionCode || "").toLowerCase();
+      const base = tag.split("-")[0].split("_")[0];
+
+      // Chinese variants ── inspect script + region.
+      if (base === "zh") {
+        if (
+          scriptCode === "hant" ||
+          regionCode === "tw" ||
+          regionCode === "hk" ||
+          regionCode === "mo" ||
+          tag.includes("-hant") ||
+          tag.includes("_hant")
+        ) {
+          return "zh-Hant";
+        }
+        return "zh-Hans";
+      }
+
+      if ((SUPPORTED_LOCALES as string[]).includes(base)) {
+        return base as Locale;
+      }
     }
   } catch (_) {
     // ``expo-localization`` throws on jest/web without native.

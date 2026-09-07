@@ -1,0 +1,45 @@
+=== MONGO SNAPSHOT MANIFEST ===
+DB name    : test_database
+Exported at: 2026-09-07T16:51:16.438346Z
+Total docs : 13057
+
+  dance_sync_log                                    5683 docs
+  dances_backup_20260903_150512                     1165 docs
+  dances                                            1165 docs
+  dances_backup_20260903_150010                     1165 docs
+  dances_backup_20260903_145106                     1165 docs
+  dances_backup_20260903_143213                     1164 docs
+  dances_backup_20260903_143715                     1164 docs
+  dance_drift_flags                                  104 docs
+  users                                               78 docs
+  activity_events                                     38 docs
+  tracking                                            37 docs
+  user_badges                                         27 docs
+  practice_daily                                      22 docs
+  practice_sessions                                   22 docs
+  follows                                             14 docs
+  geocode_cache                                        9 docs
+  feed_reactions                                       7 docs
+  feedback                                             6 docs
+  suggestions                                          6 docs
+  feed_reports                                         6 docs
+  events                                               2 docs
+  instructor_messages                                  2 docs
+  classes                                              2 docs
+  leaderboard_prizes                                   2 docs
+  dance_sync_status                                    1 docs
+  drift_scan_status                                    1 docs
+  attendance                                           0 docs
+  user_blocks                                          0 docs
+  user_sessions                                        0 docs
+  choreographer_notifications                          0 docs
+  sent_reminders                                       0 docs
+  password_reset_tokens                                0 docs
+  leaderboard_state                                    0 docs
+  event_rsvps                                          0 docs
+  chat_mentions                                        0 docs
+  choreographer_follows                                0 docs
+  leaderboard_seasons                                  0 docs
+  instructor_notifications                             0 docs
+
+Note: Preview/dev environment snapshot (DB_NAME=test_database). Includes 5 dances_backup_YYYYMMDD_HHMMSS collections created during the Sep 3 2026 library sync — safe to drop after restore if you want a leaner DB.

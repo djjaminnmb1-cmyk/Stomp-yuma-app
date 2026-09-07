@@ -1,0 +1,97 @@
+[
+  {
+    "_id": {
+      "$oid": "6a8a81c796ce30e09f2983f3"
+    },
+    "key": "1440 desert hills dr|yuma|az|85365|us",
+    "cached_at": "2026-08-23T05:14:47.016542+00:00",
+    "display_name": "Yuma Civic Center, 1440, West Desert Hills Drive, Yuma, Yuma County, Arizona, 85365, United States",
+    "lat": 32.661757,
+    "lng": -114.6377764,
+    "query": "1440 Desert Hills Dr, Yuma, AZ, 85365, US"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a854d96ce30e09f29858e"
+    },
+    "key": "1600 amphitheatre parkway|mountain view|ca|94043|us",
+    "cached_at": "2026-08-23T05:29:49.155338+00:00",
+    "display_name": "Google Building 41, 1600, Amphitheatre Parkway, Mountain View, Santa Clara County, California, 94043, United States",
+    "lat": 37.4224858,
+    "lng": -122.0855846,
+    "query": "1600 Amphitheatre Parkway, Mountain View, CA, 94043, US"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a854e96ce30e09f298597"
+    },
+    "key": "qwzxpqz nonexistent 99999|zzzzznoplace|az|85364|us",
+    "cached_at": "2026-08-23T05:29:50.195188+00:00",
+    "not_found": true,
+    "query": "qwzxpqz nonexistent 99999, Zzzzznoplace, AZ, 85364, US"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a854f96ce30e09f2985a2"
+    },
+    "key": "1234 main st|yuma|az|85364|us",
+    "cached_at": "2026-08-23T05:29:51.533083+00:00",
+    "display_name": "Main Street, May Avenue Park, Avenue B & C, Yuma County, Arizona, 85364, United States",
+    "lat": 32.7221641,
+    "lng": -114.6604705,
+    "query": "1234 Main St, Yuma, AZ, 85364, US"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a85aa96ce30e09f298626"
+    },
+    "key": "1600 amphitheatre parkway|mountain view|ca||us",
+    "cached_at": "2026-08-23T05:31:22.861767+00:00",
+    "display_name": "Google Building 41, 1600, Amphitheatre Parkway, Mountain View, Santa Clara County, California, 94043, United States",
+    "lat": 37.4224858,
+    "lng": -122.0855846,
+    "query": "1600 Amphitheatre Parkway, Mountain View, CA, US"
+  },
+  {
+    "_id": {
+      "$oid": "6a986d4e3c85a41f19682911"
+    },
+    "key": "123 main st|yuma|az|85364|us",
+    "cached_at": "2026-09-02T18:39:10.847970+00:00",
+    "display_name": "123, South Main Street, Yuma, Yuma County, Arizona, 85364, United States",
+    "lat": 32.7249944,
+    "lng": -114.6180124,
+    "query": "123 Main St, Yuma, AZ, 85364, US"
+  },
+  {
+    "_id": {
+      "$oid": "6a986d503c85a41f19682924"
+    },
+    "key": "456 main st|yuma|az|85364|us",
+    "cached_at": "2026-09-02T18:39:12.043019+00:00",
+    "display_name": "456, South Main Street, Yuma, Yuma County, Arizona, 85364, United States",
+    "lat": 32.7196096,
+    "lng": -114.6175433,
+    "query": "456 Main St, Yuma, AZ, 85364, US"
+  },
+  {
+    "_id": {
+      "$oid": "6a986d523c85a41f1968294f"
+    },
+    "key": "1 old st|yuma|az|85364|us",
+    "cached_at": "2026-09-02T18:39:14.224484+00:00",
+    "display_name": "East 32nd Street, Yuma, Yuma County, Arizona, 85364, United States",
+    "lat": 32.6694493,
+    "lng": -114.5911378,
+    "query": "1 Old St, Yuma, AZ, 85364, US"
+  },
+  {
+    "_id": {
+      "$oid": "6a997fce6cb23e06191fe1b0"
+    },
+    "key": "1 rsvp rd|yuma|az|85364|us",
+    "cached_at": "2026-09-03T14:10:22.417105+00:00",
+    "not_found": true,
+    "query": "1 RSVP Rd, Yuma, AZ, 85364, US"
+  }
+]

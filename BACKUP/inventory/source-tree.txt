@@ -1,0 +1,68 @@
+=== SOURCE TREE (top-level, no node_modules / caches) ===
+/app
+/app/.emergent
+/app/.emergent/cron
+/app/.emergent/markers
+/app/backend
+/app/backend/assets
+/app/backend/backups
+/app/backend/core
+/app/backend/logs
+/app/backend/models
+/app/backend/routes
+/app/backend/scripts
+/app/backend/secrets
+/app/backend/services
+/app/backend/tests
+/app/frontend
+/app/frontend/app
+/app/frontend/app/(tabs)
+/app/frontend/app/admin
+/app/frontend/app/bootstepper
+/app/frontend/app/choreographers
+/app/frontend/app/copperknob
+/app/frontend/app/dance
+/app/frontend/app/events
+/app/frontend/app/external-search
+/app/frontend/app/settings
+/app/frontend/app/users
+/app/frontend/assets
+/app/frontend/assets/fonts
+/app/frontend/assets/images
+/app/frontend/assets/sounds
+/app/frontend/constants
+/app/frontend/constants/testIds
+/app/frontend/patches
+/app/frontend/plugins
+/app/frontend/scripts
+/app/frontend/scripts/cmd-guard
+/app/frontend/src
+/app/frontend/src/api
+/app/frontend/src/components
+/app/frontend/src/context
+/app/frontend/src/hooks
+/app/frontend/src/i18n
+/app/frontend/src/lib
+/app/frontend/src/utils
+/app/memory
+/app/scripts
+/app/scripts/data
+/app/test_reports
+/app/test_reports/pytest
+/app/tests
+
+=== FILE COUNTS PER TOP-LEVEL DIR (source only) ===
+  /app/backend : 123 files
+  /app/frontend/app : 49 files
+  /app/frontend/src : 58 files
+  /app/frontend/assets : 17 files
+  /app/memory : 9 files
+  /app/scripts : 14 files
+
+=== BACKEND PYTHON MODULES ===
+111
+  Python files
+
+=== FRONTEND SCREEN COUNT (expo-router routes) ===
+49
+  route files

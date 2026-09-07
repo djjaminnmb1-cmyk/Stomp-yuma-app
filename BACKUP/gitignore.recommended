@@ -1,0 +1,52 @@
+# Suggested .gitignore for the private GitHub repo.
+# Overwrite /app/.gitignore with this content (or merge) before your first `git add`.
+
+# ── secrets & env ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!*.env.example
+backend/.env
+frontend/.env
+backend/secrets/*
+!backend/secrets/.gitignore
+
+# ── platform-specific credentials & signing keys ─────────────────────
+*.p8
+*.p12
+*.pem
+*.mobileprovision
+*.jks
+*.keystore
+
+# ── large / regenerable / build artifacts ────────────────────────────
+frontend/node_modules/
+frontend/.expo/
+frontend/.metro-cache/
+frontend/dist/
+frontend/web-build/
+frontend/ios/build/
+frontend/android/build/
+frontend/android/app/build/
+frontend/android/.gradle/
+frontend/.gradle/
+**/__pycache__/
+**/*.pyc
+.ruff_cache/
+.pytest_cache/
+.venv/
+venv/
+
+# ── this backup folder (contains user PII + preview passwords) ───────
+BACKUP/mongo-dump/
+BACKUP/mongo-json/
+BACKUP/inventory/tmp/
+
+# ── historical / one-time snapshots ──────────────────────────────────
+stompin-app.zip
+
+# ── credentials & PII in memory/ ─────────────────────────────────────
+memory/test_credentials.md
+
+# ── Emergent internal ────────────────────────────────────────────────
+.emergent/

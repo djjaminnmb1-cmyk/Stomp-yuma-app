@@ -1,0 +1,299 @@
+[
+  {
+    "_id": {
+      "$oid": "6a8096341d47c4c112c7df3e"
+    },
+    "user_id": "user_31b307e4ccc8",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T16:39:16.850450+00:00",
+    "seen": true,
+    "requirement": 1,
+    "progress_at_earn": 4
+  },
+  {
+    "_id": {
+      "$oid": "6a8097f8d791dff584e02447"
+    },
+    "user_id": "user_c96bef8b849a",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T16:46:48.950318+00:00",
+    "seen": true,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8097f9d791dff584e02449"
+    },
+    "user_id": "user_b5e4c0bda2c7",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T16:46:49.482610+00:00",
+    "seen": true,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8097f9d791dff584e0244b"
+    },
+    "user_id": "user_481782794f47",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T16:46:49.941895+00:00",
+    "seen": true,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8097fad791dff584e0244d"
+    },
+    "user_id": "user_b0aca02a1c71",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T16:46:50.314354+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8097fad791dff584e0244f"
+    },
+    "user_id": "user_7a3f4c7e3c63",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T16:46:50.637093+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8097fbd791dff584e02451"
+    },
+    "user_id": "user_7a03999f61eb",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T16:46:51.056606+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8097fdd791dff584e02458"
+    },
+    "user_id": "user_9fdac0d52d2b",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T16:46:53.354385+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a809c10a74b8eea2a5333d8"
+    },
+    "user_id": "user_e705a4f01833",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T17:04:16.497077+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 2
+  },
+  {
+    "_id": {
+      "$oid": "6a809cd1a74b8eea2a5333d9"
+    },
+    "user_id": "user_9e09e08e5e0e",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-15T17:07:29.934631+00:00",
+    "seen": true,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1cc36083bfb3ce42eb"
+    },
+    "user_id": "user_875e3283ec14",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:50:36.694190+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1dc36083bfb3ce42ef"
+    },
+    "user_id": "user_6d45cae955b4",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:50:37.359004+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1ec36083bfb3ce42f6"
+    },
+    "user_id": "user_c5d635e1b6b2",
+    "badge_id": "perfect_week",
+    "earned_at": "2026-08-23T04:50:38.512794+00:00",
+    "seen": false,
+    "requirement": 7,
+    "progress_at_earn": 7
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c20c36083bfb3ce42fc"
+    },
+    "user_id": "user_1de3f999021d",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:50:40.033957+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c24c36083bfb3ce430e"
+    },
+    "user_id": "user_30804e32dd92",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:50:44.926242+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c4f2a1f409ec04c55fb"
+    },
+    "user_id": "user_86258fa2d35f",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:51:27.289949+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c4f2a1f409ec04c55ff"
+    },
+    "user_id": "user_89f9a01a5069",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:51:27.990706+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c8b2a1f409ec04c5609"
+    },
+    "user_id": "user_d17c19801c5c",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:52:27.088111+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c922a1f409ec04c561b"
+    },
+    "user_id": "user_0236e38a9eaf",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:52:34.287744+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c9b2a1f409ec04c5628"
+    },
+    "user_id": "user_2bad753428be",
+    "badge_id": "perfect_week",
+    "earned_at": "2026-08-23T04:52:43.433936+00:00",
+    "seen": false,
+    "requirement": 7,
+    "progress_at_earn": 7
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca72a1f409ec04c563b"
+    },
+    "user_id": "user_87d149afe589",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:52:55.824403+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca82a1f409ec04c563f"
+    },
+    "user_id": "user_8b8146f96e40",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:52:56.466338+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca92a1f409ec04c5646"
+    },
+    "user_id": "user_0c0973fa143b",
+    "badge_id": "perfect_week",
+    "earned_at": "2026-08-23T04:52:57.659451+00:00",
+    "seen": false,
+    "requirement": 7,
+    "progress_at_earn": 7
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7cab2a1f409ec04c564c"
+    },
+    "user_id": "user_6607c4ce339b",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:52:59.233908+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7cb02a1f409ec04c565e"
+    },
+    "user_id": "user_3c19c6efa7b3",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T04:53:04.425776+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8a90305abcf7c0da72ae3b"
+    },
+    "user_id": "user_e56ba51bb780",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T06:16:16.125485+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a8b25e7efb3b46c3ee977e1"
+    },
+    "user_id": "user_80aff6c2af50",
+    "badge_id": "first_steps",
+    "earned_at": "2026-08-23T16:55:03.046229+00:00",
+    "seen": false,
+    "requirement": 1,
+    "progress_at_earn": 1
+  }
+]

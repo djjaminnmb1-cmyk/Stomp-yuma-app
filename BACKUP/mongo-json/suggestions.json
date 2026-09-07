@@ -1,0 +1,128 @@
+[
+  {
+    "_id": {
+      "$oid": "6a8b34f77bafdd8e90bb5a11"
+    },
+    "id": "sug_efa04e58cd",
+    "user_id": "user_175d2c8f70de",
+    "user_name": "TEST Fresh User",
+    "user_email": "test_pi_53d49a23@test.example",
+    "dance_name": "TEST_fallback_cef031",
+    "song": "",
+    "artist": "",
+    "difficulty": "",
+    "youtube_url": "",
+    "step_sheet_url": "",
+    "step_sheet_image": "",
+    "notes": "",
+    "status": "pending",
+    "target_instructor_id": "user_31b307e4ccc8",
+    "target_instructor_name": "Erin Brown",
+    "created_at": "2026-08-23T17:59:19.655942+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b34f87bafdd8e90bb5a12"
+    },
+    "id": "sug_64d4bdd234",
+    "user_id": "user_175d2c8f70de",
+    "user_name": "TEST Fresh User",
+    "user_email": "test_pi_53d49a23@test.example",
+    "dance_name": "TEST_override_37f18c",
+    "song": "",
+    "artist": "",
+    "difficulty": "",
+    "youtube_url": "",
+    "step_sheet_url": "",
+    "step_sheet_image": "",
+    "notes": "",
+    "status": "pending",
+    "target_instructor_id": "user_e705a4f01833",
+    "target_instructor_name": "Jamin Brown",
+    "created_at": "2026-08-23T17:59:20.006232+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b34f87bafdd8e90bb5a13"
+    },
+    "id": "sug_d196969319",
+    "user_id": "user_175d2c8f70de",
+    "user_name": "TEST Fresh User",
+    "user_email": "test_pi_53d49a23@test.example",
+    "dance_name": "TEST_invalid_376284",
+    "song": "",
+    "artist": "",
+    "difficulty": "",
+    "youtube_url": "",
+    "step_sheet_url": "",
+    "step_sheet_image": "",
+    "notes": "",
+    "status": "pending",
+    "target_instructor_id": "",
+    "target_instructor_name": "",
+    "created_at": "2026-08-23T17:59:20.119157+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b34f87bafdd8e90bb5a14"
+    },
+    "id": "sug_bb42d8e8a4",
+    "user_id": "user_175d2c8f70de",
+    "user_name": "TEST Fresh User",
+    "user_email": "test_pi_53d49a23@test.example",
+    "dance_name": "TEST_for_jamin_8d3b16",
+    "song": "",
+    "artist": "",
+    "difficulty": "",
+    "youtube_url": "",
+    "step_sheet_url": "",
+    "step_sheet_image": "",
+    "notes": "",
+    "status": "pending",
+    "target_instructor_id": "user_e705a4f01833",
+    "target_instructor_name": "Jamin Brown",
+    "created_at": "2026-08-23T17:59:20.380168+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b37e66fb87252627cac71"
+    },
+    "id": "sug_f4ce01c8e8",
+    "user_id": "user_9cd0b8b8f29e",
+    "user_name": "TEST Multi Pick",
+    "user_email": "test_mip_7ac8152f@test.example",
+    "dance_name": "TEST_mip_fallback_92c6f8",
+    "song": "",
+    "artist": "",
+    "difficulty": "",
+    "youtube_url": "",
+    "step_sheet_url": "",
+    "step_sheet_image": "",
+    "notes": "",
+    "status": "pending",
+    "target_instructor_id": "user_31b307e4ccc8",
+    "target_instructor_name": "Erin Brown",
+    "created_at": "2026-08-23T18:11:50.426750+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b38f29c4c0226df047362"
+    },
+    "id": "sug_f83c82abf8",
+    "user_id": "user_9a0180ee4307",
+    "user_name": "TEST Multi Pick",
+    "user_email": "test_mip_0a647cd5@test.example",
+    "dance_name": "TEST_mip_fallback_878359",
+    "song": "",
+    "artist": "",
+    "difficulty": "",
+    "youtube_url": "",
+    "step_sheet_url": "",
+    "step_sheet_image": "",
+    "notes": "",
+    "status": "pending",
+    "target_instructor_id": "user_31b307e4ccc8",
+    "target_instructor_name": "Erin Brown",
+    "created_at": "2026-08-23T18:16:18.454781+00:00"
+  }
+]

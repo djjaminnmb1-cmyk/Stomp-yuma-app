@@ -103,9 +103,12 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Stompin' Ground Yuma line-dance mobile app enhancement. In this session we're rolling out five
-  additive features one at a time (Practice Mode → Enhanced Search → Leaderboard → Instructor
-  Dashboard → Backend Refactor). Currently working on Practice Mode.
+  Stompin' Ground Yuma — extend the existing EN/ES/FR localization system with
+  German, Dutch, Korean, Simplified Chinese and Traditional Chinese. Preserve
+  existing translations, honour CJK fonts, do not translate user-generated
+  content or external dance sheets, and do not change push credentials or
+  submit store releases. Then run a security audit (originally requested
+  before the localization task).
 
 frontend:
   - task: "Practice Mode: wood-block metronome with countdown + BPM slider"
@@ -682,3 +685,55 @@ agent_communication:
           device-tag comparison above).
 
       Ready for testing_agent frontend smoke.
+
+
+  - agent: "main"
+    message: |
+      Session (June 2026) — added 5 new locales on top of EN/ES/FR:
+      German (de), Dutch (nl), Korean (ko), Simplified Chinese (zh-Hans),
+      Traditional Chinese (zh-Hant). All ~315 keys translated per locale.
+
+      Frontend
+        • src/i18n/translations.ts: 8-locale catalog, ~315 keys each.
+          Cleaned up 4 broken zh-Hans string values that embedded raw
+          ASCII '"' inside double-quoted values — replaced with the
+          canonical CJK corner-brackets 「 」 (U+300C / U+300D). Metro
+          now bundles cleanly.
+        • src/i18n/index.ts: NESTED_TRANSLATIONS + deviceLocale() know
+          about the new codes. zh-Hant is inferred from script `hant`
+          or region TW/HK/MO; bare `zh` / `zh-CN` resolves to zh-Hans.
+        • Language picker (LanguagePickerModal.tsx) and settings
+          (settings/language.tsx) already iterate SUPPORTED_LOCALES /
+          LOCALE_LABELS, so both picked up the 5 new options with
+          zero screen edits.
+        • LOCALES_NEEDING_NATIVE_REVIEW = [ko, zh-Hans, zh-Hant] —
+          machine-drafted, flagged for native-speaker review pass.
+        • CJK fonts covered by iOS PingFang / Android Noto Sans CJK
+          system fallback; no custom font on translated text.
+
+      Backend
+        • core/i18n.py: SUPPORTED_LANGUAGES tuple extended with the
+          new codes. Push + email templates translated (fallback to
+          English still active via _normalise_lang()).
+        • PATCH /api/auth/me/language: accepts the new codes; anything
+          else stays 400.
+
+      Verification
+        • Screenshot walkthrough: picker shows all 8 languages,
+          switching to zh-Hans / zh-Hant / ko / de / nl live-swaps
+          the UI (age-gate, auth CTAs, legal footer, tab labels).
+        • German long-word layout (Datenschutzerklärung, Altersprüfung)
+          wraps cleanly on 390px width.
+        • zh-Hans vs zh-Hant script separation confirmed
+          (登录/账号/隐私 vs 登入/帳號/隱私權).
+
+      Non-goals honoured
+        • UGC (dance titles, chat, event descriptions) untouched.
+        • External resource links (CopperKnob / BootStepper) keep
+          upstream language.
+        • No changes to push credentials, Firebase, Apple keys, or
+          store release configuration.
+
+      Follow-up (planned this session)
+        • Security audit was originally requested before this task —
+          triggering security_audit_agent now.

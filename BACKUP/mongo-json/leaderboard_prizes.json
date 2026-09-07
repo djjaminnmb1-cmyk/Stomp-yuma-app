@@ -1,0 +1,26 @@
+[
+  {
+    "_id": {
+      "$oid": "6a6ff873fb96b9ff0ca16150"
+    },
+    "rank": 1,
+    "range": "all",
+    "description": "\\$50 Amazon gift card",
+    "image": "",
+    "title": "1st Place \u2014 Gift Card",
+    "updated_at": "2026-08-03T02:09:55.540932+00:00",
+    "updated_by": "erinboroughs@gmail.com"
+  },
+  {
+    "_id": {
+      "$oid": "6a6ff873fb96b9ff0ca16154"
+    },
+    "rank": 2,
+    "range": "all",
+    "description": "Free class pack (5 classes)",
+    "image": "",
+    "title": "Runner-up",
+    "updated_at": "2026-08-03T02:09:55.544629+00:00",
+    "updated_by": "erinboroughs@gmail.com"
+  }
+]

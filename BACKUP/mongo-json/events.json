@@ -1,0 +1,75 @@
+[
+  {
+    "_id": {
+      "$oid": "6a8a81c75e3cb32efccb30a9"
+    },
+    "id": "evt_a2e4fbdc9e45",
+    "name": "Test Workshop @ Yuma Civic Ctr",
+    "description": "Improver workshop with Erin",
+    "event_type": "workshop",
+    "skill_level": "Improver",
+    "date": "2026-09-14",
+    "start_time": "19:30",
+    "end_time": "21:30",
+    "venue_name": "Yuma Civic Center",
+    "address": "1440 Desert Hills Dr",
+    "city": "Yuma",
+    "state": "AZ",
+    "zip_code": "85365",
+    "country": "US",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        -114.6377764,
+        32.661757
+      ]
+    },
+    "display_name": "Yuma Civic Center, 1440, West Desert Hills Drive, Yuma, Yuma County, Arizona, 85365, United States",
+    "cover_image": "",
+    "price": "$15",
+    "registration_url": "",
+    "max_attendees": null,
+    "is_published": true,
+    "instructor_id": "user_9e09e08e5e0e",
+    "instructor_name": "Stompin' Admin",
+    "created_at": "2026-08-23T05:14:47.017439+00:00",
+    "updated_at": "2026-08-23T05:14:47.017439+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b2f0aefb3b46c3ee977e6"
+    },
+    "id": "evt_76fd2f73ab4b",
+    "name": "Weekend Boot Camp \u2014 Two-Day Poster Test",
+    "description": "Flyer preview demo",
+    "event_type": "workshop",
+    "skill_level": "Improver",
+    "date": "2026-09-14",
+    "end_date": "2026-09-15",
+    "start_time": "10:00",
+    "end_time": "17:00",
+    "venue_name": "Yuma Civic Center",
+    "address": "1440 Desert Hills Dr",
+    "city": "Yuma",
+    "state": "AZ",
+    "zip_code": "85365",
+    "country": "US",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        -114.6377764,
+        32.661757
+      ]
+    },
+    "display_name": "Yuma Civic Center, 1440, West Desert Hills Drive, Yuma, Yuma County, Arizona, 85365, United States",
+    "cover_image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAACICAYAAABDVpj+AAAABmJLR0QA/wD/AP+gvaeTAAAAeUlEQVRoge3PMQEAIAgAweE/9CxIAj0LxDrn3M+7QCPjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxjMhxj",
+    "price": "$45",
+    "registration_url": "",
+    "max_attendees": null,
+    "is_published": true,
+    "instructor_id": "user_31b307e4ccc8",
+    "instructor_name": "Erin Brown",
+    "created_at": "2026-08-23T17:34:02.251974+00:00",
+    "updated_at": "2026-08-23T17:34:02.251974+00:00"
+  }
+]

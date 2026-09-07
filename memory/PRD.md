@@ -821,3 +821,147 @@ must also be translated.
 - Once you drop `GoogleService-Info.plist` into `frontend/`, we add
   `expo.ios.googleServicesFile` to `app.config.js` and remove the
   `Platform.OS === "ios"` early-return in `frontend/src/lib/push.ts`.
+
+
+## Session (June 2026) — Localization: +5 Languages (DE/NL/KO/zh-Hans/zh-Hant)
+
+**User request**: Extend the existing localization system (EN/ES/FR) with
+German, Dutch, Korean, Simplified Chinese and Traditional Chinese. Preserve
+existing translations, ensure CJK fonts render on both platforms, do not
+translate user-generated content, brand names or external dance sheets, and
+do not change push credentials or submit store releases.
+
+### What shipped
+
+1. **`src/i18n/translations.ts`** — full ~315-key catalogs added for each
+   new locale, ordered EN → ES → FR → DE → NL → KO → zh-Hans → zh-Hant. All
+   locales share the same key set (verified line-count parity), which means
+   any accidentally-missing key transparently falls back to English via the
+   existing i18n-js `enableFallback` setting.
+   - **CJK-quote fix**: initial machine-drafted zh-Hans strings embedded
+     raw ASCII `"` characters inside double-quoted values on 4 lines
+     (2655 / 2670 / 2715 / 3021), which broke Metro's TypeScript parser.
+     Replaced with proper CJK corner-brackets 「 」 (U+300C / U+300D) —
+     the canonical inline-quote pair in Simplified & Traditional Chinese
+     typography, and free from JavaScript-string escaping ambiguity.
+   - **`LOCALES_NEEDING_NATIVE_REVIEW`** array flags ko / zh-Hans / zh-Hant
+     as machine-drafted and pending a native-speaker review pass. Not used
+     at runtime — surfaced only for a QA report.
+   - **CJK-font note** at the top of the file: React Native falls back to
+     the OS's system font family whenever a glyph isn't found in the
+     current typeface. On iOS that's PingFang SC/TC; on Android it's Noto
+     Sans CJK. Both ship with the OS since ~2015. Only the login-hero
+     `Rye` display font — which we treat as brand and never translate —
+     is scoped to Latin-only surfaces, so it doesn't bottleneck CJK.
+
+2. **`src/i18n/index.ts`** — added `zh-Hans` / `zh-Hant` awareness on top of
+   the existing 3-language runtime:
+   - `deviceLocale()` inspects `getLocales()` results and maps `zh-Hant`
+     script / regions `TW / HK / MO` to `zh-Hant`; anything else with base
+     `zh` (including `zh-CN` and bare `zh`) resolves to `zh-Hans`.
+   - `NESTED_TRANSLATIONS` registers all 8 locales for i18n-js.
+   - Bare `SUPPORTED_LOCALES` extended to `["en","es","fr","de","nl","ko","zh-Hans","zh-Hant"]`
+     so the settings / picker screens pick up the new options automatically
+     (they iterate the array — no hardcoded language list anywhere in the
+     UI).
+
+3. **Backend `core/i18n.py`** — `SUPPORTED_LANGUAGES` tuple extended with
+   the 5 new codes. Push-notification and email templates were previously
+   added for each locale (see phase 1 EN/ES/FR baseline); the 5 new locales
+   now share the same template set with translated bodies. Fallback to `en`
+   via `_normalise_lang()` remains the safety net for any missing template.
+   - `PATCH /api/auth/me/language` accepts the new canonical codes; anything
+     else is rejected 400 (matches the existing behaviour, no schema drift).
+
+### Verification
+
+- ✅ Metro Bundler restarts cleanly.
+- ✅ TypeScript compilation of `translations.ts` in isolation is
+  error-free (`npx tsc --noEmit --skipLibCheck ...`).
+- ✅ Screenshot pass on the LanguagePickerModal shows all 8 languages
+  rendered with proper glyphs (English, Español, Français, Deutsch,
+  Nederlands, 한국어, 简体中文, 繁體中文).
+- ✅ End-to-end tap-through on each new language triggers a live UI swap:
+  age-gate, login CTAs, legal disclaimer footer all re-render in the
+  chosen language on first tap.
+- ✅ German long-word layout (`Datenschutzerklärung`, `Altersprüfung`)
+  wraps cleanly on 390px width; no overflow.
+- ✅ zh-Hans and zh-Hant render side-by-side without character-mixing —
+  Simplified shows 登录 / 账号 / 隐私 while Traditional shows
+  登入 / 帳號 / 隱私權, confirming the split.
+
+### Non-goals honoured
+- User-generated content (dance titles, choreographer names, chat, event
+  descriptions) intentionally left untranslated.
+- External resource links (CopperKnob / BootStepper) continue to open in
+  their upstream language — attribution copy is what we translate, the
+  linked content is theirs.
+- No changes to push credentials, Firebase config, Apple keys, or store
+  release configuration. `google-services.json` untouched.
+
+
+
+## Session (June 2026) — Full Backup Package Prepared
+
+**User request**: A complete, downloadable backup of the whole app —
+source, DB, integrations, EAS/domain config, restore instructions, and a
+checklist of what's missing.
+
+### What shipped (read-only artifacts under `/app/BACKUP/`)
+
+- `README.md` + 6 numbered markdown docs (source code / DB / secrets /
+  domain-EAS / restore playbook / checklist).
+- `mongo-dump/test_database/` — native `mongodump` (BSON+metadata,
+  8.5 MB, 38 collections, 13,057 docs).
+- `mongo-json/` — portable JSON export of every collection
+  (one file per collection + `_manifest.json`).
+- `backend.env.example` + `frontend.env.example` — placeholder-only
+  env templates for GitHub. No real secret values anywhere in the
+  folder, PRD, or chat.
+- `gitignore.recommended` — ready-to-drop-in `.gitignore` covering
+  `.env`, signing keys, `node_modules`, `stompin-app.zip`, and the
+  PII-containing `mongo-*` folders.
+- `inventory/` — machine-generated `source-tree.txt`,
+  `frontend-deps.txt` (52 prod + 5 dev), `backend-requirements.txt`
+  (130 pkgs), `mongo-manifest.txt`.
+- `stompin-backup-june-2026.zip` — 4 MB rolled-up zip of the whole
+  `BACKUP/` folder for one-click download.
+
+### What was explicitly EXCLUDED (per user request)
+
+- Real values of `.env` keys (JWT_SECRET, SMTP_PASSWORD, INSTRUCTOR_CODE,
+  COPPERKNOB_API_KEY, BOOTSTEPPER_API_KEY, EMERGENT_LLM_KEY, etc.).
+- `AuthKey_KGNZBJ85K4.p8` binary.
+- `memory/test_credentials.md` preview passwords.
+
+The `03-integrations-and-secrets.md` doc lists each key with a description
+of where to obtain the real value + how to store it. The `06-checklist.md`
+doc has a copy-pasteable email template for what to request from Emergent
+Support (production MongoDB, EAS credentials, APNs key, App Store Connect
+API key, Google Play service account, managed-OTA status).
+
+### What the user still needs to do themselves
+
+1. Push the `/app/` tree to their private GitHub (after extending
+   `/app/.gitignore` with the recommended block).
+2. Copy live `.env` values from the Emergent dashboard into their
+   password manager.
+3. Download the Apple `.p8` and store as a 1Password attachment.
+4. Request from Emergent Support: production DB dump, EAS credentials,
+   OTA status.
+5. Snapshot their DNS zone at whichever registrar hosts
+   `stompingroundyuma.org`.
+
+### Live app not touched
+
+All services (backend, expo, mongodb, nginx-code-proxy, webhook-crond)
+still `RUNNING` on the same PIDs. No files were modified outside `/app/BACKUP/`
+and `/app/memory/PRD.md`.
+
+### Paused work
+
+The SEO / canonical / sitemap / redirects task requested earlier is
+paused. Full plan is captured in the previous `ask_human` and user
+response — resume by continuing that thread; no partial code changes
+were merged.
+

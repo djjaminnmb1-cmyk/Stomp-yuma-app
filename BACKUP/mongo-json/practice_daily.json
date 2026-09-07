@@ -1,0 +1,196 @@
+[
+  {
+    "_id": {
+      "$oid": "6a809e77ed9c9767f47af04b"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_9e09e08e5e0e",
+    "count": 6,
+    "last_opened_at": "2026-08-15T17:20:08.645809+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a809fd7ed9c9767f47af121"
+    },
+    "day": "2026-08-14",
+    "user_id": "user_9e09e08e5e0e",
+    "count": 5
+  },
+  {
+    "_id": {
+      "$oid": "6a809fd7ed9c9767f47af123"
+    },
+    "day": "2026-08-10",
+    "user_id": "user_9e09e08e5e0e",
+    "count": 2
+  },
+  {
+    "_id": {
+      "$oid": "6a809fd7ed9c9767f47af125"
+    },
+    "day": "2026-08-03",
+    "user_id": "user_9e09e08e5e0e",
+    "count": 1
+  },
+  {
+    "_id": {
+      "$oid": "6a809fd7ed9c9767f47af127"
+    },
+    "day": "2026-07-28",
+    "user_id": "user_9e09e08e5e0e",
+    "count": 4
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0abed9c9767f47af292"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_4eae5b247a56",
+    "count": 3,
+    "last_opened_at": "2026-08-15T17:23:55.387505+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0aced9c9767f47af2d7"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_511403a99587",
+    "count": 2,
+    "last_opened_at": "2026-08-15T17:23:56.234062+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0aced9c9767f47af300"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_3caf90eb9a8e",
+    "count": 5,
+    "last_opened_at": "2026-08-15T17:23:56.635500+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0aded9c9767f47af36b"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_391ffd0d681b",
+    "count": 1,
+    "last_opened_at": "2026-08-15T17:23:57.168034+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0aded9c9767f47af384"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_58d36bc5053f",
+    "count": 1,
+    "last_opened_at": "2026-08-15T17:23:57.570342+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0bced9c9767f47af454"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_d0594d393aa3",
+    "count": 3,
+    "last_opened_at": "2026-08-15T17:24:12.967198+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0bded9c9767f47af499"
+    },
+    "user_id": "user_b2711aadb87a",
+    "day": "2026-08-15",
+    "count": 2,
+    "last_opened_at": "2026-08-15T17:24:13.637900+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0bded9c9767f47af4c2"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_9963627e4d70",
+    "count": 5,
+    "last_opened_at": "2026-08-15T17:24:13.919737+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0beed9c9767f47af52d"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_e8fcf6e20f25",
+    "count": 1,
+    "last_opened_at": "2026-08-15T17:24:14.356644+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a80a0beed9c9767f47af546"
+    },
+    "day": "2026-08-15",
+    "user_id": "user_4dc0ca357b9f",
+    "count": 1,
+    "last_opened_at": "2026-08-15T17:24:14.713642+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8513102b3cbf0773e68cb9"
+    },
+    "user_id": "user_e705a4f01833",
+    "day": "2026-08-19",
+    "count": 1,
+    "last_opened_at": "2026-08-19T02:21:04.177532+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1e96ce30e09f29775f"
+    },
+    "user_id": "user_c5d635e1b6b2",
+    "day": "2026-08-23",
+    "count": 1,
+    "last_opened_at": "2026-08-23T04:50:38.509762+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c2596ce30e09f29787c"
+    },
+    "day": "2026-08-23",
+    "user_id": "user_8050140c75dd",
+    "count": 1,
+    "last_opened_at": "2026-08-23T04:50:45.542037+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c9296ce30e09f297b47"
+    },
+    "user_id": "user_397c9cf8f100",
+    "day": "2026-08-23",
+    "count": 1,
+    "last_opened_at": "2026-08-23T04:52:34.974658+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c9b96ce30e09f297bb6"
+    },
+    "day": "2026-08-23",
+    "user_id": "user_2bad753428be",
+    "count": 1,
+    "last_opened_at": "2026-08-23T04:52:43.431937+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca996ce30e09f297cd6"
+    },
+    "day": "2026-08-23",
+    "user_id": "user_0c0973fa143b",
+    "count": 1,
+    "last_opened_at": "2026-08-23T04:52:57.657334+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7cb196ce30e09f297df8"
+    },
+    "day": "2026-08-23",
+    "user_id": "user_50e62d85d588",
+    "count": 1,
+    "last_opened_at": "2026-08-23T04:53:05.049037+00:00"
+  }
+]

@@ -1,0 +1,426 @@
+[
+  {
+    "_id": {
+      "$oid": "6a848be12485d1e427537e81"
+    },
+    "event_id": "evt_28368f0c35e5",
+    "user_id": "user_31b307e4ccc8",
+    "type": "completion",
+    "ref": "dance_297c3214f7",
+    "extra": {},
+    "created_at": "2026-08-18T16:44:17.812427+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a85133fb3407fe13f45d762"
+    },
+    "event_id": "evt_7e5317d764f7",
+    "user_id": "user_e705a4f01833",
+    "type": "completion",
+    "ref": "dance_54df6843b5",
+    "extra": {},
+    "created_at": "2026-08-19T02:21:51.846783+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1cc36083bfb3ce42ec"
+    },
+    "event_id": "evt_35dcdddbfffb",
+    "user_id": "user_875e3283ec14",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:36.695551+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1cc36083bfb3ce42ed"
+    },
+    "event_id": "evt_bee2042f6d86",
+    "user_id": "user_875e3283ec14",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:36.700012+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1dc36083bfb3ce42f0"
+    },
+    "event_id": "evt_8fd8682fd900",
+    "user_id": "user_6d45cae955b4",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:37.359957+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1dc36083bfb3ce42f1"
+    },
+    "event_id": "evt_4e89f9aeb10d",
+    "user_id": "user_6d45cae955b4",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:37.363958+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1ec36083bfb3ce42f5"
+    },
+    "event_id": "evt_0d8fa24f42c2",
+    "user_id": "user_c5d635e1b6b2",
+    "type": "streak_milestone",
+    "ref": "",
+    "extra": {
+      "days": 7
+    },
+    "created_at": "2026-08-23T04:50:38.512549+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c1ec36083bfb3ce42f7"
+    },
+    "event_id": "evt_ea73a7171a03",
+    "user_id": "user_c5d635e1b6b2",
+    "type": "badge",
+    "ref": "perfect_week",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:38.514675+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c20c36083bfb3ce42fd"
+    },
+    "event_id": "evt_949cdcca865b",
+    "user_id": "user_1de3f999021d",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:40.034863+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c20c36083bfb3ce42fe"
+    },
+    "event_id": "evt_fd96e63c4a92",
+    "user_id": "user_1de3f999021d",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:40.038877+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c24c36083bfb3ce430f"
+    },
+    "event_id": "evt_268e782e1267",
+    "user_id": "user_30804e32dd92",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:44.927474+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c24c36083bfb3ce4310"
+    },
+    "event_id": "evt_8f52b6956273",
+    "user_id": "user_30804e32dd92",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:50:44.931841+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c4f2a1f409ec04c55fc"
+    },
+    "event_id": "evt_a8c9df40e2a0",
+    "user_id": "user_86258fa2d35f",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:51:27.290886+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c4f2a1f409ec04c55fd"
+    },
+    "event_id": "evt_fb8ab9b64b8b",
+    "user_id": "user_86258fa2d35f",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:51:27.295124+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c4f2a1f409ec04c5600"
+    },
+    "event_id": "evt_d36b71f5e67e",
+    "user_id": "user_89f9a01a5069",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:51:27.991638+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c4f2a1f409ec04c5601"
+    },
+    "event_id": "evt_6d716d12f517",
+    "user_id": "user_89f9a01a5069",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:51:27.995702+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c8b2a1f409ec04c560a"
+    },
+    "event_id": "evt_3d301f5f94e6",
+    "user_id": "user_d17c19801c5c",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:27.089069+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c8b2a1f409ec04c560b"
+    },
+    "event_id": "evt_ee6c953ecabc",
+    "user_id": "user_d17c19801c5c",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:27.093219+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c922a1f409ec04c561c"
+    },
+    "event_id": "evt_4fecb9b3d7e0",
+    "user_id": "user_0236e38a9eaf",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:34.288635+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c922a1f409ec04c561d"
+    },
+    "event_id": "evt_873e8cd5d189",
+    "user_id": "user_0236e38a9eaf",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:34.292572+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c9b2a1f409ec04c5627"
+    },
+    "event_id": "evt_ecc9ae223135",
+    "user_id": "user_2bad753428be",
+    "type": "streak_milestone",
+    "ref": "",
+    "extra": {
+      "days": 7
+    },
+    "created_at": "2026-08-23T04:52:43.433689+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7c9b2a1f409ec04c5629"
+    },
+    "event_id": "evt_da7cc6e8dfa9",
+    "user_id": "user_2bad753428be",
+    "type": "badge",
+    "ref": "perfect_week",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:43.435902+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca72a1f409ec04c563c"
+    },
+    "event_id": "evt_517869a498fb",
+    "user_id": "user_87d149afe589",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:55.825421+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca72a1f409ec04c563d"
+    },
+    "event_id": "evt_53b7891cf9e2",
+    "user_id": "user_87d149afe589",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:55.829891+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca82a1f409ec04c5640"
+    },
+    "event_id": "evt_026424d0f072",
+    "user_id": "user_8b8146f96e40",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:56.467324+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca82a1f409ec04c5641"
+    },
+    "event_id": "evt_a27f72726836",
+    "user_id": "user_8b8146f96e40",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:56.471736+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca92a1f409ec04c5645"
+    },
+    "event_id": "evt_6ccedd129632",
+    "user_id": "user_0c0973fa143b",
+    "type": "streak_milestone",
+    "ref": "",
+    "extra": {
+      "days": 7
+    },
+    "created_at": "2026-08-23T04:52:57.659186+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ca92a1f409ec04c5647"
+    },
+    "event_id": "evt_e59ea26591de",
+    "user_id": "user_0c0973fa143b",
+    "type": "badge",
+    "ref": "perfect_week",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:57.661694+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7cab2a1f409ec04c564d"
+    },
+    "event_id": "evt_94e45ed15616",
+    "user_id": "user_6607c4ce339b",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:59.234924+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7cab2a1f409ec04c564e"
+    },
+    "event_id": "evt_3447d2245128",
+    "user_id": "user_6607c4ce339b",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:52:59.239359+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7cb02a1f409ec04c565f"
+    },
+    "event_id": "evt_7d26b0311eb0",
+    "user_id": "user_3c19c6efa7b3",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T04:53:04.426854+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7cb02a1f409ec04c5660"
+    },
+    "event_id": "evt_d9b7aca89295",
+    "user_id": "user_3c19c6efa7b3",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T04:53:04.431277+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a7ce52a1f409ec04c5667"
+    },
+    "event_id": "evt_20cf64ecc54e",
+    "user_id": "user_e705a4f01833",
+    "type": "completion",
+    "ref": "dance_af6865bab5",
+    "extra": {},
+    "created_at": "2026-08-23T04:53:57.469997+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a90305abcf7c0da72ae3c"
+    },
+    "event_id": "evt_03773168cec7",
+    "user_id": "user_e56ba51bb780",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T06:16:16.126408+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8a90305abcf7c0da72ae3d"
+    },
+    "event_id": "evt_456e2b5520ae",
+    "user_id": "user_e56ba51bb780",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T06:16:16.130488+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b25e7efb3b46c3ee977e2"
+    },
+    "event_id": "evt_328c9e86337f",
+    "user_id": "user_80aff6c2af50",
+    "type": "badge",
+    "ref": "first_steps",
+    "extra": {},
+    "created_at": "2026-08-23T16:55:03.047572+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b25e7efb3b46c3ee977e3"
+    },
+    "event_id": "evt_4c10f9d3ef05",
+    "user_id": "user_80aff6c2af50",
+    "type": "completion",
+    "ref": "dance_0c73c7254b",
+    "extra": {},
+    "created_at": "2026-08-23T16:55:03.052084+00:00"
+  },
+  {
+    "_id": {
+      "$oid": "6a8b9eff5fc8f4ac68c1a237"
+    },
+    "event_id": "evt_d0b868a7e35e",
+    "user_id": "user_31b307e4ccc8",
+    "type": "completion",
+    "ref": "dance_98427d5630",
+    "extra": {},
+    "created_at": "2026-08-24T01:31:43.907384+00:00"
+  }
+]

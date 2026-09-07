@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"created_at":{"$numberInt":"1"}},"name":"created_at_1"}],"uuid":"2bef8bebce20403dada552de63108fcd","collectionName":"instructor_messages","type":"collection"}

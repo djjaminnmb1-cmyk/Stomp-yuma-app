@@ -29,7 +29,16 @@ from __future__ import annotations
 from typing import Any, Mapping, Optional
 
 
-SUPPORTED_LANGUAGES: tuple[str, ...] = ("en", "es", "fr")
+SUPPORTED_LANGUAGES: tuple[str, ...] = (
+    "en",
+    "es",
+    "fr",
+    "de",
+    "nl",
+    "ko",
+    "zh-Hans",
+    "zh-Hant",
+)
 DEFAULT_LANGUAGE: str = "en"
 
 
@@ -133,17 +142,188 @@ _CATALOG: dict[str, dict[str, str]] = {
         ),
         "email.reset.signoff": "— Stompin' Ground Yuma",
     },
+    "de": {
+        # ---------- Push-Benachrichtigungen ----------
+        "push.new_dance.title": "Neuer Tanz von {choreographer}",
+        "push.new_dance.body": "„{dance_name}" ist gerade in der Bibliothek gelandet – schau vorbei.",
+        "push.new_event.title": "{instructor} hat ein neues Event veröffentlicht",
+        "push.new_event.body": "{event_title} — {when}",
+        "push.new_class.title": "{instructor} hat einen neuen Kurs hinzugefügt",
+        "push.new_class.body": "{class_title} — {when}",
+        "push.class_reminder.title": "Kurs morgen: {class_title}",
+        "push.class_reminder.body": "Wir sehen uns um {when} — bring deine Stiefel mit!",
+        "push.new_follower.title": "{follower} folgt dir jetzt",
+        "push.new_follower.body": "Sag Hallo auf ihrem Profil.",
+        "push.chat_mention.title": "{sender} hat dich erwähnt",
+        "push.chat_mention.body": "{preview}",
+        # ---------- Passwort-Reset-E-Mail ----------
+        "email.reset.subject": "Setze dein Stompin' Ground Yuma Passwort zurück",
+        "email.reset.greeting": "Hallo {name},",
+        "email.reset.intro": (
+            "Wir haben eine Anfrage zum Zurücksetzen deines Stompin' Ground "
+            "Yuma Passworts erhalten. Tippe auf die Schaltfläche unten, um "
+            "ein neues Passwort festzulegen. Dieser Link läuft in "
+            "{minutes} Minuten ab und kann nur einmal verwendet werden."
+        ),
+        "email.reset.button": "Passwort zurücksetzen",
+        "email.reset.copy_hint": "Oder kopiere diesen Link in deinen Browser:",
+        "email.reset.ignore": (
+            "Wenn du das nicht angefordert hast, kannst du diese E-Mail "
+            "getrost ignorieren – dein Passwort bleibt unverändert."
+        ),
+        "email.reset.signoff": "— Stompin' Ground Yuma",
+    },
+    "nl": {
+        # ---------- Push-meldingen ----------
+        "push.new_dance.title": "Nieuwe dans van {choreographer}",
+        "push.new_dance.body": "\"{dance_name}\" staat nu in de bibliotheek — ga eens kijken.",
+        "push.new_event.title": "{instructor} plaatste een nieuw event",
+        "push.new_event.body": "{event_title} — {when}",
+        "push.new_class.title": "{instructor} voegde een nieuwe les toe",
+        "push.new_class.body": "{class_title} — {when}",
+        "push.class_reminder.title": "Les morgen: {class_title}",
+        "push.class_reminder.body": "Tot {when} — vergeet je laarzen niet!",
+        "push.new_follower.title": "{follower} volgt je nu",
+        "push.new_follower.body": "Zeg hallo op hun profiel.",
+        "push.chat_mention.title": "{sender} noemde je",
+        "push.chat_mention.body": "{preview}",
+        # ---------- Wachtwoord reset e-mail ----------
+        "email.reset.subject": "Reset je Stompin' Ground Yuma wachtwoord",
+        "email.reset.greeting": "Hoi {name},",
+        "email.reset.intro": (
+            "We ontvingen een verzoek om je Stompin' Ground Yuma wachtwoord "
+            "te resetten. Tik op de knop hieronder om een nieuw wachtwoord in "
+            "te stellen. Deze link vervalt over {minutes} minuten en kan "
+            "slechts één keer worden gebruikt."
+        ),
+        "email.reset.button": "Wachtwoord resetten",
+        "email.reset.copy_hint": "Of kopieer deze link in je browser:",
+        "email.reset.ignore": (
+            "Als jij dit niet hebt aangevraagd, kun je deze e-mail veilig "
+            "negeren — je wachtwoord blijft hetzelfde."
+        ),
+        "email.reset.signoff": "— Stompin' Ground Yuma",
+    },
+    "ko": {
+        # ---------- 푸시 알림 ----------
+        "push.new_dance.title": "{choreographer}의 새 댄스",
+        "push.new_dance.body": "\"{dance_name}\"이(가) 라이브러리에 방금 올라왔어요 — 확인해 보세요.",
+        "push.new_event.title": "{instructor}이(가) 새 이벤트를 올렸어요",
+        "push.new_event.body": "{event_title} — {when}",
+        "push.new_class.title": "{instructor}이(가) 새 수업을 추가했어요",
+        "push.new_class.body": "{class_title} — {when}",
+        "push.class_reminder.title": "내일 수업: {class_title}",
+        "push.class_reminder.body": "{when}에 만나요 — 부츠 잊지 마세요!",
+        "push.new_follower.title": "{follower}님이 회원님을 팔로우하기 시작했어요",
+        "push.new_follower.body": "프로필에서 인사를 남겨보세요.",
+        "push.chat_mention.title": "{sender}님이 회원님을 언급했어요",
+        "push.chat_mention.body": "{preview}",
+        # ---------- 비밀번호 재설정 이메일 ----------
+        "email.reset.subject": "Stompin' Ground Yuma 비밀번호 재설정",
+        "email.reset.greeting": "{name}님, 안녕하세요.",
+        "email.reset.intro": (
+            "Stompin' Ground Yuma 비밀번호 재설정 요청을 받았어요. "
+            "아래 버튼을 눌러 새 비밀번호를 설정해 주세요. 이 링크는 "
+            "{minutes}분 후에 만료되며 한 번만 사용할 수 있어요."
+        ),
+        "email.reset.button": "비밀번호 재설정",
+        "email.reset.copy_hint": "또는 이 링크를 브라우저에 복사하세요:",
+        "email.reset.ignore": (
+            "요청하지 않으셨다면 이 이메일을 무시해도 괜찮아요 — "
+            "비밀번호는 그대로 유지됩니다."
+        ),
+        "email.reset.signoff": "— Stompin' Ground Yuma",
+    },
+    "zh-Hans": {
+        # ---------- 推送通知 ----------
+        "push.new_dance.title": "{choreographer} 的新舞蹈",
+        "push.new_dance.body": "\"{dance_name}\" 刚刚上线,来看看吧。",
+        "push.new_event.title": "{instructor} 发布了新活动",
+        "push.new_event.body": "{event_title} — {when}",
+        "push.new_class.title": "{instructor} 新增了一节课",
+        "push.new_class.body": "{class_title} — {when}",
+        "push.class_reminder.title": "明日课程:{class_title}",
+        "push.class_reminder.body": "{when} 见 — 别忘记带靴子!",
+        "push.new_follower.title": "{follower} 开始关注你了",
+        "push.new_follower.body": "去他的主页打个招呼吧。",
+        "push.chat_mention.title": "{sender} 提到了你",
+        "push.chat_mention.body": "{preview}",
+        # ---------- 密码重置邮件 ----------
+        "email.reset.subject": "重置您的 Stompin' Ground Yuma 密码",
+        "email.reset.greeting": "你好 {name},",
+        "email.reset.intro": (
+            "我们收到重置您 Stompin' Ground Yuma 密码的请求。"
+            "点击下方按钮设置新密码。此链接将在 {minutes} 分钟后过期,只能使用一次。"
+        ),
+        "email.reset.button": "重置密码",
+        "email.reset.copy_hint": "或将此链接复制到浏览器:",
+        "email.reset.ignore": (
+            "如果这不是您的请求,可以安全地忽略此邮件 — 您的密码将保持不变。"
+        ),
+        "email.reset.signoff": "— Stompin' Ground Yuma",
+    },
+    "zh-Hant": {
+        # ---------- 推播通知 ----------
+        "push.new_dance.title": "{choreographer} 的新舞蹈",
+        "push.new_dance.body": "「{dance_name}」剛剛上線,快來看看。",
+        "push.new_event.title": "{instructor} 發佈了新活動",
+        "push.new_event.body": "{event_title} — {when}",
+        "push.new_class.title": "{instructor} 新增了一堂課",
+        "push.new_class.body": "{class_title} — {when}",
+        "push.class_reminder.title": "明日課程:{class_title}",
+        "push.class_reminder.body": "{when} 見 — 別忘了帶靴子!",
+        "push.new_follower.title": "{follower} 開始追蹤你了",
+        "push.new_follower.body": "去他的主頁打個招呼吧。",
+        "push.chat_mention.title": "{sender} 提到了你",
+        "push.chat_mention.body": "{preview}",
+        # ---------- 密碼重設信件 ----------
+        "email.reset.subject": "重設您的 Stompin' Ground Yuma 密碼",
+        "email.reset.greeting": "你好 {name},",
+        "email.reset.intro": (
+            "我們收到重設您 Stompin' Ground Yuma 密碼的請求。"
+            "點按下方按鈕設定新密碼。此連結將於 {minutes} 分鐘後失效,且只能使用一次。"
+        ),
+        "email.reset.button": "重設密碼",
+        "email.reset.copy_hint": "或將此連結複製到瀏覽器:",
+        "email.reset.ignore": (
+            "若您並未提出此要求,可以放心忽略這封信 — 您的密碼將維持不變。"
+        ),
+        "email.reset.signoff": "— Stompin' Ground Yuma",
+    },
 }
 
 
 def _normalise_lang(lang: Optional[str]) -> str:
     """Return one of ``SUPPORTED_LANGUAGES``. Accepts BCP-47 tags
     (``"es-MX"`` → ``"es"``) and falls back to English on any
-    unsupported / empty value."""
+    unsupported / empty value.
+
+    Chinese is a special case because the two supported catalogs
+    (``zh-Hans`` / ``zh-Hant``) share the same base language.
+    We inspect the script + region subtags so ``zh-CN`` /
+    ``zh-Hans-*`` land in Simplified and ``zh-TW`` / ``zh-HK`` /
+    ``zh-MO`` / ``zh-Hant-*`` land in Traditional. A bare ``zh``
+    defaults to Simplified (larger reader base) — the client can
+    always override.
+    """
     if not lang:
         return DEFAULT_LANGUAGE
-    base = str(lang).lower().split("-")[0].split("_")[0].strip()
-    return base if base in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
+    tag = str(lang).replace("_", "-").strip()
+    lower = tag.lower()
+    base = lower.split("-")[0]
+
+    if base == "zh":
+        subtags = lower.split("-")[1:]
+        if any(t in {"hant", "tw", "hk", "mo"} for t in subtags):
+            return "zh-Hant"
+        return "zh-Hans"
+
+    # Direct match for hyphenated codes like ``de`` / ``ko`` / ``nl``
+    if lower in SUPPORTED_LANGUAGES:
+        return lower
+    if base in SUPPORTED_LANGUAGES:
+        return base
+    return DEFAULT_LANGUAGE
 
 
 def t(key: str, lang: Optional[str] = None, /, **kwargs: Any) -> str:
@@ -184,9 +364,24 @@ def preferred_language_for(user: Optional[Mapping[str, Any]]) -> str:
 
 def is_supported(lang: Optional[str]) -> bool:
     """True when ``lang`` (BCP-47 or short code) maps to a supported
-    catalog. Used by the ``PATCH /api/auth/me`` validator."""
+    catalog. Used by the ``PATCH /api/auth/me`` validator.
+
+    Accepts the canonical short codes (``en``, ``es``, ``fr``,
+    ``de``, ``nl``, ``ko``), the two Chinese script variants
+    (``zh-Hans``, ``zh-Hant``), and BCP-47 tags that CLEARLY
+    disambiguate to one of them (e.g. ``zh-CN`` for Simplified,
+    ``zh-TW`` for Traditional). A BARE ``zh`` is rejected because
+    the caller would have to pick a script — the client sends the
+    explicit variant.
+    """
     if not lang:
         return False
-    return _normalise_lang(lang) in SUPPORTED_LANGUAGES and str(
-        lang
-    ).lower().split("-")[0].split("_")[0].strip() in SUPPORTED_LANGUAGES
+    tag = str(lang).replace("_", "-").strip().lower()
+    base = tag.split("-")[0]
+    if base == "zh":
+        subtags = tag.split("-")[1:]
+        if any(t in {"hans", "cn", "sg", "hant", "tw", "hk", "mo"} for t in subtags):
+            return True
+        # Bare "zh" → not accepted from the client; force explicit choice.
+        return False
+    return base in SUPPORTED_LANGUAGES

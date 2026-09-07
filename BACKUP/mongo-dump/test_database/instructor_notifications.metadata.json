@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"user_id":{"$numberInt":"1"},"entity_type":{"$numberInt":"1"},"entity_id":{"$numberInt":"1"}},"name":"uniq_user_entity","unique":true}],"uuid":"f924e47457d14f40862750dd73ca8844","collectionName":"instructor_notifications","type":"collection"}
