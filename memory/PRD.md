@@ -259,7 +259,7 @@ Companion to Phase 17 (CopperKnob). Users hitting a wall in our own ~1,200-dance
 - **Home page overflow fixes** — section headers ("Fresh on the Floor", "Community Activity") now use `flex: 1 + numberOfLines={1}` on the title so "See all" always fits on-row. "Recently Practiced" header rebuilt as a flex row where the title row expands and "Pick up where you left off" hint sticks to the right at natural width.
 
 ### Production env vars pending (unchanged from Phase 17)
-Same list as Phase 17 — user still needs to add `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_CLIENT_ID`, `APPLE_PRIVATE_KEY_PEM_B64`, `APPLE_AUDIENCES`, `COPPERKNOB_API_KEY`, plus now `BOOTSTEPPER_API_KEY=AT7G23KS2GJHR8CRR43JJ9N` to the prod environment via the Emergent dashboard and click Publish.
+Same list as Phase 17 — user still needs to add `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_CLIENT_ID`, `APPLE_PRIVATE_KEY_PEM_B64`, `APPLE_AUDIENCES`, `COPPERKNOB_API_KEY`, plus now `BOOTSTEPPER_API_KEY=<REDACTED>` to the prod environment via the Emergent dashboard and click Publish.
 
 
 

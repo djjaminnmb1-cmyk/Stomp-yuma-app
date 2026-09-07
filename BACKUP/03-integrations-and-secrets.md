@@ -29,7 +29,7 @@ gist.
 | `EMERGENT_AUTH_SESSION_URL`            | **Managed by Emergent**. Google OAuth session endpoint.                                                               | Set by Emergent's Google Auth integration.                                                     |
 | `INSTRUCTOR_EMAILS`                    | Comma-separated list. Currently `erinboroughs@gmail.com,luvtowork247@yahoo.com`.                                      | Adds these accounts to the instructor role on first-create.                                    |
 | `STEP_SHEET_EDITOR_EMAILS`             | Comma-separated list of emails allowed to edit dance step sheets.                                                     | Extends `require_admin_or_editor` role.                                                        |
-| `INSTRUCTOR_CODE`                      | Shared secret typed on the "I am an instructor" toggle. Currently `lineup4life`.                                      | Rotate freely; no user impact beyond needing to re-share with instructors.                     |
+| `INSTRUCTOR_CODE`                      | Shared secret typed on the "I am an instructor" toggle. Currently a short lowercase string (see live `.env`). | Rotate freely; no user impact beyond needing to re-share with instructors. **Note: this value is also hardcoded in the pytest suite under `backend/tests/`; if you publish the code publicly, rotate it AND update the tests.** |
 | `SMTP_HOST`                            | Your SMTP host (e.g. `smtp.gmail.com`, `smtp.postmarkapp.com`).                                                       | Used by password-reset email flow.                                                             |
 | `SMTP_PORT`                            | Usually `587`.                                                                                                        |                                                                                                |
 | `SMTP_USERNAME`                        | SMTP auth username.                                                                                                   |                                                                                                |
@@ -131,7 +131,7 @@ Any secret the app needs at runtime must be reached via a backend API call.
 
 - **BootStepper** (`BOOTSTEPPER_API_KEY`)
   - Runtime: Backend only.
-  - Ownership: BootStepper. Request via `AT7G23KS2GJHR8CRR43JJ9N` provisioning contact.
+  - Ownership: BootStepper. Request via their API contact.
   - Same shape as CopperKnob.
 
 ### Music preview
@@ -193,3 +193,39 @@ Any secret the app needs at runtime must be reached via a backend API call.
 **Never** commit `.env` files, `.p8` / `.p12` / `.jks` / `.pem` files, or any
 password/API-key to the git repo. The `.gitignore` block in `01-source-code.md`
 enforces this.
+
+---
+
+## ⚠️ IMPORTANT — Pre-existing secret exposures in the test suite
+
+**This is a heads-up, not something the backup created.** These values existed
+in the source tree **before** any backup work started. The full-source ZIP
+therefore contains them. Because you're pushing to a **private** GitHub repo,
+the immediate risk is low — but please read and act before pushing.
+
+The pytest suite under `backend/tests/` hardcodes several live secrets so tests
+can seed accounts and exercise the instructor-code flow deterministically:
+
+| Value                                | Hardcoded where                                            | Recommendation                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `INSTRUCTOR_CODE` (real value)       | `backend/tests/test_instructor_code.py:15` (`GOOD_CODE`), 4 other test files, and 2 historical `test_reports/iteration_*.json` | **Rotate the `INSTRUCTOR_CODE` env var** on the running server, and update the tests to read `os.environ["INSTRUCTOR_CODE"]` instead of hardcoding. |
+| `SEED_PW_ERINBOROUGHS_GMAIL_COM`     | 20 test files + 5 historical `test_reports/iteration_*.json` | If Erin has since rotated her password in-app (per SEC-001), the seed value is no longer applied. Still: change the test fixtures to read from env or use dedicated test-only accounts. |
+| `SEED_PW_LUVTOWORK247_YAHOO_COM`     | 15 test files + 3 historical `test_reports/iteration_*.json` | Same recommendation as above.                                                                      |
+| `SEED_PW_ADMIN_STOMPINGROUND_COM`    | `backend/tests/test_sec_audit_regression.py` + `test_reports/iteration_34.json` | Already rotated per SEC-001; the seed value is dormant. Same recommendation still applies.         |
+
+**What "expected placeholder" values look like** (safe, NOT secrets):
+- `EMERGENT_PUSH_KEY = "placeholder"` — the deploy pipeline replaces this at
+  Publish time. Never hand-edit.
+
+**Before pushing to GitHub, if you want zero live-secret exposure:**
+
+```bash
+# Rotate INSTRUCTOR_CODE on the running server (Emergent dashboard → env vars).
+# Then, in each test file, replace hardcoded strings with:
+#     INSTRUCTOR_CODE = os.environ["INSTRUCTOR_CODE"]
+# and set the test env in conftest.py from a .env.test file.
+```
+
+**If you're comfortable with private-repo-with-hardcoded-test-values** (this is
+a common trade-off for small projects with tight test-fixture coupling): just
+push, and rotate whenever you invite outside collaborators.
