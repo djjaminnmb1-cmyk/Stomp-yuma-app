@@ -1,0 +1,34 @@
+{
+  "summary": "Backend regression + feature suite for the Jan-2026 session: choreographer punctuation bug fix, Read Receipts, Quiet Hours, Chat Reactions, plus mention + account-deletion cascade regressions. All 22 pytest cases passed against the public preview URL. The choreographer_key backfill populated 1161/1161 published-with-choreographer dances (request said ~1163 — 1161 is the actual current library count; every eligible row is keyed with 0 missing). Frontend Landscape Chat Split verified by inspection: instructor.tsx line 968 computes isLandscape = win.width > win.height && win.width >= 640, and styles.chatLandscape uses flexDirection: 'row' (line 1317-1320).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_choreographer_and_chat_features.py",
+    "/app/test_reports/pytest/chor_and_chat_features.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "chat_reactions.summarize_for_messages() aggregation uses $max on a boolean-cast — correct semantics but keep in mind the 'mine' arg (viewer_id) MUST be non-empty; a caller passing '' would incorrectly mark every row as own. All current call sites pass instructor.user_id which is guaranteed truthy by require_instructor.",
+    "notification_prefs._in_quiet_window() treats start==end as 'always quiet' — a subtle behaviour worth documenting in the settings UI so an admin who accidentally saves start=0 end=0 knows their chat pushes will vanish. Currently exposed by the disabled=True default which softens the risk.",
+    "chat_reads.read_state_for_room() pulls every instructor + admin unconditionally; on a large tenant this could grow. Acceptable for the current Yuma studio scale but consider paging if the instructor pool ever crosses ~200.",
+    "routes/choreographer_follows.py GET /choreographers uses server-side substring on the display name (correct) but the aggregate groups by choreographer_key — if two display spellings share a key (e.g. 'Rob Fowler' + 'rob fowler') only one wins via $first which is deterministic-but-not-canonical. Not a bug, just a note."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "not tested (backend-only per request)"
+  },
+  "seed_data_creation": "Throwaway users prefixed TEST_ registered and deleted within tests. Reaction rows added/toggled off within same test. One temp chat message per fixture with cleanup in teardown.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Suite at tests/test_choreographer_and_chat_features.py covers all Jan-2026 features. Reuse it for regressions. DB check confirms choreographer_key present on 1161 published-with-chor dances (0 missing). Landscape split is frontend-only — chatLandscape style + isLandscape flag are in place at instructor.tsx line 968/1317.",
+  "rca_of_issue": "The original bug 'choreographers with punctuation missing dances' was caused by read-time normalisation mismatching write-time. Fix stamps choreographer_key at every write (inject_choreographer_key) + boot-time backfill_choreographer_keys(), then GET /choreographers/{name} matches on the persistent indexed key instead of regex. Verified: A.T. Kinson now returns non-zero dance_count and follow flow round-trips via me/follows with dance_count > 0."
+}

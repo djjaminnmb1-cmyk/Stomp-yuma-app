@@ -78,9 +78,90 @@ async def ensure_indexes() -> None:
             unique=True,
             name="uniq_user_dance",
         )
+        # Persistent choreographer_key on dance docs — the single source
+        # of truth that ``list_choreographers`` groups by and
+        # ``get_choreographer_detail`` matches on. Populated at every
+        # write site (see ``inject_choreographer_key`` below) and
+        # back-filled by ``backfill_choreographer_keys`` on boot for
+        # legacy rows.
+        await db.dances.create_index(
+            [("choreographer_key", 1), ("is_published", 1)],
+            name="by_chor_key_pub",
+        )
         _INDEXES_READY = True
     except Exception as e:
         logger.warning(f"choreographer index setup failed: {e}")
+
+
+# ------------- Write-side helpers -------------
+def inject_choreographer_key(dance: dict) -> dict:
+    """Mutate a dance dict IN PLACE so ``choreographer_key`` matches the
+    canonical form of ``choreographer``. Returns the same dict so
+    callers can chain if they prefer. Safe to call with a partial dict
+    (skips work when ``choreographer`` is missing / empty).
+
+    Called from every dance-writing path — CopperKnob import,
+    BootStepper import, admin POST /api/dances, admin PATCH,
+    dance_library_sync — so that ``list_choreographers`` /
+    ``get_choreographer_detail`` never have to re-normalise at read
+    time. See ADR-choreographer-key in PRD.md.
+    """
+    if not isinstance(dance, dict):
+        return dance
+    chor = (dance.get("choreographer") or "").strip()
+    dance["choreographer_key"] = normalise_choreographer(chor)
+    return dance
+
+
+async def backfill_choreographer_keys(*, batch: int = 500) -> int:
+    """One-shot migration: populate ``choreographer_key`` on every dance
+    document that's missing the field OR has a stale value.
+
+    Runs on boot from ``services/startup.py`` after ``ensure_indexes``.
+    Idempotent — becomes a no-op once every doc has the correct key,
+    so re-running has no side effect other than a couple of index
+    reads.
+
+    Returns the number of documents written.
+    """
+    written = 0
+    cursor = db.dances.find(
+        {"choreographer": {"$exists": True}},
+        {"_id": 0, "id": 1, "choreographer": 1, "choreographer_key": 1},
+    )
+    pending: list[tuple[str, str]] = []
+    async for row in cursor:
+        did = row.get("id")
+        if not did:
+            continue
+        expected = normalise_choreographer(row.get("choreographer") or "")
+        current = row.get("choreographer_key") or ""
+        if expected == current:
+            continue  # already correct
+        pending.append((did, expected))
+        if len(pending) >= batch:
+            written += await _flush_key_updates(pending)
+            pending.clear()
+    if pending:
+        written += await _flush_key_updates(pending)
+    if written:
+        logger.info(f"choreographer_key backfill: updated {written} dance(s)")
+    return written
+
+
+async def _flush_key_updates(rows: list[tuple[str, str]]) -> int:
+    """Batch ``$set`` writer used by ``backfill_choreographer_keys``.
+    Kept private — callers should go through the public helper.
+    """
+    from pymongo import UpdateOne
+    ops = [
+        UpdateOne({"id": did}, {"$set": {"choreographer_key": key}})
+        for did, key in rows
+    ]
+    if not ops:
+        return 0
+    res = await db.dances.bulk_write(ops, ordered=False)
+    return int(res.modified_count or 0)
 
 
 async def deduplicate_existing_rows() -> int:
@@ -152,18 +233,19 @@ async def my_follows(user_id: str) -> list[dict]:
     keys = [r["choreographer_key"] for r in rows if r.get("choreographer_key")]
     counts: dict[str, dict] = {}
     if keys:
-        # We store the raw choreographer string on the dance — normalise
-        # on the fly. Small pipeline: match by published+not-empty, add
-        # normalised key, group.
+        # Group by the persistent ``choreographer_key`` field — same
+        # canonical string the caller followed by, so no aggregate-time
+        # normalisation is needed. Every dance write site injects the
+        # field via ``inject_choreographer_key``; the boot-time
+        # backfill guarantees legacy rows also carry it.
         pipeline = [
-            {"$match": {"is_published": True, "choreographer": {"$ne": ""}}},
-            {"$addFields": {
-                "_key": {"$toLower": {"$trim": {"input": "$choreographer"}}},
+            {"$match": {
+                "is_published": True,
+                "choreographer_key": {"$in": keys},
             }},
-            {"$match": {"_key": {"$in": keys}}},
             {"$sort": {"created_at": -1}},
             {"$group": {
-                "_id": "$_key",
+                "_id": "$choreographer_key",
                 "count": {"$sum": 1},
                 "latest_dance_id": {"$first": "$id"},
                 "latest_dance_name": {"$first": "$name"},
@@ -173,11 +255,6 @@ async def my_follows(user_id: str) -> list[dict]:
         async for row in db.dances.aggregate(pipeline):
             counts[row["_id"]] = row
 
-    # NOTE: the aggregate above uses a light-weight `$toLower + $trim`
-    # normalisation. We ALSO run the strict Python normaliser client-
-    # side for the followed keys so we don't miss punctuation cases.
-    # In practice we care about the batch count — a small over-count
-    # from very-close-but-not-identical names is acceptable.
     out: list[dict] = []
     for r in rows:
         k = r["choreographer_key"]
@@ -211,10 +288,18 @@ async def list_choreographers(
     choreographers with at least one PUBLISHED dance appear — this
     also happens to guarantee that anyone the caller can follow will
     generate a pushable event later.
+
+    Groups by the persistent ``choreographer_key`` field so the
+    server-side substring match on ``choreographer`` (case-insensitive
+    display-name search) still returns exactly the same bucket that
+    the follow API will pin against.
     """
     q = (q or "").strip()
     pipeline: list[dict] = [
-        {"$match": {"is_published": True, "choreographer": {"$ne": ""}}},
+        {"$match": {
+            "is_published": True,
+            "choreographer_key": {"$ne": ""},
+        }},
     ]
     if q:
         # Case-insensitive substring on the display name.
@@ -222,12 +307,9 @@ async def list_choreographers(
             {"$match": {"choreographer": {"$regex": re.escape(q), "$options": "i"}}}
         )
     pipeline += [
-        {"$addFields": {
-            "_key": {"$toLower": {"$trim": {"input": "$choreographer"}}},
-        }},
         {"$sort": {"created_at": -1}},
         {"$group": {
-            "_id": "$_key",
+            "_id": "$choreographer_key",
             "choreographer": {"$first": "$choreographer"},
             "count": {"$sum": 1},
             "latest_dance_id": {"$first": "$id"},
@@ -235,7 +317,7 @@ async def list_choreographers(
             "latest_dance_at": {"$first": "$created_at"},
         }},
         {"$sort": {"count": -1, "choreographer": 1}},
-        {"$limit": max(1, min(int(limit or 40), 200))},
+        {"$limit": max(1, min(int(limit or 40), 500))},
     ]
     rows = [r async for r in db.dances.aggregate(pipeline)]
     if not rows:

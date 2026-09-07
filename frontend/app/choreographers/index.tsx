@@ -51,9 +51,15 @@ export default function ChoreographersIndex() {
   const load = useCallback(async () => {
     if (!token) return;
     try {
+      // Pass the current search query to the backend so the Discover
+      // tab surfaces ANY of the 700+ choreographers in the library —
+      // not just the top-500 by dance count. Empty ``q`` still returns
+      // the ranked default list. The server caps at 500 to keep the
+      // response small; the client filters what it received on top of
+      // that for instant substring feedback.
       const [f, d] = await Promise.all([
         api.myFollowedChoreographers(token),
-        api.listChoreographers(token, { limit: 80 }),
+        api.listChoreographers(token, { q: q.trim(), limit: 500 }),
       ]);
       setFollowing(f.choreographers);
       setDiscover(d.choreographers);
@@ -67,12 +73,31 @@ export default function ChoreographersIndex() {
     }
     setLoading(false);
     setRefreshing(false);
-  }, [token, tab]);
+  }, [token, tab, q]);
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // Re-fetch Discover when the search box changes, debounced so we
+  // don't hammer the server on every keystroke. Following is filtered
+  // purely client-side (usually <20 rows).
+  useEffect(() => {
+    if (!token) return;
+    const handle = setTimeout(() => {
+      api
+        .listChoreographers(token, { q: q.trim(), limit: 500 })
+        .then((d) => setDiscover(d.choreographers))
+        .catch(() => {
+          /* keep last-known Discover on failure */
+        });
+    }, 250);
+    return () => clearTimeout(handle);
+    // Only ``q`` should trigger this — ``token`` is stable across
+    // the screen's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
 
   // Filter the visible list by the search box. Discover already comes
   // pre-sorted by dance count on the server, so we just substring-match

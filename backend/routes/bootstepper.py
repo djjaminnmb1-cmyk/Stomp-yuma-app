@@ -334,6 +334,8 @@ async def create_dance_from_bootstepper(
             "by": user["user_id"],
         },
     }
+    from services.choreographer_follows import inject_choreographer_key
+    inject_choreographer_key(doc)
     await db.dances.insert_one(doc)
     doc.pop("_id", None)
     if doc.get("is_published"):

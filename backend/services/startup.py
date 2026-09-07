@@ -110,9 +110,22 @@ async def _ensure_indexes() -> None:
     # the follow-graph / mention / drift-scan setups underneath.
     try:
         from services.choreographer_follows import (
+            backfill_choreographer_keys,
             ensure_indexes as ensure_chor_indexes,
         )
         await ensure_chor_indexes()
+        # Idempotent one-shot: populates ``choreographer_key`` on any
+        # dance doc that's missing it (or has a stale value after the
+        # normaliser evolves). Runs in ~1-2s against the current
+        # ~1200-doc library, then becomes a no-op on subsequent boots.
+        try:
+            written = await backfill_choreographer_keys()
+            if written:
+                logger.info(
+                    f"choreographer_key backfill wrote {written} row(s)"
+                )
+        except Exception as e:
+            logger.warning(f"choreographer_key backfill skipped: {e}")
     except Exception as e:
         logger.warning(f"choreographer_follows index issue: {e}")
     try:
@@ -122,6 +135,20 @@ async def _ensure_indexes() -> None:
         await ensure_mention_indexes()
     except Exception as e:
         logger.warning(f"chat_mentions index issue: {e}")
+    try:
+        from services.chat_reads import (
+            ensure_indexes as ensure_chat_read_indexes,
+        )
+        await ensure_chat_read_indexes()
+    except Exception as e:
+        logger.warning(f"chat_reads index issue: {e}")
+    try:
+        from services.chat_reactions import (
+            ensure_indexes as ensure_chat_reaction_indexes,
+        )
+        await ensure_chat_reaction_indexes()
+    except Exception as e:
+        logger.warning(f"chat_reactions index issue: {e}")
     try:
         from services.refresh_recommendations import (
             ensure_indexes as ensure_drift_indexes,
@@ -232,6 +259,13 @@ async def _seed_dances() -> None:
             "created_at": now_iso(),
         })
     if to_insert:
+        # Every dance write path stamps a canonical ``choreographer_key``
+        # so ``list_choreographers`` / ``get_choreographer_detail`` can
+        # index into the same string without an aggregate-time
+        # normalisation pass. See services/choreographer_follows.py.
+        from services.choreographer_follows import inject_choreographer_key
+        for _row in to_insert:
+            inject_choreographer_key(_row)
         await db.dances.insert_many(to_insert)
         logger.info(f"Seeded {len(to_insert)} new dances")
 

@@ -29,6 +29,16 @@ from services.chat_mentions import (
     unread_count as chat_mentions_unread_count,
 )
 from services.chat_notifications import fan_out_chat_post
+from services.chat_reactions import (
+    ensure_indexes as ensure_chat_reaction_indexes,  # noqa: F401 — kept for startup
+    purge_message as purge_message_reactions,
+    summarize_for_messages as summarize_reactions,
+    toggle as toggle_chat_reaction,
+)
+from services.chat_reads import (
+    mark_read as chat_mark_read,
+    read_state_for_room as chat_read_state,
+)
 
 router = APIRouter()
 
@@ -61,7 +71,57 @@ async def list_chat(
         .to_list(fetch)
     )
     docs = docs[:lim]
-    return list(reversed(docs))  # oldest → newest
+    docs = list(reversed(docs))  # oldest → newest
+
+    # Reaction summary — one aggregate over the visible window so the
+    # chat bubbles can render their emoji chips without a per-message
+    # round-trip. Empty buckets are omitted so the payload stays lean.
+    msg_ids = [d["id"] for d in docs if d.get("id")]
+    if msg_ids:
+        buckets = await summarize_reactions(msg_ids, instructor["user_id"])
+        for d in docs:
+            r = buckets.get(d.get("id") or "")
+            if r:
+                d["reactions"] = r
+    return docs
+
+
+# ---------------- Read receipts ----------------
+@router.get("/chat/reads")
+async def get_chat_reads(
+    instructor: dict = Depends(require_instructor),
+):
+    """Return every instructor / admin's ``last_read_at`` timestamp so
+    the client can render "seen by …" avatar rows.
+
+    Piggybacks the same 6s poll the chat feed already runs. Users with
+    no ``chat_reads`` row (never opened the room) return
+    ``last_read_at=""`` so the client can show them as "hasn't caught
+    up".
+    """
+    reads = await chat_read_state()
+    return {"reads": reads, "count": len(reads)}
+
+
+class MarkChatReadBody(BaseModel):
+    at: Optional[str] = None  # ISO timestamp of the newest visible msg
+
+
+@router.post("/chat/mark-read")
+async def post_mark_chat_read(
+    body: MarkChatReadBody,
+    instructor: dict = Depends(require_instructor),
+):
+    """Bump the caller's chat ``last_read_at`` marker.
+
+    Called by the chat screen when it mounts, whenever a new inbound
+    message appears while the tab is focused, and on the "scroll to
+    bottom" tap. Idempotent + monotonic — ``mark_read`` never rewinds
+    the pointer, so a background poll can't clobber a fresher UI
+    read.
+    """
+    persisted = await chat_mark_read(instructor["user_id"], at=body.at)
+    return {"ok": True, "last_read_at": persisted}
 
 
 @router.post("/chat/messages")
@@ -125,7 +185,47 @@ async def delete_chat(
     if doc["user_id"] != instructor["user_id"] and not instructor.get("is_admin"):
         raise HTTPException(403, "Not allowed")
     await db.instructor_messages.delete_one({"id": msg_id})
+    # Cascade — a deleted bubble shouldn't leave orphan reaction rows.
+    await purge_message_reactions(msg_id)
     return {"ok": True}
+
+
+# ---------------- Reactions ----------------
+class ReactionBody(BaseModel):
+    kind: str  # short emoji token, e.g. "👍" or "🎉"
+
+
+@router.post("/chat/messages/{msg_id}/reactions")
+async def post_react(
+    msg_id: str,
+    body: ReactionBody,
+    instructor: dict = Depends(require_instructor),
+):
+    """Toggle an emoji reaction for the caller on this message.
+
+    Idempotent under retry — a duplicate add just flips back to
+    removed. Blocked users still can't be reacted-to (they don't show
+    up in the caller's chat list at all, so ``msg_id`` would 404).
+    """
+    doc = await db.instructor_messages.find_one({"id": msg_id}, {"_id": 0, "user_id": 1})
+    if not doc:
+        raise HTTPException(404, "Not found")
+    # Respect blocks — if the message author blocked the caller (or
+    # vice versa), don't let a reaction sneak through as an
+    # ambient signal that the caller is still there.
+    hidden = await hidden_user_ids(instructor["user_id"])
+    if doc.get("user_id") in hidden:
+        raise HTTPException(404, "Not found")
+    result = await toggle_chat_reaction(
+        message_id=msg_id,
+        kind=body.kind,
+        user_id=instructor["user_id"],
+        user_name=instructor.get("name", ""),
+    )
+    # Return the fresh summary for JUST this message so the client can
+    # re-render its chip row in a single call.
+    buckets = await summarize_reactions([msg_id], instructor["user_id"])
+    return {**result, "reactions": buckets.get(msg_id, {"counts": {}, "mine": []})}
 
 
 # ---------------- @mentions (recipient view) ----------------

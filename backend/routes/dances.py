@@ -21,7 +21,10 @@ from core.security import (
 from core.serialize import dance_to_out, youtube_search_url
 from core.time_helpers import now_iso
 from models.schemas import DanceImportBody, DanceIn
-from services.choreographer_follows import notify_followers_of_new_dance
+from services.choreographer_follows import (
+    inject_choreographer_key,
+    notify_followers_of_new_dance,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -179,13 +182,13 @@ async def restore_dance_by_name(
         "created_by_name": user.get("name", "Restored"),
         "created_at": now_iso(),
     }
+    inject_choreographer_key(new_doc)
     await db.dances.insert_one(new_doc)
     blocklist = [n for n in blocklist if n != name]
     _save_blocklist(blocklist)
     logger.info("Restored dance %r by %s", name, user.get("email"))
     new_doc.pop("_id", None)
     return dance_to_out(new_doc, user["user_id"])
-
 
 @router.get("/dances/{dance_id}")
 async def get_dance(dance_id: str, authorization: Optional[str] = Header(None)):
@@ -239,6 +242,7 @@ async def create_dance(inp: DanceIn, user: dict = Depends(require_instructor)):
     # New dances start as DRAFT unless publisher explicitly sets is_published True
     if doc.get("is_published") is None:
         doc["is_published"] = False
+    inject_choreographer_key(doc)
     await db.dances.insert_one(doc)
     doc.pop("_id", None)
     # Fan-out to choreographer followers if the dance is being
@@ -321,6 +325,8 @@ async def import_dances(inp: DanceImportBody, user: dict = Depends(require_instr
         existing_names.add(name.lower())
 
     if to_insert:
+        for _row in to_insert:
+            inject_choreographer_key(_row)
         await db.dances.insert_many(to_insert)
         # Fan-out to choreographer followers if these were published
         # immediately (publish_all=True). The idempotency ledger inside
@@ -386,6 +392,9 @@ async def update_dance(dance_id: str, inp: DanceIn, user: dict = Depends(require
         if not incoming and existing.get(_sticky):
             updates[_sticky] = existing.get(_sticky)
 
+    # If the caller changed the ``choreographer`` field, recompute
+    # ``choreographer_key`` so it stays in sync with the canonical form.
+    inject_choreographer_key(updates)
     await db.dances.update_one({"id": dance_id}, {"$set": updates})
     d = await db.dances.find_one({"id": dance_id}, {"_id": 0})
     # Fan-out to choreographer followers if this edit flipped an

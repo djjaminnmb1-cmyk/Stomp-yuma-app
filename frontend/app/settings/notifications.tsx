@@ -29,11 +29,63 @@ import { useAuth } from "@/src/context/auth-context";
 import { colors, spacing, radius } from "@/src/theme";
 
 type Row = {
-  key: keyof NotificationPrefs;
+  key: keyof Omit<NotificationPrefs, "quiet_hours">;
   icon: string;
   title: string;
   subtitle: string;
 };
+
+/** Formats a 24h hour (0-23) as a friendly 12h label ("10 pm"). */
+function formatHour(h: number): string {
+  const safe = ((h % 24) + 24) % 24;
+  if (safe === 0) return "12 am";
+  if (safe === 12) return "12 pm";
+  return safe < 12 ? `${safe} am` : `${safe - 12} pm`;
+}
+
+/** Compact hour-picker used inside the Quiet Hours row. Tap "-" / "+"
+ * to walk the value; long-press to skip 3 hours at a time so users
+ * can dial in a shifted window without dozens of taps. Wraps 0↔23 so
+ * a "10 pm → 7 am" window is only two taps apart. */
+function QuietHourPicker({
+  label,
+  value,
+  onChange,
+  testID,
+}: {
+  label: string;
+  value: number;
+  onChange: (h: number) => void;
+  testID?: string;
+}) {
+  const step = (delta: number) => onChange(((value + delta) % 24 + 24) % 24);
+  return (
+    <View style={styles.hourPicker} testID={testID}>
+      <Text style={styles.hourPickerLabel}>{label}</Text>
+      <View style={styles.hourPickerControls}>
+        <Pressable
+          onPress={() => step(-1)}
+          onLongPress={() => step(-3)}
+          hitSlop={10}
+          style={styles.hourPickerButton}
+          testID={testID ? `${testID}-dec` : undefined}
+        >
+          <Ionicons name="remove" size={18} color={colors.onSurface} />
+        </Pressable>
+        <Text style={styles.hourPickerValue}>{formatHour(value)}</Text>
+        <Pressable
+          onPress={() => step(1)}
+          onLongPress={() => step(3)}
+          hitSlop={10}
+          style={styles.hourPickerButton}
+          testID={testID ? `${testID}-inc` : undefined}
+        >
+          <Ionicons name="add" size={18} color={colors.onSurface} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
 
 const ROWS: Row[] = [
   {
@@ -95,7 +147,7 @@ export default function NotificationSettings() {
   }, [token]);
 
   const toggle = useCallback(
-    async (key: keyof NotificationPrefs, next: boolean) => {
+    async (key: keyof Omit<NotificationPrefs, "quiet_hours">, next: boolean) => {
       if (!token || !prefs) return;
       // Optimistic — flip locally, rollback if the PATCH errors.
       const previous = prefs[key];
@@ -109,6 +161,32 @@ export default function NotificationSettings() {
         setSaveError(
           e?.message ||
             "Couldn't save that change. Check your connection and try again."
+        );
+      }
+    },
+    [token, prefs]
+  );
+
+  // Quiet Hours PATCH helper — merged field-by-field on the server so
+  // partial updates (just toggling ``enabled``) don't have to re-send
+  // start / end / tz. Runs the same optimistic-then-rollback dance as
+  // the category toggles above.
+  const patchQuiet = useCallback(
+    async (partial: Partial<NotificationPrefs["quiet_hours"]>) => {
+      if (!token || !prefs) return;
+      const prev = prefs.quiet_hours;
+      const optimistic = { ...prev, ...partial };
+      setPrefs({ ...prefs, quiet_hours: optimistic });
+      setSaveError(null);
+      try {
+        const r = await api.updateNotificationPrefs(token, {
+          quiet_hours: partial,
+        });
+        setPrefs(r.prefs);
+      } catch (e: any) {
+        setPrefs({ ...prefs, quiet_hours: prev });
+        setSaveError(
+          e?.message || "Couldn't save quiet hours. Try again in a moment."
         );
       }
     },
@@ -159,7 +237,7 @@ export default function NotificationSettings() {
               <Ionicons
                 name="alert-circle"
                 size={16}
-                color={colors.danger || "#B22314"}
+                color={colors.error}
               />
               <Text style={styles.errBannerText}>{saveError}</Text>
             </View>
@@ -191,6 +269,54 @@ export default function NotificationSettings() {
               />
             </View>
           ))}
+
+          {/* ---- Quiet Hours ---- */}
+          <View style={styles.quietSection} testID="notif-quiet-hours">
+            <View style={styles.row}>
+              <View style={styles.rowLeft}>
+                <View style={styles.rowIcon}>
+                  <Ionicons name="moon" size={20} color={colors.brandPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowTitle}>Quiet hours</Text>
+                  <Text style={styles.rowSubtitle}>
+                    Pause chat and mention pings during your quiet window.
+                    Class reminders and event alerts still come through.
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                testID="notif-quiet-toggle"
+                value={prefs.quiet_hours.enabled}
+                onValueChange={(v) => {
+                  // First-time enable: stamp the caller's local UTC
+                  // offset so "10 pm" means their 10 pm, not UTC. We
+                  // read the offset every time — a user who travels
+                  // gets an auto-refreshed window on the next flip.
+                  const offset = -new Date().getTimezoneOffset();
+                  patchQuiet({ enabled: v, tz_offset_minutes: offset });
+                }}
+                trackColor={{ true: colors.brandPrimary }}
+              />
+            </View>
+
+            {prefs.quiet_hours.enabled ? (
+              <View style={styles.quietRange}>
+                <QuietHourPicker
+                  label="From"
+                  value={prefs.quiet_hours.start_hour}
+                  onChange={(h) => patchQuiet({ start_hour: h })}
+                  testID="notif-quiet-start"
+                />
+                <QuietHourPicker
+                  label="Until"
+                  value={prefs.quiet_hours.end_hour}
+                  onChange={(h) => patchQuiet({ end_hour: h })}
+                  testID="notif-quiet-end"
+                />
+              </View>
+            ) : null}
+          </View>
           <View style={styles.footNote}>
             <Text style={styles.footNoteText}>
               Push notifications also depend on your device settings. If
@@ -319,5 +445,51 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 12,
     lineHeight: 17,
+  },
+  // ---- Quiet Hours ----
+  quietSection: {
+    marginTop: spacing.md,
+  },
+  quietRange: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  hourPicker: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    gap: 6,
+  },
+  hourPickerLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  hourPickerControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  hourPickerButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  hourPickerValue: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.onSurface,
   },
 });

@@ -480,6 +480,14 @@ async def _sync_dance_source(
             for row in diff_apply:
                 set_ops[row["field"]] = row["new"]
             set_ops["updated_at"] = now_iso()
+        # If the sync updated the ``choreographer`` field, re-derive the
+        # persistent key so follow lookups stay accurate. Only fires
+        # when the field actually changed — no wasted writes.
+        if "choreographer" in set_ops:
+            from services.choreographer_follows import normalise_choreographer
+            set_ops["choreographer_key"] = normalise_choreographer(
+                set_ops.get("choreographer") or ""
+            )
         await db.dances.update_one({"id": dance["id"]}, {"$set": set_ops})
         # Persist audit log — records what was applied AND what was
         # deferred / flagged so admins have a full history of every

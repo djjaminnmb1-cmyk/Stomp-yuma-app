@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   FlatList,
   Linking as RNLinking,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,7 +23,14 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
-import { api, ClassSession, Dance, ChatMessage, EventItem } from "@/src/api/client";
+import {
+  api,
+  ChatMessage,
+  ChatReadRow,
+  ClassSession,
+  Dance,
+  EventItem,
+} from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { useBlockUser } from "@/src/hooks/useBlockUser";
 import { MentionAutocomplete } from "@/src/components/MentionAutocomplete";
@@ -927,6 +935,11 @@ const eventStyles = StyleSheet.create({
 });
 
 // ---------------- Chat ----------------
+// Reaction picker offers a small, curated emoji strip on long-press.
+// Matches the activity-feed reaction set so users don't have to learn
+// a second vocabulary.
+const REACTION_KINDS = ["👍", "❤️", "🎉", "😂", "🙌", "🔥"] as const;
+
 function ChatView({
   token,
   currentUserId,
@@ -937,18 +950,36 @@ function ChatView({
   isAdmin: boolean;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [reads, setReads] = useState<ChatReadRow[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const { confirmBlock } = useBlockUser();
+
+  // Landscape detection — when the phone is wider than it is tall we
+  // swap to a two-column layout: list on the left, composer on the
+  // right. Gives typists a full landscape keyboard's worth of space
+  // AND a wider view of the conversation. Threshold at 640 keeps
+  // narrow rotated devices (older iPhones) in the single-column
+  // layout where the composer feels more comfortable.
+  const win = useWindowDimensions();
+  const isLandscape = win.width > win.height && win.width >= 640;
 
   const load = useCallback(async () => {
     if (!token) return;
     try {
-      const msgs = await api.listChat(token);
+      const [msgs, rr] = await Promise.all([
+        api.listChat(token),
+        api.getChatReads(token).catch(() => ({ reads: [] as ChatReadRow[] })),
+      ]);
       setMessages(msgs);
-    } catch {}
+      setReads(rr.reads || []);
+    } catch {
+      // Keep last-known state on transient failure. The 6s poll will
+      // recover on the next tick.
+    }
     setLoading(false);
   }, [token]);
 
@@ -958,11 +989,33 @@ function ChatView({
     return () => clearInterval(iv);
   }, [load]);
 
+  // Auto-scroll + mark-read whenever a new message arrives. We only
+  // bump the read pointer when the newest message actually changed
+  // (comparing ``id`` avoids spamming ``mark-read`` on every 6s poll
+  // when the room is idle).
+  const newestId = messages.length ? messages[messages.length - 1].id : "";
   useEffect(() => {
     if (messages.length) {
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     }
-  }, [messages.length]);
+    if (!token || !newestId) return;
+    const latestAt = messages[messages.length - 1]?.created_at || "";
+    api.markChatRead(token, latestAt).catch(() => {
+      /* best-effort — the periodic poll will retry */
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newestId]);
+
+  // Also mark the room read whenever this tab receives focus, so a
+  // background push that took the user here doesn't leave them
+  // stuck showing "unread" indicators on their own device.
+  useFocusEffect(
+    useCallback(() => {
+      if (token) {
+        api.markChatRead(token).catch(() => {});
+      }
+    }, [token])
+  );
 
   const send = async () => {
     const t = text.trim();
@@ -986,99 +1039,242 @@ function ChatView({
     } catch {}
   };
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={90}
-      style={{ flex: 1 }}
-    >
-      {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={colors.brandPrimary} />
-        </View>
-      ) : (
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(i) => i.id}
-          contentContainerStyle={{ padding: spacing.lg, paddingBottom: 20, gap: spacing.sm }}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="chatbubbles-outline" size={40} color={colors.muted} />
-              <Text style={styles.emptyText}>
-                Instructor lounge — say hi 👋
-              </Text>
-            </View>
+  const react = useCallback(
+    async (msgId: string, kind: string) => {
+      // Optimistic update — flip the chip immediately, then reconcile
+      // with the server's authoritative summary in the background.
+      setMessages((m) =>
+        m.map((x) => {
+          if (x.id !== msgId) return x;
+          const prev = x.reactions || { counts: {}, mine: [] };
+          const mine = prev.mine.includes(kind);
+          const counts = { ...prev.counts };
+          if (mine) {
+            counts[kind] = Math.max(0, (counts[kind] || 1) - 1);
+            if (!counts[kind]) delete counts[kind];
+          } else {
+            counts[kind] = (counts[kind] || 0) + 1;
           }
-          renderItem={({ item }) => {
-            const mine = item.user_id === currentUserId;
-            // Long-press on someone else's bubble → offer Block user.
-            // Wrapped in a Pressable so the hit target matches the
-            // bubble bounds — matches iMessage/WhatsApp conventions.
-            const onBubbleLongPress = () => {
-              if (mine) return;
-              confirmBlock({
-                user_id: item.user_id,
-                name: item.user_name,
-                onBlocked: () => {
-                  // Optimistically hide their messages while the next
-                  // 6s poll refreshes the list from the server.
-                  setMessages((m) =>
-                    m.filter((x) => x.user_id !== item.user_id)
-                  );
-                },
-              });
-            };
-            return (
-              <View
-                style={[
-                  styles.msgRow,
-                  { alignItems: mine ? "flex-end" : "flex-start" },
-                ]}
-              >
-                {!mine ? (
-                  <Text style={styles.msgAuthor}>{item.user_name || "Instructor"}</Text>
-                ) : null}
+          return {
+            ...x,
+            reactions: {
+              counts,
+              mine: mine
+                ? prev.mine.filter((k) => k !== kind)
+                : [...prev.mine, kind],
+            },
+          };
+        })
+      );
+      try {
+        const res = await api.reactToChat(msgId, kind, token);
+        setMessages((m) =>
+          m.map((x) =>
+            x.id === msgId ? { ...x, reactions: res.reactions } : x
+          )
+        );
+      } catch {
+        // On failure, next 6s poll will restore the truth.
+      }
+      setPickerFor(null);
+    },
+    [token]
+  );
+
+  // Pre-compute a per-message "seen-by" list once so we don't do the
+  // O(reads × messages) scan on every FlatList row render.
+  const readsByMessage = useMemo(() => {
+    if (!messages.length || !reads.length) return {} as Record<string, ChatReadRow[]>;
+    // Sort reads by timestamp asc so each message ends up with the
+    // MINIMUM subset of avatars — otherwise a stale reader who
+    // opened the app hours ago and never came back would appear on
+    // every recent bubble. We attach an avatar to the message that's
+    // exactly at or just above their last_read_at.
+    const eligible = reads
+      .filter((r) => r.user_id !== currentUserId && r.last_read_at)
+      .sort((a, b) => a.last_read_at.localeCompare(b.last_read_at));
+    const out: Record<string, ChatReadRow[]> = {};
+    for (const r of eligible) {
+      // Find the last message whose created_at <= r.last_read_at AND
+      // the author is not this reader (nobody wants to see themselves
+      // marked as having read their own bubble).
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const m = messages[i];
+        if (m.user_id === r.user_id) continue;
+        if (m.created_at <= r.last_read_at) {
+          (out[m.id] = out[m.id] || []).push(r);
+          break;
+        }
+      }
+    }
+    return out;
+  }, [messages, reads, currentUserId]);
+
+  const renderChatMessage = ({ item }: { item: ChatMessage }) => {
+    const mine = item.user_id === currentUserId;
+    const seenBy = readsByMessage[item.id] || [];
+    const rxCounts = item.reactions?.counts || {};
+    const myReactions = new Set(item.reactions?.mine || []);
+    const rxEntries = Object.entries(rxCounts).filter(([, n]) => n > 0);
+    // Long-press on someone else's bubble → menu with Block +
+    // Reactions. Own bubble: only React menu.
+    const onBubbleLongPress = () => {
+      setPickerFor(item.id);
+    };
+    return (
+      <View
+        style={[
+          styles.msgRow,
+          { alignItems: mine ? "flex-end" : "flex-start" },
+        ]}
+      >
+        {!mine ? (
+          <Text style={styles.msgAuthor}>{item.user_name || "Instructor"}</Text>
+        ) : null}
+        <Pressable
+          onLongPress={onBubbleLongPress}
+          delayLongPress={350}
+          testID={`chat-bubble-${item.id}`}
+          style={[
+            styles.msgBubble,
+            mine ? styles.msgBubbleMine : styles.msgBubbleOther,
+          ]}
+        >
+          <Text style={[styles.msgText, mine && { color: colors.onBrandPrimary }]}>
+            {item.message}
+          </Text>
+          <Text
+            style={[
+              styles.msgTime,
+              mine
+                ? { color: colors.onBrandPrimary, opacity: 0.7 }
+                : { color: colors.muted },
+            ]}
+          >
+            {new Date(item.created_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        </Pressable>
+
+        {rxEntries.length > 0 ? (
+          <View
+            style={[
+              styles.reactionRow,
+              { alignSelf: mine ? "flex-end" : "flex-start" },
+            ]}
+          >
+            {rxEntries.map(([kind, n]) => {
+              const own = myReactions.has(kind);
+              return (
                 <Pressable
-                  onLongPress={onBubbleLongPress}
-                  delayLongPress={450}
-                  testID={`chat-bubble-${item.id}`}
+                  key={kind}
+                  onPress={() => react(item.id, kind)}
                   style={[
-                    styles.msgBubble,
-                    mine ? styles.msgBubbleMine : styles.msgBubbleOther,
+                    styles.reactionChip,
+                    own && styles.reactionChipOwn,
                   ]}
+                  testID={`chat-rx-${item.id}-${kind}`}
                 >
-                  <Text style={[styles.msgText, mine && { color: colors.onBrandPrimary }]}>
-                    {item.message}
-                  </Text>
+                  <Text style={styles.reactionEmoji}>{kind}</Text>
                   <Text
                     style={[
-                      styles.msgTime,
-                      mine
-                        ? { color: colors.onBrandPrimary, opacity: 0.7 }
-                        : { color: colors.muted },
+                      styles.reactionCount,
+                      own && { color: colors.brandPrimary },
                     ]}
                   >
-                    {new Date(item.created_at).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {n}
                   </Text>
                 </Pressable>
-                {(mine || isAdmin) ? (
-                  <Pressable
-                    testID={`chat-delete-${item.id}`}
-                    onPress={() => remove(item.id)}
-                    style={styles.msgDeleteBtn}
-                  >
-                    <Ionicons name="trash-outline" size={11} color={colors.muted} />
-                  </Pressable>
-                ) : null}
+              );
+            })}
+          </View>
+        ) : null}
+
+        {(mine || isAdmin) ? (
+          <Pressable
+            testID={`chat-delete-${item.id}`}
+            onPress={() => {
+              if (mine) {
+                // Own message: swipe/tap directly deletes.
+                remove(item.id);
+              } else {
+                Alert.alert(
+                  "Delete this message?",
+                  `From ${item.user_name || "instructor"}`,
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: () => remove(item.id),
+                    },
+                  ]
+                );
+              }
+            }}
+            style={styles.msgDeleteBtn}
+          >
+            <Ionicons name="trash-outline" size={11} color={colors.muted} />
+          </Pressable>
+        ) : null}
+
+        {seenBy.length > 0 ? (
+          <View
+            style={[
+              styles.seenRow,
+              { alignSelf: mine ? "flex-end" : "flex-start" },
+            ]}
+          >
+            {seenBy.slice(0, 4).map((r) => (
+              <View
+                key={r.user_id}
+                style={styles.seenAvatar}
+                testID={`seen-avatar-${item.id}-${r.user_id}`}
+              >
+                {r.picture ? (
+                  <Image source={{ uri: r.picture }} style={styles.seenAvatarImg} />
+                ) : (
+                  <Text style={styles.seenAvatarInitial}>
+                    {(r.user_name || "?").slice(0, 1).toUpperCase()}
+                  </Text>
+                )}
               </View>
-            );
-          }}
-        />
-      )}
+            ))}
+            {seenBy.length > 4 ? (
+              <Text style={styles.seenExtra}>+{seenBy.length - 4}</Text>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    );
+  };
+
+  const messagesList = loading ? (
+    <View style={styles.loading}>
+      <ActivityIndicator color={colors.brandPrimary} />
+    </View>
+  ) : (
+    <FlatList
+      ref={listRef}
+      data={messages}
+      keyExtractor={(i) => i.id}
+      contentContainerStyle={{ padding: spacing.lg, paddingBottom: 20, gap: spacing.sm }}
+      ListEmptyComponent={
+        <View style={styles.empty}>
+          <Ionicons name="chatbubbles-outline" size={40} color={colors.muted} />
+          <Text style={styles.emptyText}>
+            Instructor lounge — say hi 👋
+          </Text>
+        </View>
+      }
+      renderItem={renderChatMessage}
+    />
+  );
+
+  const composerBlock = (
+    <>
       <MentionAutocomplete
         text={text}
         onPickMention={(replaced) => setText(replaced)}
@@ -1100,13 +1296,91 @@ function ChatView({
           disabled={sending || !text.trim()}
           style={[styles.sendBtn, (sending || !text.trim()) && { opacity: 0.5 }]}
         >
-          {sending ? (
-            <ActivityIndicator color={colors.onBrandPrimary} />
-          ) : (
-            <Ionicons name="send" size={18} color={colors.onBrandPrimary} />
-          )}
+          <Ionicons name="send" size={18} color={colors.onBrandPrimary} />
         </Pressable>
       </View>
+    </>
+  );
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={90}
+      style={{ flex: 1 }}
+    >
+      {isLandscape ? (
+        // Landscape split: message list on the left, composer +
+        // MentionAutocomplete on the right. Both flex-1 so they share
+        // the width evenly on tablets; on phones the natural
+        // 640px cutoff means we only enter this branch when there's
+        // enough real estate.
+        <View style={styles.chatLandscape}>
+          <View style={styles.chatLandscapeList}>{messagesList}</View>
+          <View style={styles.chatLandscapeComposer}>{composerBlock}</View>
+        </View>
+      ) : (
+        <>
+          {messagesList}
+          {composerBlock}
+        </>
+      )}
+
+      {/* Reaction picker — inline modal shown when a bubble is
+          long-pressed. Tapping outside dismisses, tapping an emoji
+          toggles the reaction. On someone else's bubble we also
+          expose the Block user action so the safety flow the old
+          long-press provided isn't lost. */}
+      <Modal
+        visible={!!pickerFor}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerFor(null)}
+      >
+        <Pressable style={styles.reactionPickerBackdrop} onPress={() => setPickerFor(null)}>
+          <View style={styles.reactionPicker}>
+            {REACTION_KINDS.map((kind) => (
+              <Pressable
+                key={kind}
+                onPress={() => pickerFor && react(pickerFor, kind)}
+                style={styles.reactionPickerButton}
+                testID={`chat-rx-picker-${kind}`}
+              >
+                <Text style={styles.reactionPickerEmoji}>{kind}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {(() => {
+            const target = pickerFor
+              ? messages.find((m) => m.id === pickerFor)
+              : null;
+            if (!target || target.user_id === currentUserId) return null;
+            return (
+              <Pressable
+                onPress={() => {
+                  const t = target;
+                  setPickerFor(null);
+                  confirmBlock({
+                    user_id: t.user_id,
+                    name: t.user_name,
+                    onBlocked: () => {
+                      setMessages((m) =>
+                        m.filter((x) => x.user_id !== t.user_id)
+                      );
+                    },
+                  });
+                }}
+                style={styles.reactionPickerBlockRow}
+                testID="chat-rx-picker-block"
+              >
+                <Ionicons name="ban-outline" size={16} color={colors.error} />
+                <Text style={styles.reactionPickerBlockText}>
+                  Block {target.user_name || "user"}
+                </Text>
+              </Pressable>
+            );
+          })()}
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -2056,6 +2330,130 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandPrimary,
     alignItems: "center",
     justifyContent: "center",
+  },
+  // ---- Landscape chat split ----
+  chatLandscape: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  chatLandscapeList: {
+    flex: 1,
+    borderRightWidth: 1,
+    borderRightColor: colors.divider,
+  },
+  chatLandscapeComposer: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  // ---- Reactions ----
+  reactionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: 2,
+    marginHorizontal: 2,
+  },
+  reactionChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  reactionChipOwn: {
+    // Warm tint of the brand so the user's own reaction pops. Using
+    // ``brandTertiary`` at 22% alpha rather than an ad-hoc color to
+    // stay dark-mode-safe.
+    backgroundColor: colors.brandTertiary + "38",
+    borderColor: colors.brandPrimary,
+  },
+  reactionEmoji: { fontSize: 13 },
+  reactionCount: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.muted,
+    minWidth: 8,
+  },
+  reactionPickerBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  reactionPicker: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    // Give the emoji strip a subtle lift so it reads as a floating
+    // palette rather than being glued to the message list.
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  reactionPickerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reactionPickerEmoji: { fontSize: 24 },
+  reactionPickerBlockRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: spacing.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  reactionPickerBlockText: {
+    color: colors.error,
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  // ---- Seen-by row ----
+  seenRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 3,
+    marginHorizontal: 2,
+  },
+  seenAvatar: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  seenAvatarImg: { width: 16, height: 16, borderRadius: 8 },
+  seenAvatarInitial: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: colors.muted,
+  },
+  seenExtra: {
+    fontSize: 10,
+    color: colors.muted,
+    marginLeft: 3,
   },
   restoreListRow: {
     flexDirection: "row",

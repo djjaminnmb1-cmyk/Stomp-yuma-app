@@ -251,6 +251,8 @@ async def bulk_import(
             user=user,
         )
         try:
+            from services.choreographer_follows import inject_choreographer_key
+            inject_choreographer_key(doc)
             await db.dances.insert_one(doc)
         except Exception as e:  # noqa: BLE001
             logger.exception("Bulk insert failed on %s/%s: %s", entry.source, entry.ref, e)

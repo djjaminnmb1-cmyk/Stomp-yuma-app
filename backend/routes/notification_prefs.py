@@ -5,6 +5,10 @@
 
 Missing keys are always defaulted to True (opted-in) so a user who has
 never opened the settings screen keeps receiving every alert.
+
+Also carries the Quiet Hours sub-doc — a daily window during which
+chat + mention pushes are held back. See
+``services/notification_prefs.py`` for the full contract.
 """
 from __future__ import annotations
 
@@ -23,6 +27,13 @@ from services.notification_prefs import (
 router = APIRouter()
 
 
+class QuietHoursIn(BaseModel):
+    enabled: Optional[bool] = None
+    start_hour: Optional[int] = None      # 0-23
+    end_hour: Optional[int] = None        # 0-23
+    tz_offset_minutes: Optional[int] = None  # signed minutes from UTC
+
+
 class NotificationPrefsIn(BaseModel):
     """All fields optional — PATCH-style merge. Only supplied keys
     are written; missing keys keep their stored value (or default to
@@ -34,6 +45,7 @@ class NotificationPrefsIn(BaseModel):
     mention_alerts: Optional[bool] = None
     reminder_alerts: Optional[bool] = None
     chat_alerts: Optional[bool] = None
+    quiet_hours: Optional[QuietHoursIn] = None
 
 
 @router.get("/users/me/notification-prefs")
@@ -49,7 +61,10 @@ async def patch_my_notification_prefs(
     """Merge-in: fields set to ``None`` keep their existing value.
 
     We fetch → apply overrides → save so a caller PATCHing a single
-    toggle doesn't accidentally reset the others to True.
+    toggle doesn't accidentally reset the others to True. The
+    ``quiet_hours`` sub-doc is merged field-by-field so a client that
+    only wants to toggle ``enabled`` doesn't have to re-send
+    start / end / tz.
     """
     current = await get_prefs(user["user_id"])
     merged = dict(current)
@@ -57,5 +72,13 @@ async def patch_my_notification_prefs(
         incoming = getattr(body, cat, None)
         if incoming is not None:
             merged[cat] = bool(incoming)
+    if body.quiet_hours is not None:
+        # Field-by-field merge so partial PATCH is safe.
+        current_quiet = dict(current.get("quiet_hours") or {})
+        for f in ("enabled", "start_hour", "end_hour", "tz_offset_minutes"):
+            val = getattr(body.quiet_hours, f, None)
+            if val is not None:
+                current_quiet[f] = val
+        merged["quiet_hours"] = current_quiet
     saved = await update_prefs(user["user_id"], merged)
     return {"prefs": saved}

@@ -47,8 +47,14 @@ async def get_choreographers(
 ):
     """List the top-N choreographers in the library, hydrated with the
     caller's follow state. Optional ``q`` substring-filters by name.
+
+    Capped server-side at 500 so a paranoid client can't ask for the
+    whole world in one shot, but the default (40) is enough for the
+    Discover screen's initial render — clients that want more (like
+    the choreographers/index screen, which now passes ``limit=500``
+    to surface the full library) get the higher ceiling.
     """
-    lim = max(1, min(200, int(limit or 40)))
+    lim = max(1, min(500, int(limit or 40)))
     rows = await list_choreographers(q or "", user["user_id"], lim)
     return {"choreographers": rows, "count": len(rows)}
 
@@ -74,34 +80,26 @@ async def get_choreographer_detail(
 
     Uses ``{name:path}`` so slashes / dots aren't rejected — a few
     choreographers include suffixes like "Jr." or use "aka" separators.
+
+    Matches on the persistent ``choreographer_key`` field (indexed) —
+    same value both the follow API and every dance write site use, so
+    a name with punctuation (``A.T. Kinson``, ``Adrian Lefebour
+    (AUS)``, etc.) never falls through the cracks.
     """
     display = unquote(name or "").strip()
     key = normalise_choreographer(display)
     if not key:
         raise HTTPException(400, "Choreographer name required.")
 
-    # Aggregate to fetch dances + count in a single round-trip
-    pipeline = [
-        {"$match": {"is_published": True, "choreographer": {"$ne": ""}}},
-        {"$addFields": {
-            "_key": {"$toLower": {"$trim": {"input": "$choreographer"}}},
-        }},
-        {"$match": {"_key": key}},
-        {"$sort": {"created_at": -1}},
-        {"$project": {
-            "_id": 0,
-            "id": 1,
-            "name": 1,
-            "choreographer": 1,
-            "song": 1,
-            "artist": 1,
-            "difficulty": 1,
-            "bpm": 1,
-            "count": 1,
-            "created_at": 1,
-        }},
-    ]
-    dances = [d async for d in db.dances.aggregate(pipeline)]
+    cursor = db.dances.find(
+        {"is_published": True, "choreographer_key": key},
+        {
+            "_id": 0, "id": 1, "name": 1, "choreographer": 1,
+            "song": 1, "artist": 1, "difficulty": 1, "bpm": 1,
+            "count": 1, "created_at": 1,
+        },
+    ).sort("created_at", -1)
+    dances = await cursor.to_list(length=500)
 
     canonical_name = dances[0]["choreographer"] if dances else display
     followers = await db.choreographer_follows.count_documents(
@@ -128,17 +126,14 @@ async def post_follow_choreographer(
 
     # Reject if there's no dance in the library at all — prevents
     # someone from creating orphan follow rows for arbitrary strings.
+    # Fast indexed lookup on the persistent ``choreographer_key`` — no
+    # per-request aggregate needed.
     key = normalise_choreographer(display)
-    exists_pipeline = [
-        {"$match": {"choreographer": {"$ne": ""}}},
-        {"$addFields": {
-            "_key": {"$toLower": {"$trim": {"input": "$choreographer"}}},
-        }},
-        {"$match": {"_key": key}},
-        {"$limit": 1},
-        {"$project": {"_id": 0, "id": 1}},
-    ]
-    hit = [d async for d in db.dances.aggregate(exists_pipeline)]
+    if not key:
+        raise HTTPException(400, "Choreographer name required.")
+    hit = await db.dances.find_one(
+        {"choreographer_key": key}, {"_id": 0, "id": 1}
+    )
     if not hit:
         raise HTTPException(
             404, "That choreographer doesn't have any dances in the library."

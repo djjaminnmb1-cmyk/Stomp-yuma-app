@@ -622,6 +622,12 @@ export type NotificationPrefs = {
   mention_alerts: boolean;
   reminder_alerts: boolean;
   chat_alerts: boolean;
+  quiet_hours: {
+    enabled: boolean;
+    start_hour: number;   // 0-23 inclusive
+    end_hour: number;     // 0-23 exclusive; may wrap past midnight
+    tz_offset_minutes: number;
+  };
 };
 
 export type RsvpCounts = {
@@ -661,6 +667,17 @@ export type ChatMessage = {
   user_name: string;
   message: string;
   created_at: string;
+  reactions?: {
+    counts: Record<string, number>;
+    mine: string[];
+  };
+};
+
+export type ChatReadRow = {
+  user_id: string;
+  user_name: string;
+  picture: string;
+  last_read_at: string;
 };
 
 export type ClassSession = {
@@ -1307,6 +1324,28 @@ export const api = {
   deleteChat: (id: string, token: string) =>
     req<{ ok: boolean }>(`/chat/messages/${id}`, { method: "DELETE" }, token),
 
+  // ---------------- Chat read receipts ----------------
+  getChatReads: (token: string) =>
+    req<{ reads: ChatReadRow[]; count: number }>("/chat/reads", {}, token),
+  markChatRead: (token: string, at?: string) =>
+    req<{ ok: boolean; last_read_at: string }>(
+      "/chat/mark-read",
+      { method: "POST", body: JSON.stringify(at ? { at } : {}) },
+      token
+    ),
+
+  // ---------------- Chat reactions ----------------
+  reactToChat: (msgId: string, kind: string, token: string) =>
+    req<{
+      added: boolean;
+      kind: string;
+      reactions: { counts: Record<string, number>; mine: string[] };
+    }>(
+      `/chat/messages/${msgId}/reactions`,
+      { method: "POST", body: JSON.stringify({ kind }) },
+      token
+    ),
+
   // ---------------- Chat @mentions (recipient view) ----------------
   getMyMentions: (token: string, limit: number = 40) =>
     req<{ mentions: ChatMention[]; count: number; unread_count: number }>(
@@ -1333,7 +1372,9 @@ export const api = {
     ),
   updateNotificationPrefs: (
     token: string,
-    prefs: Partial<NotificationPrefs>
+    prefs: Partial<Omit<NotificationPrefs, "quiet_hours">> & {
+      quiet_hours?: Partial<NotificationPrefs["quiet_hours"]>;
+    }
   ) =>
     req<{ prefs: NotificationPrefs }>(
       "/users/me/notification-prefs",

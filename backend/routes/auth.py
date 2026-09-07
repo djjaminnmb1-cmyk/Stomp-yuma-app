@@ -621,6 +621,12 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
     # Chat @mention rows (both sent BY and TO this user)
     from services.chat_mentions import purge_user as purge_mentions
     await purge_mentions(uid)
+    # Chat read-receipt pointer
+    from services.chat_reads import purge_user as purge_chat_reads
+    await purge_chat_reads(uid)
+    # Chat reactions authored by this user
+    from services.chat_reactions import purge_user as purge_chat_reactions
+    await purge_chat_reactions(uid)
     # Follower push ledger for classes/events posted BY or seen BY user
     from services.instructor_notifications import purge_user as purge_inst_notif
     await purge_inst_notif(uid)

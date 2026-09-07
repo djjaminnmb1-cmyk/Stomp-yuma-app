@@ -1059,3 +1059,126 @@ were merged.
 - Regular dancers (not instructors) do NOT receive chat-room push
   notifications — they can't see the room, so no need.
 
+
+
+## Session (June 2026) — Choreographer Follow Bug + 4 Chat Features
+
+### 🐛 P0 Bug fix — choreographer follow flow was silently returning zero dances for 71% of names
+
+**User report**: "Some choreographers' dances not showing when trying to
+follow them; very few choreographers in the follow list."
+
+**Root cause**: The `list_choreographers`, `get_choreographer_detail`,
+and `notify_followers_of_new_dance` code paths each used a DIFFERENT
+normalisation algorithm:
+
+- Discover aggregate: MongoDB `$toLower + $trim` on the raw
+  `choreographer` field → **preserved punctuation**.
+- Follow / detail API: Python `re.sub(r'[^a-z0-9]+', ' ', …)` →
+  **stripped all non-alphanumeric characters**.
+
+For any name with punctuation (dots, dashes, parens, apostrophes,
+semicolons), the two keys disagreed. A DB scan showed **552 of 774
+choreographers (71%)** were affected — including every "Firstname
+(country) — month year" entry the CopperKnob/BootStepper sync creates,
+which is dominant in the catalogue. Users could see the choreographer
+card, tap to view dances → **zero results**. They could follow →
+**never receive a push** on new dances because the fan-out uses the
+strict key.
+
+**Second complaint** ("very few choreographers"): The Discover screen
+called `listChoreographers({ limit: 80 })` against a library of 774,
+and the search box only filtered those 80 client-side.
+
+### Fix (single source of truth)
+
+- **New persistent field on every dance doc**: `choreographer_key` —
+  the strict, alphanumeric-only, whitespace-collapsed form of
+  `choreographer`. Injected at every write site via a new
+  `services/choreographer_follows.py::inject_choreographer_key(dance)`
+  helper.
+- **Boot-time backfill**: `backfill_choreographer_keys()` walks every
+  dance doc missing / stale `choreographer_key` and stamps the correct
+  value. Idempotent — a no-op after the first successful run. Wired
+  into `services/startup.py` right after `ensure_indexes`.
+- **New indexed lookup**: `(choreographer_key, is_published)` compound
+  index means detail lookups are now an indexed find, not an
+  aggregation pipeline.
+- **Refactored aggregates** in `list_choreographers` and `my_follows`
+  to group by the persistent field (no more `$addFields` normalisation
+  at query time).
+- **Write sites patched** to stamp the key on insert / update:
+  - `routes/dances.py` (POST /dances, PUT /dances/{id}, POST
+    /dances/restore-by-name, POST /dances/import)
+  - `routes/copperknob.py` (POST /copperknob/import)
+  - `routes/bootstepper.py` (POST /bootstepper/import)
+  - `routes/bulk_import.py` (POST /admin/library/import-batch)
+  - `services/startup.py` (seed inserts)
+  - `services/dance_library_sync.py` (auto-applied sync writes only when
+    the `choreographer` field itself changed)
+- **Route-level cap bumped** from 200 → 500 in
+  `GET /api/choreographers` so the discover screen can render the whole
+  library.
+- **Frontend `app/choreographers/index.tsx`** now passes `q` to the
+  backend + `limit=500`, with a 250 ms debounce on keystroke. Any of
+  the 775 choreographers is now findable by name.
+
+### Live verification against the preview DB (June 2026 snapshot)
+
+- Backfill wrote 1,163 rows on first boot (all published dances with a
+  choreographer). 2 unpublished test dances left alone.
+- `GET /api/choreographers/A.T.%20Kinson` → 1 dance (was 0).
+- `GET /api/choreographers/Adrian%20Lefebour%20(AUS)%20-%20September%202025`
+  → 2 dances (was 0).
+- `GET /api/choreographers?q=fowler&limit=500` → 15 matched (was 0
+  before the search box hit the server).
+- Follow → my_follows → correct dance_count + latest_dance_name.
+
+### 🎁 Then — 4 chat features on top of the base
+
+(Coming next in this session — this section will be filled in as each
+feature ships.)
+
+
+### ✅ 4 chat features shipped this session
+
+**1. Read Receipts (`services/chat_reads.py`)**
+
+- New `chat_reads` collection: one row per user, `{user_id, last_read_at, updated_at}`.
+- `mark_read(user_id)` uses `$max` so a background poll can't rewind a fresh UI stamp (monotonic).
+- `read_state_for_room()` returns every instructor+admin's current pointer, joined with `name` + `picture` — one round-trip per chat poll.
+- Endpoints: `GET /api/chat/reads`, `POST /api/chat/mark-read` (both instructor-only).
+- Frontend renders tiny 16×16 avatar rows under each message showing readers whose `last_read_at >= created_at` (excluding the message author). Deep-computed once per message list via `useMemo` — no O(m×r) scan on every FlatList row.
+- Account-deletion cascade: `services/chat_reads.purge_user(uid)` wired into `routes/auth.py::delete_me`.
+
+**2. Quiet Hours (`services/notification_prefs.py`)**
+
+- New sub-doc on `notification_prefs`: `{enabled, start_hour, end_hour, tz_offset_minutes}`.
+- `_in_quiet_window()` wraps past midnight cleanly — `start=22, end=7` correctly covers `22:00-23:59 + 00:00-06:59`.
+- Only silences `chat_alerts` + `mention_alerts` — class reminders / event alerts / choreographer drops stay live (they carry time-sensitive info).
+- `filter_recipients()` consults BOTH the mute flag AND the quiet-hours window when the category is chat/mention.
+- Frontend Settings → Notifications now has a "Quiet hours" section with a Switch + two "-/+" hour pickers (long-press = ±3 hours for faster dial-in). First enable stamps the caller's `-new Date().getTimezoneOffset()` so "10 pm" always means the user's 10 pm.
+- Route: `PATCH /users/me/notification-prefs` accepts partial `quiet_hours` — field-by-field merge, so a client toggling just `enabled` doesn't have to re-send start/end/tz.
+
+**3. Chat Reactions (`services/chat_reactions.py`)**
+
+- New `chat_reactions` collection with unique compound index `(user_id, message_id, kind)` — a user can add MULTIPLE emojis to the same message but never the same one twice.
+- `toggle()` = insert if missing / delete if present, idempotent under network retry.
+- `summarize_for_messages(ids, viewer_id)` aggregates in one round-trip and returns `{msg_id: {counts: {"👍": 3, "🎉": 1}, mine: ["🎉"]}}`.
+- `GET /api/chat/messages` piggy-backs the summary onto each doc (empty buckets are omitted for payload size).
+- Endpoint: `POST /api/chat/messages/{id}/reactions {kind: "👍"}` — honours blocks (a blocked user's messages 404 for the caller, so no reaction sneak-through).
+- Delete cascade: `services/chat_reactions.purge_message(id)` wired into `DELETE /chat/messages/{id}`. Account-deletion also cascades.
+- Frontend: long-press any bubble → floating emoji strip (👍 ❤️ 🎉 😂 🙌 🔥). Own emoji chips glow in `brandTertiary + 38` alpha to signal "yours". Also preserved the pre-existing Block-user safety flow inside the same modal for others' bubbles.
+
+**4. Landscape Chat Split (`frontend/app/(tabs)/instructor.tsx`)**
+
+- `useWindowDimensions()` derives `isLandscape = win.width > win.height && win.width >= 640`.
+- When landscape, the chat renders as a two-column `flexDirection: "row"` layout — message list on the left, composer + MentionAutocomplete on the right.
+- 640px cutoff means older/rotated iPhones stay in single-column (composer feels more comfortable on narrow rotated devices); iPads and larger phones get the split.
+
+### Testing (via testing_agent, iteration 38)
+
+- 22/22 tests passed. New pytest suite at `backend/tests/test_choreographer_and_chat_features.py`.
+- Verified: choreographer-fix DB state (1161/1161 populated); punctuated names return non-empty dances; server-side search; landscape split by inspection; monotonic mark-read; wrap-past-midnight quiet window; reaction toggle+cascade; account-deletion cascade for both chat_reads and chat_reactions.
+- Zero regressions on the existing chat / @mention / notification-prefs / dance-write flows.
+
