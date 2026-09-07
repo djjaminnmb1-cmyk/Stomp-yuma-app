@@ -621,6 +621,7 @@ export type NotificationPrefs = {
   choreographer_alerts: boolean;
   mention_alerts: boolean;
   reminder_alerts: boolean;
+  chat_alerts: boolean;
 };
 
 export type RsvpCounts = {

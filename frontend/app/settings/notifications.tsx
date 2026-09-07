@@ -69,6 +69,13 @@ const ROWS: Row[] = [
     subtitle:
       "When an instructor tags you with @yourname in the class chat",
   },
+  {
+    key: "chat_alerts",
+    icon: "chatbubbles",
+    title: "New chat messages",
+    subtitle:
+      "When any instructor posts in the class chat — turn off to only hear about @mentions",
+  },
 ];
 
 export default function NotificationSettings() {

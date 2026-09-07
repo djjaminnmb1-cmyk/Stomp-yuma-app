@@ -43,7 +43,16 @@ module.exports = {
     name: "Stompin' Ground Yuma",
     slug: "stompin-ground-yuma",
     version: "1.0.0",
-    orientation: "portrait",
+    // ``default`` lets the OS pick the natural orientation — portrait
+    // stays the primary layout (phones open in portrait), but users
+    // who rotate the device sideways get a proper landscape reflow
+    // instead of the app being locked upright. This is especially
+    // helpful for typing in the instructor chat and for viewing the
+    // dance library on tablets. The UI already uses
+    // ``SafeAreaProvider`` + ``KeyboardProvider`` at the root, so
+    // notches, keyboards, and gestures all handle rotation correctly
+    // without per-screen changes.
+    orientation: "default",
     icon: "./assets/images/icon.png",
     scheme: "frontend",
     userInterfaceStyle: "automatic",

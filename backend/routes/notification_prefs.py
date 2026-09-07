@@ -33,6 +33,7 @@ class NotificationPrefsIn(BaseModel):
     choreographer_alerts: Optional[bool] = None
     mention_alerts: Optional[bool] = None
     reminder_alerts: Optional[bool] = None
+    chat_alerts: Optional[bool] = None
 
 
 @router.get("/users/me/notification-prefs")

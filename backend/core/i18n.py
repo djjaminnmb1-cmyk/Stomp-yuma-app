@@ -65,6 +65,9 @@ _CATALOG: dict[str, dict[str, str]] = {
         # Mention in instructor chat
         "push.chat_mention.title": "{sender} mentioned you",
         "push.chat_mention.body": "{preview}",
+        # Any new chat post (opt-out via ``chat_alerts``)
+        "push.chat_message.title": "{sender} posted in chat",
+        "push.chat_message.body": "{preview}",
         # ---------- Password-reset email ----------
         "email.reset.subject": "Reset your Stompin' Ground Yuma password",
         "email.reset.greeting": "Hi {name},",
@@ -95,6 +98,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.new_follower.body": "Salúdalo en su perfil.",
         "push.chat_mention.title": "{sender} te mencionó",
         "push.chat_mention.body": "{preview}",
+        "push.chat_message.title": "{sender} escribió en el chat",
+        "push.chat_message.body": "{preview}",
         # ---------- Correo de restablecimiento ----------
         "email.reset.subject": "Restablece tu contraseña de Stompin' Ground Yuma",
         "email.reset.greeting": "Hola {name},",
@@ -125,6 +130,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.new_follower.body": "Passez lui dire bonjour sur son profil.",
         "push.chat_mention.title": "{sender} vous a mentionné",
         "push.chat_mention.body": "{preview}",
+        "push.chat_message.title": "{sender} a écrit dans le chat",
+        "push.chat_message.body": "{preview}",
         # ---------- Email de réinitialisation ----------
         "email.reset.subject": "Réinitialisez votre mot de passe Stompin' Ground Yuma",
         "email.reset.greeting": "Bonjour {name},",
@@ -145,7 +152,7 @@ _CATALOG: dict[str, dict[str, str]] = {
     "de": {
         # ---------- Push-Benachrichtigungen ----------
         "push.new_dance.title": "Neuer Tanz von {choreographer}",
-        "push.new_dance.body": "„{dance_name}" ist gerade in der Bibliothek gelandet – schau vorbei.",
+        "push.new_dance.body": "„{dance_name}“ ist gerade in der Bibliothek gelandet – schau vorbei.",
         "push.new_event.title": "{instructor} hat ein neues Event veröffentlicht",
         "push.new_event.body": "{event_title} — {when}",
         "push.new_class.title": "{instructor} hat einen neuen Kurs hinzugefügt",
@@ -156,6 +163,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.new_follower.body": "Sag Hallo auf ihrem Profil.",
         "push.chat_mention.title": "{sender} hat dich erwähnt",
         "push.chat_mention.body": "{preview}",
+        "push.chat_message.title": "{sender} hat im Chat geschrieben",
+        "push.chat_message.body": "{preview}",
         # ---------- Passwort-Reset-E-Mail ----------
         "email.reset.subject": "Setze dein Stompin' Ground Yuma Passwort zurück",
         "email.reset.greeting": "Hallo {name},",
@@ -187,6 +196,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.new_follower.body": "Zeg hallo op hun profiel.",
         "push.chat_mention.title": "{sender} noemde je",
         "push.chat_mention.body": "{preview}",
+        "push.chat_message.title": "{sender} plaatste een chatbericht",
+        "push.chat_message.body": "{preview}",
         # ---------- Wachtwoord reset e-mail ----------
         "email.reset.subject": "Reset je Stompin' Ground Yuma wachtwoord",
         "email.reset.greeting": "Hoi {name},",
@@ -218,6 +229,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.new_follower.body": "프로필에서 인사를 남겨보세요.",
         "push.chat_mention.title": "{sender}님이 회원님을 언급했어요",
         "push.chat_mention.body": "{preview}",
+        "push.chat_message.title": "{sender}님이 채팅에 글을 올렸어요",
+        "push.chat_message.body": "{preview}",
         # ---------- 비밀번호 재설정 이메일 ----------
         "email.reset.subject": "Stompin' Ground Yuma 비밀번호 재설정",
         "email.reset.greeting": "{name}님, 안녕하세요.",
@@ -248,6 +261,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.new_follower.body": "去他的主页打个招呼吧。",
         "push.chat_mention.title": "{sender} 提到了你",
         "push.chat_mention.body": "{preview}",
+        "push.chat_message.title": "{sender} 在聊天中发言",
+        "push.chat_message.body": "{preview}",
         # ---------- 密码重置邮件 ----------
         "email.reset.subject": "重置您的 Stompin' Ground Yuma 密码",
         "email.reset.greeting": "你好 {name},",
@@ -276,6 +291,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.new_follower.body": "去他的主頁打個招呼吧。",
         "push.chat_mention.title": "{sender} 提到了你",
         "push.chat_mention.body": "{preview}",
+        "push.chat_message.title": "{sender} 在聊天中發言",
+        "push.chat_message.body": "{preview}",
         # ---------- 密碼重設信件 ----------
         "email.reset.subject": "重設您的 Stompin' Ground Yuma 密碼",
         "email.reset.greeting": "你好 {name},",

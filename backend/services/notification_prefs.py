@@ -12,6 +12,7 @@ Categories
 * ``choreographer_alerts``  — a followed choreographer's new dance
 * ``mention_alerts``        — someone tags you in chat
 * ``reminder_alerts``       — 24h-before-class reminder (existing)
+* ``chat_alerts``           — any new post in the instructor chat room
 
 Contract
 --------
@@ -37,6 +38,7 @@ ALL_CATEGORIES = (
     "choreographer_alerts",
     "mention_alerts",
     "reminder_alerts",
+    "chat_alerts",
 )
 
 

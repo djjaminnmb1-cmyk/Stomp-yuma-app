@@ -28,6 +28,7 @@ from services.chat_mentions import (
     mark_seen as mark_mentions_seen,
     unread_count as chat_mentions_unread_count,
 )
+from services.chat_notifications import fan_out_chat_post
 
 router = APIRouter()
 
@@ -83,16 +84,33 @@ async def post_chat(
     # actively in the app on a slow network still sees the ledger row
     # by the time they tap the push. If the resolver misfires the
     # helper swallows the error rather than blocking the send.
+    mentioned: list[str] = []
     try:
-        notified = await fan_out_mentions(
+        mentioned = await fan_out_mentions(
             text=doc["message"],
             mentioner_id=instructor["user_id"],
             mentioner_name=instructor.get("name", ""),
             message_id=doc["id"],
         )
-        if notified:
-            doc["mentioned_user_ids"] = notified
+        if mentioned:
+            doc["mentioned_user_ids"] = mentioned
     except Exception:
+        pass
+    # Fan-out "someone posted" push to everyone else in the room who
+    # hasn't opted out via ``notification_prefs.chat_alerts``. Users
+    # already notified by the mention fan-out above are skipped so a
+    # single ``@Erin nice one!`` never buzzes Erin twice.
+    try:
+        await fan_out_chat_post(
+            message_id=doc["id"],
+            message_text=doc["message"],
+            poster_user_id=instructor["user_id"],
+            poster_name=instructor.get("name", ""),
+            already_notified=mentioned,
+        )
+    except Exception:
+        # Never let a push flake break the POST — chat still returns
+        # the fresh doc so the poster sees their message immediately.
         pass
     return doc
 

@@ -1,0 +1,30 @@
+{
+  "summary": "Backend-only regression for the two new features: (1) chat_alerts notification-preferences category, (2) orientation flip from 'portrait' to 'default' in app.config.js. All 9 tests in /app/backend/tests/test_chat_alerts_and_orientation.py PASSED against the public preview URL. GET /api/users/me/notification-prefs exposes chat_alerts in both the prefs dict and the categories list, defaulting to True. PATCH round-trips chat_alerts, preserves other categories (class/event/choreographer/mention/reminder_alerts), and ignores unknown keys. A brand-new registered user can read + toggle their own chat_alerts (opt-out semantics). POST /api/chat/messages returns 200 for both admin@stompinground.com and erinboroughs@gmail.com even when the push relay key is a placeholder — no 500. The mention flow returns 'mentioned_user_ids' containing Erin when the message says 'Hi @Erin nice one!'. Direct service-level tests of services.chat_notifications.fan_out_chat_post confirm: poster is excluded, users with chat_alerts=False are excluded, and users listed in already_notified are excluded (so a single '@Erin' message never buzzes Erin twice). app.config.js orientation is 'default'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_chat_alerts_and_orientation.py",
+    "/app/test_reports/pytest/chat_alerts_orientation.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/chat_notifications.py: fan_out_chat_post correctly layers exclusions in the right order (poster → blocks → prefs filter). Nice defensive try/except around blocks + prefs so a partial failure never spikes the chat POST. Consider logging the final recipient count at DEBUG so ops can trace 'nobody got the push' cases without adding a return-value inspection.",
+    "routes/chat.py post_chat swallows exceptions from both fan_out_mentions and fan_out_chat_post with bare `except Exception: pass`. Suggest at least logger.warning(...) inside the except blocks so a systemic push regression isn't silent.",
+    "routes/notification_prefs.py PATCH performs a full get→merge→save which is correct for merge-semantics but slightly heavier than a $set on individual keys. Fine at current scale; note for future perf tuning.",
+    "core/i18n.py: push.chat_message.title/body templates present across all 8 supported languages — confirmed by inspection. German push.new_dance.body uses proper closing quote U+201C."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_chat_alerts_and_orientation.py (new)"
+  ],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "n/a (backend-only per request)"},
+  "seed_data_creation": "One TEST_chatalerts_<uuid>@example.com user created via /api/auth/register for opt-out semantics check. Prefixed with TEST_ for later cleanup. Erin's chat_alerts was toggled off then restored to True at end of the fan-out test.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Reuse /app/backend/tests/test_chat_alerts_and_orientation.py for regression. Public URL comes from /app/frontend/.env EXPO_PUBLIC_BACKEND_URL. Admin creds admin@stompinground.com / C^c+9$ii4y@_L1mU4sl5BTOd and erinboroughs@gmail.com / Stompin2026! are current. Note: the service-level test imports from /app/backend directly (sys.path.insert) — it will still work in a subsequent agent's environment because backend/ is on disk.",
+  "rca_of_issue": "N/A — feature verification, no bug fix required."
+}

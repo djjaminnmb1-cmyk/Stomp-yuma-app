@@ -965,3 +965,97 @@ paused. Full plan is captured in the previous `ask_human` and user
 response — resume by continuing that thread; no partial code changes
 were merged.
 
+
+
+## Session (June 2026) — Chat Post Notifications + Landscape Orientation
+
+**User request**: Two additive features:
+
+1. Give users an option to get a push notification when someone posts
+   in the instructor chat (not just @mentions).
+2. Add an orientation mode so users can turn their phones sideways and
+   type / view the full app in landscape.
+
+### Feature 1 — Chat post notifications
+
+- **Category**: New `chat_alerts` added to
+  `services/notification_prefs.py::ALL_CATEGORIES` (6 categories total
+  now). Defaults to True (opt-out, matching every other category).
+- **Model**: `NotificationPrefsIn.chat_alerts: Optional[bool]` added in
+  `routes/notification_prefs.py`.
+- **Service**: New `services/chat_notifications.py::fan_out_chat_post`
+  handles the fan-out with these rules (in order):
+  1. Pool = every user with `is_instructor=True` OR `is_admin=True`.
+  2. Exclude the poster themselves — never self-notify.
+  3. Exclude anyone the poster has blocked (or who has blocked them) —
+     mirrors chat-list visibility so blocked users don't resurface
+     through a push.
+  4. Exclude anyone already fanned-out by `fan_out_mentions` for this
+     message (via the `already_notified` param) — a single
+     `@Erin nice one!` never buzzes Erin twice.
+  5. Exclude anyone with `notification_prefs.chat_alerts=False` —
+     shared `filter_recipients` helper.
+- **Wiring**: `routes/chat.py::post_chat` now calls
+  `fan_out_mentions` → captures the mentioned user_ids → then calls
+  `fan_out_chat_post(already_notified=mentioned)`. Both are best-effort
+  (any push flake is swallowed so the POST always returns 200 with the
+  fresh doc).
+- **i18n**: New push templates `push.chat_message.title` +
+  `push.chat_message.body` added in all 8 languages inside
+  `core/i18n.py`. Body is a 100-char preview.
+- **Frontend**: `NotificationPrefs` type in `src/api/client.ts` extended
+  with `chat_alerts: boolean`. New toggle row in
+  `app/settings/notifications.tsx` labelled "New chat messages",
+  positioned right below "Chat mentions" with a
+  `chatbubbles` icon, subtitle "…turn off to only hear about @mentions".
+
+### Feature 2 — Landscape orientation
+
+- **Config**: `frontend/app.config.js` `orientation` changed from
+  `"portrait"` to `"default"`. Lets the OS pick the natural
+  orientation — portrait stays primary, but rotating the device
+  triggers a proper landscape reflow (bigger keyboard, more chat
+  history visible, roomier dance-library grid on tablets).
+- **No per-screen work needed**: the root layout already wraps
+  everything in `SafeAreaProvider` + `KeyboardProvider` +
+  `GestureHandlerRootView`, so notches, keyboards, and gestures
+  handle rotation without additional code.
+- **Requires native rebuild to take full effect** on physical
+  devices — the `orientation` field is baked in at build time via
+  Expo config-plugins. Web preview responds to viewport resize
+  immediately (verified via 844×390 screenshot).
+
+### Also fixed en-route
+
+- Pre-existing SyntaxError in `core/i18n.py` line 155 (German
+  `push.new_dance.body`) — string contained an unescaped ASCII `"`
+  inside a double-quoted value, causing the backend to fail to
+  boot after this restart. Replaced the closing `"` with the
+  proper German closing quote `"` (U+201C). Same failure mode we
+  fixed in `frontend/src/i18n/translations.ts` during the
+  language-expansion phase.
+
+### Testing
+
+- `testing_agent` iteration confirmed all 9 backend scenarios
+  passed:
+  1. `chat_alerts` in categories + prefs, default True
+  2. PATCH round-trip persists
+  3. PATCH preserves other categories
+  4. PATCH ignores unknown keys
+  5. Non-instructor user can read/toggle their own `chat_alerts`
+  6. `POST /chat/messages` returns 200 (no 500 on placeholder push key)
+  7. Mention flow still returns `mentioned_user_ids`
+  8. `fan_out_chat_post` excludes poster + muted users + already-notified
+  9. `app.config.js` orientation = `"default"` confirmed
+- New pytest file at `backend/tests/test_chat_alerts_and_orientation.py`.
+- JUnit report at `test_reports/pytest/chat_alerts_orientation.xml`.
+
+### Non-goals honoured
+
+- No push credentials touched.
+- No changes to Firebase / Apple / EAS config.
+- No changes to language-selection or existing i18n behavior.
+- Regular dancers (not instructors) do NOT receive chat-room push
+  notifications — they can't see the room, so no need.
+
