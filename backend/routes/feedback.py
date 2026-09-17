@@ -63,6 +63,25 @@ async def submit_feedback(
     if isinstance(ctx, dict) and len(str(ctx)) > 2048:
         raise HTTPException(400, "context is too large (max ~2 KB).")
 
+    # Apple UGC 1.2: pre-insert content filter.
+    from services import content_filter
+    verdict = content_filter.check(msg)
+    if not verdict.ok:
+        content_filter.log_block(
+            user_id=user["user_id"],
+            category=verdict.category or "unknown",
+            detail=verdict.detail,
+            surface="feedback",
+        )
+        raise HTTPException(
+            400,
+            {
+                "code": "content_blocked",
+                "message": verdict.message,
+                "category": verdict.category,
+            },
+        )
+
     doc = {
         "id": f"fb_{uuid.uuid4().hex[:12]}",
         "user_id": user["user_id"],

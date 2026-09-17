@@ -1,0 +1,46 @@
+{
+  "summary": "Backend-only tests for the Apple UGC Guideline 1.2 compliance package. 32/32 pytest cases passing against public preview URL. Covered: (1) Terms/EULA enforcement on /api/auth/register + /api/legal/terms-status + /api/legal/accept-terms with correct 'terms_not_accepted' / 'stale_terms_version' error codes; (2) content-filter pre-insert guard on /api/chat/messages and /api/feedback for slur/threat/kys/sexual/spam categories with 'content_blocked' 400s and normal text still landing 200; (3) UGC reporting via /api/moderation/reports with dedupe (already_reported=true), invalid-type/invalid-reason 400s, self-report 400, and canonical 8 report reasons; (4) admin queue: 403 for regular users, admin GET returns items+count+pending_count and every item has elapsed_seconds, PATCH dismiss works, POST remove-content on chat target actions the report AND soft-deletes the underlying instructor_messages row; (5) user suspend/ban/unsuspend/warn — suspension is enforced via pwd_ver bump + get_current_user's is_suspended check (see nuance below), ban blocks even after fresh login with detail.code='account_banned', warn increments warnings_count, and both self- and admin-target moderation attempts return 400; (6) /api/legal/terms and /api/legal/community-guidelines HTML pages contain 'zero tolerance' and 'harassment' as required; (7) regression: /api/copperknob/popular, /api/dances?scope=public, /api/pending-dances/submit still respond correctly. NUANCE (as request called out): after suspend, the OLD token returns 401 'Session invalidated' (pwd_ver bump revokes JWTs before the is_suspended check runs) rather than 403 'account_suspended'. Fresh login DOES succeed and any subsequent /api/auth/me → 403 account_suspended, which is Apple-adequate (community routes are locked). Test accepts both 401 and 403 for the old-token step and documents this. No deprecated Expo packages detected (backend-only pass).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/auth/me (after suspend, OLD token)",
+        "issue": "Returns 401 'Session invalidated — please sign in again.' instead of 403 detail.code='account_suspended'. Cause: pwd_ver bump on suspend invalidates the JWT at the token-verify layer, which fires 401 BEFORE the is_suspended check. Functionally correct (user is blocked), but the response code differs from the request's stated expectation. Fresh logins after suspend still correctly yield 403 account_suspended on /me."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ugc_compliance.py",
+    "/app/test_reports/pytest/ugc_compliance.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: If Apple review wants a semantic 403 (not 401) even with the stale token, decide whether suspend should NOT bump pwd_ver — instead rely on is_suspended check alone — so old tokens still hit get_current_user and receive 403 account_suspended. Trade-off: keeps stale sessions technically valid until they expire. Current design (pwd_ver bump + is_suspended on fresh sessions) is stricter and reviewer-safe, so no change recommended unless product wants uniform 403.",
+    "OPTIONAL: Consider adding /api/auth/login-side is_banned/is_suspended checks so a banned/suspended user cannot even mint a fresh token. Right now they can login (200) but every subsequent /api/* call is 403. Apple's intent is met, but rejecting at login would be a cleaner UX."
+  ],
+  "critical_code_review_comments": [
+    "moderation.py suspend flow bumps pwd_ver AND deletes user_sessions — good session revocation on suspend. Consistent with core/security.py's pwd_ver enforcement.",
+    "content_filter.py leet-normalisation correctly catches n1gger-style bypasses via slur regex on normalised text; sexual patterns run on raw text to preserve multi-word boundaries — sound design.",
+    "moderation.py remove-content for chat correctly sets message='', deleted_at, deleted_by_moderator on instructor_messages and marks report status='actioned'.",
+    "legal.py terms page includes TERMS_VERSION='2026-06-24' in footer; accept-terms rejects any other version with detail.code='stale_terms_version' — matches Apple audit trail requirement.",
+    "moderation.py /moderation/reports dedupes on (reporter_id, target_type, target_id) — returns already_reported=true instead of creating a duplicate row. Prevents spam-reporting.",
+    "auth.py register stamps accepted_terms_version + accepted_terms_at at user creation time — good evidence trail for App Store reviewers."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_ugc_compliance.py (new — 32 pytest cases)"
+  ],
+  "success_rate": {
+    "backend": "100% (32/32 pytest cases)",
+    "frontend": "not tested (backend-only pass per request)"
+  },
+  "seed_data_creation": "Test data prefixed 'TEST_' / 'test_' — each test uses a fresh uuid-suffixed email. Registered ~4 test users, created a handful of chat messages (some soft-deleted by moderation flow), 3+ moderation_reports, moderation_actions rows for suspend/ban/warn. All isolated to test emails, safe to leave.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Test file at /app/backend/tests/test_ugc_compliance.py is safe to re-run — every test uses uuid-suffixed test users and idempotent operations. Only nuance: the suspend-old-token step is intentionally lenient (accepts 401 OR 403) because pwd_ver-bump revokes tokens with 401 before is_suspended fires 403 — this is by design and matches the review request's called-out nuance.",
+  "rca_of_issue": "N/A — no product bugs. One design nuance noted above under backend_issues.minor about 401 vs 403 on stale tokens post-suspend."
+}

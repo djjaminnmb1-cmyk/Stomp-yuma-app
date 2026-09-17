@@ -151,6 +151,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
         )
         if not user:
             raise HTTPException(401, "User not found")
+        _enforce_account_status(user)
         return user
 
     # 2) Try JWT
@@ -168,9 +169,60 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
         cur_ver = int(user.get("pwd_ver") or 0)
         if tok_ver != cur_ver:
             raise HTTPException(401, "Session invalidated — please sign in again.")
+        _enforce_account_status(user)
         return user
     except pyjwt.PyJWTError:
         raise HTTPException(401, "Invalid token")
+
+
+def _enforce_account_status(user: dict) -> None:
+    """Block API access for banned or currently-suspended accounts.
+
+    Called from every path that resolves a user. Admin actions never
+    apply to admin accounts (guarded in the moderation route) so this
+    can't lock the last admin out. Suspension auto-lifts when the
+    ``suspend_until`` timestamp elapses — no cron needed."""
+    if user.get("is_banned"):
+        raise HTTPException(
+            403,
+            {
+                "code": "account_banned",
+                "message": (
+                    "Your account has been permanently removed for violating "
+                    "our Community Guidelines. Contact "
+                    "whereyumalinesuptodance@stompingroundyuma.org if you "
+                    "believe this is an error."
+                ),
+            },
+        )
+    if user.get("is_suspended"):
+        suspend_until = user.get("suspend_until")
+        try:
+            if suspend_until:
+                until = datetime.fromisoformat(str(suspend_until).replace("Z", "+00:00"))
+                if until.tzinfo is None:
+                    until = until.replace(tzinfo=timezone.utc)
+                if until > datetime.now(timezone.utc):
+                    raise HTTPException(
+                        403,
+                        {
+                            "code": "account_suspended",
+                            "message": (
+                                "Your account is temporarily suspended for violating "
+                                "our Community Guidelines."
+                            ),
+                            "suspend_until": suspend_until,
+                            "reason": user.get("moderation_reason") or "",
+                        },
+                    )
+            # No timestamp or elapsed → keep is_suspended but let the
+            # user back in; a background job / next admin action will
+            # tidy the flag. Fail-open on parse errors so we never
+            # brick an account over a bad timestamp.
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("suspend_until parse failed for user %s", user.get("user_id"))
 
 
 async def require_admin(user: dict = Depends(get_current_user)) -> dict:

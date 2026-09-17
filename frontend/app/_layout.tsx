@@ -11,6 +11,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { AuthProvider } from "@/src/context/auth-context";
 import { PendingSubmissionsProvider } from "@/src/context/pending-submissions-context";
+import { TermsGate } from "@/src/components/TermsGate";
 import { DraftCountProvider } from "@/src/context/draft-count-context";
 import { AgeGateModal } from "@/src/components/AgeGateModal";
 import { LanguagePickerModal } from "@/src/components/LanguagePickerModal";
@@ -151,6 +152,7 @@ export default function RootLayout() {
             <AuthProvider>
               <PendingSubmissionsProvider>
                 <DraftCountProvider>
+                  <TermsGate />
                   <StatusBar barStyle="dark-content" />
                   <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#FDFBF7" } }} />
                   <AgeGateModal />

@@ -35,6 +35,7 @@ import {
 import { useAuth } from "@/src/context/auth-context";
 import { useBlockUser } from "@/src/hooks/useBlockUser";
 import { MentionAutocomplete } from "@/src/components/MentionAutocomplete";
+import { ReportContentSheet } from "@/src/components/ReportContentSheet";
 import { useDraftCount } from "@/src/context/draft-count-context";
 import { parseCsv } from "@/src/lib/csv";
 import { useTranslation } from "@/src/i18n";
@@ -1014,6 +1015,9 @@ function ChatView({
   const [sending, setSending] = useState(false);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [reportTarget, setReportTarget] = useState<
+    import("@/src/components/ReportContentSheet").ReportTarget | null
+  >(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const { confirmBlock } = useBlockUser();
 
@@ -1515,6 +1519,31 @@ function ChatView({
                     onPress={() => {
                       const t = target;
                       setPickerFor(null);
+                      setReportTarget({
+                        target_type: "chat",
+                        target_id: t.id,
+                        target_user_id: t.user_id,
+                      });
+                    }}
+                    style={styles.reactionPickerActionRow}
+                    testID="chat-rx-picker-report"
+                  >
+                    <Ionicons name="flag-outline" size={16} color="#8A1E1E" />
+                    <Text
+                      style={[
+                        styles.reactionPickerActionText,
+                        { color: "#8A1E1E" },
+                      ]}
+                    >
+                      Report {target.user_name || "message"}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                {isOther ? (
+                  <Pressable
+                    onPress={() => {
+                      const t = target;
+                      setPickerFor(null);
                       confirmBlock({
                         user_id: t.user_id,
                         name: t.user_name,
@@ -1539,6 +1568,15 @@ function ChatView({
           })()}
         </Pressable>
       </Modal>
+
+      {/* Apple UGC 1.2: every user-generated chat message needs a
+          Report action reachable in ≤2 taps (long-press → Report).
+          Rendered here so it lives inside the same auth/route scope. */}
+      <ReportContentSheet
+        visible={!!reportTarget}
+        target={reportTarget}
+        onClose={() => setReportTarget(null)}
+      />
     </KeyboardAvoidingView>
   );
 }

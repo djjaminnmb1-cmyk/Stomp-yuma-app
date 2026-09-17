@@ -25,6 +25,7 @@ import { AppleSignInButton } from "@/src/components/AppleSignInButton";
 import { api } from "@/src/api/client";
 import { colors, spacing, radius } from "@/src/theme";
 import { useTranslation } from "@/src/i18n";
+import { TERMS_VERSION } from "@/src/lib/terms";
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -39,11 +40,19 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Apple Guideline 1.2 — the checkbox must be actively ticked before
+  // Create Account is enabled. We do NOT default to true; the user
+  // has to affirmatively opt in.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const submitEmail = async () => {
     setErr(null);
     if (!email || !pw || (mode === "register" && !name)) {
       setErr(t("auth.error_fill_all"));
+      return;
+    }
+    if (mode === "register" && !acceptedTerms) {
+      setErr(t("auth.error_accept_terms"));
       return;
     }
     if (mode === "register" && isInstructor && !instructorCode.trim()) {
@@ -59,7 +68,8 @@ export default function AuthScreen() {
               email.trim(),
               pw,
               name.trim(),
-              isInstructor ? instructorCode.trim() : undefined
+              isInstructor ? instructorCode.trim() : undefined,
+              TERMS_VERSION,
             );
       await signIn(res.token, res.user);
       // Warn (via Alert so it survives the navigation) if instructor toggle
@@ -403,11 +413,66 @@ export default function AuthScreen() {
               </Text>
             ) : null}
 
+            {mode === "register" && (
+              <Pressable
+                testID="auth-accept-terms-checkbox"
+                onPress={() => setAcceptedTerms((v) => !v)}
+                style={styles.termsCheckboxRow}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: acceptedTerms }}
+              >
+                <View
+                  style={[
+                    styles.termsCheckbox,
+                    acceptedTerms && styles.termsCheckboxChecked,
+                  ]}
+                >
+                  {acceptedTerms ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={16}
+                      color={colors.onBrandPrimary}
+                    />
+                  ) : null}
+                </View>
+                <Text style={styles.termsCheckboxText}>
+                  {tRaw("auth.accept_terms_checkbox").split("{terms}")[0]}
+                  <Text
+                    style={styles.legalLink}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      router.push("/terms");
+                    }}
+                  >
+                    {t("auth.terms_of_service")}
+                  </Text>
+                  {tRaw("auth.accept_terms_checkbox")
+                    .split("{terms}")[1]
+                    ?.split("{guidelines}")[0]}
+                  <Text
+                    style={styles.legalLink}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      router.push("/community-guidelines");
+                    }}
+                  >
+                    {t("auth.community_guidelines")}
+                  </Text>
+                  {tRaw("auth.accept_terms_checkbox").split("{guidelines}")[1]}
+                </Text>
+              </Pressable>
+            )}
+
             <Pressable
               testID="auth-submit-button"
               onPress={submitEmail}
-              disabled={busy}
-              style={[styles.primaryBtn, busy && { opacity: 0.6 }]}
+              disabled={busy || (mode === "register" && !acceptedTerms)}
+              style={[
+                styles.primaryBtn,
+                (busy || (mode === "register" && !acceptedTerms)) && {
+                  opacity: 0.6,
+                },
+              ]}
             >
               {busy ? (
                 <ActivityIndicator color={colors.onBrandPrimary} />
@@ -756,5 +821,31 @@ const styles = StyleSheet.create({
     color: colors.brandPrimary,
     fontWeight: "700",
     textDecorationLine: "underline",
+  },
+  termsCheckboxRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  termsCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.brandPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  termsCheckboxChecked: {
+    backgroundColor: colors.brandPrimary,
+  },
+  termsCheckboxText: {
+    flex: 1,
+    color: colors.onSurface,
+    fontSize: 13,
+    lineHeight: 19,
   },
 });

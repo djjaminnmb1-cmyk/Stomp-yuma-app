@@ -1025,6 +1025,30 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
 
+          {/* Safety Center — Apple UGC 1.2 compliance:
+              every user needs a discoverable way to reach support,
+              read the community guidelines, and manage blocks. */}
+          <Pressable
+            testID="profile-safety-cta"
+            onPress={() => router.push("/safety")}
+            style={styles.websiteRow}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>{i18nT("safety.title")}</Text>
+                <Text style={styles.deleteSub}>
+                  {i18nT("profile.safety_sub")}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
           <Pressable
             testID="profile-feedback-cta"
             onPress={() => router.push("/feedback")}
@@ -1052,7 +1076,7 @@ export default function Profile() {
             <Text style={styles.sectionTitle}>{i18nT("profile.sgy_admin")}</Text>
             <Pressable
               testID="profile-moderation-cta"
-              onPress={() => router.push("/admin/reports")}
+              onPress={() => router.push("/admin/moderation")}
               style={styles.websiteRow}
             >
               <View style={styles.rowLeft}>

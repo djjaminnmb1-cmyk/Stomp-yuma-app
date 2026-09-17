@@ -51,6 +51,24 @@ router = APIRouter()
 
 @router.post("/auth/register")
 async def register(inp: RegisterIn, request: Request):
+    # Apple Guideline 1.2: users must actively accept the current
+    # Terms of Use / EULA BEFORE the account is created. The mobile
+    # client sends the exact version string the user checked; if it
+    # doesn't match, refuse the registration with a clear code the
+    # UI can react to.
+    from core.terms import TERMS_VERSION
+    if (inp.accepted_terms_version or "").strip() != TERMS_VERSION:
+        raise HTTPException(
+            400,
+            {
+                "code": "terms_not_accepted",
+                "message": (
+                    "You must read and agree to the Terms of Use and "
+                    "Community Guidelines to create an account."
+                ),
+                "required_version": TERMS_VERSION,
+            },
+        )
     existing = await db.users.find_one({"email": inp.email.lower()})
     if existing and existing.get("password_hash"):
         raise HTTPException(400, "Email already registered")
@@ -69,6 +87,19 @@ async def register(inp: RegisterIn, request: Request):
         inp.email, inp.name, provider="email",
         password_hash=hash_password(inp.password),
     )
+    # Stamp the accepted terms version on the fresh record so we know
+    # this user consented at signup time (audit + Apple review evidence).
+    from core.terms import TERMS_VERSION as _TV
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {
+            "$set": {
+                "accepted_terms_version": _TV,
+                "accepted_terms_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            }
+        },
+    )
+    user["accepted_terms_version"] = _TV
     # If they entered the studio's instructor code on signup, unlock the role.
     # (Admin/whitelist status set by upsert_user is preserved — we never demote.)
     if instructor_code_ok(inp.instructor_code) and not user.get("is_instructor"):
@@ -138,6 +169,46 @@ async def login(inp: LoginIn, request: Request):
         raise HTTPException(401, "Invalid credentials")
     if not verify_password(inp.password, user["password_hash"]):
         raise HTTPException(401, "Invalid credentials")
+    # Apple UGC 1.2 — banned users get a clear 403 at login time
+    # instead of a fresh token they can't use. Suspended users get a
+    # 403 with the unlock time so the UI can render a countdown.
+    if user.get("is_banned"):
+        raise HTTPException(
+            403,
+            {
+                "code": "account_banned",
+                "message": (
+                    "Your account has been permanently removed for violating "
+                    "our Community Guidelines. Contact "
+                    "whereyumalinesuptodance@stompingroundyuma.org if you "
+                    "believe this is an error."
+                ),
+            },
+        )
+    if user.get("is_suspended"):
+        suspend_until = user.get("suspend_until")
+        try:
+            if suspend_until:
+                until = datetime.fromisoformat(str(suspend_until).replace("Z", "+00:00"))
+                if until.tzinfo is None:
+                    until = until.replace(tzinfo=timezone.utc)
+                if until > datetime.now(timezone.utc):
+                    raise HTTPException(
+                        403,
+                        {
+                            "code": "account_suspended",
+                            "message": (
+                                "Your account is temporarily suspended for "
+                                "violating our Community Guidelines."
+                            ),
+                            "suspend_until": suspend_until,
+                            "reason": user.get("moderation_reason") or "",
+                        },
+                    )
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("suspend_until parse failed at login for user=%s", email)
     throttle_reset(f"login:{email}")
     token = make_jwt(user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0))
     return {"token": token, "user": user_to_out(user)}

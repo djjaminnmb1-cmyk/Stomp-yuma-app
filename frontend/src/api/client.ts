@@ -41,6 +41,20 @@ export type User = {
   // BCP-47 short code chosen by the user, or "" to follow device
   // locale. Server enforces membership in the supported set.
   preferred_language?: string;
+  // Apple UGC 1.2 — stamped on the user record when they actively
+  // accept the current Terms/Community Guidelines via a checkbox.
+  // The client compares against the server's TERMS_VERSION on
+  // startup and shows the Terms Accept screen if it doesn't match.
+  accepted_terms_version?: string;
+  accepted_terms_at?: string;
+  // Moderation state. Any of these truthy means the server is
+  // already refusing the auth token (403); we surface them just so
+  // the client can render a friendly "your account is on hold" screen
+  // when it hits a stale cached user object.
+  is_suspended?: boolean;
+  is_banned?: boolean;
+  suspend_until?: string;
+  moderation_reason?: string;
 };
 
 // ---------------- Badges / Achievements ----------------
@@ -759,6 +773,43 @@ export type PendingDance = {
   approved_dance_id?: string | null;
 };
 
+// A user-generated content report — Apple UGC 1.2. Sourced from
+// /moderation/reports (user POST) and rendered in the unified admin
+// moderation queue.
+export type ModerationReport = {
+  id: string;
+  target_type: "feed" | "chat" | "profile" | "comment" | "dance" | "event";
+  target_id: string;
+  target_user_id?: string | null;
+  reporter_id: string;
+  reporter_email: string;
+  reporter_name: string;
+  reason: string;
+  note?: string;
+  content_snapshot?: string;
+  status: "pending" | "reviewed" | "resolved" | "dismissed" | "actioned";
+  reported_at: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  reviewed_by_name?: string | null;
+  admin_note?: string;
+  content_removed?: boolean;
+  moderation_action?: string;
+  elapsed_seconds?: number;
+};
+
+// Any admin action taken against a user account.
+export type ModerationAction = {
+  id: string;
+  user_id: string;
+  action: string;
+  duration_hours: number;
+  reason: string;
+  at: string;
+  by: string;
+  by_name: string;
+};
+
 async function req<T>(
   path: string,
   opts: RequestInit = {},
@@ -790,10 +841,22 @@ async function req<T>(
 }
 
 export const api = {
-  register: (email: string, password: string, name: string, instructor_code?: string) =>
+  register: (
+    email: string,
+    password: string,
+    name: string,
+    instructor_code: string | undefined,
+    accepted_terms_version: string,
+  ) =>
     req<{ token: string; user: User; is_new_user?: boolean }>("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password, name, instructor_code }),
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        instructor_code,
+        accepted_terms_version,
+      }),
     }),
   login: (email: string, password: string) =>
     req<{ token: string; user: User; is_new_user?: boolean }>("/auth/login", {
@@ -2021,6 +2084,123 @@ export const api = {
     req<{ ok: boolean }>(
       `/admin/pending-dances/${encodeURIComponent(id)}/reject`,
       { method: "POST", body: JSON.stringify({ reason }) },
+      token
+    ),
+
+  // ---------------- Terms of Use / EULA (Apple 1.2) ----------------
+  getTermsStatus: (token: string) =>
+    req<{
+      required_version: string;
+      accepted_version: string;
+      up_to_date: boolean;
+      accepted_at?: string;
+    }>("/legal/terms-status", {}, token),
+  acceptTerms: (version: string, token: string) =>
+    req<{ ok: boolean; accepted_version: string }>(
+      "/legal/accept-terms",
+      { method: "POST", body: JSON.stringify({ version }) },
+      token
+    ),
+
+  // ---------------- Moderation / Reporting (Apple 1.2) ----------------
+  getReportReasons: (token: string) =>
+    req<{ reasons: { key: string; label: string }[] }>(
+      "/moderation/report-reasons",
+      {},
+      token
+    ),
+  reportContent: (
+    body: {
+      target_type: "feed" | "chat" | "profile" | "comment" | "dance" | "event";
+      target_id: string;
+      target_user_id?: string;
+      reason: string;
+      note?: string;
+    },
+    token: string
+  ) =>
+    req<{ ok: boolean; id?: string; already_reported?: boolean }>(
+      "/moderation/reports",
+      { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
+  adminListModerationReports: (
+    status: "pending" | "reviewed" | "resolved" | "dismissed" | "actioned" | "all",
+    token: string,
+    target_type?: string
+  ) =>
+    req<{
+      items: ModerationReport[];
+      count: number;
+      pending_count: number;
+    }>(
+      `/admin/moderation/reports?status=${encodeURIComponent(status)}${
+        target_type ? `&target_type=${encodeURIComponent(target_type)}` : ""
+      }`,
+      {},
+      token
+    ),
+  adminPatchModerationReport: (
+    id: string,
+    body: { status?: string; admin_note?: string },
+    token: string
+  ) =>
+    req<{ ok: boolean }>(
+      `/admin/moderation/reports/${encodeURIComponent(id)}`,
+      { method: "PATCH", body: JSON.stringify(body) },
+      token
+    ),
+  adminRemoveReportedContent: (id: string, token: string) =>
+    req<{ ok: boolean; action: string }>(
+      `/admin/moderation/reports/${encodeURIComponent(id)}/remove-content`,
+      { method: "POST", body: JSON.stringify({}) },
+      token
+    ),
+  adminSuspendUser: (
+    user_id: string,
+    duration_hours: 24 | 168 | 720 | 999999,
+    reason: string,
+    token: string
+  ) =>
+    req<{
+      user_id: string;
+      is_suspended: boolean;
+      is_banned: boolean;
+      suspend_until?: string;
+    }>(
+      `/admin/moderation/users/${encodeURIComponent(user_id)}/suspend`,
+      { method: "POST", body: JSON.stringify({ duration_hours, reason }) },
+      token
+    ),
+  adminUnsuspendUser: (user_id: string, token: string) =>
+    req<{ ok: boolean }>(
+      `/admin/moderation/users/${encodeURIComponent(user_id)}/unsuspend`,
+      { method: "POST", body: JSON.stringify({}) },
+      token
+    ),
+  adminBanUser: (user_id: string, reason: string, token: string) =>
+    req<{
+      user_id: string;
+      is_suspended: boolean;
+      is_banned: boolean;
+    }>(
+      `/admin/moderation/users/${encodeURIComponent(user_id)}/ban`,
+      {
+        method: "POST",
+        body: JSON.stringify({ duration_hours: 999999, reason }),
+      },
+      token
+    ),
+  adminWarnUser: (user_id: string, reason: string, token: string) =>
+    req<{ ok: boolean; warnings_count: number }>(
+      `/admin/moderation/users/${encodeURIComponent(user_id)}/warn`,
+      { method: "POST", body: JSON.stringify({ reason }) },
+      token
+    ),
+  adminUserModerationHistory: (user_id: string, token: string) =>
+    req<{ actions: ModerationAction[]; reports: ModerationReport[] }>(
+      `/admin/moderation/users/${encodeURIComponent(user_id)}/history`,
+      {},
       token
     ),
 };

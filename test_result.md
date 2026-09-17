@@ -885,3 +885,243 @@ agent_communication:
           request → banner + button flips to "Pending Review".
         - Sign in as admin, open Profile → SGY Admin → "Pending
           Dances", approve/reject a row.
+
+
+#====================================================================================================
+# APPLE UGC 1.2 COMPLIANCE — 2026-06-24
+#====================================================================================================
+
+backend:
+  - task: "Apple UGC 1.2 — full compliance surface"
+    implemented: true
+    working: "NA"
+    file: "backend/routes/moderation.py, backend/routes/legal.py, backend/routes/auth.py, backend/core/security.py, backend/core/terms.py, backend/services/content_filter.py, backend/models/schemas.py, backend/routes/chat.py, backend/routes/feedback.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          Full backend package for Apple Guideline 1.2 rejection response.
+          Changes:
+          1. Content filter (`services/content_filter.py`) — wordlist +
+             regex for slurs, threats, sexual solicitation, spam.
+             Applied on POST /chat/messages and POST /feedback BEFORE
+             insert. Blocked posts return 400 with
+             `{code:"content_blocked", message, category}`.
+          2. Terms/EULA version tracking (`core/terms.py`,
+             TERMS_VERSION="2026-06-24") + new endpoints:
+             - POST /api/auth/register now requires accepted_terms_version
+               matching current version (400 code=terms_not_accepted).
+             - GET /api/legal/terms-status
+             - POST /api/legal/accept-terms {version}
+             - GET /api/legal/terms (HTML)
+             - GET /api/legal/community-guidelines (HTML)
+          3. Unified moderation API (`routes/moderation.py`):
+             - GET /api/moderation/report-reasons
+             - POST /api/moderation/reports {target_type, target_id,
+               reason, note, target_user_id?} — supports feed/chat/
+               profile/dance/event/comment.
+             - GET /api/admin/moderation/reports (with tab filter +
+               pending_count + elapsed_seconds for 24-h SLA UI)
+             - PATCH /api/admin/moderation/reports/{id}
+             - POST /api/admin/moderation/reports/{id}/remove-content
+               (soft-deletes chat msgs, deletes feed events, un-publishes
+                dances/events, clears profile bios)
+             - POST /api/admin/moderation/users/{id}/suspend
+               {duration_hours=24|168|720|999999, reason}
+             - POST /api/admin/moderation/users/{id}/unsuspend
+             - POST /api/admin/moderation/users/{id}/ban
+             - POST /api/admin/moderation/users/{id}/warn {reason}
+             - GET /api/admin/moderation/users/{id}/history
+          4. Account status enforcement in `core/security.py` —
+             get_current_user now rejects banned users (403
+             code=account_banned) and currently-suspended users
+             (403 code=account_suspended) plus their current pwd_ver
+             is bumped so all existing tokens are invalid.
+          Users collection gets new fields (all optional, backward
+          compatible): accepted_terms_version, accepted_terms_at,
+          is_suspended, is_banned, suspend_until, moderation_reason,
+          moderation_action, moderation_at, moderation_by,
+          moderation_by_name, warnings_count, last_warning_at,
+          last_warning_reason.
+          New Mongo collections: moderation_reports, moderation_actions.
+
+frontend:
+  - task: "Apple UGC 1.2 — active Terms checkbox + terms re-accept gate"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/auth.tsx, frontend/app/terms-accept.tsx, frontend/src/components/TermsGate.tsx, frontend/src/lib/terms.ts, frontend/app/_layout.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          Registration flow now shows a mandatory checkbox
+          ("I have read and agree to the Terms of Use and Community
+          Guidelines") that MUST be actively ticked before the
+          Create Account button becomes enabled. On submit, the
+          client sends `accepted_terms_version=TERMS_VERSION` in the
+          register payload; server rejects if version mismatch.
+          A root-level TermsGate component runs on every route and
+          redirects signed-in users to /terms-accept whenever their
+          accepted_terms_version doesn't match the current live
+          version. The terms-accept screen has the same checkbox
+          gate and shows what changed + links to the full Terms and
+          Community Guidelines HTML pages (served by the backend).
+
+  - task: "Apple UGC 1.2 — Report + Block on chat messages"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/(tabs)/instructor.tsx, frontend/src/components/ReportContentSheet.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          Long-press on someone else's chat message now shows Reply /
+          Report / Block. Report opens the shared
+          ReportContentSheet with the canonical 8-reason picker
+          (loaded from GET /moderation/report-reasons). Block was
+          already implemented and continues to hide the user's
+          content instantly.
+
+  - task: "Apple UGC 1.2 — Safety Center screen"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/safety.tsx, frontend/app/(tabs)/profile.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          New /safety route reachable from Profile → Safety Center
+          row. Shows the zero-tolerance banner, step-by-step Report
+          instructions, step-by-step Block instructions, a big
+          "Email Safety Team" button, and links to the Terms /
+          Community Guidelines / Privacy Policy HTML pages served
+          by the backend.
+
+  - task: "Apple UGC 1.2 — Admin moderation queue"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/admin/moderation.tsx, frontend/app/(tabs)/profile.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          New unified queue at /admin/moderation (Profile → SGY
+          Admin → Moderation Queue for admins). Tabs Pending (with
+          red count badge) / Actioned / Dismissed / All. Every card
+          shows the reported item's snapshot, reason, reporter, and
+          elapsed time (amber pill at ≥20h, red pill at ≥24h).
+          Per-card actions: View User, Dismiss, Warn, Remove
+          Content, Suspend/Ban (opens sheet with 24h/7d/30d/permanent
+          options + reason field).
+
+metadata:
+  test_sequence: 43
+  test_priority: "high_first"
+
+test_plan:
+  current_focus:
+    - "Apple UGC 1.2 — full compliance surface"
+    - "Apple UGC 1.2 — active Terms checkbox + terms re-accept gate"
+    - "Apple UGC 1.2 — Report + Block on chat messages"
+    - "Apple UGC 1.2 — Safety Center screen"
+    - "Apple UGC 1.2 — Admin moderation queue"
+  stuck_tasks: []
+  test_all: false
+
+agent_communication:
+    -agent: "main"
+    -message: |
+      Backend + frontend implementation for Apple Guideline 1.2 UGC
+      rejection response is complete. Please run the following
+      acceptance tests:
+
+      BACKEND:
+      1. Terms enforcement:
+         a. POST /api/auth/register with NO accepted_terms_version
+            → 400 code=terms_not_accepted
+         b. POST /api/auth/register with accepted_terms_version="wrong"
+            → 400 code=terms_not_accepted
+         c. POST /api/auth/register with accepted_terms_version=
+            "2026-06-24" → 200, account created, user record has
+            accepted_terms_version set.
+         d. GET /api/legal/terms-status as fresh user → up_to_date=true
+         e. POST /api/legal/accept-terms {version:"2026-06-24"} → 200
+         f. POST /api/legal/accept-terms {version:"wrong"} → 400
+
+      2. Content filter (chat + feedback):
+         a. As instructor, POST /api/chat/messages
+            {message:"you nigger"} → 400 code=content_blocked
+         b. Same with "kill yourself" → 400
+         c. Same with "send me nudes" → 400
+         d. Same with "AAAAAAAAAA"×20 → 400 (spam)
+         e. Same with "great dance today" → 200
+         f. POST /api/feedback with slur → 400
+         g. POST /api/feedback with normal text → 200
+
+      3. Reporting:
+         a. As user, POST /api/moderation/reports
+            {target_type:"chat", target_id:<a real chat id>,
+             reason:"harassment"} → 200
+         b. Same report again → 200 already_reported=true
+         c. Bad target_type → 400
+         d. Bad reason → 400
+         e. Self-report (target_user_id = own user_id) → 400
+         f. GET /api/moderation/report-reasons → 8 reasons list
+         g. GET /api/admin/moderation/reports?status=pending as
+            regular user → 403
+         h. Same as admin → 200 with pending_count
+
+      4. Admin actions:
+         a. POST /api/admin/moderation/reports/{id}/remove-content
+            for a chat report → 200; message deleted_at set,
+            message="", report.status="actioned"
+         b. POST /api/admin/moderation/users/{u}/suspend
+            {duration_hours:24, reason:"test"} → 200; user is_suspended
+            true, suspend_until iso, pwd_ver bumped, sessions cleared
+         c. Existing token for suspended user → 403 code=account_suspended
+         d. POST /api/admin/moderation/users/{u}/unsuspend → 200,
+            user can log back in via password.
+         e. POST /api/admin/moderation/users/{u}/ban → 200; get_current_user
+            returns 403 code=account_banned.
+         f. POST /api/admin/moderation/users/{u}/warn {reason:"..."} → 200,
+            warnings_count incremented.
+         g. Attempting to suspend/ban an admin → 400.
+         h. Attempting to suspend/ban self → 400.
+
+      5. HTML pages:
+         a. GET /api/legal/terms → 200 HTML with zero-tolerance clause
+            + prohibited-conduct list.
+         b. GET /api/legal/community-guidelines → 200 HTML.
+
+      Existing pending-dances, chat threads, link previews, feed
+      reporting should all continue to work — regression run.
+
+      FRONTEND (light smoke check):
+      1. Fresh app boot → language picker OK, then auth screen.
+         Register tab shows an active checkbox that MUST be ticked
+         before Create Account button enables.
+      2. Register a fresh user → account created, arrives in app,
+         no forced /terms-accept redirect.
+      3. Sign in as an existing user whose accepted_terms_version is
+         old / missing → app redirects to /terms-accept, checkbox
+         MUST be ticked to Continue.
+      4. Profile shows a "Safety Center" row (before the feedback row).
+      5. Admin profile shows "Moderation Queue" (renamed from Reports).
+
+      CREDENTIALS: admin@stompinground.com / C^c+9$ii4y@_L1mU4sl5BTOd
+      (see /app/memory/test_credentials.md)

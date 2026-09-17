@@ -28,6 +28,10 @@ class RegisterIn(BaseModel):
     name: str
     # Self-serve instructor role at signup, if code matches server's INSTRUCTOR_CODE.
     instructor_code: Optional[str] = None
+    # Apple Guideline 1.2 UGC — the client MUST send the terms version
+    # they accepted via an active checkbox. Server verifies it matches
+    # the current live version before creating the account.
+    accepted_terms_version: Optional[str] = None
 
 
 class SetInstructorIn(BaseModel):

@@ -15,6 +15,7 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,8 @@ import { api, PublicProfile } from "@/src/api/client";
 import { FollowButton } from "@/src/components/FollowButton";
 import { InstructorBadge } from "@/src/components/InstructorBadge";
 import { InstructorFollowButton } from "@/src/components/InstructorFollowButton";
+import { ReportContentSheet } from "@/src/components/ReportContentSheet";
+import { useBlockUser } from "@/src/hooks/useBlockUser";
 
 export default function PublicProfileScreen() {
   const router = useRouter();
@@ -37,6 +40,8 @@ export default function PublicProfileScreen() {
   // Local mirror of the follower count so the FollowButton can bump it
   // optimistically without a round-trip refetch.
   const [followers, setFollowers] = useState(0);
+  const [reportOpen, setReportOpen] = useState(false);
+  const { confirmBlock } = useBlockUser();
 
   const load = useCallback(async () => {
     if (!token || !id) return;
@@ -55,6 +60,35 @@ export default function PublicProfileScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Apple UGC 1.2 — every UGC surface must have a report + block action
+  // reachable in ≤ 2 taps. Profile screens open into a native action
+  // sheet with Report user / Block user (destructive) / Cancel.
+  const openMoreMenu = useCallback(() => {
+    if (!profile || profile.is_self) return;
+    const name = profile.name || "this dancer";
+    Alert.alert(
+      name,
+      "What would you like to do?",
+      [
+        {
+          text: "Report user",
+          onPress: () => setReportOpen(true),
+        },
+        {
+          text: "Block user",
+          style: "destructive",
+          onPress: () =>
+            confirmBlock({
+              user_id: profile.user_id,
+              name: profile.name,
+              onBlocked: () => router.back(),
+            }),
+        },
+        { text: "Cancel", style: "cancel" },
+      ],
+    );
+  }, [profile, confirmBlock, router]);
 
   if (loading) {
     return (
@@ -96,7 +130,20 @@ export default function PublicProfileScreen() {
             >
               <Ionicons name="chevron-back" size={24} color="#fff" />
             </Pressable>
-            <View style={styles.iconBtn} />
+            {profile.is_self ? (
+              <View style={styles.iconBtn} />
+            ) : (
+              <Pressable
+                onPress={openMoreMenu}
+                style={styles.iconBtn}
+                hitSlop={12}
+                testID="public-profile-more"
+                accessibilityLabel="More options"
+                accessibilityRole="button"
+              >
+                <Ionicons name="ellipsis-horizontal" size={22} color="#fff" />
+              </Pressable>
+            )}
           </View>
 
           <View style={styles.heroContent}>
@@ -216,6 +263,20 @@ export default function PublicProfileScreen() {
           </View>
         ) : null}
       </ScrollView>
+
+      <ReportContentSheet
+        visible={reportOpen}
+        target={
+          profile && !profile.is_self
+            ? {
+                target_type: "profile",
+                target_id: profile.user_id,
+                target_user_id: profile.user_id,
+              }
+            : null
+        }
+        onClose={() => setReportOpen(false)}
+      />
     </View>
   );
 }

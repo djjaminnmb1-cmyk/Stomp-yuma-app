@@ -205,6 +205,27 @@ async def post_chat(
     text = (inp.message or "").strip()
     if not text:
         raise HTTPException(400, "Empty message")
+    # Apple UGC 1.2: pre-insert content filter. Blocks obvious slurs,
+    # threats, sexual solicitation, and spam patterns BEFORE the row
+    # lands in the DB. Admins are NOT exempt — the filter is agnostic
+    # of role.
+    from services import content_filter
+    verdict = content_filter.check(text)
+    if not verdict.ok:
+        content_filter.log_block(
+            user_id=instructor["user_id"],
+            category=verdict.category or "unknown",
+            detail=verdict.detail,
+            surface="chat",
+        )
+        raise HTTPException(
+            400,
+            {
+                "code": "content_blocked",
+                "message": verdict.message,
+                "category": verdict.category,
+            },
+        )
     doc = {
         "id": f"msg_{uuid.uuid4().hex[:10]}",
         "user_id": instructor["user_id"],

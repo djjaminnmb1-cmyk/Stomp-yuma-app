@@ -46,6 +46,20 @@ def user_to_out(u: dict) -> dict:
         # ``fr``. Empty string means "no override, follow device locale"
         # (the client interprets an empty value as auto-detect).
         "preferred_language": (u.get("preferred_language") or "") or "",
+        # Apple UGC 1.2 — the version string the user actively accepted
+        # (empty on brand-new users). The client compares this against
+        # its local TERMS_VERSION on every mount; a mismatch bounces
+        # them into /terms-accept before they can touch any UGC.
+        "accepted_terms_version": u.get("accepted_terms_version", "") or "",
+        "accepted_terms_at": u.get("accepted_terms_at", "") or "",
+        # Moderation state — surfaced so the client can render a
+        # friendly "your account is on hold" banner instead of a raw
+        # 403 when a stale token is used. The server still refuses
+        # tokens for suspended / banned users at the auth layer.
+        "is_suspended": bool(u.get("is_suspended", False)),
+        "suspend_until": u.get("suspend_until", "") or "",
+        "is_banned": bool(u.get("is_banned", False)),
+        "moderation_reason": u.get("moderation_reason", "") or "",
     }
 
 

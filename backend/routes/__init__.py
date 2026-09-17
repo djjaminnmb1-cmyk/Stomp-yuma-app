@@ -35,6 +35,7 @@ from . import (
     misc,
     notification_prefs,
     pending_dances,
+    moderation,
     prizes,
     push,
     social,
@@ -79,6 +80,7 @@ api_router.include_router(song_preview.router)
 api_router.include_router(push.router)
 api_router.include_router(notification_prefs.router)
 api_router.include_router(pending_dances.router)
+api_router.include_router(moderation.router)
 api_router.include_router(weekly_recap.router)
 api_router.include_router(legal.router)
 api_router.include_router(misc.router)

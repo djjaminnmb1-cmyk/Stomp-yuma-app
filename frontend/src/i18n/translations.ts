@@ -559,6 +559,137 @@ export const translations: Record<Locale, Record<string, string>> = {
     "my_submissions.untitled": "(Untitled)",
     "my_submissions.quota":
       "{used}/{limit} sent today ({remaining} left)",
+
+    // ---------- Apple UGC 1.2 Compliance ----------
+    // Auth checkbox + errors
+    "auth.accept_terms_checkbox":
+      "I have read and agree to the {terms} and {guidelines}",
+    "auth.community_guidelines": "Community Guidelines",
+    "auth.error_accept_terms":
+      "Please accept the Terms of Use and Community Guidelines to continue.",
+    // Profile
+    "profile.safety_sub": "Report abuse, contact support, read policies",
+    // Terms accept re-flow
+    "terms_accept.title": "Updated Terms",
+    "terms_accept.hero_title": "Our Terms Have Been Updated",
+    "terms_accept.hero_body":
+      "Hi {name} — we've updated our Terms of Use and Community Guidelines to keep the community safe. Please review and accept to continue using the app.",
+    "terms_accept.zero_tolerance":
+      "Stompin' Ground Yuma has zero tolerance for objectionable content, harassment, abusive behavior, threats, bullying, hate speech, sexual exploitation, illegal content, impersonation, spam, or users who abuse other members.",
+    "terms_accept.what_changed_title": "What's included",
+    "terms_accept.bullet_zero_tolerance":
+      "Zero-tolerance for objectionable content and abusive users",
+    "terms_accept.bullet_report":
+      "One-tap Report button on every post, chat message, and profile",
+    "terms_accept.bullet_block":
+      "One-tap Block to instantly hide a user's content from your feed",
+    "terms_accept.bullet_24h":
+      "Reports of objectionable content acted on within 24 hours",
+    "terms_accept.bullet_contact":
+      "Direct email to our safety team in every corner of the app",
+    "terms_accept.read_terms": "Read the full Terms of Use",
+    "terms_accept.read_guidelines": "Read the Community Guidelines",
+    "terms_accept.checkbox_label":
+      "I have read and agree to the Terms of Use and Community Guidelines",
+    "terms_accept.continue": "Agree & Continue",
+    "terms_accept.decline": "Decline",
+    "terms_accept.decline_title": "Sign out?",
+    "terms_accept.decline_body":
+      "You need to accept the Terms to keep using Stompin' Ground Yuma. If you decline you'll be signed out; you can accept later by signing back in.",
+    "terms_accept.stay": "Go Back",
+    "terms_accept.sign_out": "Sign out",
+    "terms_accept.error_title": "Couldn't save your acceptance",
+    // Safety Center
+    "safety.title": "Safety Center",
+    "safety.hero_title": "Your Safety Is Our Priority",
+    "safety.hero_body":
+      "Stompin' Ground Yuma has zero tolerance for harassment, hate, threats, or any abusive behavior. Here's how you're protected.",
+    "safety.zero_tolerance":
+      "Zero tolerance for objectionable content, harassment, abusive behavior, threats, bullying, hate speech, sexual exploitation, illegal content, impersonation, spam, or abusive users.",
+    "safety.report_title": "Reporting Content",
+    "safety.report_body":
+      "Every post, chat message, dance, event, and user profile has a Report action.",
+    "safety.report_step1":
+      "Long-press or open the item's menu → tap Report",
+    "safety.report_step2":
+      "Pick a reason (harassment, hate, sexual, threats, spam, impersonation, copyright, other)",
+    "safety.report_step3":
+      "Add an optional note and submit — our team reviews within 24 hours",
+    "safety.block_title": "Blocking Users",
+    "safety.block_body":
+      "Blocking a user immediately hides all their content from your feed, chats, and reactions. It also prevents them from seeing yours.",
+    "safety.block_step1":
+      "Long-press their message or tap the ⋯ on their profile → Block",
+    "safety.block_step2":
+      "Manage or unblock at any time from Profile → Blocked Users",
+    "safety.manage_blocked": "Manage Blocked Users",
+    "safety.contact_title": "Contact the Safety Team",
+    "safety.contact_body":
+      "For urgent safety concerns, account questions, or to report abuse that requires our direct help, email us.",
+    "safety.email_us": "Email Safety Team",
+    "safety.contact_sla":
+      "We aim to respond to valid safety reports within 24 hours.",
+    "safety.policies_title": "Read Our Policies",
+    "safety.read_terms": "Terms of Use",
+    "safety.read_guidelines": "Community Guidelines",
+    "safety.read_privacy": "Privacy Policy",
+    // Report content sheet
+    "report.title": "Report content",
+    "report.subtitle": "Choose the reason that best describes the issue.",
+    "report.reason_harassment": "Harassment or bullying",
+    "report.reason_hate": "Hate or abusive content",
+    "report.reason_sexual": "Sexual or inappropriate content",
+    "report.reason_threats": "Threats or violence",
+    "report.reason_spam": "Spam",
+    "report.reason_impersonation": "Impersonation",
+    "report.reason_copyright": "Copyright / IP concern",
+    "report.reason_other": "Other",
+    "report.note_placeholder": "Add details (optional)…",
+    "report.cancel": "Cancel",
+    "report.submit": "Submit report",
+    "report.ok_title": "Report submitted",
+    "report.ok_body":
+      "Thank you. Your report has been submitted for review.",
+    "report.dup_title": "Already reported",
+    "report.dup_body":
+      "You've already reported this. Our team will review it.",
+    "report.fail_title": "Couldn't submit report",
+    // Admin moderation
+    "admin_mod.title": "Moderation Queue",
+    "admin_mod.not_allowed": "Admin only.",
+    "admin_mod.tab_pending": "Pending",
+    "admin_mod.tab_actioned": "Actioned",
+    "admin_mod.tab_dismissed": "Dismissed",
+    "admin_mod.tab_all": "All",
+    "admin_mod.empty": "Nothing here — the queue is clear.",
+    "admin_mod.reporter_note": "Reporter's note",
+    "admin_mod.reported_by": "Reported by {name}",
+    "admin_mod.admin_action_prefix": "Action:",
+    "admin_mod.view_user": "View user",
+    "admin_mod.dismiss": "Dismiss",
+    "admin_mod.warn": "Warn",
+    "admin_mod.remove_content": "Remove content",
+    "admin_mod.suspend_user": "Suspend / Ban",
+    "admin_mod.warn_title": "Warn user",
+    "admin_mod.warn_body":
+      "Add a short reason — the user will see this on their next login.",
+    "admin_mod.suspend_title": "Suspend or Ban",
+    "admin_mod.suspend_body":
+      "Choose a duration. The user is immediately signed out and can't sign back in until the suspension ends.",
+    "admin_mod.no_target_user":
+      "This report has no associated user account.",
+    "admin_mod.reason_placeholder": "Reason (visible to user)…",
+    "admin_mod.suspend_24h": "24 hours",
+    "admin_mod.suspend_7d": "7 days",
+    "admin_mod.suspend_30d": "30 days",
+    "admin_mod.ban_permanent": "Permanent Ban",
+    "admin_mod.confirm_remove_title": "Remove content?",
+    "admin_mod.confirm_remove_body":
+      "This will unpublish or soft-delete the reported item and mark the report as actioned.",
+    "admin_mod.confirm_remove": "Remove",
+    "admin_mod.cancel": "Cancel",
+    "admin_mod.error_load": "Couldn't load reports",
+    "admin_mod.error_action": "Action failed",
   },
 
   es: {

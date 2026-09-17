@@ -1357,3 +1357,53 @@ compliant with both providers).
   submission is approved or rejected — could be added by piping
   the reviewed row through the existing chat/notification
   services.
+
+---
+
+## 24. Apple App Review 1.2 UGC re-review package — 2026-06-24
+
+### Background
+Apple rejected build under Guideline 1.2 – Safety – User-Generated Content.
+This section documents the full response package delivered back to Apple.
+
+### What shipped this pass
+- **Serializer fix** (`backend/core/serialize.py`) — `user_to_out` now
+  echoes `accepted_terms_version`, `accepted_terms_at`, `is_suspended`,
+  `suspend_until`, `is_banned`, `moderation_reason`. This closes a
+  redirect-loop bug where a freshly-accepted-terms user would bounce
+  back to `/terms-accept` on the next `/api/auth/me`.
+- **Public profile ⋯ menu** (`frontend/app/users/[id].tsx`) — every
+  non-self profile now has an "⋯" header button that opens a native
+  action sheet with Report user / Block user (destructive) / Cancel.
+  Uses the shared `ReportContentSheet` + `useBlockUser` hook. Closes
+  the "reachable in ≤ 2 taps" requirement for profile-level UGC.
+- **Reviewer seed script** (`backend/scripts/seed_apple_review.py`)
+  — idempotent, creates:
+  1. `reviewer@stompinground.com` / `AppleReview!2026` (dancer,
+     instructor-flagged, `accepted_terms_version` **set to a stale
+     value** so Demo 1B trips the gate).
+  2. `adminreview@stompinground.com` / `AppleReview!2026#` (admin,
+     terms up-to-date so Demo 4 lands directly on the queue).
+  3. `samplecontent@stompinground.com` (never signs in — used as
+     the author of a pinned demo chat message the reviewer can
+     long-press).
+- **Reviewer Notes doc** (`/app/APPLE_REVIEW_NOTES.md`) — copy-paste
+  block for App Store Connect + step-by-step demo script for the
+  physical-device dry-run.
+
+### Testing
+- 32/32 UGC compliance tests PASS (`backend/tests/test_ugc_compliance.py`).
+- Test file updated: `test_suspend_and_unsuspend_flow` and `test_ban_flow`
+  now assert login-time 403 (stronger security than the previous
+  /me-time 403 assertion).
+- Frontend visually verified: Terms Gate loop bug fixed
+  (reviewer account signs in → gate appears → ticks checkbox →
+  home screen loads without bouncing back).
+
+### Follow-ups
+- Alert.alert strings in the profile ⋯ menu are hardcoded English
+  right now — should be localized into the 7 non-English locales
+  in the next translations pass.
+- Push notification to the reporter when their report is actioned
+  (Apple doesn't require this but it improves the SLA feedback loop).
+

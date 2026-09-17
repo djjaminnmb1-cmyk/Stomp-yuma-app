@@ -30,9 +30,14 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from pydantic import BaseModel
 
+from core.database import db
 from core.i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, _normalise_lang
+from core.security import get_current_user
+from core.terms import TERMS_VERSION
+from core.time_helpers import now_iso
 
 
 router = APIRouter(prefix="/legal", tags=["legal"])
@@ -410,3 +415,314 @@ async def privacy_policy(
             "X-Frame-Options": "SAMEORIGIN",
         },
     )
+
+
+# ================= Terms of Use / EULA (Apple Guideline 1.2) =================
+
+# Terms are served by the backend for the same reason as the privacy
+# policy above: stable URL, cache friendly, reviewers get a page even
+# if the mobile app isn't running. The content below meets Apple's
+# UGC compliance requirements — zero-tolerance clause, explicit
+# prohibited-behaviour list, moderation SLA, and the operator's
+# contact address.
+
+_TERMS_HTML_CACHE: dict[str, str] = {}
+
+
+def _render_terms(lang: str) -> str:
+    """Build (or return cached) HTML of the Terms of Use for ``lang``.
+
+    Only English is fully translated at launch — Apple review is in
+    English so this is enough for compliance. Other languages fall
+    back to the English text with a heads-up notice at the top.
+    """
+    if lang in _TERMS_HTML_CACHE:
+        return _TERMS_HTML_CACHE[lang]
+
+    fallback_notice = ""
+    if lang != "en":
+        fallback_notice = (
+            "<p style=\"color:#6b5a44;font-size:13px;background:#fff5e0;"
+            "padding:8px 12px;border-radius:8px;margin:0 0 16px\">"
+            "The Terms of Use are currently maintained in English. A "
+            "localised version is coming soon.</p>"
+        )
+
+    body = f"""
+      {fallback_notice}
+      <p>These Terms of Use (\"Terms\") govern your access to and use of
+      the Stompin' Ground Yuma mobile application, website, and any
+      related services (collectively, the \"Service\") operated by
+      Stompin' Ground Yuma (\"we\", \"our\", \"us\"). By creating an
+      account, tapping \"Agree &amp; Continue\", or otherwise using the
+      Service you accept these Terms. If you do not agree, do not
+      use the Service.</p>
+
+      <h2>1. Eligibility</h2>
+      <p>You must be at least 13 years old to create an account.
+      Dancers under 13 may use the Service only with the involvement
+      of a parent or legal guardian who accepts these Terms on their
+      behalf.</p>
+
+      <h2>2. Zero-Tolerance for Objectionable Content and Abusive Users</h2>
+      <p><b>Stompin' Ground Yuma has zero tolerance for objectionable
+      content, harassment, abusive behavior, threats, bullying, hate
+      speech, sexual exploitation, illegal content, impersonation,
+      spam, or users who abuse other members.</b></p>
+
+      <h2>3. Prohibited Conduct</h2>
+      <p>You may NOT use the Service to:</p>
+      <ul>
+        <li>Harass, threaten, stalk, dox, or intimidate other members.</li>
+        <li>Post obscene, sexually explicit, or child-endangering material.</li>
+        <li>Promote hate speech, discrimination, or violence against any
+        person or group.</li>
+        <li>Bully, shame, or coordinate targeted harassment.</li>
+        <li>Impersonate another person, choreographer, instructor, or
+        organisation.</li>
+        <li>Post illegal content or content that facilitates illegal
+        activity.</li>
+        <li>Send spam, unsolicited commercial content, or scam links.</li>
+        <li>Upload content that infringes copyrights, trademarks,
+        publicity rights, or other intellectual-property rights.</li>
+        <li>Abuse the reporting or blocking systems (e.g. mass-reporting
+        someone in bad faith).</li>
+      </ul>
+
+      <h2>4. Content You Post</h2>
+      <p>You retain the rights you already hold in the content you post
+      to community surfaces (chat, activity feed, dance suggestions,
+      profile). You grant Stompin' Ground Yuma a worldwide, royalty-free
+      licence to display, distribute, and store that content solely for
+      the purpose of operating the Service. You are responsible for the
+      content you post.</p>
+
+      <h2>5. Reporting &amp; Blocking</h2>
+      <p>Every user-generated post has a <b>Report</b> action.
+      Reports of objectionable content are reviewed promptly and, where
+      valid, acted on within 24 hours. Every profile has a <b>Block</b>
+      action; blocking another user immediately hides their content
+      from your view and prevents future interactions. You can review
+      or unblock users at any time in <b>Profile &rarr; Settings &rarr; Blocked
+      Users</b>.</p>
+
+      <h2>6. Enforcement</h2>
+      <p>We may, at our sole discretion and without prior notice:</p>
+      <ul>
+        <li>remove any content that violates these Terms;</li>
+        <li>issue a warning to an offending user;</li>
+        <li>suspend an account temporarily;</li>
+        <li>permanently remove an offending user from the Service;</li>
+        <li>cooperate with lawful requests from law enforcement when
+        appropriate.</li>
+      </ul>
+
+      <h2>7. Third-Party Content</h2>
+      <p>The Service displays metadata from third parties including
+      CopperKnob and BootStepper. We do not host their step-sheet
+      content and are not responsible for it. See section 10 of our
+      <a href=\"/api/legal/privacy\">Privacy Policy</a> for the
+      DMCA / copyright takedown process.</p>
+
+      <h2>8. Account Deletion</h2>
+      <p>You may delete your account and personal data at any time from
+      <b>Profile &rarr; Delete My Account</b>. Deletion is permanent.</p>
+
+      <h2>9. Disclaimers &amp; Limitation of Liability</h2>
+      <p>The Service is provided \"as is\" and \"as available\" without
+      warranties of any kind. To the maximum extent permitted by law,
+      Stompin' Ground Yuma will not be liable for any indirect,
+      incidental, special, consequential, or punitive damages arising
+      out of or related to your use of the Service.</p>
+
+      <h2>10. Changes to These Terms</h2>
+      <p>We may update these Terms from time to time. Material changes
+      will prompt you to re-accept the updated Terms on your next app
+      open. Continued use of the Service after re-acceptance means
+      you accept the updated Terms.</p>
+
+      <h2>11. Contact</h2>
+      <p>Report abuse, submit safety concerns, or request account
+      support at
+      <a href=\"mailto:{_CONTACT}\">{_CONTACT}</a>. We aim to review
+      valid reports within 24 hours.</p>
+
+      <p class=\"footer\">Stompin' Ground Yuma &middot; Yuma, Arizona &middot;
+      Terms version {TERMS_VERSION}</p>
+    """.strip()
+
+    html = f"""<!doctype html>
+<html lang=\"{lang}\">
+<head>
+  <meta charset=\"utf-8\"/>
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>
+  <meta name=\"robots\" content=\"index, follow\"/>
+  <title>Terms of Use · Stompin&#39; Ground Yuma</title>
+  <style>
+    :root {{ --bg:#fdf9f1;--ink:#2b1d0e;--muted:#6b5a44;--brand:#b04b1f;--card:#fff;--border:#e6dbc7; }}
+    * {{ box-sizing:border-box; }}
+    html, body {{ margin:0;padding:0;background:var(--bg);color:var(--ink);
+      font:16px/1.6 -apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Arial,sans-serif; }}
+    header {{ background:var(--brand);color:#fff;padding:32px 24px 24px;text-align:center; }}
+    header h1 {{ margin:0 0 4px;font-size:22px; }}
+    header p {{ margin:0;opacity:.85;font-size:14px; }}
+    main {{ max-width:760px;margin:-20px auto 60px;padding:24px;background:var(--card);
+      border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(45,30,15,.06); }}
+    h2 {{ font-size:17px;margin:28px 0 8px;color:var(--brand); }}
+    p, li {{ margin:0 0 8px; }} ul {{ padding-left:22px; }}
+    b {{ color:var(--ink); }} a {{ color:var(--brand);text-decoration:none; }} a:hover {{ text-decoration:underline; }}
+    .footer {{ color:var(--muted);font-size:13px;text-align:center;margin-top:32px; }}
+    .updated {{ color:var(--muted);font-size:13px;margin-bottom:20px; }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Terms of Use</h1>
+    <p>Stompin&#39; Ground Yuma</p>
+  </header>
+  <main>
+    <p class=\"updated\">Last updated: {_LAST_UPDATED} &middot; Version {TERMS_VERSION}</p>
+    {body}
+  </main>
+</body>
+</html>"""
+    _TERMS_HTML_CACHE[lang] = html
+    return html
+
+
+@router.get("/terms", response_class=Response)
+async def terms_of_use(
+    request: Request,
+    lang: Optional[str] = Query(None, max_length=8),
+) -> Response:
+    """Public Terms of Use HTML page."""
+    accept = request.headers.get("accept-language")
+    chosen = _pick_language(lang, accept)
+    return Response(
+        content=_render_terms(chosen),
+        media_type="text/html; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=3600",
+            "Content-Language": chosen,
+            "Vary": "Accept-Language",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.get("/community-guidelines", response_class=Response)
+async def community_guidelines(
+    request: Request,
+    lang: Optional[str] = Query(None, max_length=8),
+) -> Response:
+    """Community Guidelines page — same zero-tolerance content as the
+    Terms sections 2 & 3, extracted as a standalone URL so we can
+    link to it from the app's Safety screen."""
+    # Reuse the terms body but present only the relevant sections.
+    html = f"""<!doctype html>
+<html>
+<head>
+  <meta charset=\"utf-8\"/>
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>
+  <title>Community Guidelines · Stompin&#39; Ground Yuma</title>
+  <style>
+    body {{ margin:0;padding:0;background:#fdf9f1;color:#2b1d0e;
+      font:16px/1.6 -apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Arial,sans-serif; }}
+    header {{ background:#b04b1f;color:#fff;padding:32px 24px 24px;text-align:center; }}
+    header h1 {{ margin:0;font-size:22px; }}
+    main {{ max-width:720px;margin:-20px auto 60px;padding:24px;background:#fff;
+      border:1px solid #e6dbc7;border-radius:14px;box-shadow:0 8px 24px rgba(45,30,15,.06); }}
+    h2 {{ color:#b04b1f;font-size:17px;margin:24px 0 8px; }}
+    p, li {{ margin:0 0 8px; }} ul {{ padding-left:22px; }}
+    a {{ color:#b04b1f; }}
+    .zero {{ background:#fff5e0;padding:12px 14px;border-radius:8px;font-weight:700; }}
+  </style>
+</head>
+<body>
+  <header><h1>Community Guidelines</h1></header>
+  <main>
+    <p class=\"zero\">Stompin&#39; Ground Yuma has zero tolerance for
+      objectionable content, harassment, abusive behavior, threats,
+      bullying, hate speech, sexual exploitation, illegal content,
+      impersonation, spam, or users who abuse other members.</p>
+    <h2>What you may not post</h2>
+    <ul>
+      <li>Harassment, threats, stalking, doxing, or intimidation.</li>
+      <li>Obscene, sexually explicit, or child-endangering material.</li>
+      <li>Hate speech, discrimination, or incitement to violence.</li>
+      <li>Bullying or coordinated targeted harassment.</li>
+      <li>Impersonation of another person, choreographer, or organisation.</li>
+      <li>Illegal content or content that facilitates illegal activity.</li>
+      <li>Spam, unsolicited commercial content, or scam links.</li>
+      <li>Content that infringes copyrights or other IP rights.</li>
+      <li>Abuse of the reporting or blocking systems.</li>
+    </ul>
+    <h2>How reports are handled</h2>
+    <p>Every post has a <b>Report</b> action. Reports are reviewed
+      promptly and, where valid, acted on within 24 hours. Actions we
+      may take include content removal, warnings, suspension, and
+      permanent removal from the Service.</p>
+    <h2>Contact</h2>
+    <p>Email <a href=\"mailto:{_CONTACT}\">{_CONTACT}</a> to report
+      safety concerns or request account support. We aim to review
+      valid reports within 24 hours.</p>
+  </main>
+</body>
+</html>"""
+    return Response(
+        content=html,
+        media_type="text/html; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+# --------- Terms acceptance API ---------
+
+class AcceptTermsBody(BaseModel):
+    version: str
+
+
+@router.get("/terms-status")
+async def terms_status(user: dict = Depends(get_current_user)):
+    """Return the current required version + whether this user has
+    accepted it. The client uses this to decide whether to show the
+    Terms Accept screen after login."""
+    accepted = (user.get("accepted_terms_version") or "").strip()
+    return {
+        "required_version": TERMS_VERSION,
+        "accepted_version": accepted,
+        "up_to_date": accepted == TERMS_VERSION,
+        "accepted_at": user.get("accepted_terms_at") or None,
+    }
+
+
+@router.post("/accept-terms")
+async def accept_terms(body: AcceptTermsBody, user: dict = Depends(get_current_user)):
+    """Persist the user's active acceptance of a Terms version.
+
+    The client only ever sends the current live TERMS_VERSION; anything
+    else is rejected 400 so a stale build can't record a fake accept.
+    """
+    if body.version.strip() != TERMS_VERSION:
+        raise HTTPException(
+            400,
+            {
+                "code": "stale_terms_version",
+                "message": "Terms have been updated. Please reload the app.",
+                "required_version": TERMS_VERSION,
+            },
+        )
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {
+            "$set": {
+                "accepted_terms_version": TERMS_VERSION,
+                "accepted_terms_at": now_iso(),
+            }
+        },
+    )
+    return {"ok": True, "accepted_version": TERMS_VERSION}
+
