@@ -27,6 +27,22 @@ BASE_URL = os.environ.get(
 ADMIN_EMAIL = "admin@stompinground.com"
 ADMIN_PASSWORD = "C^c+9$ii4y@_L1mU4sl5BTOd"
 
+# Apple UGC 1.2 — every register call must include the current
+# terms version. Kept in one place so a version bump only requires
+# updating this constant + core/terms.py.
+TERMS_VERSION = "2026-06-24"
+
+
+def _register_payload(email: str, password: str, name: str) -> dict:
+    """Return the JSON body for POST /api/auth/register with terms
+    acceptance included."""
+    return {
+        "email": email,
+        "password": password,
+        "name": name,
+        "accepted_terms_version": TERMS_VERSION,
+    }
+
 
 # ---------------------------- Fixtures ----------------------------
 
@@ -55,7 +71,7 @@ def user_ctx(api):
     email = f"TEST_pd_{suffix}@example.com"
     r = api.post(
         f"{BASE_URL}/api/auth/register",
-        json={"email": email, "password": "TestPass123!", "name": f"PD Tester {suffix}"},
+        json=_register_payload(email, "TestPass123!", f"PD Tester {suffix}"),
     )
     assert r.status_code == 200, f"register failed: {r.status_code} {r.text[:200]}"
     body = r.json()
@@ -74,7 +90,7 @@ def user2_ctx(api):
     email = f"TEST_pd2_{suffix}@example.com"
     r = api.post(
         f"{BASE_URL}/api/auth/register",
-        json={"email": email, "password": "TestPass123!", "name": f"PD Quota {suffix}"},
+        json=_register_payload(email, "TestPass123!", f"PD Quota {suffix}"),
     )
     assert r.status_code == 200, f"register failed: {r.status_code} {r.text[:200]}"
     body = r.json()
@@ -87,7 +103,7 @@ def user3_ctx(api):
     email = f"TEST_pd3_{suffix}@example.com"
     r = api.post(
         f"{BASE_URL}/api/auth/register",
-        json={"email": email, "password": "TestPass123!", "name": f"PD Third {suffix}"},
+        json=_register_payload(email, "TestPass123!", f"PD Third {suffix}"),
     )
     assert r.status_code == 200, f"register failed: {r.status_code} {r.text[:200]}"
     body = r.json()

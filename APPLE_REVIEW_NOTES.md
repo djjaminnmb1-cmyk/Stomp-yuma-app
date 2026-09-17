@@ -136,21 +136,17 @@ Do this on a real iPhone or iPad (TestFlight build or dev build) — Apple's rev
 
 ---
 
-## 3. Seed script — run this ONCE before submitting
+## 3. Seeding is automatic — nothing to run
 
-The two reviewer accounts and the seeded chat test message must exist on production before Apple runs the demos. Everything below is idempotent; running it twice is safe.
+You **don't** need to run any seed script manually. The backend's startup composite (`services/startup.run_startup`) now includes `seed_apple_review_accounts()`, so every deploy creates (or refreshes) the following on production:
 
-```bash
-# From the repo root, on your prod DB:
-python /app/backend/scripts/seed_apple_review.py
-```
+1. `reviewer@stompinground.com` — regular user, `accepted_terms_version` **intentionally set to a stale value** so Demo 1B trips the gate.
+2. `adminreview@stompinground.com` — admin, terms up-to-date.
+3. A pinned message in the instructor chat from a placeholder "Sample User" account, body: `"This is sample content for App Review — long-press me to Report or Block."`
 
-The seed script creates:
-1. `reviewer@stompinground.com` (regular user, `accepted_terms_version` **intentionally set to the previous version** so Demo 1B trips the gate).
-2. `adminreview@stompinground.com` (admin flag on, terms up-to-date).
-3. A pinned message in the "Yuma Line Dancers" room from a placeholder "Sample User" account, body: `"This is sample content for App Review — long-press me to Report or Block."`
+> When Apple approves the build, remove the `await seed_apple_review_accounts()` line from `backend/services/startup.py` and delete the three `@stompinground.com` accounts from production. See the top of `backend/services/apple_review_seed.py` for the checklist.
 
-> The seed script is generated as part of this task — see `/app/backend/scripts/seed_apple_review.py`.
+If you ever need to re-seed on demand (e.g. after locally deleting the accounts): `python /app/backend/scripts/seed_apple_review.py`.
 
 ---
 

@@ -388,7 +388,11 @@ async def _seed_accounts() -> None:
 
 
 async def run_startup() -> None:
-    """Composite startup: indexes → dance seed → account seed."""
+    """Composite startup: indexes → dance seed → account seed → App Review seed."""
     await _ensure_indexes()
     await _seed_dances()
     await _seed_accounts()
+    # Apple App Review 1.2 UGC — reviewer accounts + demo chat message.
+    # Remove this call (and the file) once Apple approves the build.
+    from services.apple_review_seed import seed_apple_review_accounts
+    await seed_apple_review_accounts()
