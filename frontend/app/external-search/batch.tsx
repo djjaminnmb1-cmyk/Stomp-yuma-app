@@ -26,7 +26,7 @@ import {
   Switch,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -43,6 +43,7 @@ export default function BatchReviewScreen() {
   const router = useRouter();
   const { token, user } = useAuth();
   const isAdminOrEditor = !!(user?.is_admin || user?.is_instructor);
+  const insets = useSafeAreaInsets();
 
   const initialEntries: BulkImportEntry[] = useMemo(() => {
     try {
@@ -445,7 +446,12 @@ export default function BatchReviewScreen() {
       </ScrollView>
 
       {/* Sticky bottom action bar */}
-      <View style={styles.actionBar}>
+      <View
+        style={[
+          styles.actionBar,
+          { paddingBottom: Math.max(spacing.lg, insets.bottom + 4) },
+        ]}
+      >
         <View style={{ flex: 1 }}>
           <Text style={styles.actionBarTitle}>
             {pickedCount} of {readyRows.length} selected

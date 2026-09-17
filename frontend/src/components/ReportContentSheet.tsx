@@ -32,6 +32,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { colors, radius, spacing } from "@/src/theme";
@@ -57,6 +58,7 @@ export function ReportContentSheet({
   onReported,
 }: Props) {
   const { token } = useAuth();
+  const insets = useSafeAreaInsets();
   const [reasons, setReasons] = useState<{ key: string; label: string }[]>([]);
   const [selected, setSelected] = useState<string>("");
   const [note, setNote] = useState("");
@@ -129,7 +131,12 @@ export function ReportContentSheet({
       onRequestClose={onClose}
     >
       <View style={styles.scrim}>
-        <View style={styles.sheet}>
+        <View
+          style={[
+            styles.sheet,
+            { paddingBottom: Math.max(spacing.md, insets.bottom + spacing.sm) },
+          ]}
+        >
           <View style={styles.handleWrap}>
             <View style={styles.handle} />
           </View>

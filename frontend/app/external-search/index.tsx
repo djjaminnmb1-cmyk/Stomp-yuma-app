@@ -27,7 +27,7 @@ import {
   Platform,
   Linking,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { api, MergedExternalResult } from "@/src/api/client";
@@ -56,6 +56,9 @@ export default function ExternalSearchScreen() {
   const router = useRouter();
   const { token, user } = useAuth();
   const isAdminOrEditor = !!(user?.is_admin || user?.is_instructor);
+  // Bottom safe-area — used to lift the batch action bar clear of
+  // the home indicator / gesture bar on modern devices.
+  const insets = useSafeAreaInsets();
 
   const [q, setQ] = useState((params.q as string) || "");
   const [results, setResults] = useState<MergedExternalResult[]>([]);
@@ -305,7 +308,12 @@ export default function ExternalSearchScreen() {
       ) : null}
 
       {batchMode ? (
-        <View style={styles.batchBar}>
+        <View
+          style={[
+            styles.batchBar,
+            { paddingBottom: Math.max(spacing.lg, insets.bottom + 4) },
+          ]}
+        >
           <View style={{ flex: 1 }}>
             <Text style={styles.batchBarTitle}>
               {selectedCount === 0

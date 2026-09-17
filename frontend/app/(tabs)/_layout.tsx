@@ -1,5 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
 import { useDraftCount } from "@/src/context/draft-count-context";
@@ -10,6 +12,13 @@ export default function TabsLayout() {
   const { draftCount } = useDraftCount();
   const { t } = useTranslation();
   const isInstructor = !!(user && (user.is_admin || user.is_instructor));
+  // Bottom safe-area inset — 34pt on iPhones with a home indicator,
+  // 24-48px on Androids with gesture nav, 0 on iPhone SE / 3-button
+  // Android nav. We floor to a small value so the tab bar never
+  // pancakes flush against the screen edge even on hardware with
+  // zero-inset chins.
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === "ios" ? 8 : 12);
 
   return (
     <Tabs
@@ -21,9 +30,12 @@ export default function TabsLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.divider,
           borderTopWidth: 1,
-          height: 78,
+          // Base tab-bar surface = 56pt icons + labels. We add the
+          // device's bottom safe-area on top so the icons never sit
+          // under the home indicator / gesture bar.
+          height: 56 + bottomInset,
           paddingTop: 8,
-          paddingBottom: 22,
+          paddingBottom: bottomInset,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}

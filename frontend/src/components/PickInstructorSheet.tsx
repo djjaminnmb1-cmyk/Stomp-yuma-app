@@ -26,6 +26,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, User } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { InstructorBadge } from "@/src/components/InstructorBadge";
@@ -53,6 +54,7 @@ export function PickInstructorSheet({
   subtitle?: string;
 }) {
   const { token, user, updateUser } = useAuth();
+  const insets = useSafeAreaInsets();
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -362,7 +364,12 @@ export function PickInstructorSheet({
             />
           )}
 
-          <View style={styles.footer}>
+          <View
+            style={[
+              styles.footer,
+              { paddingBottom: Math.max(spacing.lg, insets.bottom + 4) },
+            ]}
+          >
             <Pressable
               onPress={onClose}
               disabled={saving}

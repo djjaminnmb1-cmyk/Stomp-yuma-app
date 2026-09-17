@@ -20,7 +20,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api } from "@/src/api/client";
@@ -34,6 +34,7 @@ const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL || "";
 export default function TermsAcceptScreen() {
   const router = useRouter();
   const { token, user, updateUser, signOut } = useAuth();
+  const insets = useSafeAreaInsets();
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -132,7 +133,12 @@ export default function TermsAcceptScreen() {
         </Pressable>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(spacing.md, insets.bottom + 4) },
+        ]}
+      >
         <Pressable
           onPress={() => {
             Alert.alert(
