@@ -1,0 +1,34 @@
+{
+  "summary": "Backend testing for the new User-Submitted Dances (pending approval) feature. All 19 tests PASS (100%). Verified quota endpoint (auth required, fresh-user shape), submit flow (valid CopperKnob ref, duplicate detection for already_pending / already_in_library, unknown source, empty ref), daily limit of 5 (6th returns 429 daily_limit_reached), 'my submissions' list (own + newest-first), admin list (403 for regular user, filter by status, pending_count present), approve (creates dance row with is_published=true, created_by=submitter, copperknob_ref set; queue row transitions to approved with approved_dance_id), approve already-reviewed -> 409, reject (status/reason persisted, rejected rows do NOT count toward daily quota), reject already-reviewed -> 409. Regression checks on /api/copperknob/popular, /api/bootstepper/popular, /api/dances?scope=public all healthy.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pending_dances.py",
+    "/app/test_reports/pytest/pending_dances.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/pending_dances.py:83 — `_count_today` filters by ISO string using $gte on `submitted_at`. Works because now_iso() emits UTC ISO strings with 'Z' suffix and the day-start is normalised the same way, but string-based date comparisons are fragile. If now_iso() ever changes format (e.g. adds a timezone offset instead of Z), the quota counting silently breaks. Consider storing an epoch-ms field or a native datetime for the range query.",
+    "routes/pending_dances.py:198 — daily-limit HTTPException detail is a dict; FastAPI wraps it as {'detail': {...}}. Callers parsing r.json()['detail']['code'] works; verified in tests. Just document this contract for the frontend.",
+    "routes/pending_dances.py:335 — On approve, if a library duplicate is found post-fetch, the row is marked 'approved' with approved_dance_id set to the pre-existing dance. That's clean, but the response shape differs ({'ok': True, 'already_in_library': True, 'dance_id': ...}) vs the fresh-insert path ({'ok': True, 'dance_id': ...}). Frontend should branch on `already_in_library`.",
+    "routes/pending_dances.py:243 — `id` uses `pd_<uuid[:12]>` (12 hex chars = 48 bits). Low collision risk at current scale but worth noting.",
+    "The queue's source+ref dedup is GLOBAL across all users (correctly enforced in _find_duplicate_in_queue). This means if user A submits ref X and it's rejected, user B can then submit ref X (because rejected rows are excluded from the {status: pending/approved} filter) — matches the spec intent."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pending_dances.py (new)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "n/a (skipped per request)"},
+  "seed_data_creation": "Created 3 ephemeral test users (emails prefixed TEST_pd_*). Approved 1 submission -> a real dance row was created in the dances collection with copperknob_ref set (id captured in test output as pytest.pd_approved_dance_id). Rejected 1 submission. These are expected/left as-is per the review request.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Test suite is idempotent: the popular_refs fixture now filters out queue-claimed refs by scanning /api/admin/pending-dances?status=all, so consecutive runs won't collide as long as CopperKnob's 'popular' returns >=8 unclaimed refs (currently ~99). Every run creates 3 new users, ~7 pending_dances rows, 1 approved dance (real dance row) and 1 rejected row. If the popular list ever runs low (all annotated with existing_dance from prior approvals + queue), the fixture will assert-fail with a clear message. Consider periodic cleanup of TEST_pd_* users and their rejected/approved rows to keep the popular pool healthy.",
+  "rca_of_issue": "N/A — no bugs found in the implementation."
+}

@@ -475,6 +475,64 @@ export const translations: Record<Locale, Record<string, string>> = {
     "error.generic":
       "Something went wrong. Please try again in a moment.",
     "error.offline": "You appear to be offline.",
+
+    // ---------- User-submitted dances (pending approval) ----------
+    "pending_dance.btn_request": "+ Request to Add",
+    "pending_dance.btn_submitting": "Submitting…",
+    "pending_dance.btn_pending": "Pending Review",
+    "pending_dance.btn_rejected": "Not Approved",
+    "pending_dance.btn_in_library": "In Library",
+    "pending_dance.btn_limit": "{limit}/{limit} today",
+    "pending_dance.submitted_title": "Submitted for Review",
+    "pending_dance.submitted_body":
+      "An admin will review it soon. ({used}/{limit} today)",
+    "pending_dance.pending_title": "Awaiting Approval",
+    "pending_dance.pending_body":
+      "An admin will review your submission soon.",
+    "pending_dance.rejected_title": "Not Approved",
+    "pending_dance.rejected_body":
+      "The admin didn't add this dance to the library.",
+    "pending_dance.limit_title": "Daily limit reached",
+    "pending_dance.limit_body":
+      "You've reached today's limit (5). Try again tomorrow.",
+    "pending_dance.dup_title": "Already Submitted",
+    "pending_dance.dup_pending_body":
+      "This dance is already pending approval.",
+    "pending_dance.dup_library_body":
+      "This dance is already in the library.",
+    "pending_dance.error_title": "Something went wrong",
+    "pending_dance.error_body": "Please try again in a moment.",
+
+    // ---------- Admin: Pending Dances queue ----------
+    "admin_pending.title": "Pending Dances",
+    "admin_pending.not_allowed": "Admin only.",
+    "admin_pending.tab_pending": "Pending",
+    "admin_pending.tab_approved": "Approved",
+    "admin_pending.tab_rejected": "Rejected",
+    "admin_pending.tab_all": "All",
+    "admin_pending.empty_pending": "No pending submissions.",
+    "admin_pending.empty_generic": "Nothing here yet.",
+    "admin_pending.untitled": "(Untitled)",
+    "admin_pending.by": "By",
+    "admin_pending.rejected_reason": "Rejection reason",
+    "admin_pending.status_approved": "Approved & added to library",
+    "admin_pending.view_source": "View on {source}",
+    "admin_pending.view_dance": "View Dance",
+    "admin_pending.approve": "Approve",
+    "admin_pending.reject": "Reject",
+    "admin_pending.reject_modal_title": "Reject this submission?",
+    "admin_pending.reject_placeholder":
+      "Optional reason (visible to the user)",
+    "admin_pending.cancel": "Cancel",
+    "admin_pending.confirm_reject": "Reject",
+    "admin_pending.error_load": "Couldn't load submissions",
+    "admin_pending.approve_ok_title":
+      "Approved and added to library",
+    "admin_pending.approve_dup_title": "Already in library",
+    "admin_pending.approve_dup_body":
+      "This dance is already listed. Submission cleared.",
+    "admin_pending.approve_fail": "Approval failed",
+    "admin_pending.reject_fail": "Reject failed",
   },
 
   es: {
@@ -889,6 +947,64 @@ export const translations: Record<Locale, Record<string, string>> = {
     // ---------- Errors ----------
     "error.generic": "Algo salió mal. Inténtalo en un momento.",
     "error.offline": "Parece que no tienes conexión.",
+
+    // ---------- User-submitted dances (pending approval) ----------
+    "pending_dance.btn_request": "+ Pedir añadir",
+    "pending_dance.btn_submitting": "Enviando…",
+    "pending_dance.btn_pending": "En revisión",
+    "pending_dance.btn_rejected": "No aprobado",
+    "pending_dance.btn_in_library": "En la biblioteca",
+    "pending_dance.btn_limit": "{limit}/{limit} hoy",
+    "pending_dance.submitted_title": "Enviado a revisión",
+    "pending_dance.submitted_body":
+      "Un admin lo revisará pronto. ({used}/{limit} hoy)",
+    "pending_dance.pending_title": "Esperando aprobación",
+    "pending_dance.pending_body":
+      "Un admin revisará tu envío pronto.",
+    "pending_dance.rejected_title": "No aprobado",
+    "pending_dance.rejected_body":
+      "El admin no añadió este baile a la biblioteca.",
+    "pending_dance.limit_title": "Límite diario alcanzado",
+    "pending_dance.limit_body":
+      "Has alcanzado el límite de hoy (5). Inténtalo de nuevo mañana.",
+    "pending_dance.dup_title": "Ya enviado",
+    "pending_dance.dup_pending_body":
+      "Este baile ya está pendiente de aprobación.",
+    "pending_dance.dup_library_body":
+      "Este baile ya está en la biblioteca.",
+    "pending_dance.error_title": "Algo salió mal",
+    "pending_dance.error_body": "Inténtalo de nuevo en un momento.",
+
+    // ---------- Admin: Pending Dances queue ----------
+    "admin_pending.title": "Bailes pendientes",
+    "admin_pending.not_allowed": "Solo administradores.",
+    "admin_pending.tab_pending": "Pendientes",
+    "admin_pending.tab_approved": "Aprobados",
+    "admin_pending.tab_rejected": "Rechazados",
+    "admin_pending.tab_all": "Todos",
+    "admin_pending.empty_pending": "No hay envíos pendientes.",
+    "admin_pending.empty_generic": "Aún no hay nada aquí.",
+    "admin_pending.untitled": "(Sin título)",
+    "admin_pending.by": "Por",
+    "admin_pending.rejected_reason": "Motivo del rechazo",
+    "admin_pending.status_approved": "Aprobado y añadido a la biblioteca",
+    "admin_pending.view_source": "Ver en {source}",
+    "admin_pending.view_dance": "Ver baile",
+    "admin_pending.approve": "Aprobar",
+    "admin_pending.reject": "Rechazar",
+    "admin_pending.reject_modal_title": "¿Rechazar este envío?",
+    "admin_pending.reject_placeholder":
+      "Motivo opcional (visible para el usuario)",
+    "admin_pending.cancel": "Cancelar",
+    "admin_pending.confirm_reject": "Rechazar",
+    "admin_pending.error_load": "No se pudieron cargar los envíos",
+    "admin_pending.approve_ok_title":
+      "Aprobado y añadido a la biblioteca",
+    "admin_pending.approve_dup_title": "Ya en la biblioteca",
+    "admin_pending.approve_dup_body":
+      "Este baile ya está listado. Envío eliminado.",
+    "admin_pending.approve_fail": "Falló la aprobación",
+    "admin_pending.reject_fail": "Falló el rechazo",
   },
 
   fr: {
@@ -1330,6 +1446,67 @@ export const translations: Record<Locale, Record<string, string>> = {
     "error.generic":
       "Une erreur s'est produite. Réessayez dans un instant.",
     "error.offline": "Vous semblez hors ligne.",
+
+    // ---------- User-submitted dances (pending approval) ----------
+    "pending_dance.btn_request": "+ Proposer",
+    "pending_dance.btn_submitting": "Envoi…",
+    "pending_dance.btn_pending": "En attente",
+    "pending_dance.btn_rejected": "Refusée",
+    "pending_dance.btn_in_library": "Dans la bibliothèque",
+    "pending_dance.btn_limit": "{limit}/{limit} aujourd'hui",
+    "pending_dance.submitted_title": "Proposition envoyée",
+    "pending_dance.submitted_body":
+      "Un admin la vérifiera bientôt. ({used}/{limit} aujourd'hui)",
+    "pending_dance.pending_title": "En attente d'approbation",
+    "pending_dance.pending_body":
+      "Un admin va bientôt vérifier votre proposition.",
+    "pending_dance.rejected_title": "Refusée",
+    "pending_dance.rejected_body":
+      "L'admin n'a pas ajouté cette danse à la bibliothèque.",
+    "pending_dance.limit_title": "Limite journalière atteinte",
+    "pending_dance.limit_body":
+      "Vous avez atteint la limite du jour (5). Réessayez demain.",
+    "pending_dance.dup_title": "Déjà proposée",
+    "pending_dance.dup_pending_body":
+      "Cette danse est déjà en attente d'approbation.",
+    "pending_dance.dup_library_body":
+      "Cette danse est déjà dans la bibliothèque.",
+    "pending_dance.error_title": "Une erreur est survenue",
+    "pending_dance.error_body": "Merci de réessayer dans un instant.",
+
+    // ---------- Admin: Pending Dances queue ----------
+    "admin_pending.title": "Danses en attente",
+    "admin_pending.not_allowed": "Réservé aux administrateurs.",
+    "admin_pending.tab_pending": "En attente",
+    "admin_pending.tab_approved": "Approuvées",
+    "admin_pending.tab_rejected": "Refusées",
+    "admin_pending.tab_all": "Toutes",
+    "admin_pending.empty_pending": "Aucune proposition en attente.",
+    "admin_pending.empty_generic": "Rien pour le moment.",
+    "admin_pending.untitled": "(Sans titre)",
+    "admin_pending.by": "Par",
+    "admin_pending.rejected_reason": "Motif du refus",
+    "admin_pending.status_approved":
+      "Approuvée et ajoutée à la bibliothèque",
+    "admin_pending.view_source": "Voir sur {source}",
+    "admin_pending.view_dance": "Voir la danse",
+    "admin_pending.approve": "Approuver",
+    "admin_pending.reject": "Refuser",
+    "admin_pending.reject_modal_title":
+      "Refuser cette proposition ?",
+    "admin_pending.reject_placeholder":
+      "Motif facultatif (visible par l'utilisateur)",
+    "admin_pending.cancel": "Annuler",
+    "admin_pending.confirm_reject": "Refuser",
+    "admin_pending.error_load":
+      "Impossible de charger les propositions",
+    "admin_pending.approve_ok_title":
+      "Approuvée et ajoutée à la bibliothèque",
+    "admin_pending.approve_dup_title": "Déjà dans la bibliothèque",
+    "admin_pending.approve_dup_body":
+      "Cette danse est déjà listée. Proposition effacée.",
+    "admin_pending.approve_fail": "Échec de l'approbation",
+    "admin_pending.reject_fail": "Échec du refus",
   },
 
   de: {
@@ -1767,6 +1944,69 @@ export const translations: Record<Locale, Record<string, string>> = {
     "error.generic":
       "Etwas ist schiefgelaufen. Bitte in Kürze erneut versuchen.",
     "error.offline": "Du scheinst offline zu sein.",
+
+    // ---------- User-submitted dances (pending approval) ----------
+    "pending_dance.btn_request": "+ Vorschlagen",
+    "pending_dance.btn_submitting": "Sende…",
+    "pending_dance.btn_pending": "In Prüfung",
+    "pending_dance.btn_rejected": "Abgelehnt",
+    "pending_dance.btn_in_library": "In der Bibliothek",
+    "pending_dance.btn_limit": "{limit}/{limit} heute",
+    "pending_dance.submitted_title": "Zur Prüfung eingereicht",
+    "pending_dance.submitted_body":
+      "Ein Admin prüft es bald. ({used}/{limit} heute)",
+    "pending_dance.pending_title": "Warte auf Freigabe",
+    "pending_dance.pending_body":
+      "Ein Admin prüft deinen Vorschlag bald.",
+    "pending_dance.rejected_title": "Abgelehnt",
+    "pending_dance.rejected_body":
+      "Der Admin hat diesen Tanz nicht in die Bibliothek aufgenommen.",
+    "pending_dance.limit_title": "Tageslimit erreicht",
+    "pending_dance.limit_body":
+      "Du hast das heutige Limit (5) erreicht. Versuch es morgen erneut.",
+    "pending_dance.dup_title": "Bereits vorgeschlagen",
+    "pending_dance.dup_pending_body":
+      "Dieser Tanz wartet bereits auf Freigabe.",
+    "pending_dance.dup_library_body":
+      "Dieser Tanz ist bereits in der Bibliothek.",
+    "pending_dance.error_title": "Etwas ist schiefgelaufen",
+    "pending_dance.error_body": "Bitte gleich noch einmal versuchen.",
+
+    // ---------- Admin: Pending Dances queue ----------
+    "admin_pending.title": "Ausstehende Tänze",
+    "admin_pending.not_allowed": "Nur für Admins.",
+    "admin_pending.tab_pending": "Ausstehend",
+    "admin_pending.tab_approved": "Freigegeben",
+    "admin_pending.tab_rejected": "Abgelehnt",
+    "admin_pending.tab_all": "Alle",
+    "admin_pending.empty_pending":
+      "Keine ausstehenden Vorschläge.",
+    "admin_pending.empty_generic": "Hier gibt es noch nichts.",
+    "admin_pending.untitled": "(Ohne Titel)",
+    "admin_pending.by": "Von",
+    "admin_pending.rejected_reason": "Ablehnungsgrund",
+    "admin_pending.status_approved":
+      "Freigegeben und zur Bibliothek hinzugefügt",
+    "admin_pending.view_source": "Auf {source} ansehen",
+    "admin_pending.view_dance": "Tanz ansehen",
+    "admin_pending.approve": "Freigeben",
+    "admin_pending.reject": "Ablehnen",
+    "admin_pending.reject_modal_title":
+      "Diesen Vorschlag ablehnen?",
+    "admin_pending.reject_placeholder":
+      "Grund optional (für den Nutzer sichtbar)",
+    "admin_pending.cancel": "Abbrechen",
+    "admin_pending.confirm_reject": "Ablehnen",
+    "admin_pending.error_load":
+      "Vorschläge konnten nicht geladen werden",
+    "admin_pending.approve_ok_title":
+      "Freigegeben und zur Bibliothek hinzugefügt",
+    "admin_pending.approve_dup_title":
+      "Bereits in der Bibliothek",
+    "admin_pending.approve_dup_body":
+      "Dieser Tanz ist bereits gelistet. Vorschlag entfernt.",
+    "admin_pending.approve_fail": "Freigabe fehlgeschlagen",
+    "admin_pending.reject_fail": "Ablehnung fehlgeschlagen",
   },
 
   nl: {
@@ -2218,6 +2458,69 @@ export const translations: Record<Locale, Record<string, string>> = {
     "error.generic":
       "Er ging iets mis. Probeer het zo nog eens.",
     "error.offline": "Je lijkt offline te zijn.",
+
+    // ---------- User-submitted dances (pending approval) ----------
+    "pending_dance.btn_request": "+ Voorstellen",
+    "pending_dance.btn_submitting": "Verzenden…",
+    "pending_dance.btn_pending": "In behandeling",
+    "pending_dance.btn_rejected": "Afgewezen",
+    "pending_dance.btn_in_library": "In de bibliotheek",
+    "pending_dance.btn_limit": "{limit}/{limit} vandaag",
+    "pending_dance.submitted_title": "Voorstel ingediend",
+    "pending_dance.submitted_body":
+      "Een admin bekijkt het snel. ({used}/{limit} vandaag)",
+    "pending_dance.pending_title": "Wacht op goedkeuring",
+    "pending_dance.pending_body":
+      "Een admin beoordeelt je inzending binnenkort.",
+    "pending_dance.rejected_title": "Afgewezen",
+    "pending_dance.rejected_body":
+      "De admin heeft deze dans niet toegevoegd.",
+    "pending_dance.limit_title": "Daglimiet bereikt",
+    "pending_dance.limit_body":
+      "Je hebt het daglimiet bereikt (5). Probeer het morgen opnieuw.",
+    "pending_dance.dup_title": "Al ingediend",
+    "pending_dance.dup_pending_body":
+      "Deze dans wacht al op goedkeuring.",
+    "pending_dance.dup_library_body":
+      "Deze dans staat al in de bibliotheek.",
+    "pending_dance.error_title": "Er ging iets mis",
+    "pending_dance.error_body": "Probeer het zo nog eens.",
+
+    // ---------- Admin: Pending Dances queue ----------
+    "admin_pending.title": "Wachtende dansen",
+    "admin_pending.not_allowed": "Alleen voor admins.",
+    "admin_pending.tab_pending": "Wachtend",
+    "admin_pending.tab_approved": "Goedgekeurd",
+    "admin_pending.tab_rejected": "Afgewezen",
+    "admin_pending.tab_all": "Alle",
+    "admin_pending.empty_pending":
+      "Geen wachtende inzendingen.",
+    "admin_pending.empty_generic": "Nog niets hier.",
+    "admin_pending.untitled": "(Zonder titel)",
+    "admin_pending.by": "Door",
+    "admin_pending.rejected_reason": "Reden voor afwijzing",
+    "admin_pending.status_approved":
+      "Goedgekeurd en toegevoegd aan de bibliotheek",
+    "admin_pending.view_source": "Bekijk op {source}",
+    "admin_pending.view_dance": "Bekijk dans",
+    "admin_pending.approve": "Goedkeuren",
+    "admin_pending.reject": "Afwijzen",
+    "admin_pending.reject_modal_title":
+      "Deze inzending afwijzen?",
+    "admin_pending.reject_placeholder":
+      "Optionele reden (zichtbaar voor gebruiker)",
+    "admin_pending.cancel": "Annuleren",
+    "admin_pending.confirm_reject": "Afwijzen",
+    "admin_pending.error_load":
+      "Inzendingen laden mislukt",
+    "admin_pending.approve_ok_title":
+      "Goedgekeurd en toegevoegd aan bibliotheek",
+    "admin_pending.approve_dup_title":
+      "Al in de bibliotheek",
+    "admin_pending.approve_dup_body":
+      "Deze dans staat al vermeld. Inzending gewist.",
+    "admin_pending.approve_fail": "Goedkeuring mislukt",
+    "admin_pending.reject_fail": "Afwijzen mislukt",
   },
 
   ko: {
@@ -2646,6 +2949,69 @@ export const translations: Record<Locale, Record<string, string>> = {
     // ---------- Errors ----------
     "error.generic": "문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
     "error.offline": "오프라인 상태로 보여요.",
+
+    // ---------- User-submitted dances (pending approval) ----------
+    "pending_dance.btn_request": "+ 추가 요청",
+    "pending_dance.btn_submitting": "제출 중…",
+    "pending_dance.btn_pending": "검토 중",
+    "pending_dance.btn_rejected": "거절됨",
+    "pending_dance.btn_in_library": "라이브러리에 있음",
+    "pending_dance.btn_limit": "오늘 {limit}/{limit}",
+    "pending_dance.submitted_title": "검토 요청 완료",
+    "pending_dance.submitted_body":
+      "관리자가 곧 확인합니다. (오늘 {used}/{limit})",
+    "pending_dance.pending_title": "승인 대기",
+    "pending_dance.pending_body":
+      "관리자가 곧 검토합니다.",
+    "pending_dance.rejected_title": "거절됨",
+    "pending_dance.rejected_body":
+      "관리자가 이 댄스를 라이브러리에 추가하지 않았어요.",
+    "pending_dance.limit_title": "일일 한도 도달",
+    "pending_dance.limit_body":
+      "오늘 한도(5)에 도달했어요. 내일 다시 시도해 주세요.",
+    "pending_dance.dup_title": "이미 요청됨",
+    "pending_dance.dup_pending_body":
+      "이 댄스는 이미 승인 대기 중입니다.",
+    "pending_dance.dup_library_body":
+      "이 댄스는 이미 라이브러리에 있습니다.",
+    "pending_dance.error_title": "문제가 발생했어요",
+    "pending_dance.error_body": "잠시 후 다시 시도해 주세요.",
+
+    // ---------- Admin: Pending Dances queue ----------
+    "admin_pending.title": "대기 중인 댄스",
+    "admin_pending.not_allowed": "관리자 전용입니다.",
+    "admin_pending.tab_pending": "대기",
+    "admin_pending.tab_approved": "승인됨",
+    "admin_pending.tab_rejected": "거절됨",
+    "admin_pending.tab_all": "전체",
+    "admin_pending.empty_pending":
+      "대기 중인 요청이 없어요.",
+    "admin_pending.empty_generic": "아직 아무 것도 없어요.",
+    "admin_pending.untitled": "(제목 없음)",
+    "admin_pending.by": "제공",
+    "admin_pending.rejected_reason": "거절 사유",
+    "admin_pending.status_approved":
+      "승인되어 라이브러리에 추가됨",
+    "admin_pending.view_source": "{source}에서 보기",
+    "admin_pending.view_dance": "댄스 보기",
+    "admin_pending.approve": "승인",
+    "admin_pending.reject": "거절",
+    "admin_pending.reject_modal_title":
+      "이 요청을 거절할까요?",
+    "admin_pending.reject_placeholder":
+      "선택 사유 (사용자에게 표시됨)",
+    "admin_pending.cancel": "취소",
+    "admin_pending.confirm_reject": "거절",
+    "admin_pending.error_load":
+      "요청을 불러오지 못했어요",
+    "admin_pending.approve_ok_title":
+      "승인 후 라이브러리에 추가되었어요",
+    "admin_pending.approve_dup_title":
+      "이미 라이브러리에 있어요",
+    "admin_pending.approve_dup_body":
+      "이 댄스는 이미 등록되어 있어요. 요청을 정리했어요.",
+    "admin_pending.approve_fail": "승인에 실패했어요",
+    "admin_pending.reject_fail": "거절에 실패했어요",
   },
 
   "zh-Hans": {
@@ -3061,6 +3427,69 @@ export const translations: Record<Locale, Record<string, string>> = {
     // ---------- Errors ----------
     "error.generic": "出错了。请稍后再试。",
     "error.offline": "您似乎离线了。",
+
+    // ---------- User-submitted dances (pending approval) ----------
+    "pending_dance.btn_request": "+ 请求添加",
+    "pending_dance.btn_submitting": "提交中…",
+    "pending_dance.btn_pending": "待审核",
+    "pending_dance.btn_rejected": "未通过",
+    "pending_dance.btn_in_library": "已在库中",
+    "pending_dance.btn_limit": "今日 {limit}/{limit}",
+    "pending_dance.submitted_title": "已提交审核",
+    "pending_dance.submitted_body":
+      "管理员将尽快审核。(今日 {used}/{limit})",
+    "pending_dance.pending_title": "等待审核",
+    "pending_dance.pending_body":
+      "管理员将尽快审核您的提交。",
+    "pending_dance.rejected_title": "未通过",
+    "pending_dance.rejected_body":
+      "管理员未将此舞蹈添加到库中。",
+    "pending_dance.limit_title": "今日限额已满",
+    "pending_dance.limit_body":
+      "您已达到今日限额（5）。请明天再试。",
+    "pending_dance.dup_title": "已提交",
+    "pending_dance.dup_pending_body":
+      "此舞蹈已在等待审核。",
+    "pending_dance.dup_library_body":
+      "此舞蹈已在库中。",
+    "pending_dance.error_title": "出错了",
+    "pending_dance.error_body": "请稍后再试。",
+
+    // ---------- Admin: Pending Dances queue ----------
+    "admin_pending.title": "待审核舞蹈",
+    "admin_pending.not_allowed": "仅限管理员。",
+    "admin_pending.tab_pending": "待审核",
+    "admin_pending.tab_approved": "已通过",
+    "admin_pending.tab_rejected": "已拒绝",
+    "admin_pending.tab_all": "全部",
+    "admin_pending.empty_pending":
+      "没有待审核的提交。",
+    "admin_pending.empty_generic": "这里还没有内容。",
+    "admin_pending.untitled": "（无标题）",
+    "admin_pending.by": "作者",
+    "admin_pending.rejected_reason": "拒绝原因",
+    "admin_pending.status_approved":
+      "已通过并添加到库中",
+    "admin_pending.view_source": "在 {source} 查看",
+    "admin_pending.view_dance": "查看舞蹈",
+    "admin_pending.approve": "通过",
+    "admin_pending.reject": "拒绝",
+    "admin_pending.reject_modal_title":
+      "拒绝此提交？",
+    "admin_pending.reject_placeholder":
+      "可选原因（对用户可见）",
+    "admin_pending.cancel": "取消",
+    "admin_pending.confirm_reject": "拒绝",
+    "admin_pending.error_load":
+      "无法加载提交",
+    "admin_pending.approve_ok_title":
+      "已通过并添加到库中",
+    "admin_pending.approve_dup_title":
+      "已在库中",
+    "admin_pending.approve_dup_body":
+      "此舞蹈已列出，提交已清除。",
+    "admin_pending.approve_fail": "审核失败",
+    "admin_pending.reject_fail": "拒绝失败",
   },
 
   "zh-Hant": {
@@ -3476,6 +3905,69 @@ export const translations: Record<Locale, Record<string, string>> = {
     // ---------- Errors ----------
     "error.generic": "出錯了。請稍後再試。",
     "error.offline": "您似乎已離線。",
+
+    // ---------- User-submitted dances (pending approval) ----------
+    "pending_dance.btn_request": "+ 請求加入",
+    "pending_dance.btn_submitting": "提交中…",
+    "pending_dance.btn_pending": "待審核",
+    "pending_dance.btn_rejected": "未通過",
+    "pending_dance.btn_in_library": "已在資料庫",
+    "pending_dance.btn_limit": "今日 {limit}/{limit}",
+    "pending_dance.submitted_title": "已提交審核",
+    "pending_dance.submitted_body":
+      "管理員將盡快審核。(今日 {used}/{limit})",
+    "pending_dance.pending_title": "等待審核",
+    "pending_dance.pending_body":
+      "管理員將盡快審核您的提交。",
+    "pending_dance.rejected_title": "未通過",
+    "pending_dance.rejected_body":
+      "管理員未將此舞蹈加入資料庫。",
+    "pending_dance.limit_title": "今日已達上限",
+    "pending_dance.limit_body":
+      "您已達到今日上限（5）。請明天再試。",
+    "pending_dance.dup_title": "已提交過",
+    "pending_dance.dup_pending_body":
+      "此舞蹈已在等待審核。",
+    "pending_dance.dup_library_body":
+      "此舞蹈已在資料庫。",
+    "pending_dance.error_title": "發生錯誤",
+    "pending_dance.error_body": "請稍後再試。",
+
+    // ---------- Admin: Pending Dances queue ----------
+    "admin_pending.title": "待審核舞蹈",
+    "admin_pending.not_allowed": "僅限管理員。",
+    "admin_pending.tab_pending": "待審核",
+    "admin_pending.tab_approved": "已通過",
+    "admin_pending.tab_rejected": "已拒絕",
+    "admin_pending.tab_all": "全部",
+    "admin_pending.empty_pending":
+      "沒有待審核的提交。",
+    "admin_pending.empty_generic": "這裡還沒有內容。",
+    "admin_pending.untitled": "（無標題）",
+    "admin_pending.by": "編舞者",
+    "admin_pending.rejected_reason": "拒絕原因",
+    "admin_pending.status_approved":
+      "已通過並加入資料庫",
+    "admin_pending.view_source": "在 {source} 檢視",
+    "admin_pending.view_dance": "檢視舞蹈",
+    "admin_pending.approve": "通過",
+    "admin_pending.reject": "拒絕",
+    "admin_pending.reject_modal_title":
+      "拒絕此提交？",
+    "admin_pending.reject_placeholder":
+      "可選原因（對使用者可見）",
+    "admin_pending.cancel": "取消",
+    "admin_pending.confirm_reject": "拒絕",
+    "admin_pending.error_load":
+      "無法載入提交",
+    "admin_pending.approve_ok_title":
+      "已通過並加入資料庫",
+    "admin_pending.approve_dup_title":
+      "已在資料庫",
+    "admin_pending.approve_dup_body":
+      "此舞蹈已列出，提交已清除。",
+    "admin_pending.approve_fail": "審核失敗",
+    "admin_pending.reject_fail": "拒絕失敗",
   },
 };
 

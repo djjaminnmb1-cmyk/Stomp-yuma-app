@@ -661,6 +661,22 @@ export type ChatMention = {
   created_at: string;
 };
 
+export type ChatLinkPreview = {
+  url: string;
+  kind: "youtube" | "bootstepper" | "copperknob";
+  title: string;
+  subtitle: string;
+  thumbnail: string;
+  meta: string;
+};
+
+export type ChatMessageParent = {
+  id: string;
+  user_id: string;
+  user_name: string;
+  message: string;
+};
+
 export type ChatMessage = {
   id: string;
   user_id: string;
@@ -671,6 +687,9 @@ export type ChatMessage = {
     counts: Record<string, number>;
     mine: string[];
   };
+  parent_id?: string;
+  parent?: ChatMessageParent;
+  link_previews?: ChatLinkPreview[];
 };
 
 export type ChatReadRow = {
@@ -710,6 +729,34 @@ export type Suggestion = {
   target_instructor_id?: string;
   target_instructor_name?: string;
   created_at: string;
+};
+
+// A user-submitted dance awaiting admin approval. Sourced from
+// CopperKnob or BootStepper metadata only (no step sheet content).
+export type PendingDance = {
+  id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+  source: "copperknob" | "bootstepper";
+  ref: string;
+  title: string;
+  choreographer: string;
+  choreographer_country?: string;
+  song: string;
+  artist: string;
+  music?: string;
+  level?: string;
+  count?: string;
+  wall?: string;
+  url: string;
+  status: "pending" | "approved" | "rejected";
+  submitted_at: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  reviewed_by_name?: string | null;
+  rejection_reason?: string | null;
+  approved_dance_id?: string | null;
 };
 
 async function req<T>(
@@ -1315,10 +1362,13 @@ export const api = {
     ),
 
   listChat: (token: string) => req<ChatMessage[]>("/chat/messages", {}, token),
-  postChat: (message: string, token: string) =>
+  postChat: (message: string, token: string, parent_id?: string) =>
     req<ChatMessage & { mentioned_user_ids?: string[] }>(
       "/chat/messages",
-      { method: "POST", body: JSON.stringify({ message }) },
+      {
+        method: "POST",
+        body: JSON.stringify(parent_id ? { message, parent_id } : { message }),
+      },
       token
     ),
   deleteChat: (id: string, token: string) =>
@@ -1919,6 +1969,58 @@ export const api = {
     req<{ ok: boolean }>(
       "/admin/leaderboard/season",
       { method: "DELETE" },
+      token
+    ),
+
+  // ---------------- User-submitted dances (pending approval queue) ----------------
+  // Users submit CopperKnob / BootStepper listings; admins approve or
+  // reject. Enforces a 5-per-day limit server-side; UI reads
+  // `getPendingDanceQuota` to keep the CTA in sync.
+  getPendingDanceQuota: (token: string) =>
+    req<{
+      used: number;
+      limit: number;
+      remaining: number;
+      resets_at: string;
+    }>("/pending-dances/quota", {}, token),
+  submitPendingDance: (
+    source: "copperknob" | "bootstepper",
+    ref: string,
+    token: string
+  ) =>
+    req<{
+      submission: PendingDance;
+      quota: { used: number; limit: number; remaining: number; resets_at: string };
+    }>(
+      "/pending-dances/submit",
+      { method: "POST", body: JSON.stringify({ source, ref }) },
+      token
+    ),
+  getMyPendingDances: (token: string) =>
+    req<{ items: PendingDance[]; count: number }>(
+      "/pending-dances/mine",
+      {},
+      token
+    ),
+  adminListPendingDances: (
+    status: "pending" | "approved" | "rejected" | "all",
+    token: string
+  ) =>
+    req<{ items: PendingDance[]; count: number; pending_count: number }>(
+      `/admin/pending-dances?status=${encodeURIComponent(status)}`,
+      {},
+      token
+    ),
+  adminApprovePendingDance: (id: string, token: string) =>
+    req<{ ok: boolean; dance_id?: string; already_in_library?: boolean }>(
+      `/admin/pending-dances/${encodeURIComponent(id)}/approve`,
+      { method: "POST", body: JSON.stringify({}) },
+      token
+    ),
+  adminRejectPendingDance: (id: string, reason: string, token: string) =>
+    req<{ ok: boolean }>(
+      `/admin/pending-dances/${encodeURIComponent(id)}/reject`,
+      { method: "POST", body: JSON.stringify({ reason }) },
       token
     ),
 };

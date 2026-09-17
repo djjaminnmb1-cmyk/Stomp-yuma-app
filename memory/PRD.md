@@ -1182,3 +1182,178 @@ feature ships.)
 - Verified: choreographer-fix DB state (1161/1161 populated); punctuated names return non-empty dances; server-side search; landscape split by inspection; monotonic mark-read; wrap-past-midnight quiet window; reaction toggle+cascade; account-deletion cascade for both chat_reads and chat_reactions.
 - Zero regressions on the existing chat / @mention / notification-prefs / dance-write flows.
 
+
+## Session (June 2026) — Chat Threads + Rich Link Previews
+
+### 1️⃣ Chat Threads (iMessage-style inline reply)
+
+- **Schema**: `instructor_messages` gained an optional `parent_id`
+  field.  **We do NOT persist a `parent` snapshot** — the snippet is
+  re-hydrated at read time from the live parent doc, so a later edit
+  or delete of the parent is reflected instantly across every reply.
+- **POST `/api/chat/messages`** accepts optional `parent_id`. If the
+  parent doesn't exist OR its author is blocked by the caller
+  (or vice-versa), the link is silently dropped — the reply still
+  saves as a standalone message so the poster's typing is never
+  lost.  The immediate POST response carries a `parent` snippet so
+  the composer's optimistic-append UI can render the strip without
+  a follow-up GET.
+- **GET `/api/chat/messages`** batch-hydrates every reply in a
+  single Mongo `find({"id": {"$in": parent_ids}})` and attaches a
+  120-char truncated `parent` = `{id, user_id, user_name, message}`
+  snippet.  Missing parents (deleted upstream) leave the reply
+  without a `parent` field — client renders it as standalone.  A
+  defensive `d.pop("parent", None)` up-front strips any legacy
+  persisted snippet from pre-fix rows on first read.
+- **Startup migration**: idempotent one-shot
+  `updateMany({parent: {$exists: true}}, {$unset: {parent: 1}})`
+  scrubs any legacy persisted snippet.  A no-op after the first
+  successful run.
+- **Frontend UI**:
+  - Long-press bubble → picker now includes a **Reply** row (above
+    Block, since Reply is the more common action).
+  - Composer shows a "Replying to X: …" pill with a dismiss X.
+  - Reply bubble renders a compact parent-strip above itself; tap
+    scrolls to the parent (silent no-op if the parent scrolled off
+    the loaded window).
+- **Contract preserved**: `/api/chat/messages` still returns a
+  plain array — no breaking shape change.
+
+### 2️⃣ Rich Link Previews
+
+- **New service `services/link_previews.py`** — resolves URLs
+  pasted in chat into compact cards.  Deliberately narrow supported
+  set:
+  - **YouTube** (`youtube.com/watch`, `youtu.be/`, `youtube.com/shorts/`,
+    `youtube.com/embed/`) — hits the public oEmbed endpoint, no key
+    needed.  Title, channel name, `i.ytimg.com` `hqdefault.jpg`
+    thumbnail.
+  - **BootStepper** (`bootstepper.com/dance/…`) — uses existing
+    `BOOTSTEPPER_API_KEY`; skipped gracefully when unconfigured.
+  - **CopperKnob** (`copperknob.co.uk/stepsheet/…`) — same via
+    `COPPERKNOB_API_KEY`.
+- **Extractor**: conservative regex, up to **3 URLs per message**
+  cap, trailing punctuation stripped so
+  `see https://youtu.be/abc.` still resolves.
+- **Cache**: new `link_previews` collection with unique
+  `canonical` URL index.  7-day TTL check on read.  Tracking
+  params (`utm_*`, `si`, `feature`, `fbclid`, `gclid`) are stripped
+  only from the canonical cache key — the ORIGINAL user URL
+  (query string included) is preserved on the returned preview
+  so a `?t=42` YouTube timestamp still opens at the right spot.
+- **POST-time resolution**: fan-out via `asyncio.gather` so a
+  message with 3 links stays snappy.  Cache hit brings the second
+  post of the same URL from ~500 ms to ~50 ms.
+- **GET-time backfill**: legacy messages without `link_previews`
+  are re-resolved on next read (cheap short-circuit skips messages
+  with no `://` in the body).  Fetches are stored back onto the
+  doc so the next poll skips the work.
+- **Frontend UI**:
+  - New `LinkPreviewCard` component renders below the bubble body:
+    64×64 thumbnail (or coloured icon fallback for BootStepper /
+    CopperKnob), title, subtitle (channel / choreographer),
+    optional meta line ("60 BPM · Improver · 32 count").
+  - Tap opens the URL in the system browser via
+    `Linking.openURL`.
+  - Cards align with the bubble (right for own messages, left for
+    others') and cap at `maxWidth: 82%`.
+
+### Testing (via testing_agent, iterations 39 → 40)
+
+- **Iteration 39**: 19/21 pytest cases passed on first run.  Found
+  one real bug — persisted-then-stale parent snippet — with a
+  precise one-line fix suggestion.
+- **Iteration 40**: 21/21 pass after applying the fix and adding
+  the defensive read-time pop + startup migration.  Confirmed
+  regressions all green: post/list/delete/mark-read/reactions/
+  link-previews-cache-hit/blocked-parent-drop-link/chat-alerts
+  fan-out.
+- YouTube oEmbed was reachable throughout — no rate-limit skips.
+- Test file: `/app/backend/tests/test_chat_threads_and_link_previews.py`.
+
+
+
+---
+
+## 2026-06 · User-Submitted Dances (Pending Approval Queue)
+
+### Product intent
+Let any authenticated dancer suggest a CopperKnob or BootStepper listing
+for the SGY library without giving them write access. Admins moderate
+in a lightweight queue. Metadata-only — never step-sheet content (Terms
+compliant with both providers).
+
+### Constraints (confirmed with user 2026-06)
+- Sources allowed: **CopperKnob** and **BootStepper** only.
+- No step-sheet content is stored — metadata only, matching the
+  existing admin-only import flow.
+- **Daily limit: 5 non-rejected submissions per user, per UTC day.**
+- **Duplicates rejected** early: same source+ref that is already
+  pending/approved in the queue OR already in the dance library.
+- Approval creates a real `dances` row with `is_published=true` and
+  credits the submitter as `created_by` (submitter's name appears on
+  the dance card in the library).
+- Rejected submissions do NOT consume the daily quota.
+
+### Backend
+- New module `/app/backend/routes/pending_dances.py`:
+  - `GET  /api/pending-dances/quota` — used/limit/remaining/resets_at
+  - `POST /api/pending-dances/submit` — body `{source, ref}` → 200 /
+    409 already_pending / 409 already_in_library / 429 daily_limit_reached
+  - `GET  /api/pending-dances/mine` — user's own submissions
+  - `GET  /api/admin/pending-dances?status=pending|approved|rejected|all`
+    — admin list with `pending_count` for the tab badge
+  - `POST /api/admin/pending-dances/{id}/approve` — creates a real dance
+  - `POST /api/admin/pending-dances/{id}/reject` — body `{reason}`
+- Auth: user endpoints use `get_current_user`; admin endpoints use
+  `require_admin_or_editor` (admin + step-sheet editors).
+- Approval re-fetches upstream metadata (never trusts client / stale
+  queue row) and reuses `services.dance_dedupe.find_duplicate` for
+  the last-chance library dedupe check.
+
+### Collection: `pending_dances`
+```
+{
+  id: "pd_XXXXXXXXXXXX",
+  user_id, user_email, user_name,
+  source: "copperknob" | "bootstepper",
+  ref: "AB1234",
+  title, choreographer, choreographer_country, song, artist,
+  music, level, count, wall, url,
+  status: "pending" | "approved" | "rejected",
+  submitted_at, reviewed_at?, reviewed_by?, reviewed_by_name?,
+  rejection_reason?, approved_dance_id?,
+}
+```
+
+### Frontend
+- **`RequestAddToLibraryButton`** replaces the previous "admins only"
+  gap on CopperKnob & BootStepper result cards for regular users.
+  Renders one of: request / submitting / pending / in-library /
+  rejected / limit-reached.
+- **`PendingSubmissionsProvider`** hydrates the current user's
+  submissions once per session so every card knows its status
+  without re-fetching. Optimistic write on submit.
+- **`/admin/pending-dances`** screen: tab filter (Pending has the
+  red badge count) → per-row Approve / Reject actions with a
+  rejection-reason modal (500 char cap, surfaced to the user).
+- Profile → SGY Admin section adds a new "Pending Dances" row.
+- Translations added for all 8 locales (~40 keys × 8 = 320 lines).
+
+### Testing
+- 19/19 backend tests PASS
+  (`/app/backend/tests/test_pending_dances.py` — auth guards,
+  quota, duplicates, daily limit, approve → real dance created
+  with submitter credit, reject → status + reason persisted,
+  regression sanity for existing CK/BS/dances routes).
+- Frontend smoke tested: admin queue renders with 10 pending
+  items from test seed data and shows the tab badge.
+
+### Known trade-offs / follow-ups
+- Approved dances are published immediately (per spec). If the
+  team ever wants a "review-before-publish" second step they'd
+  change the `is_published=True` line in `admin_approve`.
+- No email / push notification to the submitter yet when their
+  submission is approved or rejected — could be added by piping
+  the reviewed row through the existing chat/notification
+  services.

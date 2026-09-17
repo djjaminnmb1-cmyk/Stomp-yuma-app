@@ -737,3 +737,151 @@ agent_communication:
       Follow-up (planned this session)
         • Security audit was originally requested before this task —
           triggering security_audit_agent now.
+
+
+#====================================================================================================
+# NEW FEATURE: User-Submitted Dances (Pending Approval Queue) — 2026-06
+#====================================================================================================
+
+backend:
+  - task: "User-Submitted Dances — pending approval queue"
+    implemented: true
+    working: "NA"
+    file: "backend/routes/pending_dances.py, backend/routes/__init__.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          Added `/api/pending-dances/*` (user) and
+          `/api/admin/pending-dances/*` (admin) endpoints:
+            • POST /api/pending-dances/submit  — body {source, ref}
+              - source must be `copperknob` or `bootstepper`
+              - server re-fetches source metadata (never trusts client)
+              - Duplicate check: same source+ref pending/approved OR
+                already in the dances library (via services.dance_dedupe)
+              - Rate limit: 5 non-rejected submissions per UTC day per
+                user; 429 on excess with reset time
+            • GET  /api/pending-dances/quota   — used/limit/remaining/resets_at
+            • GET  /api/pending-dances/mine    — user's own submissions
+            • GET  /api/admin/pending-dances   — admin list with tab filter,
+              returns pending_count for the tab badge
+            • POST /api/admin/pending-dances/{id}/approve  — re-fetches
+              upstream and creates a real `dances` row (published=true,
+              credited to submitter), fires choreographer-follow notify
+            • POST /api/admin/pending-dances/{id}/reject   — body {reason}
+          Auth: user endpoints use get_current_user; admin endpoints use
+          require_admin_or_editor. Rejected submissions do NOT consume
+          the daily quota.
+
+frontend:
+  - task: "Request to Add Dance button on CopperKnob / BootStepper cards"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/CopperKnobResultCard.tsx, frontend/src/components/BootStepperResultCard.tsx, frontend/src/components/RequestAddToLibraryButton.tsx, frontend/src/context/pending-submissions-context.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          Regular users now see a `+ Request to Add` button on both
+          CopperKnob and BootStepper result cards (search + popular).
+          Admin/instructor flow (direct import) unchanged.
+          States rendered by RequestAddToLibraryButton:
+            • idle → primary button
+            • submitting → spinner
+            • pending → tan "Pending Review" pill (tap for info)
+            • approved → primary "In Library" (routes to /dance/{id})
+            • rejected → red "Not Approved" pill (tap shows reason)
+            • limit reached → disabled "5/5 today"
+          A new PendingSubmissionsProvider hydrates the user's own
+          submissions once per session and drives all card state so
+          each card doesn't re-fetch. Optimistic write on submit so
+          the button flips instantly.
+
+  - task: "Admin Pending Dances queue screen"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/admin/pending-dances.tsx, frontend/app/(tabs)/profile.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          New route `/admin/pending-dances` reachable from Profile →
+          SGY Admin section for admins/instructors. Tabs: Pending
+          (default, with red count badge) / Approved / Rejected / All.
+          Each row shows title, choreographer, level, count/wall,
+          music, submitter + submitted_at, and (for approved) the
+          admin who reviewed. Approve = one tap; Reject opens a modal
+          with an optional reason (500 char cap) that is surfaced to
+          the user. Pull-to-refresh + refresh header button.
+
+  - task: "i18n translations for pending_dance / admin_pending across 8 locales"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/i18n/translations.ts"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+          Added ~40 new keys × 8 locales = 320 translations for
+          pending_dance.* (button labels, alert bodies, quota
+          messaging) and admin_pending.* (tabs, actions, modal). No
+          escaped quotes inside zh-Hans / zh-Hant (used 「」 or plain
+          text). Lint clean.
+
+metadata:
+  test_sequence: 42
+  test_priority: "high_first"
+
+test_plan:
+  current_focus:
+    - "User-Submitted Dances — pending approval queue"
+    - "Request to Add Dance button on CopperKnob / BootStepper cards"
+    - "Admin Pending Dances queue screen"
+  stuck_tasks: []
+  test_all: false
+
+agent_communication:
+    -agent: "main"
+    -message: |
+      Please test the new User-Submitted Dances feature end-to-end.
+
+      BACKEND (priority):
+        1. As a REGULAR user (create one via POST /api/auth/register):
+           - GET /api/pending-dances/quota → {used:0, limit:5, remaining:5}
+           - POST /api/pending-dances/submit {source:"copperknob", ref:"<any valid CK ref>"}
+             (You can hit GET /api/copperknob/popular to find a real ref.)
+             → 200 with `submission` + updated `quota`
+           - GET /api/pending-dances/mine → contains the row
+           - POST same source+ref again → 409 code=already_pending
+           - Repeat submits with 5 DIFFERENT refs from popular, then the
+             6th should return 429 with code=daily_limit_reached
+        2. As ADMIN (`admin@stompinground.com` / `C^c+9$ii4y@_L1mU4sl5BTOd`):
+           - GET /api/admin/pending-dances?status=pending → shows the rows
+           - POST /api/admin/pending-dances/{id}/reject {reason:"test"}
+             → 200; then GET pending shows one less, GET rejected shows it
+           - POST /api/admin/pending-dances/{id}/approve on a pending row
+             → 200 with dance_id; a new row appears in `dances` collection
+             with copperknob_ref/bootstepper_ref set and is_published=true
+        3. Auth guards:
+           - Regular user → 403 on /api/admin/pending-dances/*
+           - Missing token → 401 on /api/pending-dances/*
+        4. Regression: existing /api/dances, /api/copperknob/*,
+           /api/bootstepper/* should still work.
+
+      FRONTEND (light UI check is fine):
+        - Sign in as a regular user, go to CopperKnob search, submit a
+          request → banner + button flips to "Pending Review".
+        - Sign in as admin, open Profile → SGY Admin → "Pending
+          Dances", approve/reject a row.

@@ -1,0 +1,43 @@
+{
+  "summary": "Backend pytest suite for Jan-2026 Chat Threads + Rich Link Previews shipped this session. 19/21 pass. Both failures pinpoint the SAME real backend bug: POST /chat/messages persists the `parent` inline snapshot onto the reply doc (routes/chat.py:222), so when the parent message is later deleted, GET /chat/messages still surfaces the stale `parent` field on the orphan reply. The batch-hydration on GET only OVERRIDES `parent` for parents that still exist — it never STRIPS a stale one. Spec is clear: 'when a parent is deleted, batch-hydration skips missing parents so no `parent` field appears'. Threads happy-path (parent hydration, silent-drop on bogus/blocked parents, plain-array shape) and all link-preview paths (YouTube oEmbed resolve, timestamp preservation, tracker preservation on returned URL, canonical caching, per-message cap of 3, trailing-punctuation strip, unsupported-host skip, GET carries link_previews) all pass. Reactions on threaded replies, chat-alerts fan-out visibility for other instructors, and mark-read regressions all pass. YouTube oEmbed was reachable across the whole run — no rate-limit skips fired.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/chat/messages",
+        "issue": "Reply doc persists inline `parent` snapshot at write time (routes/chat.py:222 `doc[\"parent\"] = _parent_summary(parent)`). When the parent is later deleted, GET /api/chat/messages returns the reply WITH the stale `parent` field intact — because the batch-hydration at routes/chat.py:113-129 only OVERWRITES `parent` for parents that still exist, it never clears a stale snapshot for a deleted parent. Spec explicitly requires: 'batch-hydration skips missing parents so no `parent` field appears (client renders reply as standalone)'. Two clean fixes: (a) don't persist `parent` at write time (only `parent_id`); rely fully on batch-hydrate; OR (b) in the GET loop, strip `parent` from any reply whose `parent_id` is not in `parents_by_id`.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_chat_threads_and_link_previews.py",
+    "/app/test_reports/pytest/chat_threads_and_link_previews.xml"
+  ],
+  "action_items": [
+    "Fix routes/chat.py POST handler: EITHER stop persisting `parent` on the reply doc (leave only `parent_id`) and let GET batch-hydration be the single source of truth, OR extend the GET batch-hydration loop to strip stale `parent` when the parent doc is missing from `parents_by_id`. Option A is cleaner (no denormalised copy). Once fixed, re-run tests/test_chat_threads_and_link_previews.py — both failing tests should flip green with no further changes."
+  ],
+  "critical_code_review_comments": [
+    "routes/chat.py:222 duplicates state — writing `parent` inline AND relying on GET-side hydration creates a stale-copy hazard exactly as this bug proves. Recommend removing the inline `doc[\"parent\"] = ...` line and returning parent-hydrated doc only via a post-insert reload OR by inlining the same _parent_summary logic into the response (but NOT the persisted doc).",
+    "services/link_previews.py:319-322 correctly overlays the original URL onto cached previews so timestamps/trackers survive cache hits — nice touch.",
+    "services/link_previews.py:113 _URL_RE handles standard trailing punctuation; verified against `see https://youtu.be/xxx.` — test passes.",
+    "services/link_previews.py:302-322 cache lookup uses _canonical() (strips utm_/si/fbclid/gclid/feature) then overrides `url` with the raw one so tracker-carrying URLs still resolve from a cached canonical. Working as intended.",
+    "The public YouTube oEmbed endpoint is unauthenticated & throttleable — consider adding a 2-attempt retry inside _fetch_youtube (or bumping the httpx timeout above 6.0s) if intermittent misses show up in production traffic. Not observed in this suite."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "90% (19/21 — both failures are the SAME bug counted twice by different test angles)",
+    "frontend": "not tested (backend-only per request)"
+  },
+  "seed_data_creation": "All test messages prefixed TEST_{6-char hex} + deleted in per-test teardown. Block created in test_reply_when_blocked_drops_parent_link is cleaned up in the finally block via DELETE /api/blocks/{id}. Reactions toggled off after each reaction test.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Suite lives at /app/backend/tests/test_chat_threads_and_link_previews.py. Bug is deterministic — re-run the two failing tests (test_orphan_reply_after_parent_deleted + test_delete_parent_leaves_reply_but_no_parent_field) to verify fix. YouTube oEmbed was reachable throughout this run so no test was skipped; if a future run gets intermittent skips on preview tests, that's the public oEmbed endpoint's rate limit — retry once. Both admin+instructor accounts (admin@stompinground.com, erinboroughs@gmail.com) work for the block-scenario test.",
+  "rca_of_issue": "REPRO: (1) POST /api/chat/messages {\"message\":\"parent\"} → returns msg_A. (2) POST /api/chat/messages {\"message\":\"reply\",\"parent_id\":\"msg_A\"} → returns msg_B with `parent_id=msg_A` AND `parent={id,user_id,user_name,message}`. (3) DELETE /api/chat/messages/msg_A → 200. (4) GET /api/chat/messages → msg_B is returned with BOTH `parent_id=msg_A` (correct, preserved) AND `parent={...}` (BUG — should be absent because parent no longer exists). ROOT CAUSE: routes/chat.py:222 mutates the doc dict with `doc[\"parent\"] = _parent_summary(parent)` right BEFORE `db.instructor_messages.insert_one(doc)` at :233. This persists a denormalised copy of the parent inline on the reply document. Later, in GET (routes/chat.py:113-129), the code fetches missing parents into `parents_by_id` and only sets `d[\"parent\"] = parents_by_id[pid]` when `pid in parents_by_id`. It never DELETES `d[\"parent\"]` when the parent is gone — so the stale snapshot survives. MITIGATION (recommended): remove the persist step and do post-insert response shaping only, so the parent is inlined ONLY on the immediate POST response, not in the stored doc. Alternative: add `else: d.pop(\"parent\", None)` inside the hydration loop."
+}

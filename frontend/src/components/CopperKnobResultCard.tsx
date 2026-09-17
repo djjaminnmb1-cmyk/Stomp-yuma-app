@@ -23,6 +23,7 @@ import { useRouter } from "expo-router";
 import type { CopperKnobResult } from "@/src/api/client";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
+import { RequestAddToLibraryButton } from "@/src/components/RequestAddToLibraryButton";
 
 export function CopperKnobResultCard({
   item,
@@ -123,8 +124,15 @@ export function CopperKnobResultCard({
             <Ionicons name="add" size={16} color={colors.onBrandPrimary} />
             <Text style={styles.btnPrimaryText}>Add to Library</Text>
           </Pressable>
-        ) : null}
-
+        ) : (
+          // Regular users can request the dance be added; admin will
+          // review it in the "Pending Dances" queue. Limit 5/day.
+          <RequestAddToLibraryButton
+            source="copperknob"
+            ref_={item.ref}
+            testID={`ck-request-${item.ref}`}
+          />
+        )}
         <Pressable
           testID={`ck-view-ck-${item.ref}`}
           style={[styles.btn, styles.btnSecondary]}

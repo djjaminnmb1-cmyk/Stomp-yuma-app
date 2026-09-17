@@ -25,6 +25,7 @@ import * as FileSystem from "expo-file-system";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import {
   api,
+  ChatLinkPreview,
   ChatMessage,
   ChatReadRow,
   ClassSession,
@@ -940,6 +941,63 @@ const eventStyles = StyleSheet.create({
 // a second vocabulary.
 const REACTION_KINDS = ["👍", "❤️", "🎉", "😂", "🙌", "🔥"] as const;
 
+/**
+ * Compact tappable card rendered below a chat bubble for each URL we
+ * were able to resolve into rich metadata (YouTube / BootStepper /
+ * CopperKnob). Keeps the chat feed itself uncluttered — the bubble
+ * still shows the original URL, the card is the sugar.
+ */
+function LinkPreviewCard({
+  preview,
+  onOpen,
+}: {
+  preview: ChatLinkPreview;
+  onOpen: (url: string) => void;
+}) {
+  const icon =
+    preview.kind === "youtube"
+      ? "logo-youtube"
+      : preview.kind === "bootstepper"
+        ? "footsteps"
+        : "musical-notes";
+  const tint =
+    preview.kind === "youtube"
+      ? "#C4432E"
+      : preview.kind === "bootstepper"
+        ? colors.brandTertiary
+        : colors.brandSecondary;
+  return (
+    <Pressable
+      onPress={() => onOpen(preview.url)}
+      style={styles.linkPreview}
+      testID={`link-preview-${preview.kind}`}
+    >
+      {preview.thumbnail ? (
+        <Image source={{ uri: preview.thumbnail }} style={styles.linkPreviewImg} />
+      ) : (
+        <View style={[styles.linkPreviewImg, { backgroundColor: tint + "1F", alignItems: "center", justifyContent: "center" }]}>
+          <Ionicons name={icon as any} size={22} color={tint} />
+        </View>
+      )}
+      <View style={styles.linkPreviewBody}>
+        <Text style={styles.linkPreviewTitle} numberOfLines={2}>
+          {preview.title}
+        </Text>
+        {preview.subtitle ? (
+          <Text style={styles.linkPreviewSubtitle} numberOfLines={1}>
+            {preview.subtitle}
+          </Text>
+        ) : null}
+        {preview.meta ? (
+          <Text style={styles.linkPreviewMeta} numberOfLines={1}>
+            {preview.meta}
+          </Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
 function ChatView({
   token,
   currentUserId,
@@ -955,6 +1013,7 @@ function ChatView({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const { confirmBlock } = useBlockUser();
 
@@ -1022,9 +1081,10 @@ function ChatView({
     if (!t) return;
     setSending(true);
     try {
-      const msg = await api.postChat(t, token);
+      const msg = await api.postChat(t, token, replyTo?.id);
       setMessages((m) => [...m, msg]);
       setText("");
+      setReplyTo(null);
     } catch (e: any) {
       Alert.alert("Error", e?.message || "Could not send");
     } finally {
@@ -1121,6 +1181,18 @@ function ChatView({
     const onBubbleLongPress = () => {
       setPickerFor(item.id);
     };
+    // Scroll to a parent message when the "replying to" strip is
+    // tapped. Silent no-op if the parent has scrolled off the head
+    // of the loaded window — chat feeds are last-200 by default,
+    // which covers all reasonable reply depths in this small room.
+    const scrollToParent = () => {
+      if (!item.parent_id) return;
+      const idx = messages.findIndex((m) => m.id === item.parent_id);
+      if (idx >= 0) {
+        listRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 });
+      }
+    };
+    const previews = item.link_previews || [];
     return (
       <View
         style={[
@@ -1131,6 +1203,28 @@ function ChatView({
         {!mine ? (
           <Text style={styles.msgAuthor}>{item.user_name || "Instructor"}</Text>
         ) : null}
+
+        {item.parent ? (
+          <Pressable
+            onPress={scrollToParent}
+            style={[
+              styles.parentStrip,
+              mine ? styles.parentStripMine : styles.parentStripOther,
+            ]}
+            testID={`chat-parent-${item.id}`}
+          >
+            <View style={styles.parentStripBar} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.parentStripAuthor} numberOfLines={1}>
+                {item.parent.user_name || "Instructor"}
+              </Text>
+              <Text style={styles.parentStripText} numberOfLines={2}>
+                {item.parent.message}
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
+
         <Pressable
           onLongPress={onBubbleLongPress}
           delayLongPress={350}
@@ -1157,6 +1251,23 @@ function ChatView({
             })}
           </Text>
         </Pressable>
+
+        {previews.length > 0 ? (
+          <View
+            style={[
+              styles.linkPreviewList,
+              { alignSelf: mine ? "flex-end" : "flex-start" },
+            ]}
+          >
+            {previews.map((preview) => (
+              <LinkPreviewCard
+                key={preview.url}
+                preview={preview}
+                onOpen={(url) => RNLinking.openURL(url).catch(() => {})}
+              />
+            ))}
+          </View>
+        ) : null}
 
         {rxEntries.length > 0 ? (
           <View
@@ -1275,6 +1386,27 @@ function ChatView({
 
   const composerBlock = (
     <>
+      {replyTo ? (
+        <View style={styles.replyPill} testID="chat-reply-pill">
+          <View style={styles.replyPillBar} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.replyPillLabel}>
+              Replying to {replyTo.user_name || "Instructor"}
+            </Text>
+            <Text style={styles.replyPillText} numberOfLines={1}>
+              {replyTo.message}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => setReplyTo(null)}
+            hitSlop={12}
+            testID="chat-reply-cancel"
+            style={styles.replyPillClose}
+          >
+            <Ionicons name="close" size={16} color={colors.muted} />
+          </Pressable>
+        </View>
+      ) : null}
       <MentionAutocomplete
         text={text}
         onPickMention={(replaced) => setText(replaced)}
@@ -1285,7 +1417,11 @@ function ChatView({
           testID="chat-input"
           value={text}
           onChangeText={setText}
-          placeholder="Message the instructors… (tag with @name)"
+          placeholder={
+            replyTo
+              ? `Replying to ${replyTo.user_name || "instructor"}…`
+              : "Message the instructors… (tag with @name)"
+          }
           placeholderTextColor={colors.muted}
           multiline
           style={styles.chatField}
@@ -1353,30 +1489,52 @@ function ChatView({
             const target = pickerFor
               ? messages.find((m) => m.id === pickerFor)
               : null;
-            if (!target || target.user_id === currentUserId) return null;
+            if (!target) return null;
+            const isOther = target.user_id !== currentUserId;
             return (
-              <Pressable
-                onPress={() => {
-                  const t = target;
-                  setPickerFor(null);
-                  confirmBlock({
-                    user_id: t.user_id,
-                    name: t.user_name,
-                    onBlocked: () => {
-                      setMessages((m) =>
-                        m.filter((x) => x.user_id !== t.user_id)
-                      );
-                    },
-                  });
-                }}
-                style={styles.reactionPickerBlockRow}
-                testID="chat-rx-picker-block"
-              >
-                <Ionicons name="ban-outline" size={16} color={colors.error} />
-                <Text style={styles.reactionPickerBlockText}>
-                  Block {target.user_name || "user"}
-                </Text>
-              </Pressable>
+              <View style={styles.reactionPickerActions}>
+                <Pressable
+                  onPress={() => {
+                    setReplyTo(target);
+                    setPickerFor(null);
+                  }}
+                  style={styles.reactionPickerActionRow}
+                  testID="chat-rx-picker-reply"
+                >
+                  <Ionicons
+                    name="return-up-back"
+                    size={16}
+                    color={colors.brandPrimary}
+                  />
+                  <Text style={styles.reactionPickerActionText}>
+                    Reply to {target.user_name || "message"}
+                  </Text>
+                </Pressable>
+                {isOther ? (
+                  <Pressable
+                    onPress={() => {
+                      const t = target;
+                      setPickerFor(null);
+                      confirmBlock({
+                        user_id: t.user_id,
+                        name: t.user_name,
+                        onBlocked: () => {
+                          setMessages((m) =>
+                            m.filter((x) => x.user_id !== t.user_id)
+                          );
+                        },
+                      });
+                    }}
+                    style={[styles.reactionPickerActionRow, styles.reactionPickerBlockRow]}
+                    testID="chat-rx-picker-block"
+                  >
+                    <Ionicons name="ban-outline" size={16} color={colors.error} />
+                    <Text style={styles.reactionPickerBlockText}>
+                      Block {target.user_name || "user"}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
             );
           })()}
         </Pressable>
@@ -2454,6 +2612,142 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.muted,
     marginLeft: 3,
+  },
+  // ---- Reply / thread ----
+  parentStrip: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    maxWidth: "82%",
+    paddingLeft: 8,
+    paddingRight: 10,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    marginBottom: 3,
+    gap: 8,
+  },
+  parentStripMine: {
+    backgroundColor: colors.brandTertiary + "22",
+  },
+  parentStripOther: {
+    backgroundColor: colors.surfaceSecondary,
+  },
+  parentStripBar: {
+    width: 3,
+    backgroundColor: colors.brandPrimary,
+    borderRadius: 1.5,
+  },
+  parentStripAuthor: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.brandPrimary,
+    marginBottom: 1,
+  },
+  parentStripText: {
+    fontSize: 12,
+    color: colors.onSurface,
+    opacity: 0.75,
+  },
+  replyPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginHorizontal: spacing.md,
+    marginBottom: 4,
+    paddingLeft: 10,
+    paddingRight: 6,
+    paddingVertical: 8,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.brandPrimary,
+  },
+  replyPillBar: {
+    // Empty; the borderLeft on ``replyPill`` does the same job while
+    // being cleaner than a nested view. Kept as an empty style so
+    // future tweaks stay in one place.
+  },
+  replyPillLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.brandPrimary,
+    marginBottom: 1,
+  },
+  replyPillText: {
+    fontSize: 12,
+    color: colors.onSurface,
+    opacity: 0.75,
+  },
+  replyPillClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reactionPickerActions: {
+    marginTop: spacing.md,
+    gap: 8,
+    alignSelf: "stretch",
+    paddingHorizontal: spacing.xl,
+    maxWidth: 320,
+  },
+  reactionPickerActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  reactionPickerActionText: {
+    color: colors.brandPrimary,
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  // ---- Link previews ----
+  linkPreviewList: {
+    marginTop: 4,
+    gap: 4,
+    maxWidth: "82%",
+  },
+  linkPreview: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    padding: 8,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 10,
+    overflow: "hidden",
+  },
+  linkPreviewImg: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  linkPreviewBody: {
+    flex: 1,
+    justifyContent: "center",
+    gap: 2,
+  },
+  linkPreviewTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
+  linkPreviewSubtitle: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  linkPreviewMeta: {
+    fontSize: 11,
+    color: colors.brandPrimary,
+    fontWeight: "600",
   },
   restoreListRow: {
     flexDirection: "row",

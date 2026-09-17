@@ -25,6 +25,7 @@ import { useRouter } from "expo-router";
 import type { BootStepperResult } from "@/src/api/client";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
+import { RequestAddToLibraryButton } from "@/src/components/RequestAddToLibraryButton";
 
 export function BootStepperResultCard({
   item,
@@ -128,7 +129,15 @@ export function BootStepperResultCard({
             <Ionicons name="add" size={16} color={colors.onBrandPrimary} />
             <Text style={styles.btnPrimaryText}>Add to Library</Text>
           </Pressable>
-        ) : null}
+        ) : (
+          // Regular users can request; admin reviews in the "Pending
+          // Dances" queue. Server enforces 5-per-day, no dup submits.
+          <RequestAddToLibraryButton
+            source="bootstepper"
+            ref_={item.id}
+            testID={`bs-request-${item.id}`}
+          />
+        )}
 
         <Pressable
           testID={`bs-view-bs-${item.id}`}

@@ -39,6 +39,25 @@ from services.chat_reads import (
     mark_read as chat_mark_read,
     read_state_for_room as chat_read_state,
 )
+from services.link_previews import preview_for_message
+
+
+def _parent_summary(doc: dict) -> dict:
+    """Trim a parent message down to just what the reply bubble needs
+    to render its "replying to …" strip. Keeps the payload small and
+    keeps deletion cascades simple — deleting a parent only breaks
+    the strip, not the reply itself.
+    """
+    if not doc:
+        return {}
+    return {
+        "id": doc.get("id") or "",
+        "user_id": doc.get("user_id") or "",
+        "user_name": doc.get("user_name") or "",
+        # 120 chars is enough for a preview line without wrapping on a
+        # phone screen. The full text is still one tap away.
+        "message": (doc.get("message") or "")[:120],
+    }
 
 router = APIRouter()
 
@@ -83,6 +102,61 @@ async def list_chat(
             r = buckets.get(d.get("id") or "")
             if r:
                 d["reactions"] = r
+
+    # Thread hydration — a reply carries ``parent_id`` on the wire;
+    # we hydrate a compact ``parent`` snippet in ONE batched find so
+    # every reply can render "replying to X: …" without per-message
+    # round-trips. Blocked-parent replies still render the parent
+    # (the parent is by the caller's blocker, but ledgering the reply
+    # made it visible earlier so hiding the parent now would just
+    # confuse the strip).
+    #
+    # Defense-in-depth: any ``parent`` field that slipped through from
+    # an older POST-time persist (pre-fix) is stripped up-front, so
+    # the only source of truth for the strip is the live parent doc.
+    for d in docs:
+        d.pop("parent", None)
+    parent_ids = [d.get("parent_id") for d in docs if d.get("parent_id")]
+    if parent_ids:
+        # Dedup — a lively thread will have many replies pointing at
+        # the same parent.
+        parent_ids = list({p for p in parent_ids if p})
+        parents_by_id: dict[str, dict] = {}
+        async for p in db.instructor_messages.find(
+            {"id": {"$in": parent_ids}},
+            {"_id": 0, "id": 1, "user_id": 1, "user_name": 1, "message": 1},
+        ):
+            pid = p.get("id")
+            if pid:
+                parents_by_id[pid] = _parent_summary(p)
+        for d in docs:
+            pid = d.get("parent_id")
+            if pid and pid in parents_by_id:
+                d["parent"] = parents_by_id[pid]
+
+    # Link-preview backfill — messages posted BEFORE link-preview
+    # existed, or whose fetcher was flaky at post time, will have
+    # ``link_previews`` missing. Retry now against the shared cache
+    # so a later poll upgrades the card silently. Only fires for
+    # messages without a preview and only when the text contains at
+    # least one supported URL, so the common no-links case is a
+    # no-op.
+    for d in docs:
+        if d.get("link_previews") is not None:
+            continue
+        if "://" not in (d.get("message") or ""):
+            continue  # cheap short-circuit — most messages have no URL
+        try:
+            previews = await preview_for_message(d.get("message") or "")
+            if previews:
+                d["link_previews"] = previews
+                # Persist for next poll so we don't re-resolve.
+                await db.instructor_messages.update_one(
+                    {"id": d["id"]},
+                    {"$set": {"link_previews": previews}},
+                )
+        except Exception:
+            pass
     return docs
 
 
@@ -138,6 +212,40 @@ async def post_chat(
         "message": text[:2000],
         "created_at": now_iso(),
     }
+    # Thread parent — best-effort. If the parent doesn't exist or the
+    # caller has blocked its author (or vice versa), we drop the link
+    # rather than 400 the whole POST. The reply still lands as a
+    # normal message so the user's typing isn't lost.
+    #
+    # We store ONLY ``parent_id`` on the doc — the ``parent`` snippet
+    # is re-hydrated at read time from the current parent state. This
+    # keeps orphaned replies (whose parent was later deleted) from
+    # returning a stale summary, and keeps a parent's edits reflected
+    # in every reply's strip.
+    parent_snippet: Optional[dict] = None
+    if inp.parent_id:
+        parent = await db.instructor_messages.find_one(
+            {"id": inp.parent_id},
+            {"_id": 0, "id": 1, "user_id": 1, "user_name": 1, "message": 1},
+        )
+        if parent:
+            hidden = await hidden_user_ids(instructor["user_id"])
+            if parent.get("user_id") not in hidden:
+                doc["parent_id"] = parent["id"]
+                # Keep the snippet for the IMMEDIATE POST response so
+                # the poster's UI can render the strip without a
+                # follow-up GET. Not persisted.
+                parent_snippet = _parent_summary(parent)
+    # Link previews — pre-resolve now so the composer's message shows
+    # cards immediately for the poster (and every reader in the next
+    # 6s poll). Best-effort; oEmbed / BootStepper / CopperKnob
+    # failures leave the message intact without cards.
+    try:
+        previews = await preview_for_message(doc["message"])
+        if previews:
+            doc["link_previews"] = previews
+    except Exception:
+        pass
     await db.instructor_messages.insert_one(doc)
     doc.pop("_id", None)
     # Fan-out @mentions — best-effort. Runs INLINE so a follower who's
@@ -172,6 +280,12 @@ async def post_chat(
         # Never let a push flake break the POST — chat still returns
         # the fresh doc so the poster sees their message immediately.
         pass
+    # Attach the parent snippet to the RESPONSE only — not persisted,
+    # so a later deletion of the parent leaves the reply as a
+    # standalone message (see the GET hydration for the read-time
+    # story).
+    if parent_snippet:
+        doc["parent"] = parent_snippet
     return doc
 
 

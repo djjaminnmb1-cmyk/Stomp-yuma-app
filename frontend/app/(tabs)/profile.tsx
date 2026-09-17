@@ -1055,6 +1055,21 @@ export default function Profile() {
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
+            <Pressable
+              testID="profile-admin-pending-dances-cta"
+              onPress={() => router.push("/admin/pending-dances")}
+              style={styles.websiteRow}
+            >
+              <View style={styles.rowLeft}>
+                <Ionicons
+                  name="hourglass-outline"
+                  size={22}
+                  color={colors.brandPrimary}
+                />
+                <Text style={styles.rowText}>{i18nT("admin_pending.title")}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </Pressable>
             <RefreshRecommendationsAdminRow />
           </View>
         ) : null}

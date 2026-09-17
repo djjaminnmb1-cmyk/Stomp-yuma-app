@@ -150,6 +150,31 @@ async def _ensure_indexes() -> None:
     except Exception as e:
         logger.warning(f"chat_reactions index issue: {e}")
     try:
+        from services.link_previews import (
+            ensure_indexes as ensure_link_preview_indexes,
+        )
+        await ensure_link_preview_indexes()
+    except Exception as e:
+        logger.warning(f"link_previews index issue: {e}")
+    # One-off migration: strip any persisted ``parent`` snippet from
+    # legacy reply docs (pre-thread-fix). New POSTs never write it;
+    # GET reads defensively pop it; this migration removes the field
+    # entirely so a future maintainer can drop the defensive pop
+    # without regressing anything. Idempotent — becomes a no-op after
+    # the first successful run.
+    try:
+        res = await db.instructor_messages.update_many(
+            {"parent": {"$exists": True}},
+            {"$unset": {"parent": ""}},
+        )
+        if getattr(res, "modified_count", 0):
+            logger.info(
+                f"chat threads migration: stripped persisted `parent` "
+                f"from {res.modified_count} legacy row(s)"
+            )
+    except Exception as e:
+        logger.warning(f"chat threads migration skipped: {e}")
+    try:
         from services.refresh_recommendations import (
             ensure_indexes as ensure_drift_indexes,
         )

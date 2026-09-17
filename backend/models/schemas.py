@@ -218,6 +218,12 @@ class RegisterPushBody(BaseModel):
 # ---------------- Chat ----------------
 class ChatMessageIn(BaseModel):
     message: str
+    # Optional ID of the message this one is replying to. When set, the
+    # reply carries a compact ``parent`` summary on GET so the UI can
+    # render the "replying to X" strip above the bubble. Ignored (with
+    # a soft warning) if the parent doesn't exist or is by a blocked
+    # user — the reply still goes through as a standalone message.
+    parent_id: Optional[str] = None
 
 
 # ---------------- Suggestions ----------------

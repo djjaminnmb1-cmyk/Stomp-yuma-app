@@ -1,0 +1,33 @@
+{
+  "summary": "RETEST of Chat Threads + Rich Link Previews after main agent's fix to POST /api/chat/messages. Result: 21/21 pass (was 19/21 in iteration 39). The two previously failing tests (test_orphan_reply_after_parent_deleted and test_delete_parent_leaves_reply_but_no_parent_field) now both PASS without any test-code changes. Verified in routes/chat.py: (a) POST no longer persists doc['parent']; only parent_id is stored (line 234). (b) The inline parent snippet is only attached to the immediate POST response via parent_snippet (line 238), not written to Mongo. (c) GET batch-hydration defensively strips any pre-existing parent field via `d.pop('parent', None)` at line 118 before re-hydrating from live parent docs — legacy rows self-heal on first read. Full regression suite of 19 previously-passing tests still green: post/list/delete/mark-read/reactions/link-previews (YouTube oEmbed resolve, timestamp preservation, tracker preservation, canonical caching, per-message 3-URL cap, trailing-punctuation strip, unsupported-host skip, GET carries link_previews), threads happy-path, blocked-parent silent-drop, and chat-alerts fan-out visibility all pass. YouTube oEmbed was reachable across the full run — no rate-limit skips fired.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_chat_threads_and_link_previews.py",
+    "/app/test_reports/pytest/chat_threads_and_link_previews.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/chat.py:117-118 defensive `d.pop('parent', None)` before hydration is a clean belt-and-suspenders — any pre-fix docs with a persisted parent snapshot will self-heal on the next GET.",
+    "routes/chat.py:238 parent_snippet-only-on-response is the right shape: single source of truth is the live parent doc; the immediate POST response still gets the strip so the poster's UI doesn't need a follow-up GET.",
+    "Suggestion (non-blocking): once traffic is confirmed clean, a one-off migration `db.instructor_messages.update_many({'parent': {'$exists': True}}, {'$unset': {'parent': 1}})` would clear the DB of stale snapshots and let you drop the defensive pop — but the current self-heal-on-read strategy is fine to keep long term."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (21/21)",
+    "frontend": "not tested (backend-only per request)"
+  },
+  "seed_data_creation": "All test messages prefixed TEST_{6-char hex} + deleted in per-test teardown. Block created in test_reply_when_blocked_drops_parent_link cleaned up in finally. Reactions toggled off after each reaction test. No stray state remaining.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Chat Threads + Rich Link Previews backend is stable at 21/21. Suite lives at /app/backend/tests/test_chat_threads_and_link_previews.py. If a future run gets intermittent skips on preview tests (test_youtube_short_url_preserves_timestamp, test_youtube_url_with_tracking_preserves_original_url, test_second_post_hits_cache_faster, test_trailing_punctuation_stripped, test_get_messages_includes_link_previews), that's the public YouTube oEmbed endpoint's rate limit — the tests correctly pytest.skip on that path. Both admin+instructor accounts (admin@stompinground.com, erinboroughs@gmail.com) confirmed working for the block-scenario test.",
+  "rca_of_issue": "FIX VERIFIED. Original bug (iteration 39): POST persisted `doc['parent'] = _parent_summary(parent)` at write time, so GET's batch-hydration (which only OVERRODE parent for live parents) left a stale snapshot on orphan replies. Applied fix has three parts in routes/chat.py: (1) L226-238: only `doc['parent_id']` is set on the persisted doc; the snippet is bound to a local `parent_snippet` variable that is later attached to the POST response only. (2) L117-118: defensive `d.pop('parent', None)` on every GET doc before re-hydration guarantees the strip is a function of live parents only. (3) L132-135: the hydration loop is unchanged — it sets `d['parent']` only for parent_ids that exist in `parents_by_id`. Re-ran test_orphan_reply_after_parent_deleted + test_delete_parent_leaves_reply_but_no_parent_field — both green. Full suite 21/21 green in 11.69s."
+}
