@@ -10,6 +10,7 @@
 // preview vs. production.
 
 const path = require("path");
+const fs = require("fs");
 // Load .env early so dev builds see the same env the deploy pipeline
 // injects in prod. Non-fatal if the file is missing.
 try {
@@ -17,6 +18,17 @@ try {
 } catch (_) {
   // dotenv is a transitive dep; if it's ever pruned, skip silently.
 }
+
+// Optional iOS Firebase config for push notifications. We only wire
+// it into the native build if the plist actually exists on disk —
+// otherwise a missing file would fail `expo prebuild --clean`. Drop
+// the plist from the Firebase console at frontend/GoogleService-Info.plist
+// and it's picked up automatically on the next build.
+const iosGoogleServicesFile = fs.existsSync(
+  path.join(__dirname, "GoogleService-Info.plist")
+)
+  ? "./GoogleService-Info.plist"
+  : undefined;
 
 /**
  * Resolve the privacy-policy URL:
@@ -78,6 +90,8 @@ module.exports = {
       },
       infoPlist: {
         CFBundleDisplayName: "Stompin' Yuma",
+        NSCameraUsageDescription:
+          "Scan step sheets and take dance photos",
         NSPhotoLibraryUsageDescription: "Upload step-sheet images for dances",
         NSPhotoLibraryAddUsageDescription: "Save step-sheet images to your device",
         NSLocationWhenInUseUsageDescription: "Find line-dance events near you",
@@ -91,6 +105,14 @@ module.exports = {
           "tiktok",
         ],
       },
+      // iOS Firebase for push. Drop your `GoogleService-Info.plist`
+      // (downloaded from the Firebase console for the iOS app that
+      // matches `bundleIdentifier` above) at `frontend/GoogleService-Info.plist`
+      // and this key wires it into every native iOS build. Guarded
+      // above with `fs.existsSync` so the config still validates when
+      // the plist hasn't been dropped in yet — iOS push simply stays
+      // dormant until the file lands.
+      ...(iosGoogleServicesFile ? { googleServicesFile: iosGoogleServicesFile } : {}),
     },
     android: {
       adaptiveIcon: {

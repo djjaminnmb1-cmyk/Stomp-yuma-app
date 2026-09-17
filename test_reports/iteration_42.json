@@ -1,0 +1,35 @@
+{
+  "summary": "Verified the two enhancements to User-Submitted Dances. Backend: 12/12 new tests PASS in /app/backend/tests/test_pending_dance_notifications.py — (a) all 4 new i18n keys resolve non-empty in ALL 8 locales (en/es/fr/de/nl/ko/zh-Hans/zh-Hant); (b) {title} interpolates correctly in approved.body and both {title}+{reason} interpolate in rejected.body across all locales; (c) _notify_submitter_approved is a no-op when user_id is missing and otherwise calls send_push_localised with title_key=push.pending_dance.approved.title, deeplink=/dance/{id}, kind=pending_dance_approved, idempotency_key=pd-approved-{pd_id}; (d) _notify_submitter_rejected mirrors that with rejected.* keys, deeplink=/my-submissions, kind=pending_dance_rejected, idempotency_key=pd-rejected-{pd_id}, and swaps in a fallback reason when reason is empty; (e) HTTP smoke: real approve + reject both return 200 with the notification helpers wired in, rejection reason persists on the queue row. Regression: 19/19 tests in /app/backend/tests/test_pending_dances.py still PASS. Frontend smoke: /my-submissions renders cleanly for a signed-in user — quota banner shows '0/5 sent today (5 left)', all 4 tab testIDs (tab-all/pending/approved/rejected) render, empty-state message + both CTAs (cta-search-copperknob, cta-search-bootstepper) present, no JS errors. Profile row testID 'profile-my-submissions-row' present and wired to router.push('/my-submissions') in code. Failure-isolation at the endpoint level was verified by inspection (approve/reject each wrap the notify helper in try/except with logger.exception) and reinforced by the in-process helper spec tests; the HTTP smoke would fail loudly if the wrappers were missing.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pending_dance_notifications.py",
+    "/app/backend/tests/test_pending_dances.py",
+    "/app/test_reports/pytest/pending_dance_notifications.xml",
+    "/app/test_reports/pytest/pending_dances.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/pending_dances.py:428-441 — follower-notify and submitter-notify are both wrapped in try/except with logger.exception; good. Consider a shared helper like _safe_call(coro, name) to remove the two identical blocks and keep the primary path readable.",
+    "core/i18n.py:73,75 — approved.body / rejected.body use Unicode escapes (\\u201c, \\u2019, \\u2014). Consistent with the existing catalog style but a lint reviewer scanning for smart quotes would find these harder to grep. Not a functional issue.",
+    "routes/pending_dances.py:513-538 — _notify_submitter_rejected truncates the reason to 120 chars (good — push payloads are size-limited) and falls back to a friendly string when the admin didn't supply one. Nice UX detail.",
+    "The notify helpers themselves DO NOT swallow exceptions — swallowing is delegated to the endpoint handlers. This is the right split (helpers stay testable) but callers *must* wrap them; a future new call site could accidentally leak an exception. Consider a decorator `@fire_and_forget_push` to make the contract impossible to forget."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pending_dance_notifications.py (new)"
+  ],
+  "success_rate": {"backend": "100% (12/12 new + 19/19 regression)", "frontend": "smoke pass (screen renders, quota banner + tabs + CTAs + profile row all verified)"},
+  "seed_data_creation": "Created 1 fresh TEST_ms_* user for the frontend smoke and 1 fresh TEST_pdnote_* user for the HTTP smoke tests. Approved 1 additional submission (adds one dance row) and rejected 1. All rows are tagged TEST_* / originate from ephemeral users; safe to leave.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The new file test_pending_dance_notifications.py combines pure-unit (i18n + helper spec via monkeypatch) with HTTP smoke, so it needs sys.path bumped to /app/backend — already handled at the top of the file. If i18n keys are ever renamed, update NEW_KEYS at the top of the file. The failure-isolation-at-the-endpoint scenario is only proved indirectly (helpers propagate; endpoint wraps in try/except). If a future refactor moves the wrapping, add an integration test that HTTP-hits approve while monkey-patching send_push_localised in-process (requires importing the app object rather than talking over HTTP).",
+  "rca_of_issue": "N/A — no bugs found."
+}

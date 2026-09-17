@@ -431,6 +431,15 @@ async def admin_approve(
     except Exception:  # never let a follower-notify hiccup break approval
         logger.exception("Failed to notify choreographer followers for %s", doc["id"])
 
+    # Ping the submitter so they don't have to check the app to see the
+    # good news. Push is best-effort — failure never blocks approval.
+    try:
+        await _notify_submitter_approved(row, doc)
+    except Exception:
+        logger.exception(
+            "Failed to notify submitter %s of approval", row.get("user_id")
+        )
+
     return {"ok": True, "dance_id": doc["id"]}
 
 
@@ -461,4 +470,69 @@ async def admin_reject(
             }
         },
     )
+
+    # Let the submitter know the outcome so they can act on it. Best
+    # effort — a push relay hiccup shouldn't block the admin's flow.
+    try:
+        await _notify_submitter_rejected(row, reason)
+    except Exception:
+        logger.exception(
+            "Failed to notify submitter %s of rejection", row.get("user_id")
+        )
+
     return {"ok": True}
+
+
+# ---------- Submitter notifications ----------
+# Push is fire-and-forget; failure is logged and swallowed by the
+# callers above so approve/reject always succeeds regardless.
+
+async def _notify_submitter_approved(pd_row: dict, dance_doc: dict) -> None:
+    """Push a friendly heads-up to the user whose submission just
+    got approved. Deep-links straight to the new dance page."""
+    user_id = pd_row.get("user_id")
+    if not user_id:
+        return
+    from core.push_service import send_push_localised
+    await send_push_localised(
+        recipients=[user_id],
+        title_key="push.pending_dance.approved.title",
+        body_key="push.pending_dance.approved.body",
+        params={"title": pd_row.get("title") or dance_doc.get("name") or ""},
+        data={
+            "deeplink": f"/dance/{dance_doc['id']}",
+            "action_url": f"/dance/{dance_doc['id']}",
+            "kind": "pending_dance_approved",
+            "submission_id": pd_row.get("id"),
+            "dance_id": dance_doc["id"],
+        },
+        idempotency_key=f"pd-approved-{pd_row.get('id')}",
+    )
+
+
+async def _notify_submitter_rejected(pd_row: dict, reason: str) -> None:
+    """Push a heads-up when a submission is rejected. Body shows the
+    admin's reason (trimmed) if one was supplied, else a soft
+    catch-all so the user still knows what happened."""
+    user_id = pd_row.get("user_id")
+    if not user_id:
+        return
+    from core.push_service import send_push_localised
+    fallback = "The admin didn't add it to the library this time."
+    trimmed = (reason or "").strip()[:120]
+    await send_push_localised(
+        recipients=[user_id],
+        title_key="push.pending_dance.rejected.title",
+        body_key="push.pending_dance.rejected.body",
+        params={
+            "title": pd_row.get("title") or "",
+            "reason": trimmed or fallback,
+        },
+        data={
+            "deeplink": "/my-submissions",
+            "action_url": "/my-submissions",
+            "kind": "pending_dance_rejected",
+            "submission_id": pd_row.get("id"),
+        },
+        idempotency_key=f"pd-rejected-{pd_row.get('id')}",
+    )

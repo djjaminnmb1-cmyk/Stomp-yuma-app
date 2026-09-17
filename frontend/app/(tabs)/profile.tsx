@@ -690,6 +690,31 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
 
+          {/* My Submissions — user's own CopperKnob/BootStepper dance
+              requests: pending, approved, rejected. */}
+          <Pressable
+            testID="profile-my-submissions-row"
+            style={styles.row}
+            onPress={() => router.push("/my-submissions")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="cloud-upload-outline"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>
+                  {i18nT("my_submissions.title")}
+                </Text>
+                <Text style={styles.deleteSub}>
+                  {i18nT("my_submissions.subtitle")}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
           {/* Language — user chooses UI + notification language */}
           <Pressable
             testID="profile-language-row"

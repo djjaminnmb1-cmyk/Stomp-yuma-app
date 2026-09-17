@@ -533,6 +533,32 @@ export const translations: Record<Locale, Record<string, string>> = {
       "This dance is already listed. Submission cleared.",
     "admin_pending.approve_fail": "Approval failed",
     "admin_pending.reject_fail": "Reject failed",
+
+    // ---------- My Submissions (user's own pending dance requests) ----------
+    "my_submissions.title": "My Submissions",
+    "my_submissions.subtitle": "See your requests to add dances",
+    "my_submissions.sign_in": "Sign in to view your submissions.",
+    "my_submissions.tab_all": "All",
+    "my_submissions.tab_pending": "Pending",
+    "my_submissions.tab_approved": "Approved",
+    "my_submissions.tab_rejected": "Rejected",
+    "my_submissions.empty_all":
+      "You haven't submitted any dances yet. Find one on CopperKnob or BootStepper and tap + Request to Add.",
+    "my_submissions.empty_pending": "No pending submissions.",
+    "my_submissions.empty_approved": "No approved submissions yet.",
+    "my_submissions.empty_rejected": "No rejected submissions yet.",
+    "my_submissions.browse_copperknob": "Browse CopperKnob",
+    "my_submissions.browse_bootstepper": "Browse BootStepper",
+    "my_submissions.status_pending": "Pending review",
+    "my_submissions.status_approved": "Added to library",
+    "my_submissions.status_rejected": "Not approved",
+    "my_submissions.reason_label": "Admin's reason",
+    "my_submissions.view_source": "View on {source}",
+    "my_submissions.view_dance": "View Dance",
+    "my_submissions.by": "By",
+    "my_submissions.untitled": "(Untitled)",
+    "my_submissions.quota":
+      "{used}/{limit} sent today ({remaining} left)",
   },
 
   es: {
@@ -1005,6 +1031,40 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Este baile ya está listado. Envío eliminado.",
     "admin_pending.approve_fail": "Falló la aprobación",
     "admin_pending.reject_fail": "Falló el rechazo",
+
+    // ---------- My Submissions (user's own pending dance requests) ----------
+    "my_submissions.title": "Mis envíos",
+    "my_submissions.subtitle":
+      "Mira tus solicitudes de añadir bailes",
+    "my_submissions.sign_in":
+      "Inicia sesión para ver tus envíos.",
+    "my_submissions.tab_all": "Todos",
+    "my_submissions.tab_pending": "Pendientes",
+    "my_submissions.tab_approved": "Aprobados",
+    "my_submissions.tab_rejected": "Rechazados",
+    "my_submissions.empty_all":
+      "Aún no has enviado ningún baile. Búscalo en CopperKnob o BootStepper y toca + Pedir añadir.",
+    "my_submissions.empty_pending":
+      "No hay envíos pendientes.",
+    "my_submissions.empty_approved":
+      "Aún no hay envíos aprobados.",
+    "my_submissions.empty_rejected":
+      "Aún no hay envíos rechazados.",
+    "my_submissions.browse_copperknob":
+      "Explorar CopperKnob",
+    "my_submissions.browse_bootstepper":
+      "Explorar BootStepper",
+    "my_submissions.status_pending": "Pendiente",
+    "my_submissions.status_approved":
+      "Añadido a la biblioteca",
+    "my_submissions.status_rejected": "No aprobado",
+    "my_submissions.reason_label": "Motivo del admin",
+    "my_submissions.view_source": "Ver en {source}",
+    "my_submissions.view_dance": "Ver baile",
+    "my_submissions.by": "Por",
+    "my_submissions.untitled": "(Sin título)",
+    "my_submissions.quota":
+      "{used}/{limit} enviados hoy ({remaining} disponibles)",
   },
 
   fr: {
@@ -1507,6 +1567,40 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Cette danse est déjà listée. Proposition effacée.",
     "admin_pending.approve_fail": "Échec de l'approbation",
     "admin_pending.reject_fail": "Échec du refus",
+
+    // ---------- My Submissions (user's own pending dance requests) ----------
+    "my_submissions.title": "Mes propositions",
+    "my_submissions.subtitle":
+      "Voir vos demandes d'ajout de danse",
+    "my_submissions.sign_in":
+      "Connectez-vous pour voir vos propositions.",
+    "my_submissions.tab_all": "Toutes",
+    "my_submissions.tab_pending": "En attente",
+    "my_submissions.tab_approved": "Approuvées",
+    "my_submissions.tab_rejected": "Refusées",
+    "my_submissions.empty_all":
+      "Aucune proposition pour l'instant. Cherchez sur CopperKnob ou BootStepper et touchez + Proposer.",
+    "my_submissions.empty_pending":
+      "Aucune proposition en attente.",
+    "my_submissions.empty_approved":
+      "Aucune proposition approuvée.",
+    "my_submissions.empty_rejected":
+      "Aucune proposition refusée.",
+    "my_submissions.browse_copperknob":
+      "Parcourir CopperKnob",
+    "my_submissions.browse_bootstepper":
+      "Parcourir BootStepper",
+    "my_submissions.status_pending": "En attente",
+    "my_submissions.status_approved":
+      "Ajoutée à la bibliothèque",
+    "my_submissions.status_rejected": "Refusée",
+    "my_submissions.reason_label": "Motif de l'admin",
+    "my_submissions.view_source": "Voir sur {source}",
+    "my_submissions.view_dance": "Voir la danse",
+    "my_submissions.by": "Par",
+    "my_submissions.untitled": "(Sans titre)",
+    "my_submissions.quota":
+      "{used}/{limit} envoyées aujourd'hui ({remaining} restantes)",
   },
 
   de: {
@@ -2007,6 +2101,39 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Dieser Tanz ist bereits gelistet. Vorschlag entfernt.",
     "admin_pending.approve_fail": "Freigabe fehlgeschlagen",
     "admin_pending.reject_fail": "Ablehnung fehlgeschlagen",
+
+    // ---------- My Submissions (user's own pending dance requests) ----------
+    "my_submissions.title": "Meine Vorschläge",
+    "my_submissions.subtitle":
+      "Sieh dir deine Tanz-Vorschläge an",
+    "my_submissions.sign_in":
+      "Melde dich an, um deine Vorschläge zu sehen.",
+    "my_submissions.tab_all": "Alle",
+    "my_submissions.tab_pending": "Ausstehend",
+    "my_submissions.tab_approved": "Freigegeben",
+    "my_submissions.tab_rejected": "Abgelehnt",
+    "my_submissions.empty_all":
+      "Noch keine Vorschläge. Auf CopperKnob oder BootStepper suchen und + Vorschlagen tippen.",
+    "my_submissions.empty_pending":
+      "Keine ausstehenden Vorschläge.",
+    "my_submissions.empty_approved":
+      "Noch keine freigegebenen Vorschläge.",
+    "my_submissions.empty_rejected":
+      "Noch keine abgelehnten Vorschläge.",
+    "my_submissions.browse_copperknob": "CopperKnob durchsuchen",
+    "my_submissions.browse_bootstepper":
+      "BootStepper durchsuchen",
+    "my_submissions.status_pending": "Ausstehend",
+    "my_submissions.status_approved":
+      "Zur Bibliothek hinzugefügt",
+    "my_submissions.status_rejected": "Abgelehnt",
+    "my_submissions.reason_label": "Grund des Admins",
+    "my_submissions.view_source": "Auf {source} ansehen",
+    "my_submissions.view_dance": "Tanz ansehen",
+    "my_submissions.by": "Von",
+    "my_submissions.untitled": "(Ohne Titel)",
+    "my_submissions.quota":
+      "{used}/{limit} heute gesendet ({remaining} übrig)",
   },
 
   nl: {
@@ -2521,6 +2648,37 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Deze dans staat al vermeld. Inzending gewist.",
     "admin_pending.approve_fail": "Goedkeuring mislukt",
     "admin_pending.reject_fail": "Afwijzen mislukt",
+
+    // ---------- My Submissions (user's own pending dance requests) ----------
+    "my_submissions.title": "Mijn inzendingen",
+    "my_submissions.subtitle":
+      "Bekijk je verzoeken om een dans toe te voegen",
+    "my_submissions.sign_in": "Log in om je inzendingen te bekijken.",
+    "my_submissions.tab_all": "Alle",
+    "my_submissions.tab_pending": "Wachtend",
+    "my_submissions.tab_approved": "Goedgekeurd",
+    "my_submissions.tab_rejected": "Afgewezen",
+    "my_submissions.empty_all":
+      "Nog geen inzendingen. Zoek op CopperKnob of BootStepper en tik op + Voorstellen.",
+    "my_submissions.empty_pending":
+      "Geen wachtende inzendingen.",
+    "my_submissions.empty_approved":
+      "Nog geen goedgekeurde inzendingen.",
+    "my_submissions.empty_rejected":
+      "Nog geen afgewezen inzendingen.",
+    "my_submissions.browse_copperknob": "Zoek op CopperKnob",
+    "my_submissions.browse_bootstepper": "Zoek op BootStepper",
+    "my_submissions.status_pending": "Wachtend",
+    "my_submissions.status_approved":
+      "Toegevoegd aan de bibliotheek",
+    "my_submissions.status_rejected": "Afgewezen",
+    "my_submissions.reason_label": "Reden van admin",
+    "my_submissions.view_source": "Bekijk op {source}",
+    "my_submissions.view_dance": "Bekijk dans",
+    "my_submissions.by": "Door",
+    "my_submissions.untitled": "(Zonder titel)",
+    "my_submissions.quota":
+      "{used}/{limit} vandaag verzonden ({remaining} over)",
   },
 
   ko: {
@@ -3012,6 +3170,32 @@ export const translations: Record<Locale, Record<string, string>> = {
       "이 댄스는 이미 등록되어 있어요. 요청을 정리했어요.",
     "admin_pending.approve_fail": "승인에 실패했어요",
     "admin_pending.reject_fail": "거절에 실패했어요",
+
+    // ---------- My Submissions (user's own pending dance requests) ----------
+    "my_submissions.title": "내 제출",
+    "my_submissions.subtitle": "댄스 추가 요청 확인",
+    "my_submissions.sign_in": "제출 내역을 보려면 로그인하세요.",
+    "my_submissions.tab_all": "전체",
+    "my_submissions.tab_pending": "대기",
+    "my_submissions.tab_approved": "승인됨",
+    "my_submissions.tab_rejected": "거절됨",
+    "my_submissions.empty_all":
+      "아직 제출한 댄스가 없어요. CopperKnob 또는 BootStepper에서 + 추가 요청을 눌러 보세요.",
+    "my_submissions.empty_pending": "대기 중인 제출이 없어요.",
+    "my_submissions.empty_approved": "아직 승인된 제출이 없어요.",
+    "my_submissions.empty_rejected": "아직 거절된 제출이 없어요.",
+    "my_submissions.browse_copperknob": "CopperKnob 둘러보기",
+    "my_submissions.browse_bootstepper": "BootStepper 둘러보기",
+    "my_submissions.status_pending": "대기 중",
+    "my_submissions.status_approved": "라이브러리에 추가됨",
+    "my_submissions.status_rejected": "거절됨",
+    "my_submissions.reason_label": "관리자 사유",
+    "my_submissions.view_source": "{source}에서 보기",
+    "my_submissions.view_dance": "댄스 보기",
+    "my_submissions.by": "제공",
+    "my_submissions.untitled": "(제목 없음)",
+    "my_submissions.quota":
+      "오늘 {used}/{limit} 제출 ({remaining} 남음)",
   },
 
   "zh-Hans": {
@@ -3490,6 +3674,32 @@ export const translations: Record<Locale, Record<string, string>> = {
       "此舞蹈已列出，提交已清除。",
     "admin_pending.approve_fail": "审核失败",
     "admin_pending.reject_fail": "拒绝失败",
+
+    // ---------- My Submissions (user's own pending dance requests) ----------
+    "my_submissions.title": "我的提交",
+    "my_submissions.subtitle": "查看您添加舞蹈的请求",
+    "my_submissions.sign_in": "请先登录以查看您的提交。",
+    "my_submissions.tab_all": "全部",
+    "my_submissions.tab_pending": "待审核",
+    "my_submissions.tab_approved": "已通过",
+    "my_submissions.tab_rejected": "已拒绝",
+    "my_submissions.empty_all":
+      "您还没有提交任何舞蹈。在 CopperKnob 或 BootStepper 找到后点击 + 请求添加。",
+    "my_submissions.empty_pending": "没有待审核的提交。",
+    "my_submissions.empty_approved": "还没有已通过的提交。",
+    "my_submissions.empty_rejected": "还没有被拒绝的提交。",
+    "my_submissions.browse_copperknob": "浏览 CopperKnob",
+    "my_submissions.browse_bootstepper": "浏览 BootStepper",
+    "my_submissions.status_pending": "待审核",
+    "my_submissions.status_approved": "已加入库",
+    "my_submissions.status_rejected": "未通过",
+    "my_submissions.reason_label": "管理员原因",
+    "my_submissions.view_source": "在 {source} 查看",
+    "my_submissions.view_dance": "查看舞蹈",
+    "my_submissions.by": "编舞",
+    "my_submissions.untitled": "（无标题）",
+    "my_submissions.quota":
+      "今天已提交 {used}/{limit}（剩余 {remaining}）",
   },
 
   "zh-Hant": {
@@ -3968,6 +4178,32 @@ export const translations: Record<Locale, Record<string, string>> = {
       "此舞蹈已列出，提交已清除。",
     "admin_pending.approve_fail": "審核失敗",
     "admin_pending.reject_fail": "拒絕失敗",
+
+    // ---------- My Submissions (user's own pending dance requests) ----------
+    "my_submissions.title": "我的提交",
+    "my_submissions.subtitle": "檢視您加入舞蹈的請求",
+    "my_submissions.sign_in": "請先登入以檢視您的提交。",
+    "my_submissions.tab_all": "全部",
+    "my_submissions.tab_pending": "待審核",
+    "my_submissions.tab_approved": "已通過",
+    "my_submissions.tab_rejected": "已拒絕",
+    "my_submissions.empty_all":
+      "您尚未提交任何舞蹈。在 CopperKnob 或 BootStepper 找到後點選 + 請求加入。",
+    "my_submissions.empty_pending": "沒有待審核的提交。",
+    "my_submissions.empty_approved": "還沒有已通過的提交。",
+    "my_submissions.empty_rejected": "還沒有已拒絕的提交。",
+    "my_submissions.browse_copperknob": "瀏覽 CopperKnob",
+    "my_submissions.browse_bootstepper": "瀏覽 BootStepper",
+    "my_submissions.status_pending": "待審核",
+    "my_submissions.status_approved": "已加入資料庫",
+    "my_submissions.status_rejected": "未通過",
+    "my_submissions.reason_label": "管理員的原因",
+    "my_submissions.view_source": "在 {source} 檢視",
+    "my_submissions.view_dance": "檢視舞蹈",
+    "my_submissions.by": "編舞",
+    "my_submissions.untitled": "（無標題）",
+    "my_submissions.quota":
+      "今天已提交 {used}/{limit}（剩餘 {remaining}）",
   },
 };
 

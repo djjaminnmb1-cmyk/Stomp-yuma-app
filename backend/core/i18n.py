@@ -68,6 +68,12 @@ _CATALOG: dict[str, dict[str, str]] = {
         # Any new chat post (opt-out via ``chat_alerts``)
         "push.chat_message.title": "{sender} posted in chat",
         "push.chat_message.body": "{preview}",
+        # Pending-dance submission approved / rejected
+        "push.pending_dance.approved.title": "🎉 Your dance was approved!",
+        "push.pending_dance.approved.body": "\u201c{title}\u201d is now in the library. Tap to view.",
+        "push.pending_dance.rejected.title": "Your submission wasn\u2019t approved",
+        "push.pending_dance.rejected.body": "\u201c{title}\u201d \u2014 {reason}",
+
         # ---------- Password-reset email ----------
         "email.reset.subject": "Reset your Stompin' Ground Yuma password",
         "email.reset.greeting": "Hi {name},",
@@ -100,6 +106,12 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} escribió en el chat",
         "push.chat_message.body": "{preview}",
+        # Pending-dance submission approved / rejected
+        "push.pending_dance.approved.title": "🎉 ¡Tu baile fue aprobado!",
+        "push.pending_dance.approved.body": "«{title}» ya está en la biblioteca. Toca para ver.",
+        "push.pending_dance.rejected.title": "Tu envío no fue aprobado",
+        "push.pending_dance.rejected.body": "«{title}» — {reason}",
+
         # ---------- Correo de restablecimiento ----------
         "email.reset.subject": "Restablece tu contraseña de Stompin' Ground Yuma",
         "email.reset.greeting": "Hola {name},",
@@ -132,6 +144,12 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} a écrit dans le chat",
         "push.chat_message.body": "{preview}",
+        # Pending-dance submission approved / rejected
+        "push.pending_dance.approved.title": "🎉 Votre danse a été approuvée !",
+        "push.pending_dance.approved.body": "« {title} » est maintenant dans la bibliothèque. Touchez pour voir.",
+        "push.pending_dance.rejected.title": "Votre proposition a été refusée",
+        "push.pending_dance.rejected.body": "« {title} » — {reason}",
+
         # ---------- Email de réinitialisation ----------
         "email.reset.subject": "Réinitialisez votre mot de passe Stompin' Ground Yuma",
         "email.reset.greeting": "Bonjour {name},",
@@ -165,6 +183,12 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} hat im Chat geschrieben",
         "push.chat_message.body": "{preview}",
+        # Pending-dance submission approved / rejected
+        "push.pending_dance.approved.title": "🎉 Dein Tanz wurde freigegeben!",
+        "push.pending_dance.approved.body": "„{title}“ ist jetzt in der Bibliothek. Tippen zum Ansehen.",
+        "push.pending_dance.rejected.title": "Dein Vorschlag wurde abgelehnt",
+        "push.pending_dance.rejected.body": "„{title}“ — {reason}",
+
         # ---------- Passwort-Reset-E-Mail ----------
         "email.reset.subject": "Setze dein Stompin' Ground Yuma Passwort zurück",
         "email.reset.greeting": "Hallo {name},",
@@ -198,6 +222,12 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} plaatste een chatbericht",
         "push.chat_message.body": "{preview}",
+        # Pending-dance submission approved / rejected
+        "push.pending_dance.approved.title": "🎉 Je dans is goedgekeurd!",
+        "push.pending_dance.approved.body": "'{title}' staat nu in de bibliotheek. Tik om te bekijken.",
+        "push.pending_dance.rejected.title": "Je inzending is afgewezen",
+        "push.pending_dance.rejected.body": "'{title}' — {reason}",
+
         # ---------- Wachtwoord reset e-mail ----------
         "email.reset.subject": "Reset je Stompin' Ground Yuma wachtwoord",
         "email.reset.greeting": "Hoi {name},",
@@ -231,6 +261,12 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender}님이 채팅에 글을 올렸어요",
         "push.chat_message.body": "{preview}",
+        # Pending-dance submission approved / rejected
+        "push.pending_dance.approved.title": "🎉 댄스가 승인되었어요!",
+        "push.pending_dance.approved.body": "「{title}」이(가) 라이브러리에 추가되었어요. 눌러서 확인하세요.",
+        "push.pending_dance.rejected.title": "제출이 승인되지 않았어요",
+        "push.pending_dance.rejected.body": "「{title}」 — {reason}",
+
         # ---------- 비밀번호 재설정 이메일 ----------
         "email.reset.subject": "Stompin' Ground Yuma 비밀번호 재설정",
         "email.reset.greeting": "{name}님, 안녕하세요.",
@@ -263,6 +299,12 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} 在聊天中发言",
         "push.chat_message.body": "{preview}",
+        # Pending-dance submission approved / rejected
+        "push.pending_dance.approved.title": "🎉 您的舞蹈已通过！",
+        "push.pending_dance.approved.body": "「{title}」现在已在库中。点击查看。",
+        "push.pending_dance.rejected.title": "您的提交未通过",
+        "push.pending_dance.rejected.body": "「{title}」 — {reason}",
+
         # ---------- 密码重置邮件 ----------
         "email.reset.subject": "重置您的 Stompin' Ground Yuma 密码",
         "email.reset.greeting": "你好 {name},",
@@ -293,6 +335,12 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} 在聊天中發言",
         "push.chat_message.body": "{preview}",
+        # Pending-dance submission approved / rejected
+        "push.pending_dance.approved.title": "🎉 您的舞蹈已通過！",
+        "push.pending_dance.approved.body": "「{title}」現已在資料庫中。點選檢視。",
+        "push.pending_dance.rejected.title": "您的提交未通過",
+        "push.pending_dance.rejected.body": "「{title}」 — {reason}",
+
         # ---------- 密碼重設信件 ----------
         "email.reset.subject": "重設您的 Stompin' Ground Yuma 密碼",
         "email.reset.greeting": "你好 {name},",
