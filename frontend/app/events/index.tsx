@@ -27,6 +27,7 @@ import { useAuth } from "@/src/context/auth-context";
 import { api, EventItem, EventSearchQuery } from "@/src/api/client";
 import { EventCard } from "@/src/components/EventCard";
 import { getDeviceLocation } from "@/src/lib/geo";
+import { localTodayISO, localDateOffset } from "@/src/utils/date";
 
 type DateWindow = "any" | "upcoming" | "next30" | "past";
 
@@ -80,20 +81,16 @@ export default function EventsSearch() {
       include_classes: includeClasses,
       limit: 50,
     };
-    // Date window presets
-    const today = new Date();
-    const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+    // Date window presets — computed in LOCAL time so an event dated
+    // "today" for the user never gets filtered out because UTC has
+    // already rolled to tomorrow (Arizona / MST edge case).
     if (dateWindow === "upcoming") {
-      query.date_from = isoDate(today);
+      query.date_from = localTodayISO();
     } else if (dateWindow === "next30") {
-      const end = new Date(today);
-      end.setDate(end.getDate() + 30);
-      query.date_from = isoDate(today);
-      query.date_to = isoDate(end);
+      query.date_from = localTodayISO();
+      query.date_to = localDateOffset(30);
     } else if (dateWindow === "past") {
-      const y = new Date(today);
-      y.setDate(y.getDate() - 1);
-      query.date_to = isoDate(y);
+      query.date_to = localDateOffset(-1);
     }
     // Location
     if (locMode === "gps" && coords) {

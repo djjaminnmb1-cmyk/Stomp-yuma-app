@@ -943,6 +943,28 @@ const eventStyles = StyleSheet.create({
 const REACTION_KINDS = ["👍", "❤️", "🎉", "😂", "🙌", "🔥"] as const;
 
 /**
+ * Compact "2m ago" / "3h ago" / "yesterday" formatter used by the
+ * "Seen by …" reader list. Keeps timestamps readable without pulling
+ * in a full date library.
+ */
+function formatRelativeTime(iso: string): string {
+  if (!iso) return "";
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) return "";
+  const diffMs = Date.now() - then;
+  const s = Math.max(1, Math.floor(diffMs / 1000));
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return "yesterday";
+  if (d < 7) return `${d}d ago`;
+  return new Date(then).toLocaleDateString();
+}
+
+/**
  * Compact tappable card rendered below a chat bubble for each URL we
  * were able to resolve into rich metadata (YouTube / BootStepper /
  * CopperKnob). Keeps the chat feed itself uncluttered — the bubble
@@ -1014,6 +1036,9 @@ function ChatView({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  // Which message's "Seen by N" pill is currently expanded — null =
+  // no modal open. Used to render the reader list bottom sheet.
+  const [seenListFor, setSeenListFor] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [reportTarget, setReportTarget] = useState<
     import("@/src/components/ReportContentSheet").ReportTarget | null
@@ -1363,32 +1388,31 @@ function ChatView({
           </Pressable>
         ) : null}
 
-        {seenBy.length > 0 ? (
-          <View
+        {seenBy.length > 0 && mine ? (
+          // "Seen by N" pill under YOUR OWN messages so instructors
+          // know their announcement has actually landed. Only appears
+          // on own bubbles — readers don't care who's read someone
+          // else's message. Anchored to the same edge as the bubble
+          // (right on mine, left on others), matching iMessage etc.
+          <Pressable
+            onPress={() => setSeenListFor(item.id)}
             style={[
-              styles.seenRow,
+              styles.seenPill,
               { alignSelf: mine ? "flex-end" : "flex-start" },
             ]}
+            testID={`seen-pill-${item.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Seen by ${seenBy.length} ${seenBy.length === 1 ? "person" : "people"}`}
           >
-            {seenBy.slice(0, 4).map((r) => (
-              <View
-                key={r.user_id}
-                style={styles.seenAvatar}
-                testID={`seen-avatar-${item.id}-${r.user_id}`}
-              >
-                {r.picture ? (
-                  <Image source={{ uri: r.picture }} style={styles.seenAvatarImg} />
-                ) : (
-                  <Text style={styles.seenAvatarInitial}>
-                    {(r.user_name || "?").slice(0, 1).toUpperCase()}
-                  </Text>
-                )}
-              </View>
-            ))}
-            {seenBy.length > 4 ? (
-              <Text style={styles.seenExtra}>+{seenBy.length - 4}</Text>
-            ) : null}
-          </View>
+            <Ionicons
+              name="checkmark-done"
+              size={12}
+              color={colors.brandPrimary}
+            />
+            <Text style={styles.seenPillText}>
+              Seen by {seenBy.length}
+            </Text>
+          </Pressable>
         ) : null}
       </View>
     );
@@ -1605,6 +1629,79 @@ function ChatView({
         target={reportTarget}
         onClose={() => setReportTarget(null)}
       />
+
+      {/* "Seen by …" reader-list sheet — surfaced when the poster
+          taps the compact "Seen by N" pill under their own message.
+          Lists the readers with avatars + names + relative timestamps
+          so instructors get a full picture of who's caught up. */}
+      <Modal
+        visible={!!seenListFor}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSeenListFor(null)}
+      >
+        <Pressable
+          style={styles.reactionPickerBackdrop}
+          onPress={() => setSeenListFor(null)}
+        >
+          <Pressable
+            style={styles.seenListSheet}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.seenListHeader}>
+              <Ionicons
+                name="checkmark-done"
+                size={18}
+                color={colors.brandPrimary}
+              />
+              <Text style={styles.seenListTitle}>
+                Seen by {(readsByMessage[seenListFor || ""] || []).length}
+              </Text>
+              <Pressable
+                onPress={() => setSeenListFor(null)}
+                hitSlop={10}
+                testID="seen-list-close"
+                style={{ marginLeft: "auto" }}
+              >
+                <Ionicons name="close" size={20} color={colors.muted} />
+              </Pressable>
+            </View>
+            <ScrollView
+              style={{ maxHeight: 360 }}
+              contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}
+            >
+              {(readsByMessage[seenListFor || ""] || []).map((r) => (
+                <View
+                  key={r.user_id}
+                  style={styles.seenListRow}
+                  testID={`seen-list-row-${r.user_id}`}
+                >
+                  <View style={styles.seenAvatar}>
+                    {r.picture ? (
+                      <Image
+                        source={{ uri: r.picture }}
+                        style={styles.seenAvatarImg}
+                      />
+                    ) : (
+                      <Text style={styles.seenAvatarInitial}>
+                        {(r.user_name || "?").slice(0, 1).toUpperCase()}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.seenListName}>
+                      {r.user_name || "Instructor"}
+                    </Text>
+                    <Text style={styles.seenListMeta}>
+                      Read {formatRelativeTime(r.last_read_at)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -2695,6 +2792,69 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.muted,
     marginLeft: 3,
+  },
+  // "Seen by N" pill under own messages. Small + subtle so the eye
+  // reads it as metadata, not a call-to-action, but has enough
+  // touch-target margin to open the reader-list sheet.
+  seenPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 3,
+    marginHorizontal: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandPrimary + "18",
+  },
+  seenPillText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.brandPrimary,
+  },
+  // Reader-list sheet (tap "Seen by N" pill to expand).
+  seenListSheet: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+    // Drop shadow so the sheet clearly floats above the darkened backdrop.
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  seenListHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  seenListTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.onSurface,
+  },
+  seenListRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: 4,
+  },
+  seenListName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.onSurface,
+  },
+  seenListMeta: {
+    fontSize: 11,
+    color: colors.muted,
+    marginTop: 1,
   },
   // ---- Reply / thread ----
   parentStrip: {

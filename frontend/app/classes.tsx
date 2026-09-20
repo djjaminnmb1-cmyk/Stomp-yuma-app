@@ -23,7 +23,11 @@ import { colors, spacing, radius, difficultyColor } from "../src/theme";
 import { api, ClassSession, Dance } from "../src/api/client";
 import { useAuth } from "../src/context/auth-context";
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
+import { localTodayISO } from "@/src/utils/date";
+
+// Kept for backwards-compat — reads LOCAL calendar day, not UTC, so
+// events posted "today" in Arizona / MST still land in "upcoming".
+const todayISO = () => localTodayISO();
 
 export default function ClassesScreen() {
   const router = useRouter();
@@ -40,7 +44,7 @@ export default function ClassesScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.listClasses(scope, 200);
+      const data = await api.listClasses(scope, 200, todayISO());
       setItems(data);
       if (token) {
         const att = await api.myAttendance(token);

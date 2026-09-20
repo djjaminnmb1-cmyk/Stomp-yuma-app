@@ -1376,8 +1376,22 @@ export const api = {
   deleteSuggestion: (id: string, token: string) =>
     req<{ ok: boolean }>(`/suggestions/${id}`, { method: "DELETE" }, token),
 
-  listClasses: (scope: "all" | "upcoming" | "past" = "all", limit = 100) =>
-    req<ClassSession[]>(`/classes?scope=${scope}&limit=${limit}`),
+  listClasses: (
+    scope: "all" | "upcoming" | "past" = "all",
+    limit = 100,
+    dateFromLocal?: string,
+  ) => {
+    // Pass the client's LOCAL calendar day as ``date_from`` so an
+    // instructor in Arizona posting a class dated "today" still sees
+    // it in "upcoming" between local 5pm and midnight — see
+    // ``src/utils/date.ts`` for the reasoning.
+    const params = new URLSearchParams({
+      scope,
+      limit: String(limit),
+    });
+    if (dateFromLocal) params.set("date_from", dateFromLocal);
+    return req<ClassSession[]>(`/classes?${params.toString()}`);
+  },
   getClass: (id: string) => req<ClassSession>(`/classes/${id}`),
   createClass: (
     body: {

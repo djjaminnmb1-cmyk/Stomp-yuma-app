@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -28,9 +29,24 @@ router = APIRouter()
 
 
 @router.get("/classes")
-async def list_classes(scope: str = "all", limit: int = 100):
+async def list_classes(
+    scope: str = "all",
+    limit: int = 100,
+    date_from: Optional[str] = None,
+):
+    """List classes, filtered by ``scope``.
+
+    ``date_from`` is an OPTIONAL client-supplied YYYY-MM-DD anchor for
+    "today". The client sends its LOCAL calendar day so an instructor
+    in Arizona posting a class dated "today" still sees it in
+    "upcoming" between local 5pm and midnight (when UTC has already
+    rolled to tomorrow). Falls back to server UTC when the client
+    doesn't send anything.
+    """
     query: dict = {}
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = (date_from or "").strip() or datetime.now(timezone.utc).strftime(
+        "%Y-%m-%d"
+    )
     if scope == "upcoming":
         query["date"] = {"$gte": today}
     elif scope == "past":

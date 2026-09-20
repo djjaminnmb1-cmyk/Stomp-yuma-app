@@ -1,0 +1,36 @@
+{
+  "summary": "Backend-only regression run for two fixes: (1) timezone off-by-one on 'Upcoming' events/classes filter, (2) chat 'Seen by N' pill via /api/chat/reads. Also re-ran the 32-case UGC compliance suite as regression. All 5 new tests + all 32 UGC tests PASSED (37/37 = 100%).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_events_classes_today_and_chat_reads.py",
+    "/app/backend/tests/test_ugc_compliance.py",
+    "/app/test_reports/pytest/events_classes_today_chat_reads.xml",
+    "/app/test_reports/pytest/ugc_compliance.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/classes.py list_classes (line 47-49): correctly accepts optional date_from and falls back to server UTC — matches the client-sent LOCAL day approach described by main agent. Behaviour verified: an event/class dated `datetime.now().strftime('%Y-%m-%d')` and searched with the same date_from is returned. If server tz drifts from client tz by a full day the client-supplied date_from wins, which is the intended fix.",
+    "services/events.py search (line 239-263): uses `$expr` with `$cond` to compare effective end_date >= date_from — correctly handles single-day events (end_date empty) by falling back to $date. Confirmed inclusive match at boundary.",
+    "services/chat_reads.py mark_read (line 60-71): `$max` on last_read_at ensures monotonic advance — verified via test that a stale ISO timestamp does not rewind the pointer.",
+    "routes/chat.py get_chat_reads (line 164-177): returns rows for every user with is_instructor OR is_admin, so user B (admin) shows up in user A's /reads feed even though A is the message author. Correct behaviour for 'Seen by N' rendering.",
+    "Cleanup: new test file self-cleans (DELETE event/class/message after asserting) so no test debris is left in the DB."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_events_classes_today_and_chat_reads.py (new)"
+  ],
+  "success_rate": {"backend": "100% (37/37)", "frontend": "not tested (backend-only request)"},
+  "seed_data_creation": "None persisted — every test-created event/class/chat message is deleted in a finally block.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Two regression suites cover: (a) POST /api/events + GET /api/events/search?date_from=<today_local> returns the fresh event; (b) POST /api/classes + GET /api/classes?scope=upcoming&date_from=<today_local> returns the fresh class; (c) POST /api/chat/mark-read by user B is reflected in GET /api/chat/reads called by user A with non-empty last_read_at >= message's created_at; (d) mark_read is monotonic. UGC compliance regression (32 tests) is preserved at /app/backend/tests/test_ugc_compliance.py.",
+  "rca_of_issue": "Original bug: instructor posts event/class dated 'today' from device in earlier timezone (e.g., America/Phoenix, UTC-7). Server anchor for the 'Upcoming' filter was `datetime.now(timezone.utc).strftime('%Y-%m-%d')`, which after 5pm local rolls to tomorrow in UTC — so `date >= <tomorrow>` filtered the just-created row out. Fix: client now sends its LOCAL calendar day as `date_from`; both routes/classes.py list_classes (new optional param) and services/events.search (already supported) use it as the inclusive lower bound. Tests confirm the fix by creating a row dated today and asserting it appears when queried with date_from=today."
+}
