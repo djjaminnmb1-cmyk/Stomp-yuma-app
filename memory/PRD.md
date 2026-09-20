@@ -1407,3 +1407,42 @@ This section documents the full response package delivered back to Apple.
 - Push notification to the reporter when their report is actioned
   (Apple doesn't require this but it improves the SLA feedback loop).
 
+
+---
+
+## 25. Tab bar safe-area regression — 2026-09-20
+
+### What Went Wrong
+Even after the first safe-area pass, the user's tester reported tabs
+still being clipped under the phone taskbar on iPhone SE, iPhone Pro,
+Android gesture nav, AND Android 3-button nav — i.e. every device
+category. The root causes were two subtle bugs:
+
+1. **`useSafeAreaInsets()` returned 0 briefly on cold boot**, because
+   `SafeAreaProvider` was mounted without `initialMetrics`. On the
+   very first render the tab layout picked up `insets.bottom = 0`
+   and rendered a too-short tab bar. Subsequent re-renders had the
+   correct inset but the height was already committed.
+
+2. **`Android edgeToEdgeEnabled: true`** in `app.config.js` means the
+   app draws BEHIND the translucent system nav bar. When the tab
+   bar's `paddingBottom` wasn't AT LEAST the nav-bar height, the
+   icons sat under it.
+
+### Fix
+- `_layout.tsx`: `<SafeAreaProvider initialMetrics={initialWindowMetrics}>`
+  so the very first paint has correct insets from the RN native side.
+- `(tabs)/_layout.tsx`: kept explicit `height + paddingBottom` but
+  introduced platform-aware minimums (12pt Android, 6pt iOS, 4pt web)
+  as a floor for any edge case where insets briefly return 0.
+- Content area is now a stable 60pt + `insets.bottom`, up from the
+  earlier 56 + floored-inset which was too tight for tall labels on
+  compact iOS devices.
+- Removed the redundant `Platform.OS === "ios" ? 8 : 12` ternary in
+  favour of the more granular Android/iOS/web floor.
+
+### Verification
+- Web viewport 390×844: all 5 tab labels legible (Home / Dances / My
+  Dances / Instructor / Profile).
+- Ready for real-device verification post-publish.
+

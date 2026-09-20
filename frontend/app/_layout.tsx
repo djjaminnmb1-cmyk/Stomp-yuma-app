@@ -5,7 +5,7 @@ import * as Linking from "expo-linking";
 import { useEffect } from "react";
 import { LogBox, Platform, StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
@@ -149,7 +149,7 @@ export default function RootLayout() {
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
-          <SafeAreaProvider>
+          <SafeAreaProvider initialMetrics={initialWindowMetrics}>
             <ToastProvider>
               <AuthProvider>
                 <PendingSubmissionsProvider>

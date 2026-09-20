@@ -7,18 +7,29 @@ import { useAuth } from "@/src/context/auth-context";
 import { useDraftCount } from "@/src/context/draft-count-context";
 import { useTranslation } from "@/src/i18n";
 
+// Base "content" height for the tab bar — icons (24pt) + labels (11pt)
+// + breathing room. This is added ON TOP of the device's bottom safe
+// area so the final visible bar height is ``TAB_CONTENT_HEIGHT + insets.bottom``.
+const TAB_CONTENT_HEIGHT = 60;
+
 export default function TabsLayout() {
   const { user } = useAuth();
   const { draftCount } = useDraftCount();
   const { t } = useTranslation();
   const isInstructor = !!(user && (user.is_admin || user.is_instructor));
-  // Bottom safe-area inset — 34pt on iPhones with a home indicator,
-  // 24-48px on Androids with gesture nav, 0 on iPhone SE / 3-button
-  // Android nav. We floor to a small value so the tab bar never
-  // pancakes flush against the screen edge even on hardware with
-  // zero-inset chins.
   const insets = useSafeAreaInsets();
-  const bottomInset = Math.max(insets.bottom, Platform.OS === "ios" ? 8 : 12);
+  // Bottom safe-area — 34pt on iPhones with a home indicator,
+  // 24-48pt on Androids with gesture / 3-button nav, 0 on iPhone
+  // SE / web. On Android edge-to-edge (see ``app.config.js``) the
+  // system nav bar is translucent and the app draws behind it, so
+  // this padding is REQUIRED — without it the tab icons sit under
+  // the nav bar. We floor at a small value for platforms where
+  // insets briefly return 0 during layout thrash.
+  const rawInset = insets.bottom;
+  const bottomInset = Math.max(
+    rawInset,
+    Platform.OS === "android" ? 12 : Platform.OS === "ios" ? 6 : 4,
+  );
 
   return (
     <Tabs
@@ -30,14 +41,20 @@ export default function TabsLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.divider,
           borderTopWidth: 1,
-          // Base tab-bar surface = 56pt icons + labels. We add the
-          // device's bottom safe-area on top so the icons never sit
-          // under the home indicator / gesture bar.
-          height: 56 + bottomInset,
-          paddingTop: 8,
+          // Explicit height + paddingBottom keeps icons + labels
+          // ABOVE the phone's system nav bar / home indicator on
+          // every device. See TAB_CONTENT_HEIGHT / bottomInset above.
+          height: TAB_CONTENT_HEIGHT + bottomInset,
           paddingBottom: bottomInset,
+          paddingTop: 6,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+          // Push the label down a tiny bit so it doesn't crash into
+          // the icon on the compact devices.
+          marginBottom: 2,
+        },
       }}
     >
       <Tabs.Screen
