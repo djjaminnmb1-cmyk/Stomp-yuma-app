@@ -11,20 +11,39 @@ because these are demo credentials Apple must be able to log in with
 regardless of any manual rotation — an operator who rotates them
 would immediately fail the App Review demo.
 
+CREDENTIALS
+-----------
+Passwords are read from environment variables — never hard-coded here.
+Set the following in ``backend/.env`` (or the equivalent secret store
+on prod) to enable the seed. If any of them is unset the corresponding
+account is silently skipped so a misconfigured deploy never blocks
+boot:
+
+    SEED_PW_REVIEWER_STOMPINGROUND_COM
+    SEED_PW_ADMINREVIEW_STOMPINGROUND_COM
+    SEED_PW_SAMPLECONTENT_STOMPINGROUND_COM
+
+Values must MATCH the passwords documented in
+``/app/APPLE_REVIEW_NOTES.md`` verbatim so Apple's reviewer can log in.
+
 REMOVING THIS AFTER APPLE APPROVES
 ----------------------------------
 Once App Review clears the build:
   1. Delete the ``await seed_apple_review_accounts()`` line from
      ``services/startup.run_startup``.
-  2. Delete the three ``@stompinground.com`` accounts listed below
-     from the production ``users`` collection.
-  3. Delete the demo chat message (``id = msg_apple_review_demo``)
-     from ``instructor_messages``.
-  4. Optionally remove this file.
+  2. Delete the three ``SEED_PW_*STOMPINGROUND_COM`` lines from
+     ``backend/.env``.
+  3. Delete the three reviewer accounts (``reviewer@``, ``adminreview@``,
+     ``samplecontent@stompinground.com``) from the production
+     ``users`` collection.
+  4. Delete the demo chat message (``id = msg_apple_review_demo``) from
+     ``instructor_messages``.
+  5. Optionally remove this file.
 """
 from __future__ import annotations
 
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -34,14 +53,12 @@ from core.terms import TERMS_VERSION
 
 logger = logging.getLogger(__name__)
 
+# Reviewer identity — emails / display names / roles can safely live in
+# source (they're not secrets and Apple's reviewer needs to see them
+# documented). Passwords are pulled from env — see docstring above.
 REVIEWER_EMAIL = "reviewer@stompinground.com"
-REVIEWER_PASSWORD = "AppleReview!2026"
-
 ADMIN_REVIEWER_EMAIL = "adminreview@stompinground.com"
-ADMIN_REVIEWER_PASSWORD = "AppleReview!2026#"
-
 SAMPLE_USER_EMAIL = "samplecontent@stompinground.com"
-SAMPLE_USER_PASSWORD = "SampleContent!2026"
 
 # The reviewer's terms are pinned to a stale value so Demo 1B (the
 # "existing user hits the Updated Terms gate") demo is reproducible
@@ -58,6 +75,20 @@ DEMO_MESSAGE_TEXT = (
 
 def _iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _env_password_for(email: str) -> str:
+    """Env-var lookup — same convention as ``services/startup._seed_account``.
+
+    e.g. ``reviewer@stompinground.com`` → ``SEED_PW_REVIEWER_STOMPINGROUND_COM``.
+    Returns an empty string when the env var is unset, so callers can
+    branch on truthiness to skip seeding cleanly.
+    """
+    key = (
+        "SEED_PW_"
+        + email.replace("@", "_").replace(".", "_").replace("-", "_").upper()
+    )
+    return (os.environ.get(key) or "").strip()
 
 
 async def _upsert_reviewer_account(
@@ -136,15 +167,31 @@ async def seed_apple_review_accounts() -> None:
     """Idempotent — creates / refreshes the App Review reviewer accounts.
 
     Safe to call on every backend boot; runs in <100ms once the
-    accounts exist.
+    accounts exist. When ANY of the three ``SEED_PW_*STOMPINGROUND_COM``
+    env vars is unset the corresponding account is skipped — no
+    hard-coded fallback lives in source, so a fresh clone without the
+    env vars is a no-op.
     """
+    reviewer_pw = _env_password_for(REVIEWER_EMAIL)
+    admin_pw = _env_password_for(ADMIN_REVIEWER_EMAIL)
+    sample_pw = _env_password_for(SAMPLE_USER_EMAIL)
+
+    if not (reviewer_pw and admin_pw and sample_pw):
+        logger.info(
+            "Apple Review seed skipped — one or more of "
+            "SEED_PW_REVIEWER_STOMPINGROUND_COM / "
+            "SEED_PW_ADMINREVIEW_STOMPINGROUND_COM / "
+            "SEED_PW_SAMPLECONTENT_STOMPINGROUND_COM not set."
+        )
+        return
+
     try:
         # 1. Dancer reviewer — instructor-flagged (needed to reach the
         #    instructor chat where the demo message lives), terms
         #    intentionally STALE so Demo 1B trips the gate.
         await _upsert_reviewer_account(
             email=REVIEWER_EMAIL,
-            password=REVIEWER_PASSWORD,
+            password=reviewer_pw,
             name="App Reviewer",
             is_admin=False,
             is_instructor=True,
@@ -153,7 +200,7 @@ async def seed_apple_review_accounts() -> None:
         # 2. Admin reviewer — terms current, admin + instructor.
         await _upsert_reviewer_account(
             email=ADMIN_REVIEWER_EMAIL,
-            password=ADMIN_REVIEWER_PASSWORD,
+            password=admin_pw,
             name="Apple Admin Reviewer",
             is_admin=True,
             is_instructor=True,
@@ -163,7 +210,7 @@ async def seed_apple_review_accounts() -> None:
         #    the reviewer will long-press to Report / Block.
         sample_id = await _upsert_reviewer_account(
             email=SAMPLE_USER_EMAIL,
-            password=SAMPLE_USER_PASSWORD,
+            password=sample_pw,
             name="Sample User",
             is_admin=False,
             is_instructor=True,

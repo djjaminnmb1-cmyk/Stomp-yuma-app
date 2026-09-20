@@ -36,6 +36,17 @@ app = FastAPI(title="Stompin' Ground Yuma API")
 # Attach all /api routes.
 app.include_router(api_router)
 
+
+# ---- Unauthenticated top-level health probe ----
+# Kubernetes ingress + preview infra probe ``GET /health`` (NOT /api/health)
+# to decide whether the pod is ready to receive traffic. Keep this ROOT
+# path — moving it under /api sends the deployment probe through the
+# proxy rewrite and defeats the whole point.
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 # CORS — auth is bearer-token only (no cookies) so credentials mode is not
 # needed. Explicitly turning it off lets us keep a permissive origin
 # allow-list without the wildcard + credentials misconfiguration that some
