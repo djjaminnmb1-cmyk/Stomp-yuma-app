@@ -662,6 +662,21 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile_menu.block": "Block user",
     "profile_menu.cancel": "Cancel",
     "profile_menu.default_name": "this dancer",
+
+    // ---------- Report reasons (surfaced in ReportContentSheet /
+    // ReportFeedSheet). Keys mirror the backend catalog — the client
+    // shows t("report_reason.<key>") when available and falls back to
+    // the server-provided English label otherwise. ----------
+    "report_reason.harassment": "Harassment or bullying",
+    "report_reason.hate_abuse": "Hate or abusive content",
+    "report_reason.hate_speech": "Hate speech or slurs",
+    "report_reason.sexual": "Sexual or inappropriate content",
+    "report_reason.sexual_content": "Sexual or explicit content",
+    "report_reason.threats": "Threats or violence",
+    "report_reason.spam": "Spam",
+    "report_reason.impersonation": "Impersonation",
+    "report_reason.copyright": "Copyright / IP concern",
+    "report_reason.other": "Other",
     // Admin moderation
     "admin_mod.title": "Moderation Queue",
     "admin_mod.not_allowed": "Admin only.",
@@ -1219,6 +1234,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile_menu.block": "Bloquear usuario",
     "profile_menu.cancel": "Cancelar",
     "profile_menu.default_name": "este bailarín",
+
+    // ---------- Report reasons ----------
+    "report_reason.harassment": "Acoso o intimidación",
+    "report_reason.hate_abuse": "Contenido de odio o abuso",
+    "report_reason.hate_speech": "Discurso de odio o insultos",
+    "report_reason.sexual": "Contenido sexual o inapropiado",
+    "report_reason.sexual_content": "Contenido sexual o explícito",
+    "report_reason.threats": "Amenazas o violencia",
+    "report_reason.spam": "Spam",
+    "report_reason.impersonation": "Suplantación de identidad",
+    "report_reason.copyright": "Derechos de autor / propiedad intelectual",
+    "report_reason.other": "Otro",
   },
 
   fr: {
@@ -1764,6 +1791,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile_menu.block": "Bloquer l'utilisateur",
     "profile_menu.cancel": "Annuler",
     "profile_menu.default_name": "ce danseur",
+
+    // ---------- Report reasons ----------
+    "report_reason.harassment": "Harcèlement ou intimidation",
+    "report_reason.hate_abuse": "Contenu haineux ou abusif",
+    "report_reason.hate_speech": "Discours haineux ou insultes",
+    "report_reason.sexual": "Contenu sexuel ou inapproprié",
+    "report_reason.sexual_content": "Contenu sexuel ou explicite",
+    "report_reason.threats": "Menaces ou violence",
+    "report_reason.spam": "Spam",
+    "report_reason.impersonation": "Usurpation d'identité",
+    "report_reason.copyright": "Droits d'auteur / propriété intellectuelle",
+    "report_reason.other": "Autre",
   },
 
   de: {
@@ -2306,6 +2345,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile_menu.block": "Nutzer blockieren",
     "profile_menu.cancel": "Abbrechen",
     "profile_menu.default_name": "diese/n Tänzer/in",
+
+    // ---------- Report reasons ----------
+    "report_reason.harassment": "Belästigung oder Mobbing",
+    "report_reason.hate_abuse": "Hass oder missbräuchliche Inhalte",
+    "report_reason.hate_speech": "Hassrede oder Beleidigungen",
+    "report_reason.sexual": "Sexuelle oder unangemessene Inhalte",
+    "report_reason.sexual_content": "Sexuelle oder explizite Inhalte",
+    "report_reason.threats": "Drohungen oder Gewalt",
+    "report_reason.spam": "Spam",
+    "report_reason.impersonation": "Identitätsfälschung",
+    "report_reason.copyright": "Urheberrecht / geistiges Eigentum",
+    "report_reason.other": "Sonstiges",
   },
 
   nl: {
@@ -2860,6 +2911,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile_menu.block": "Gebruiker blokkeren",
     "profile_menu.cancel": "Annuleren",
     "profile_menu.default_name": "deze danser",
+
+    // ---------- Report reasons ----------
+    "report_reason.harassment": "Intimidatie of pesten",
+    "report_reason.hate_abuse": "Haat of misbruik",
+    "report_reason.hate_speech": "Haatzaaiende taal of beledigingen",
+    "report_reason.sexual": "Seksuele of ongepaste inhoud",
+    "report_reason.sexual_content": "Seksuele of expliciete inhoud",
+    "report_reason.threats": "Bedreigingen of geweld",
+    "report_reason.spam": "Spam",
+    "report_reason.impersonation": "Identiteitsfraude",
+    "report_reason.copyright": "Auteursrecht / intellectueel eigendom",
+    "report_reason.other": "Anders",
   },
 
   ko: {
@@ -3386,6 +3449,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile_menu.block": "사용자 차단",
     "profile_menu.cancel": "취소",
     "profile_menu.default_name": "이 댄서",
+
+    // ---------- Report reasons ----------
+    "report_reason.harassment": "괴롭힘 또는 협박",
+    "report_reason.hate_abuse": "혐오 또는 폭력적 콘텐츠",
+    "report_reason.hate_speech": "혐오 발언 또는 욕설",
+    "report_reason.sexual": "성적 또는 부적절한 콘텐츠",
+    "report_reason.sexual_content": "성적 또는 노골적인 콘텐츠",
+    "report_reason.threats": "위협 또는 폭력",
+    "report_reason.spam": "스팸",
+    "report_reason.impersonation": "사칭",
+    "report_reason.copyright": "저작권 / 지적 재산권",
+    "report_reason.other": "기타",
   },
 
   "zh-Hans": {
@@ -3899,6 +3974,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile_menu.block": "屏蔽用户",
     "profile_menu.cancel": "取消",
     "profile_menu.default_name": "这位舞者",
+
+    // ---------- Report reasons ----------
+    "report_reason.harassment": "骚扰或欺凌",
+    "report_reason.hate_abuse": "仇恨或滥用内容",
+    "report_reason.hate_speech": "仇恨言论或侮辱",
+    "report_reason.sexual": "色情或不当内容",
+    "report_reason.sexual_content": "色情或露骨内容",
+    "report_reason.threats": "威胁或暴力",
+    "report_reason.spam": "垃圾信息",
+    "report_reason.impersonation": "冒充他人",
+    "report_reason.copyright": "版权 / 知识产权",
+    "report_reason.other": "其他",
   },
 
   "zh-Hant": {
@@ -4412,6 +4499,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile_menu.block": "封鎖使用者",
     "profile_menu.cancel": "取消",
     "profile_menu.default_name": "這位舞者",
+
+    // ---------- Report reasons ----------
+    "report_reason.harassment": "騷擾或霸凌",
+    "report_reason.hate_abuse": "仇恨或濫用內容",
+    "report_reason.hate_speech": "仇恨言論或侮辱",
+    "report_reason.sexual": "色情或不當內容",
+    "report_reason.sexual_content": "色情或露骨內容",
+    "report_reason.threats": "威脅或暴力",
+    "report_reason.spam": "垃圾訊息",
+    "report_reason.impersonation": "冒充他人",
+    "report_reason.copyright": "版權 / 智慧財產權",
+    "report_reason.other": "其他",
   },
 };
 

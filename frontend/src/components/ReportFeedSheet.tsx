@@ -232,7 +232,10 @@ export function ReportFeedSheet({
                   <Text
                     style={[styles.optText, active && styles.optTextActive]}
                   >
-                    {r.label}
+                    {/* Localize the label — backend returns English
+                        only. Falls back to the server label when the
+                        locale hasn't got a translation for this key. */}
+                    {t(`report_reason.${r.reason}`, { defaultValue: r.label })}
                   </Text>
                 </Pressable>
               );

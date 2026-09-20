@@ -211,7 +211,12 @@ export function ReportContentSheet({
                         active && styles.reasonLabelActive,
                       ]}
                     >
-                      {r.label}
+                      {/* Localize the label from the i18n catalog
+                          when a translation exists — the backend
+                          returns English labels only. Falls back to
+                          the server label if the current locale
+                          hasn't got a translation for this key yet. */}
+                      {t(`report_reason.${r.key}`, { defaultValue: r.label })}
                     </Text>
                   </Pressable>
                 );
