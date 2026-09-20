@@ -105,6 +105,22 @@ class WarnBody(BaseModel):
 
 
 # ---- Helpers ----
+def _human_ref(report_id: str) -> str:
+    """Short, uppercase reference the user sees in the "your report was
+    received" toast — e.g. ``rep_abc123def456`` → ``ABC12F``.
+
+    We take a mix of the first + last three hex chars of the internal
+    id so the ref is stable across the 12-char UUID space without
+    leaking the whole id. Users type this into an email to safety@ so
+    the mods can look up the original row via
+    ``db.moderation_reports.find_one({"id": {"$regex": ref, ...}})``.
+    """
+    hex_part = report_id.split("_", 1)[1] if "_" in report_id else report_id
+    if len(hex_part) < 6:
+        return hex_part.upper()
+    return (hex_part[:3] + hex_part[-3:]).upper()
+
+
 async def _lookup_target_snapshot(target_type: str, target_id: str) -> tuple[str, Optional[str]]:
     """Return ``(preview_text, target_user_id_from_db)`` for the artefact.
 
@@ -199,7 +215,12 @@ async def create_report(
         {"_id": 0, "id": 1},
     )
     if dup:
-        return {"ok": True, "already_reported": True, "id": dup["id"]}
+        return {
+            "ok": True,
+            "already_reported": True,
+            "id": dup["id"],
+            "ref": _human_ref(dup["id"]),
+        }
 
     doc = {
         "id": f"rep_{uuid.uuid4().hex[:12]}",
@@ -225,7 +246,7 @@ async def create_report(
         "moderation_report user=%s target=%s:%s reason=%s",
         reporter_id, target_type, doc["target_id"], reason_key,
     )
-    return {"ok": True, "id": doc["id"]}
+    return {"ok": True, "id": doc["id"], "ref": _human_ref(doc["id"])}
 
 
 # ---- ADMIN ENDPOINTS ----

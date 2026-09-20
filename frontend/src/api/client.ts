@@ -1163,7 +1163,7 @@ export const api = {
     reason: string,
     note?: string
   ) =>
-    req<{ ok: boolean; created: boolean }>(
+    req<{ ok: boolean; created: boolean; ref?: string }>(
       `/feed/${encodeURIComponent(eventId)}/report`,
       {
         method: "POST",
@@ -2119,7 +2119,12 @@ export const api = {
     },
     token: string
   ) =>
-    req<{ ok: boolean; id?: string; already_reported?: boolean }>(
+    req<{
+      ok: boolean;
+      id?: string;
+      ref?: string;
+      already_reported?: boolean;
+    }>(
       "/moderation/reports",
       { method: "POST", body: JSON.stringify(body) },
       token

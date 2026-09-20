@@ -119,8 +119,15 @@ export function ReportFeedSheet({
     if (!token || !reason) return;
     setBusy(true);
     let blocked = false;
+    let reportRef = "";
     try {
-      await api.reportFeedEvent(token, eventId, reason, note.trim() || undefined);
+      const res = await api.reportFeedEvent(
+        token,
+        eventId,
+        reason,
+        note.trim() || undefined,
+      );
+      reportRef = res.ref || "";
       onReported?.();
 
       // Chain the block if the user opted-in. Report always succeeds
@@ -139,14 +146,16 @@ export function ReportFeedSheet({
 
       const label = reportedUser?.name?.trim() || "this user";
       // Cross-platform toast — 24 h SLA promise MUST match the Community
-      // Guidelines page and Safety Center copy.
+      // Guidelines page and Safety Center copy. Suffix with the human
+      // ref so the reporter can quote it in an email to safety@.
+      const refSuffix = reportRef ? ` · #${reportRef}` : "";
       if (blocked) {
         toast.success(
-          `${t("report.ok_body")} ${label} won't see your activity and vice-versa.`,
-          { duration: 4600 }
+          `${t("report.ok_body")} ${label} won't see your activity and vice-versa.${refSuffix}`,
+          { duration: 4800 },
         );
       } else {
-        toast.success(t("report.ok_body"), { duration: 4200 });
+        toast.success(`${t("report.ok_body")}${refSuffix}`, { duration: 4800 });
       }
       // Close the sheet immediately — the toast lives at the app root
       // so it stays visible even after the sheet slides out.

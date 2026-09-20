@@ -112,13 +112,17 @@ export function ReportContentSheet({
       if (res.already_reported) {
         // Duplicate reports get a plain info toast — no need for a
         // blocking alert since the user's intent (report this) is
-        // already on file.
-        toast.info(t("report.dup_body"), { duration: 3600 });
+        // already on file. Show the SAME ref they got the first time
+        // so they can keep quoting it in an email to safety@.
+        const ref = res.ref ? ` · #${res.ref}` : "";
+        toast.info(`${t("report.dup_body")}${ref}`, { duration: 4200 });
       } else {
         // Apple 1.2 auto-ack — the promise here MUST match the
         // 24-hour SLA the Community Guidelines page and Safety
-        // Center advertise.
-        toast.success(t("report.ok_body"), { duration: 4200 });
+        // Center advertise. Suffix the toast with the human ref so
+        // the reporter can quote it in an email to safety@.
+        const ref = res.ref ? ` · #${res.ref}` : "";
+        toast.success(`${t("report.ok_body")}${ref}`, { duration: 4800 });
       }
       reset();
       onReported?.();

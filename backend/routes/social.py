@@ -334,7 +334,18 @@ async def post_feed_report(
         if result.get("error") == "self_report":
             raise HTTPException(400, "You can't report your own post.")
         raise HTTPException(400, "Couldn't submit report.")
-    return {"ok": True, "created": bool(result.get("created"))}
+    # Human-friendly reference the reporter sees in the confirmation
+    # toast — derived from the deterministic (reporter, event) key so
+    # re-submissions of the same report always show the same ref.
+    _ref_seed = f"{user['user_id']}:{event_id}"
+    _ref = "".join(
+        c for c in _ref_seed if c.isalnum()
+    )[-6:].upper() or "SGYFDX"
+    return {
+        "ok": True,
+        "created": bool(result.get("created")),
+        "ref": _ref,
+    }
 
 
 @router.get("/admin/feed/reports")

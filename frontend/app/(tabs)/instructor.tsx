@@ -1197,6 +1197,11 @@ function ChatView({
       }
     };
     const previews = item.link_previews || [];
+    // Discoverable ⋯ affordance for OTHER users' messages so users
+    // can reach Report / Block without knowing the long-press
+    // gesture (Apple UGC 1.2 discoverability). Own bubbles: no menu
+    // button since Report / Block don't apply to yourself.
+    const showOverflow = !mine;
     return (
       <View
         style={[
@@ -1229,32 +1234,55 @@ function ChatView({
           </Pressable>
         ) : null}
 
-        <Pressable
-          onLongPress={onBubbleLongPress}
-          delayLongPress={350}
-          testID={`chat-bubble-${item.id}`}
+        <View
           style={[
-            styles.msgBubble,
-            mine ? styles.msgBubbleMine : styles.msgBubbleOther,
+            styles.msgBubbleWrap,
+            { flexDirection: mine ? "row-reverse" : "row" },
           ]}
         >
-          <Text style={[styles.msgText, mine && { color: colors.onBrandPrimary }]}>
-            {item.message}
-          </Text>
-          <Text
+          <Pressable
+            onLongPress={onBubbleLongPress}
+            delayLongPress={350}
+            testID={`chat-bubble-${item.id}`}
             style={[
-              styles.msgTime,
-              mine
-                ? { color: colors.onBrandPrimary, opacity: 0.7 }
-                : { color: colors.muted },
+              styles.msgBubble,
+              mine ? styles.msgBubbleMine : styles.msgBubbleOther,
             ]}
           >
-            {new Date(item.created_at).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </Text>
-        </Pressable>
+            <Text style={[styles.msgText, mine && { color: colors.onBrandPrimary }]}>
+              {item.message}
+            </Text>
+            <Text
+              style={[
+                styles.msgTime,
+                mine
+                  ? { color: colors.onBrandPrimary, opacity: 0.7 }
+                  : { color: colors.muted },
+              ]}
+            >
+              {new Date(item.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          </Pressable>
+          {showOverflow ? (
+            <Pressable
+              onPress={onBubbleLongPress}
+              hitSlop={10}
+              style={styles.msgOverflowBtn}
+              testID={`chat-msg-more-${item.id}`}
+              accessibilityRole="button"
+              accessibilityLabel="Message actions"
+            >
+              <Ionicons
+                name="ellipsis-horizontal"
+                size={16}
+                color={colors.muted}
+              />
+            </Pressable>
+          ) : null}
+        </View>
 
         {previews.length > 0 ? (
           <View
@@ -2478,6 +2506,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: radius.md,
     gap: 2,
+  },
+  msgBubbleWrap: {
+    // Wraps the bubble + ⋯ overflow button so they align on the same
+    // baseline, mirroring across "mine" (row-reverse) vs "other".
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  msgOverflowBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    // Slight fade so the icon feels secondary next to the actual
+    // message; hitSlop compensates so the tap target stays large.
+    opacity: 0.65,
+    marginBottom: 4,
   },
   msgBubbleMine: {
     backgroundColor: colors.brandPrimary,
