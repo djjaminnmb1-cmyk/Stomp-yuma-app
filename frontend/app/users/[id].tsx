@@ -24,6 +24,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { colors, radius, spacing } from "@/src/theme";
 import { useAuth } from "@/src/context/auth-context";
+import { t } from "@/src/i18n";
 import { api, PublicProfile } from "@/src/api/client";
 import { FollowButton } from "@/src/components/FollowButton";
 import { InstructorBadge } from "@/src/components/InstructorBadge";
@@ -64,19 +65,22 @@ export default function PublicProfileScreen() {
   // Apple UGC 1.2 — every UGC surface must have a report + block action
   // reachable in ≤ 2 taps. Profile screens open into a native action
   // sheet with Report user / Block user (destructive) / Cancel.
+  // Strings are pulled from the i18n catalog so each locale gets the
+  // correct copy — English falls back gracefully for any locale that
+  // doesn't yet have profile_menu.* keys.
   const openMoreMenu = useCallback(() => {
     if (!profile || profile.is_self) return;
-    const name = profile.name || "this dancer";
+    const name = profile.name || t("profile_menu.default_name");
     Alert.alert(
       name,
-      "What would you like to do?",
+      t("profile_menu.body"),
       [
         {
-          text: "Report user",
+          text: t("profile_menu.report"),
           onPress: () => setReportOpen(true),
         },
         {
-          text: "Block user",
+          text: t("profile_menu.block"),
           style: "destructive",
           onPress: () =>
             confirmBlock({
@@ -85,7 +89,7 @@ export default function PublicProfileScreen() {
               onBlocked: () => router.back(),
             }),
         },
-        { text: "Cancel", style: "cancel" },
+        { text: t("profile_menu.cancel"), style: "cancel" },
       ],
     );
   }, [profile, confirmBlock, router]);

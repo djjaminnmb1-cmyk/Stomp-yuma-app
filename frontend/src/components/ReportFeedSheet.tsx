@@ -6,8 +6,9 @@
  * level so we only fetch once per session), lets the user pick one +
  * type an optional note, and submits to ``/feed/{id}/report``.
  *
- * On success we surface a discreet confirmation toast (Alert on native,
- * inline banner on web) so the reporter knows SGY got the flag.
+ * On success we surface a top-of-screen toast via the shared
+ * ToastProvider so the reporter sees the 24-hour SLA promise without
+ * a blocking modal.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -19,13 +20,13 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Alert,
-  Platform,
   Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
+import { useToast } from "@/src/context/toast-context";
+import { t } from "@/src/i18n";
 import { colors, radius, spacing } from "@/src/theme";
 
 // Fallback in case the catalog fails to load — matches the backend.
@@ -74,13 +75,13 @@ export function ReportFeedSheet({
   onBlocked?: () => void;
 }) {
   const { token, user: me } = useAuth();
+  const toast = useToast();
   const [reasons, setReasons] = useState<{ reason: string; label: string }[]>(
     FALLBACK_REASONS
   );
   const [reason, setReason] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [inlineOk, setInlineOk] = useState(false);
   // Default the "Also block" toggle to OFF — reporting a spammy post
   // is often not a personal issue, so we don't want to silently
   // convert a report into a block. The user has to opt in.
@@ -100,7 +101,6 @@ export function ReportFeedSheet({
     if (!visible) return;
     setReason(null);
     setNote("");
-    setInlineOk(false);
     setAlsoBlock(false);
   }, [visible]);
 
@@ -138,27 +138,23 @@ export function ReportFeedSheet({
       }
 
       const label = reportedUser?.name?.trim() || "this user";
-      // Native alert closes the sheet; web shows an inline banner.
-      if (Platform.OS === "web") {
-        setInlineOk(true);
-        setTimeout(onClose, 1800);
-      } else if (blocked) {
-        Alert.alert(
-          "Report sent · user blocked",
-          `We'll review this within 48 hours. ${label} won't see your activity and vice-versa. Unblock anytime from Profile → Blocked users.`,
-          [{ text: "OK", onPress: onClose }]
+      // Cross-platform toast — 24 h SLA promise MUST match the Community
+      // Guidelines page and Safety Center copy.
+      if (blocked) {
+        toast.success(
+          `${t("report.ok_body")} ${label} won't see your activity and vice-versa.`,
+          { duration: 4600 }
         );
       } else {
-        Alert.alert(
-          "Thanks — report sent",
-          "Our team will review this within 48 hours. Thanks for keeping SGY a welcoming place.",
-          [{ text: "OK", onPress: onClose }]
-        );
+        toast.success(t("report.ok_body"), { duration: 4200 });
       }
+      // Close the sheet immediately — the toast lives at the app root
+      // so it stays visible even after the sheet slides out.
+      onClose();
     } catch (e: any) {
-      Alert.alert(
-        "Couldn't send report",
-        e?.message || "Please try again in a moment."
+      toast.error(
+        e?.message || "Please try again in a moment.",
+        { duration: 4200 }
       );
     } finally {
       setBusy(false);
@@ -175,6 +171,7 @@ export function ReportFeedSheet({
     reportedUser?.user_id,
     reportedUser?.name,
     onBlocked,
+    toast,
   ]);
 
   const canSubmit = useMemo(() => !!reason && !busy, [reason, busy]);
@@ -195,7 +192,7 @@ export function ReportFeedSheet({
               <Text style={styles.title}>Report this post</Text>
               <Text style={styles.sub}>
                 Your report goes to SGY moderators. We&apos;ll review it
-                within 48 hours.
+                within 24 hours.
               </Text>
             </View>
             <Pressable
@@ -283,19 +280,6 @@ export function ReportFeedSheet({
                   onValueChange={setAlsoBlock}
                   trackColor={{ true: colors.brandPrimary }}
                 />
-              </View>
-            ) : null}
-
-            {inlineOk ? (
-              <View style={styles.okBanner}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={16}
-                  color={colors.success}
-                />
-                <Text style={styles.okBannerText}>
-                  Report sent. Thanks for looking out for the community.
-                </Text>
               </View>
             ) : null}
           </ScrollView>

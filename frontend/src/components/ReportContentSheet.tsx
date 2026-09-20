@@ -22,7 +22,6 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -35,6 +34,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
+import { useToast } from "@/src/context/toast-context";
 import { colors, radius, spacing } from "@/src/theme";
 import { t } from "@/src/i18n";
 
@@ -59,6 +59,7 @@ export function ReportContentSheet({
 }: Props) {
   const { token } = useAuth();
   const insets = useSafeAreaInsets();
+  const toast = useToast();
   const [reasons, setReasons] = useState<{ key: string; label: string }[]>([]);
   const [selected, setSelected] = useState<string>("");
   const [note, setNote] = useState("");
@@ -109,15 +110,21 @@ export function ReportContentSheet({
         token,
       );
       if (res.already_reported) {
-        Alert.alert(t("report.dup_title"), t("report.dup_body"));
+        // Duplicate reports get a plain info toast — no need for a
+        // blocking alert since the user's intent (report this) is
+        // already on file.
+        toast.info(t("report.dup_body"), { duration: 3600 });
       } else {
-        Alert.alert(t("report.ok_title"), t("report.ok_body"));
+        // Apple 1.2 auto-ack — the promise here MUST match the
+        // 24-hour SLA the Community Guidelines page and Safety
+        // Center advertise.
+        toast.success(t("report.ok_body"), { duration: 4200 });
       }
       reset();
       onReported?.();
       onClose();
     } catch (e: any) {
-      Alert.alert(t("report.fail_title"), e?.message || "");
+      toast.error(e?.message || t("report.fail_title"), { duration: 4200 });
     } finally {
       setBusy(false);
     }
@@ -131,6 +138,14 @@ export function ReportContentSheet({
       onRequestClose={onClose}
     >
       <View style={styles.scrim}>
+        {/* Tap-outside-to-dismiss backdrop. Sits BEHIND the sheet so a
+            tap on the sheet body doesn't dismiss by accident. */}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={onClose}
+          accessibilityLabel={t("report.cancel")}
+          testID="report-backdrop"
+        />
         <View
           style={[
             styles.sheet,
@@ -140,8 +155,28 @@ export function ReportContentSheet({
           <View style={styles.handleWrap}>
             <View style={styles.handle} />
           </View>
-          <Text style={styles.title}>{t("report.title")}</Text>
-          <Text style={styles.sub}>{t("report.subtitle")}</Text>
+          {/* Header with a clear close (X) affordance in the top-right
+              so users always have a one-tap way out, even before they
+              scroll to the Cancel button in the footer. */}
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>{t("report.title")}</Text>
+              <Text style={styles.sub}>{t("report.subtitle")}</Text>
+            </View>
+            <Pressable
+              onPress={() => {
+                reset();
+                onClose();
+              }}
+              hitSlop={12}
+              testID="report-close"
+              accessibilityLabel={t("report.cancel")}
+              accessibilityRole="button"
+              style={styles.closeBtn}
+            >
+              <Ionicons name="close" size={22} color={colors.onSurface} />
+            </Pressable>
+          </View>
 
           {loading ? (
             <ActivityIndicator style={{ marginTop: spacing.md }} color={colors.brandPrimary} />
@@ -249,11 +284,24 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: colors.border,
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    marginTop: 4,
+  },
+  closeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceSecondary,
+  },
   title: {
     fontSize: 18,
     fontWeight: "700",
     color: colors.onSurface,
-    marginTop: 4,
   },
   sub: { fontSize: 13, color: colors.muted, marginTop: 2 },
   reasonList: { marginTop: spacing.md, maxHeight: 400 },

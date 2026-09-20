@@ -87,7 +87,7 @@ export default function CommunityGuidelines() {
         <Section title="If something goes wrong">
           <Text style={styles.body}>
             See something off? Report it and we&apos;ll take a look — usually
-            within 48 hours. We can hide posts, remove reactions, or suspend
+            within 24 hours. We can hide posts, remove reactions, or suspend
             accounts that don&apos;t follow these guidelines.
           </Text>
           <Pressable

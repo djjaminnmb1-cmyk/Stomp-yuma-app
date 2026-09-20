@@ -10,6 +10,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { AuthProvider } from "@/src/context/auth-context";
+import { ToastProvider } from "@/src/context/toast-context";
 import { PendingSubmissionsProvider } from "@/src/context/pending-submissions-context";
 import { TermsGate } from "@/src/components/TermsGate";
 import { DraftCountProvider } from "@/src/context/draft-count-context";
@@ -149,24 +150,26 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
           <SafeAreaProvider>
-            <AuthProvider>
-              <PendingSubmissionsProvider>
-                <DraftCountProvider>
-                  <TermsGate />
-                  <StatusBar barStyle="dark-content" />
-                  <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#FDFBF7" } }} />
-                  <AgeGateModal />
-                  {/* First-open language picker — auto-detects the
-                      device locale and shows a one-time picker so the
-                      user can confirm or override. Silently no-ops once
-                      the user has made a choice. */}
-                  <LanguagePickerModal />
-                  {/* Sticks to the top of the app; only renders on native
-                      when expo-updates has a bundle ready. Hidden on web. */}
-                  <UpdateBanner />
-                </DraftCountProvider>
-              </PendingSubmissionsProvider>
-            </AuthProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <PendingSubmissionsProvider>
+                  <DraftCountProvider>
+                    <TermsGate />
+                    <StatusBar barStyle="dark-content" />
+                    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#FDFBF7" } }} />
+                    <AgeGateModal />
+                    {/* First-open language picker — auto-detects the
+                        device locale and shows a one-time picker so the
+                        user can confirm or override. Silently no-ops once
+                        the user has made a choice. */}
+                    <LanguagePickerModal />
+                    {/* Sticks to the top of the app; only renders on native
+                        when expo-updates has a bundle ready. Hidden on web. */}
+                    <UpdateBanner />
+                  </DraftCountProvider>
+                </PendingSubmissionsProvider>
+              </AuthProvider>
+            </ToastProvider>
           </SafeAreaProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>

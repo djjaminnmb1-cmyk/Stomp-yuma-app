@@ -649,11 +649,19 @@ export const translations: Record<Locale, Record<string, string>> = {
     "report.submit": "Submit report",
     "report.ok_title": "Report submitted",
     "report.ok_body":
-      "Thank you. Your report has been submitted for review.",
+      "Thanks — our team reviews every report within 24 hours.",
     "report.dup_title": "Already reported",
     "report.dup_body":
       "You've already reported this. Our team will review it.",
     "report.fail_title": "Couldn't submit report",
+    // Profile ⋯ menu (Report user / Block user action sheet on any
+    // public profile). Apple Guideline 1.2 requires these actions to
+    // be reachable ≤ 2 taps from any UGC surface.
+    "profile_menu.body": "What would you like to do?",
+    "profile_menu.report": "Report user",
+    "profile_menu.block": "Block user",
+    "profile_menu.cancel": "Cancel",
+    "profile_menu.default_name": "this dancer",
     // Admin moderation
     "admin_mod.title": "Moderation Queue",
     "admin_mod.not_allowed": "Admin only.",
@@ -1196,6 +1204,21 @@ export const translations: Record<Locale, Record<string, string>> = {
     "my_submissions.untitled": "(Sin título)",
     "my_submissions.quota":
       "{used}/{limit} enviados hoy ({remaining} disponibles)",
+
+    // ---------- Apple UGC 1.2 (partial localization) ----------
+    // Report success confirmation (shown as a top-of-screen toast on
+    // native, inline banner on web) — must match the 24 h SLA the
+    // Community Guidelines page promises.
+    "report.ok_body":
+      "Gracias — nuestro equipo revisa cada reporte en menos de 24 horas.",
+    // Profile ⋯ menu (Report user / Block user action sheet on any
+    // public profile). Apple Guideline 1.2 requires these actions to
+    // be reachable ≤ 2 taps from any UGC surface.
+    "profile_menu.body": "¿Qué te gustaría hacer?",
+    "profile_menu.report": "Reportar usuario",
+    "profile_menu.block": "Bloquear usuario",
+    "profile_menu.cancel": "Cancelar",
+    "profile_menu.default_name": "este bailarín",
   },
 
   fr: {
@@ -1732,6 +1755,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "my_submissions.untitled": "(Sans titre)",
     "my_submissions.quota":
       "{used}/{limit} envoyées aujourd'hui ({remaining} restantes)",
+
+    // ---------- Apple UGC 1.2 (partial localization) ----------
+    "report.ok_body":
+      "Merci — notre équipe examine chaque signalement en moins de 24 heures.",
+    "profile_menu.body": "Que souhaitez-vous faire ?",
+    "profile_menu.report": "Signaler l'utilisateur",
+    "profile_menu.block": "Bloquer l'utilisateur",
+    "profile_menu.cancel": "Annuler",
+    "profile_menu.default_name": "ce danseur",
   },
 
   de: {
@@ -2265,6 +2297,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "my_submissions.untitled": "(Ohne Titel)",
     "my_submissions.quota":
       "{used}/{limit} heute gesendet ({remaining} übrig)",
+
+    // ---------- Apple UGC 1.2 (partial localization) ----------
+    "report.ok_body":
+      "Danke — unser Team prüft jede Meldung innerhalb von 24 Stunden.",
+    "profile_menu.body": "Was möchtest du tun?",
+    "profile_menu.report": "Nutzer melden",
+    "profile_menu.block": "Nutzer blockieren",
+    "profile_menu.cancel": "Abbrechen",
+    "profile_menu.default_name": "diese/n Tänzer/in",
   },
 
   nl: {
@@ -2810,6 +2851,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "my_submissions.untitled": "(Zonder titel)",
     "my_submissions.quota":
       "{used}/{limit} vandaag verzonden ({remaining} over)",
+
+    // ---------- Apple UGC 1.2 (partial localization) ----------
+    "report.ok_body":
+      "Bedankt — ons team beoordeelt elke melding binnen 24 uur.",
+    "profile_menu.body": "Wat wil je doen?",
+    "profile_menu.report": "Gebruiker melden",
+    "profile_menu.block": "Gebruiker blokkeren",
+    "profile_menu.cancel": "Annuleren",
+    "profile_menu.default_name": "deze danser",
   },
 
   ko: {
@@ -3327,6 +3377,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "my_submissions.untitled": "(제목 없음)",
     "my_submissions.quota":
       "오늘 {used}/{limit} 제출 ({remaining} 남음)",
+
+    // ---------- Apple UGC 1.2 (partial localization) ----------
+    "report.ok_body":
+      "감사합니다 — 저희 팀이 모든 신고를 24시간 이내에 검토합니다.",
+    "profile_menu.body": "무엇을 도와드릴까요?",
+    "profile_menu.report": "사용자 신고",
+    "profile_menu.block": "사용자 차단",
+    "profile_menu.cancel": "취소",
+    "profile_menu.default_name": "이 댄서",
   },
 
   "zh-Hans": {
@@ -3831,6 +3890,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "my_submissions.untitled": "（无标题）",
     "my_submissions.quota":
       "今天已提交 {used}/{limit}（剩余 {remaining}）",
+
+    // ---------- Apple UGC 1.2 (partial localization) ----------
+    "report.ok_body":
+      "感谢 — 我们的团队会在 24 小时内审核每一份举报。",
+    "profile_menu.body": "您想要做什么？",
+    "profile_menu.report": "举报用户",
+    "profile_menu.block": "屏蔽用户",
+    "profile_menu.cancel": "取消",
+    "profile_menu.default_name": "这位舞者",
   },
 
   "zh-Hant": {
@@ -4335,6 +4403,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "my_submissions.untitled": "（無標題）",
     "my_submissions.quota":
       "今天已提交 {used}/{limit}（剩餘 {remaining}）",
+
+    // ---------- Apple UGC 1.2 (partial localization) ----------
+    "report.ok_body":
+      "感謝 — 我們的團隊會在 24 小時內審核每一則檢舉。",
+    "profile_menu.body": "您想要做什麼？",
+    "profile_menu.report": "檢舉使用者",
+    "profile_menu.block": "封鎖使用者",
+    "profile_menu.cancel": "取消",
+    "profile_menu.default_name": "這位舞者",
   },
 };
 
