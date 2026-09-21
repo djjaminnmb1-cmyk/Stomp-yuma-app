@@ -1,0 +1,34 @@
+{
+  "summary": "Backend-only regression for the new SOLO CHOREOGRAPHER LIBRARY feature. Wrote /app/backend/tests/test_solo_choreographer_library.py — 30 tests across 6 classes covering the parser edge cases, BootStepper _normalise multi-name preservation, POST/PUT/GET /api/dances splitting, GET /api/choreographers library exclusion of co-only people, GET /api/dances?q= matching on co_choreographers, and GET /api/co-choreographers/{name}/dances (auth-required, case-insensitive, newest-first). All 30 tests PASSED. Test dances are created via /api/dances with a TEST_SOLO_<epoch>_ prefix and deleted in module teardown — verified 0 leftover rows after the run.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_solo_choreographer_library.py",
+    "/app/test_reports/pytest/solo_choreographer_library.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/choreographer_follows.py: `_SPLIT_RE` correctly avoids hyphen/dot/paren splits — verified against 'A.T. Kinson', 'Rachael McEnaney-White', 'Adrian Lefebour (AUS)'.",
+    "routes/dances.py: PUT /dances/{id} calls inject_choreographer_key on the incoming payload — the choreographer_key and co_choreographers stay in sync with a changed choreographer string.",
+    "services/bootstepper.py::_normalise correctly pulls the FIRST danceChoreographers[] entry as main and the rest as co, with case-insensitive dedupe.",
+    "routes/choreographer_follows.py: GET /co-choreographers/{name:path}/dances is auth-gated via get_current_user dep. Matches on choreographer_key (main) OR co_choreographers ($in candidate spellings) — correctly returns dances where the person is main OR co.",
+    "core/serialize.py::dance_to_out: co_choreographers is ALWAYS emitted as a list (defaults to []) — verified for both solo and multi-name dances."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_solo_choreographer_library.py (new)"
+  ],
+  "success_rate": {"backend": "100% (30/30)", "frontend": "N/A (backend-only)"},
+  "seed_data_creation": "Created 3 test dances per run with TEST_SOLO_<epoch>_ prefix, all deleted in module teardown. Confirmed 0 leftovers after run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The parser lives in services/choreographer_follows.py::split_choreographers / parse_main_and_co, and the write-site helper is inject_choreographer_key (trusts explicit co list when caller passes one). The BootStepper normaliser at services/bootstepper.py::_normalise is the ONE upstream that captures the exact multi-name roster via danceChoreographers[]. Test corpus fixture in the pytest file seeds three dances that share a co-choreographer (TEST_CoBob) so the co-endpoint returns dances where the person is main OR co.",
+  "rca_of_issue": "N/A — new feature validation, no regressions detected."
+}

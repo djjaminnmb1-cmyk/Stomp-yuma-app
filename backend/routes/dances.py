@@ -78,6 +78,11 @@ async def list_dances(
         query["$or"] = [
             {"name": {"$regex": safe_q, "$options": "i"}},
             {"choreographer": {"$regex": safe_q, "$options": "i"}},
+            # Co-choreographers only surface on the individual dance
+            # page, but a search for one of their names should still
+            # land the dance in the results. Matches array elements
+            # via the same case-insensitive regex.
+            {"co_choreographers": {"$regex": safe_q, "$options": "i"}},
             {"song": {"$regex": safe_q, "$options": "i"}},
             {"artist": {"$regex": safe_q, "$options": "i"}},
         ]

@@ -28,6 +28,7 @@ import { CopperKnobCompareSheet } from "@/src/components/CopperKnobCompareSheet"
 import { BootStepperLinkSheet } from "@/src/components/BootStepperLinkSheet";
 import { BootStepperCompareSheet } from "@/src/components/BootStepperCompareSheet";
 import { ChoreographerFollowButton } from "@/src/components/ChoreographerFollowButton";
+import { CoChoreographersSection } from "@/src/components/CoChoreographersSection";
 
 export default function DanceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -428,6 +429,11 @@ export default function DanceDetail() {
             </View>
           </View>
         </View>
+
+        <CoChoreographersSection
+          names={dance.co_choreographers || []}
+          currentDanceId={dance.id}
+        />
 
         <View style={styles.section}>
           <View style={styles.infoRow}>

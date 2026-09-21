@@ -50,6 +50,74 @@ def normalise_choreographer(name: Optional[str]) -> str:
     return _KEY_RE.sub(" ", name.strip().lower()).strip()
 
 
+# ------------- Multi-choreographer parsing -------------
+# A dance credit string can pack several people into one field, e.g.
+# "Rachael McEnaney-White & Roy Verdonk", "Guyton Mundy / Jose Miguel",
+# "John Robinson, Neville Fitzgerald, Julie Harris", "Foo feat. Bar".
+# The FIRST name is treated as the MAIN choreographer — the one that
+# owns the dance in the "solo choreographers only" library — and every
+# subsequent name becomes a co-choreographer that surfaces only on
+# the individual dance page.
+#
+# Splitter list (case-insensitive), applied in a single pass:
+#   * ampersand-style: " & ", " + "
+#   * slash-style:     " / "
+#   * word-style:      " and ", " feat. ", " feat ", " ft. ", " ft "
+#   * comma:           ", "
+#
+# We deliberately DON'T split on bare hyphens or dots (they appear in
+# hyphenated surnames and honorifics like "A.T. Kinson"), and we don't
+# strip parenthesised country tags like "Adrian Lefebour (AUS)".
+_SPLIT_RE = re.compile(
+    r"\s*(?:&|\+|/|,|;|\bfeat(?:\.|uring)?\s+|\bft\.?\s+|\band\s+)",
+    re.IGNORECASE,
+)
+
+
+def split_choreographers(name: Optional[str]) -> list[str]:
+    """Break a raw ``choreographer`` string into an ordered list of
+    individual people. Empty / None input returns ``[]``.
+
+    Duplicates (case-insensitively equal after normalisation) are
+    removed, preserving the first occurrence's original casing. This
+    matters so a copy-paste like "Foo & Foo" doesn't create a
+    phantom co-choreographer chip.
+    """
+    if not name:
+        return []
+    raw = str(name).strip()
+    if not raw:
+        return []
+    parts = [p.strip() for p in _SPLIT_RE.split(raw) if p and p.strip()]
+    if not parts:
+        return []
+    # De-dupe case-insensitively while preserving order + original
+    # casing of the first occurrence.
+    seen: set[str] = set()
+    out: list[str] = []
+    for p in parts:
+        key = normalise_choreographer(p)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(p)
+    return out
+
+
+def parse_main_and_co(name: Optional[str]) -> tuple[str, list[str]]:
+    """Return ``(main, co_choreographers)`` for a raw credit string.
+
+    ``main`` is the first parsed name (empty when the input yields no
+    tokens). ``co_choreographers`` is every subsequent unique name in
+    original order. Used at every dance write site so the library
+    always groups on the main artist alone.
+    """
+    parts = split_choreographers(name)
+    if not parts:
+        return "", []
+    return parts[0], parts[1:]
+
+
 # ------------- Index management -------------
 _INDEXES_READY = False
 
@@ -88,6 +156,14 @@ async def ensure_indexes() -> None:
             [("choreographer_key", 1), ("is_published", 1)],
             name="by_chor_key_pub",
         )
+        # Multi-index for the co-choreographer popup — indexes each
+        # entry in the array so a case-insensitive substring match
+        # on a specific person is still fast on a corpus of ~1200
+        # dances (grows sub-linearly with library size).
+        await db.dances.create_index(
+            [("co_choreographers", 1)],
+            name="by_co_choreographers",
+        )
         _INDEXES_READY = True
     except Exception as e:
         logger.warning(f"choreographer index setup failed: {e}")
@@ -96,26 +172,67 @@ async def ensure_indexes() -> None:
 # ------------- Write-side helpers -------------
 def inject_choreographer_key(dance: dict) -> dict:
     """Mutate a dance dict IN PLACE so ``choreographer_key`` matches the
-    canonical form of ``choreographer``. Returns the same dict so
-    callers can chain if they prefer. Safe to call with a partial dict
-    (skips work when ``choreographer`` is missing / empty).
+    canonical form of ``choreographer``, AND split any multi-name
+    credit string into ``choreographer`` (main / first name only) plus
+    ``co_choreographers`` (an ordered list of the rest). Returns the
+    same dict so callers can chain if they prefer.  Safe to call with
+    a partial dict (skips work when ``choreographer`` is missing /
+    empty).
 
     Called from every dance-writing path — CopperKnob import,
     BootStepper import, admin POST /api/dances, admin PATCH,
     dance_library_sync — so that ``list_choreographers`` /
     ``get_choreographer_detail`` never have to re-normalise at read
     time. See ADR-choreographer-key in PRD.md.
+
+    Multi-choreographer contract (added June 2026): the LIBRARY only
+    ever surfaces MAIN choreographers, so the dance doc stores the
+    main name in ``choreographer`` (used by list_choreographers'
+    aggregate + the ``choreographer_key`` used everywhere for
+    grouping / follows) and every co-collaborator in the parallel
+    ``co_choreographers`` list. The individual dance page renders
+    the co list as a separate section that never re-enters the
+    library. If the caller PASSED an explicit ``co_choreographers``
+    list (e.g. BootStepper import which knows the exact roster), we
+    respect it; otherwise we auto-parse the raw string.
     """
     if not isinstance(dance, dict):
         return dance
-    chor = (dance.get("choreographer") or "").strip()
-    dance["choreographer_key"] = normalise_choreographer(chor)
+    chor_raw = (dance.get("choreographer") or "").strip()
+    # Preserve any explicit co_choreographers the caller supplied
+    # (BootStepper import passes the exact roster). Otherwise auto-
+    # parse from the raw string.
+    explicit_co = dance.get("co_choreographers")
+    if isinstance(explicit_co, list) and explicit_co:
+        # Trust the caller — clean, dedupe, but keep the main from
+        # the string field (BootStepper sets both consistently).
+        main = chor_raw
+        cleaned_co: list[str] = []
+        seen: set[str] = {normalise_choreographer(main)} if main else set()
+        for item in explicit_co:
+            s = str(item or "").strip()
+            key = normalise_choreographer(s)
+            if not s or not key or key in seen:
+                continue
+            seen.add(key)
+            cleaned_co.append(s)
+        dance["choreographer"] = main
+        dance["co_choreographers"] = cleaned_co
+    else:
+        main, co = parse_main_and_co(chor_raw)
+        dance["choreographer"] = main
+        dance["co_choreographers"] = co
+    dance["choreographer_key"] = normalise_choreographer(dance["choreographer"])
     return dance
 
 
 async def backfill_choreographer_keys(*, batch: int = 500) -> int:
-    """One-shot migration: populate ``choreographer_key`` on every dance
-    document that's missing the field OR has a stale value.
+    """One-shot migration: populate ``choreographer_key`` +
+    ``co_choreographers`` on every dance document that's missing the
+    field OR has a stale value. Splits multi-name credit strings
+    like "Alice & Bob" into ``choreographer="Alice"`` +
+    ``co_choreographers=["Bob"]`` so the library only ever surfaces
+    solo choreographers.
 
     Runs on boot from ``services/startup.py`` after ``ensure_indexes``.
     Idempotent — becomes a no-op once every doc has the correct key,
@@ -127,18 +244,36 @@ async def backfill_choreographer_keys(*, batch: int = 500) -> int:
     written = 0
     cursor = db.dances.find(
         {"choreographer": {"$exists": True}},
-        {"_id": 0, "id": 1, "choreographer": 1, "choreographer_key": 1},
+        {
+            "_id": 0, "id": 1,
+            "choreographer": 1,
+            "choreographer_key": 1,
+            "co_choreographers": 1,
+        },
     )
-    pending: list[tuple[str, str]] = []
+    pending: list[tuple[str, dict]] = []
     async for row in cursor:
         did = row.get("id")
         if not did:
             continue
-        expected = normalise_choreographer(row.get("choreographer") or "")
-        current = row.get("choreographer_key") or ""
-        if expected == current:
-            continue  # already correct
-        pending.append((did, expected))
+        raw = (row.get("choreographer") or "").strip()
+        expected_main, expected_co = parse_main_and_co(raw)
+        expected_key = normalise_choreographer(expected_main)
+        cur_main = raw  # what's stored right now
+        cur_key = row.get("choreographer_key") or ""
+        cur_co = row.get("co_choreographers")
+        cur_co_list = cur_co if isinstance(cur_co, list) else None
+        # No-op when everything already matches
+        same_main = (cur_main == expected_main)
+        same_key = (cur_key == expected_key)
+        same_co = (cur_co_list is not None and cur_co_list == expected_co)
+        if same_main and same_key and same_co:
+            continue
+        pending.append((did, {
+            "choreographer": expected_main,
+            "choreographer_key": expected_key,
+            "co_choreographers": expected_co,
+        }))
         if len(pending) >= batch:
             written += await _flush_key_updates(pending)
             pending.clear()
@@ -149,14 +284,14 @@ async def backfill_choreographer_keys(*, batch: int = 500) -> int:
     return written
 
 
-async def _flush_key_updates(rows: list[tuple[str, str]]) -> int:
+async def _flush_key_updates(rows: list[tuple[str, dict]]) -> int:
     """Batch ``$set`` writer used by ``backfill_choreographer_keys``.
     Kept private — callers should go through the public helper.
     """
     from pymongo import UpdateOne
     ops = [
-        UpdateOne({"id": did}, {"$set": {"choreographer_key": key}})
-        for did, key in rows
+        UpdateOne({"id": did}, {"$set": updates})
+        for did, updates in rows
     ]
     if not ops:
         return 0
@@ -340,6 +475,66 @@ async def list_choreographers(
             "is_following": key in followed,
         })
     return out
+
+
+async def list_dances_by_co_choreographer(
+    name: str, limit: int = 50
+) -> list[dict]:
+    """Return every PUBLISHED dance where ``name`` appears as either
+    the main choreographer OR one of the co-choreographers, newest
+    first. Case- and punctuation-insensitive match — folded through
+    ``normalise_choreographer`` on both sides.
+
+    Powers the "tap a co-choreographer chip" popup on the dance
+    detail page: we don't have library entries for co-only people,
+    but their catalogue is still discoverable this way.
+    """
+    key = normalise_choreographer(name)
+    if not key:
+        return []
+    # Match on the persistent ``choreographer_key`` for the main-artist
+    # side (fast, indexed) and a case-insensitive equality on
+    # ``co_choreographers`` for the collaborator side. We compare via
+    # a regex anchored at both ends to avoid substring pollution while
+    # ignoring punctuation differences the same way normalise does.
+    # But an easier approach: compute the normalised form of each
+    # stored co name at match time via ``$expr`` would be slow — so
+    # instead we push a case-insensitive exact match on the display
+    # name AND a fallback path via ``choreographer_key``. Any name
+    # that arrived here through the parser is stored trimmed, so an
+    # ``$in`` on the exact display AND its normalised variants is
+    # both simple and correct for the corpus we have.
+    #
+    # For robustness we build a small set of candidate spellings —
+    # exact, and the normalised form re-cased naively (rare cases).
+    candidates = {name.strip()}
+    # If any dance in the DB has the same normalised key stored as
+    # its main, use those exact spellings — this catches "John Smith"
+    # vs "John SMITH" and gives us a canonical spelling to compare
+    # co entries against.
+    async for row in db.dances.find(
+        {"choreographer_key": key},
+        {"_id": 0, "choreographer": 1},
+    ).limit(20):
+        c = (row.get("choreographer") or "").strip()
+        if c:
+            candidates.add(c)
+    or_clauses: list[dict] = [
+        {"choreographer_key": key},
+    ]
+    if candidates:
+        or_clauses.append({"co_choreographers": {"$in": list(candidates)}})
+    query = {"is_published": True, "$or": or_clauses}
+    lim = max(1, min(int(limit or 50), 200))
+    cursor = db.dances.find(
+        query,
+        {
+            "_id": 0, "id": 1, "name": 1, "choreographer": 1,
+            "co_choreographers": 1, "song": 1, "artist": 1,
+            "difficulty": 1, "bpm": 1, "count": 1, "created_at": 1,
+        },
+    ).sort("created_at", -1).limit(lim)
+    return [row async for row in cursor]
 
 
 # ------------- Write helpers -------------

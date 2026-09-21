@@ -297,6 +297,13 @@ async def create_dance_from_bootstepper(
         "name": name,
         "choreographer": chor,
         "choreographer_country": country,
+        # BootStepper is the ONE upstream that exposes the exact
+        # roster of multi-choreographer credits via
+        # ``danceChoreographers[]``. Pass the pre-parsed list through
+        # so inject_choreographer_key trusts it instead of re-
+        # splitting the display name (which would round-trip fine
+        # but is wasted work).
+        "co_choreographers": list(bs_item.get("co_choreographers") or []),
         "song": song,
         "artist": artist,
         "difficulty": body.difficulty

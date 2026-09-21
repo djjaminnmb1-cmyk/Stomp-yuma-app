@@ -1446,3 +1446,63 @@ category. The root causes were two subtle bugs:
   Dances / Instructor / Profile).
 - Ready for real-device verification post-publish.
 
+
+## Solo-Choreographer Library + Co-Choreographers (June 2026)
+
+### Motivation
+Dancers were tapping choreographer names in the library and landing on
+composite rows like "Shane McKeever; Rachael McEnaney-White" — one
+library entry per credit STRING rather than per PERSON. Not the way
+choreographer directories normally work, and it fragmented the follow
+graph too (following "Shane" wouldn't catch dances credited to
+"Shane; Rachael" and vice-versa).
+
+### Design
+- The library only surfaces **main / solo choreographers**. The first
+  parsed name in the credit string is the main; everyone else is a
+  **co-choreographer** and never gets a library row.
+- The dance detail page renders a new **Co-Choreographers** section
+  (chips) below the main artist. Tapping a chip opens a small popup
+  listing every LOCAL dance where that person appears — as main OR
+  co — so their catalogue stays discoverable without polluting the
+  library.
+
+### Parser (`services/choreographer_follows.split_choreographers`)
+Case-insensitive splitters, single-pass:
+`&`, `+`, `/`, `,`, `;`, ` and `, ` feat.`, ` featuring `, ` ft.`, ` ft `.
+Never splits on hyphens, dots, or parentheses (so `Rachael McEnaney-White`,
+`A.T. Kinson`, `Adrian Lefebour (AUS)` stay as single names).
+Dedupes case-insensitively while preserving first-occurrence casing.
+
+### Write path
+Every dance write site (POST /api/dances, PUT /api/dances/{id},
+BootStepper import, CopperKnob import, dance_library_sync, seed loader)
+routes through `inject_choreographer_key(dance)` which:
+1. Parses the raw ``choreographer`` string into (main, [co...])
+2. If the caller passed an explicit ``co_choreographers`` list (only
+   BootStepper does; its API exposes ``danceChoreographers[]``
+   structurally), trusts that verbatim.
+3. Writes back: ``choreographer=main``, ``co_choreographers=[...]``,
+   ``choreographer_key=normalise(main)``.
+
+Boot-time backfill (`backfill_choreographer_keys`) idempotently
+re-runs on every startup so legacy rows converge.
+
+### Endpoints
+- ``GET /api/co-choreographers/{name:path}/dances?limit=50``
+  — auth-required, returns every dance where the person appears as
+  main OR co, newest first. Powers the popup.
+- ``GET /api/dances?q=...`` — now also matches on the
+  ``co_choreographers`` array so a search for a co-only name still
+  finds the dance.
+- Existing ``GET /api/choreographers?q=...`` unchanged; groups on
+  ``choreographer_key`` which is now main-only, so co-only people
+  are naturally excluded from the library.
+
+### Frontend
+- New component `src/components/CoChoreographersSection.tsx` — chips
+  + modal popup. Uses ``api.listCoChoreographerDances``. Localised
+  keys ``dance.co_choreographers.*`` across all 8 supported locales.
+- No changes to the existing choreographers/index or detail pages —
+  they keep working exactly as before because the grouping key is
+  unchanged.

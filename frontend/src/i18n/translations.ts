@@ -113,6 +113,16 @@ export const translations: Record<Locale, Record<string, string>> = {
     "tabs.instructor": "Instructor",
     "tabs.profile": "Profile",
 
+    // ---------- Dance detail: co-choreographers ----------
+    "dance.co_choreographers.title": "Co-Choreographers",
+    "dance.co_choreographers.hint": "Tap a name to see their other dances",
+    "dance.co_choreographers.popup_title": "Dances by {name}",
+    "dance.co_choreographers.popup_subtitle":
+      "Every dance where they appear as the main artist or a collaborator.",
+    "dance.co_choreographers.popup_empty": "No other dances yet.",
+    "dance.co_choreographers.popup_close": "Close",
+    "dance.co_choreographers.loading": "Loading…",
+
     // ---------- Auth screen ----------
     "auth.tab_signin": "Sign In",
     "auth.tab_signup": "Create Account",
@@ -748,6 +758,17 @@ export const translations: Record<Locale, Record<string, string>> = {
     "tabs.instructor": "Instructor",
     "tabs.profile": "Perfil",
 
+    // ---------- Detalle de baile: co-coreógrafos ----------
+    "dance.co_choreographers.title": "Co-coreógrafos",
+    "dance.co_choreographers.hint":
+      "Toca un nombre para ver sus otros bailes",
+    "dance.co_choreographers.popup_title": "Bailes de {name}",
+    "dance.co_choreographers.popup_subtitle":
+      "Todos los bailes donde participa como artista principal o colaborador.",
+    "dance.co_choreographers.popup_empty": "Aún no hay más bailes.",
+    "dance.co_choreographers.popup_close": "Cerrar",
+    "dance.co_choreographers.loading": "Cargando…",
+
     // ---------- Auth ----------
     "auth.tab_signin": "Iniciar sesión",
     "auth.tab_signup": "Crear cuenta",
@@ -1281,6 +1302,17 @@ export const translations: Record<Locale, Record<string, string>> = {
     "tabs.my_dances": "Mes danses",
     "tabs.instructor": "Instructeur",
     "tabs.profile": "Profil",
+
+    // ---------- Détail de la danse : co-chorégraphes ----------
+    "dance.co_choreographers.title": "Co-chorégraphes",
+    "dance.co_choreographers.hint":
+      "Appuyez sur un nom pour voir ses autres danses",
+    "dance.co_choreographers.popup_title": "Danses de {name}",
+    "dance.co_choreographers.popup_subtitle":
+      "Toutes les danses où cette personne apparaît comme artiste principal ou collaborateur.",
+    "dance.co_choreographers.popup_empty": "Aucune autre danse pour l’instant.",
+    "dance.co_choreographers.popup_close": "Fermer",
+    "dance.co_choreographers.loading": "Chargement…",
 
     // ---------- Auth ----------
     "auth.tab_signin": "Se connecter",
@@ -1840,6 +1872,17 @@ export const translations: Record<Locale, Record<string, string>> = {
     "tabs.instructor": "Trainer",
     "tabs.profile": "Profil",
 
+    // ---------- Tanzdetail: Co-Choreograf:innen ----------
+    "dance.co_choreographers.title": "Co-Choreograf:innen",
+    "dance.co_choreographers.hint":
+      "Tippe auf einen Namen, um weitere Tänze zu sehen",
+    "dance.co_choreographers.popup_title": "Tänze von {name}",
+    "dance.co_choreographers.popup_subtitle":
+      "Alle Tänze, in denen diese Person als Hauptautor:in oder Mitwirkende:r vorkommt.",
+    "dance.co_choreographers.popup_empty": "Noch keine weiteren Tänze.",
+    "dance.co_choreographers.popup_close": "Schließen",
+    "dance.co_choreographers.loading": "Wird geladen…",
+
     // ---------- Auth ----------
     "auth.tab_signin": "Anmelden",
     "auth.tab_signup": "Konto erstellen",
@@ -2393,6 +2436,17 @@ export const translations: Record<Locale, Record<string, string>> = {
     "tabs.my_dances": "Mijn dansen",
     "tabs.instructor": "Instructeur",
     "tabs.profile": "Profiel",
+
+    // ---------- Dansdetail: mede-choreografen ----------
+    "dance.co_choreographers.title": "Mede-choreografen",
+    "dance.co_choreographers.hint":
+      "Tik op een naam om hun andere dansen te zien",
+    "dance.co_choreographers.popup_title": "Dansen van {name}",
+    "dance.co_choreographers.popup_subtitle":
+      "Alle dansen waarin deze persoon meedoet als hoofdartiest of medewerker.",
+    "dance.co_choreographers.popup_empty": "Nog geen andere dansen.",
+    "dance.co_choreographers.popup_close": "Sluiten",
+    "dance.co_choreographers.loading": "Laden…",
 
     // ---------- Auth ----------
     "auth.tab_signin": "Inloggen",
@@ -2958,6 +3012,16 @@ export const translations: Record<Locale, Record<string, string>> = {
     "tabs.instructor": "강사",
     "tabs.profile": "프로필",
 
+    // ---------- 댄스 상세: 공동 안무가 ----------
+    "dance.co_choreographers.title": "공동 안무가",
+    "dance.co_choreographers.hint": "이름을 눌러 다른 댄스를 확인하세요",
+    "dance.co_choreographers.popup_title": "{name}의 댄스",
+    "dance.co_choreographers.popup_subtitle":
+      "이 사람이 메인 안무가나 협업자로 참여한 모든 댄스입니다.",
+    "dance.co_choreographers.popup_empty": "다른 댄스가 아직 없어요.",
+    "dance.co_choreographers.popup_close": "닫기",
+    "dance.co_choreographers.loading": "불러오는 중…",
+
     // ---------- Auth ----------
     "auth.tab_signin": "로그인",
     "auth.tab_signup": "계정 만들기",
@@ -3496,6 +3560,16 @@ export const translations: Record<Locale, Record<string, string>> = {
     "tabs.instructor": "教练",
     "tabs.profile": "我的",
 
+    // ---------- 舞蹈详情：合作编舞 ----------
+    "dance.co_choreographers.title": "合作编舞",
+    "dance.co_choreographers.hint": "轻触姓名查看他们的其他舞蹈",
+    "dance.co_choreographers.popup_title": "{name} 的舞蹈",
+    "dance.co_choreographers.popup_subtitle":
+      "此人作为主编舞或合作者参与的所有舞蹈。",
+    "dance.co_choreographers.popup_empty": "暂时没有更多舞蹈。",
+    "dance.co_choreographers.popup_close": "关闭",
+    "dance.co_choreographers.loading": "加载中…",
+
     // ---------- Auth ----------
     "auth.tab_signin": "登录",
     "auth.tab_signup": "创建账号",
@@ -4020,6 +4094,16 @@ export const translations: Record<Locale, Record<string, string>> = {
     "tabs.my_dances": "我的舞蹈",
     "tabs.instructor": "教練",
     "tabs.profile": "我的",
+
+    // ---------- 舞蹈詳情：合作編舞 ----------
+    "dance.co_choreographers.title": "合作編舞",
+    "dance.co_choreographers.hint": "輕觸姓名查看他們的其他舞蹈",
+    "dance.co_choreographers.popup_title": "{name} 的舞蹈",
+    "dance.co_choreographers.popup_subtitle":
+      "此人作為主編舞或合作者參與的所有舞蹈。",
+    "dance.co_choreographers.popup_empty": "目前沒有其他舞蹈。",
+    "dance.co_choreographers.popup_close": "關閉",
+    "dance.co_choreographers.loading": "載入中…",
 
     // ---------- Auth ----------
     "auth.tab_signin": "登入",

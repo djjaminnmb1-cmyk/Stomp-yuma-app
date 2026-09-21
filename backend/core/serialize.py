@@ -79,6 +79,12 @@ def dance_to_out(d: dict, viewer_user_id: Optional[str] = None) -> dict:
         "name": d.get("name", ""),
         "choreographer": d.get("choreographer", ""),
         "choreographer_country": d.get("choreographer_country", ""),
+        # Co-choreographers surface only on the individual dance page
+        # so tapping a name in the library never lands on someone who
+        # doesn't have their own catalogue. Empty list when the dance
+        # was choreographed solo — the field is ALWAYS present so the
+        # client can rely on the shape without null-guards.
+        "co_choreographers": list(d.get("co_choreographers") or []),
         "song": d.get("song", ""),
         "artist": d.get("artist", ""),
         "difficulty": d.get("difficulty", "Beginner"),

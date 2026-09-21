@@ -130,12 +130,50 @@ def _normalise(item: dict) -> dict:
     shape. Field names deliberately mirror CopperKnob's normaliser so
     downstream code (duplicate detection, import review, compare
     sheets) can treat either provider interchangeably.
+
+    Multi-choreographer credits (BootStepper is the ONE upstream that
+    exposes them structurally via ``danceChoreographers[]``) are
+    preserved: first entry → ``choreographer`` (main / library entry),
+    rest → ``co_choreographers`` (dance-page-only). This is the only
+    place we can capture the exact roster with high confidence — the
+    downstream write path (services/choreographer_follows.inject_
+    choreographer_key) will TRUST this pre-parsed list rather than
+    re-splitting the display name.
     """
     if not isinstance(item, dict):
         return {}
 
-    dc = _first(item.get("danceChoreographers")) or {}
-    chor = (dc.get("choreographer") or {}) if isinstance(dc, dict) else {}
+    dc_list = item.get("danceChoreographers") or []
+    if not isinstance(dc_list, list):
+        dc_list = []
+    # First entry is the main / library credit; every subsequent
+    # entry becomes a co-choreographer that only shows on the dance
+    # page.  Dedupe case-insensitively by name to guard against
+    # BootStepper occasionally listing the same person twice under
+    # different roles.
+    all_names: list[str] = []
+    seen: set[str] = set()
+    country = ""
+    for i, dc in enumerate(dc_list):
+        if not isinstance(dc, dict):
+            continue
+        chor = dc.get("choreographer") or {}
+        if not isinstance(chor, dict):
+            continue
+        nm = (chor.get("name") or "").strip()
+        if not nm:
+            continue
+        key = nm.strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        all_names.append(nm)
+        # First non-empty country wins.
+        if not country:
+            country = (chor.get("country") or "").strip()
+    main_chor = all_names[0] if all_names else ""
+    co_chor = all_names[1:] if len(all_names) > 1 else []
+
     ds = _first(item.get("danceSongs")) or {}
     song_obj = (ds.get("song") or {}) if isinstance(ds, dict) else {}
 
@@ -152,8 +190,12 @@ def _normalise(item: dict) -> dict:
         "id": (item.get("id") or "").strip(),
         "ref": (item.get("id") or "").strip(),
         "title": (item.get("title") or "").strip(),
-        "choreographer": (chor.get("name") or "").strip(),
-        "choreographer_country": (chor.get("country") or "").strip(),
+        "choreographer": main_chor,
+        # Co-choreographers preserved from BootStepper's authoritative
+        # roster. Importers pass this through to the dance write path
+        # verbatim so the local record matches upstream exactly.
+        "co_choreographers": co_chor,
+        "choreographer_country": country,
         "count": str(item.get("counts") or "").strip(),
         "wall": str(item.get("walls") or "").strip(),
         "level": (item.get("difficultyLevel") or "").strip(),

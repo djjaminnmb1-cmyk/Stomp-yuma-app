@@ -440,6 +440,13 @@ export type Dance = {
   name: string;
   choreographer: string;
   choreographer_country?: string;
+  /** Co-choreographers preserved from multi-name credit strings
+   *  (e.g. "Alice & Bob" → main=Alice, co=[Bob]) or from
+   *  BootStepper's structured ``danceChoreographers[]`` list. Only
+   *  the MAIN choreographer gets a library entry — co members
+   *  surface exclusively on the individual dance page. Always
+   *  present (empty list for solo dances). */
+  co_choreographers?: string[];
   song: string;
   artist: string;
   difficulty: string;
@@ -620,6 +627,28 @@ export type ChoreographerDetail = {
     id: string;
     name: string;
     choreographer: string;
+    song: string;
+    artist: string;
+    difficulty: string;
+    bpm?: number | null;
+    count?: string;
+    created_at: string;
+  }>;
+};
+
+/** Response for the co-choreographer discovery popup. Co-only
+ *  people never get a full library page (that would defeat the
+ *  "solo choreographers only" grouping) — the dance page fires
+ *  this endpoint to power a small popup listing every LOCAL dance
+ *  where they appear as either the main artist or a collaborator. */
+export type CoChoreographerDances = {
+  choreographer: string;
+  dance_count: number;
+  dances: Array<{
+    id: string;
+    name: string;
+    choreographer: string;
+    co_choreographers?: string[];
     song: string;
     artist: string;
     difficulty: string;
@@ -1952,6 +1981,17 @@ export const api = {
     }>(
       `/choreographers/${encodeURIComponent(name)}/follow`,
       { method: "DELETE" },
+      token
+    ),
+  /** Popup content for a co-choreographer chip on the dance detail
+   *  page. Returns every LOCAL dance where the given person appears
+   *  as either the main artist or a collaborator, newest first.
+   *  Never renders their own library entry — that's reserved for
+   *  main choreographers only. */
+  listCoChoreographerDances: (name: string, token: string, limit = 50) =>
+    req<CoChoreographerDances>(
+      `/co-choreographers/${encodeURIComponent(name)}/dances?limit=${limit}`,
+      {},
       token
     ),
 

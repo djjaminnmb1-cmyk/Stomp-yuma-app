@@ -30,6 +30,7 @@ from services.choreographer_follows import (
     follow_counts,
     is_following,
     list_choreographers,
+    list_dances_by_co_choreographer,
     my_follows,
     normalise_choreographer,
     unfollow,
@@ -67,6 +68,29 @@ async def get_my_choreographer_follows(
     rows = await my_follows(user["user_id"])
     counts = await follow_counts(user["user_id"])
     return {"choreographers": rows, "counts": counts}
+
+
+# ---------------- Co-choreographer discovery ----------------
+# Co-choreographers never get their own library entry (that would
+# defeat the "solo choreographers only" grouping). Instead the dance
+# detail page renders them as chips; tapping a chip fires this
+# endpoint to power a small popup listing every LOCAL dance they
+# appear on — as either the main artist OR one of the collaborators.
+@router.get("/co-choreographers/{name:path}/dances")
+async def get_co_choreographer_dances(
+    name: str,
+    limit: int = Query(default=50, ge=1, le=200),
+    user: dict = Depends(get_current_user),
+):
+    display = unquote(name or "").strip()
+    if not display:
+        raise HTTPException(400, "Choreographer name required.")
+    dances = await list_dances_by_co_choreographer(display, limit=limit)
+    return {
+        "choreographer": display,
+        "dance_count": len(dances),
+        "dances": dances,
+    }
 
 
 # ---------------- Detail ----------------

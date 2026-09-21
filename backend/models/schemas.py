@@ -82,6 +82,14 @@ class DanceIn(BaseModel):
     name: str
     choreographer: str
     choreographer_country: Optional[str] = ""
+    # Co-choreographers surfaced only on the individual dance page.
+    # The library groups by the MAIN ``choreographer`` field alone
+    # (see ``services/choreographer_follows.inject_choreographer_key``)
+    # so multi-name credit strings like "Alice & Bob" auto-split
+    # into ``choreographer="Alice"`` + ``co_choreographers=["Bob"]``
+    # at every write site. Callers that already know the exact
+    # roster (BootStepper import) may pass this list explicitly.
+    co_choreographers: Optional[List[str]] = []
     song: str
     artist: Optional[str] = ""
     difficulty: str  # Beginner / Improver / Intermediate / Advanced
@@ -112,6 +120,10 @@ class DanceIn(BaseModel):
 class DanceImportRow(BaseModel):
     name: str
     choreographer: Optional[str] = ""
+    # Optional pre-parsed co-choreographers when the caller already
+    # knows the roster (BootStepper import). When absent, the write
+    # path auto-splits the ``choreographer`` string itself.
+    co_choreographers: Optional[List[str]] = []
     song: Optional[str] = ""
     artist: Optional[str] = ""
     difficulty: Optional[str] = "Beginner"

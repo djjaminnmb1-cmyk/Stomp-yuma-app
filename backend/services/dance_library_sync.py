@@ -481,13 +481,19 @@ async def _sync_dance_source(
                 set_ops[row["field"]] = row["new"]
             set_ops["updated_at"] = now_iso()
         # If the sync updated the ``choreographer`` field, re-derive the
-        # persistent key so follow lookups stay accurate. Only fires
+        # persistent key AND re-split the multi-choreographer credit
+        # string so ``co_choreographers`` stays in sync. Only fires
         # when the field actually changed — no wasted writes.
         if "choreographer" in set_ops:
-            from services.choreographer_follows import normalise_choreographer
-            set_ops["choreographer_key"] = normalise_choreographer(
-                set_ops.get("choreographer") or ""
+            from services.choreographer_follows import (
+                normalise_choreographer,
+                parse_main_and_co,
             )
+            raw = set_ops.get("choreographer") or ""
+            main, co = parse_main_and_co(raw)
+            set_ops["choreographer"] = main
+            set_ops["co_choreographers"] = co
+            set_ops["choreographer_key"] = normalise_choreographer(main)
         await db.dances.update_one({"id": dance["id"]}, {"$set": set_ops})
         # Persist audit log — records what was applied AND what was
         # deferred / flagged so admins have a full history of every
