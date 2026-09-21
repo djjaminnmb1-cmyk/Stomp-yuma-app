@@ -28,6 +28,7 @@ import {
   type MatchScope,
 } from "@/src/lib/dance-filter";
 import { useTranslation } from "@/src/i18n";
+import { DuoBadge } from "@/src/components/DuoBadge";
 
 const DIFFICULTY_KEYS: { code: string; key: string }[] = [
   { code: "All", key: "library.diff_all" },
@@ -452,7 +453,17 @@ export default function Library() {
                   {item.song}
                   {item.artist ? ` — ${item.artist}` : ""}
                 </Text>
-                <Text style={styles.cardChor}>{t("library.by", { name: item.choreographer || t("library.unknown") })}</Text>
+                <View style={styles.chorRow}>
+                  <Text style={styles.cardChor} numberOfLines={1}>
+                    {t("library.by", {
+                      name: item.choreographer || t("library.unknown"),
+                    })}
+                  </Text>
+                  <DuoBadge
+                    coCount={(item.co_choreographers || []).length}
+                    compact
+                  />
+                </View>
                 <View style={styles.cardRow}>
                   <View
                     style={[
@@ -699,7 +710,14 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontFamily: "serif", fontSize: 18, fontWeight: "700", color: colors.onSurface },
   cardMeta: { fontSize: 13, color: colors.onSurfaceSecondary, marginTop: 2 },
-  cardChor: { fontSize: 12, color: colors.muted, marginTop: 2 },
+  cardChor: { flex: 1, fontSize: 12, color: colors.muted },
+  chorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 2,
+    flexWrap: "wrap",
+  },
   cardRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 10 },
   diffBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
   diffBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },

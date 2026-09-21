@@ -128,6 +128,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "library.match_main": "Main artist",
     "library.match_co": "Co-choreographer",
 
+    // ---------- Library card: multi-choreographer summary pill ----------
+    "dance.duo.duo": "Duo",
+    "dance.duo.trio": "Trio",
+    "dance.duo.group": "Group · {count}",
+
     // ---------- Auth screen ----------
     "auth.tab_signin": "Sign In",
     "auth.tab_signup": "Create Account",
@@ -779,6 +784,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "library.match_main": "Coreógrafo principal",
     "library.match_co": "Co-coreógrafo",
 
+    // ---------- Tarjeta biblioteca: resumen multi-coreógrafo ----------
+    "dance.duo.duo": "Dúo",
+    "dance.duo.trio": "Trío",
+    "dance.duo.group": "Grupo · {count}",
+
     // ---------- Auth ----------
     "auth.tab_signin": "Iniciar sesión",
     "auth.tab_signup": "Crear cuenta",
@@ -1328,6 +1338,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "library.match_all": "Tout",
     "library.match_main": "Chorégraphe principal",
     "library.match_co": "Co-chorégraphe",
+
+    // ---------- Carte bibliothèque : pastille multi-chorégraphe ----------
+    "dance.duo.duo": "Duo",
+    "dance.duo.trio": "Trio",
+    "dance.duo.group": "Groupe · {count}",
 
     // ---------- Auth ----------
     "auth.tab_signin": "Se connecter",
@@ -1903,6 +1918,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "library.match_main": "Hauptautor:in",
     "library.match_co": "Co-Choreograf:in",
 
+    // ---------- Bibliothek: Multi-Choreograf-Pill ----------
+    "dance.duo.duo": "Duo",
+    "dance.duo.trio": "Trio",
+    "dance.duo.group": "Gruppe · {count}",
+
     // ---------- Auth ----------
     "auth.tab_signin": "Anmelden",
     "auth.tab_signup": "Konto erstellen",
@@ -2472,6 +2492,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "library.match_all": "Alles",
     "library.match_main": "Hoofdartiest",
     "library.match_co": "Mede-choreograaf",
+
+    // ---------- Bibliotheek: multi-choreograaf-pill ----------
+    "dance.duo.duo": "Duo",
+    "dance.duo.trio": "Trio",
+    "dance.duo.group": "Groep · {count}",
 
     // ---------- Auth ----------
     "auth.tab_signin": "Inloggen",
@@ -3052,6 +3077,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "library.match_main": "메인 안무가",
     "library.match_co": "공동 안무가",
 
+    // ---------- 라이브러리 카드: 공동 안무가 요약 ----------
+    "dance.duo.duo": "듀오",
+    "dance.duo.trio": "트리오",
+    "dance.duo.group": "그룹 · {count}",
+
     // ---------- Auth ----------
     "auth.tab_signin": "로그인",
     "auth.tab_signup": "계정 만들기",
@@ -3605,6 +3635,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "library.match_main": "主编舞",
     "library.match_co": "合作编舞",
 
+    // ---------- 舞蹈库卡片：多编舞徽标 ----------
+    "dance.duo.duo": "双人",
+    "dance.duo.trio": "三人",
+    "dance.duo.group": "群舞 · {count}",
+
     // ---------- Auth ----------
     "auth.tab_signin": "登录",
     "auth.tab_signup": "创建账号",
@@ -4144,6 +4179,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "library.match_all": "全部",
     "library.match_main": "主編舞",
     "library.match_co": "合作編舞",
+
+    // ---------- 舞蹈庫卡片：多編舞標籤 ----------
+    "dance.duo.duo": "雙人",
+    "dance.duo.trio": "三人",
+    "dance.duo.group": "群舞 · {count}",
 
     // ---------- Auth ----------
     "auth.tab_signin": "登入",
