@@ -123,6 +123,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "dance.co_choreographers.popup_close": "Close",
     "dance.co_choreographers.loading": "Loading…",
 
+    // ---------- Library: match-scope segmented control ----------
+    "library.match_all": "All",
+    "library.match_main": "Main artist",
+    "library.match_co": "Co-choreographer",
+
     // ---------- Auth screen ----------
     "auth.tab_signin": "Sign In",
     "auth.tab_signup": "Create Account",
@@ -769,6 +774,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "dance.co_choreographers.popup_close": "Cerrar",
     "dance.co_choreographers.loading": "Cargando…",
 
+    // ---------- Biblioteca: control segmentado del alcance de búsqueda ----------
+    "library.match_all": "Todo",
+    "library.match_main": "Coreógrafo principal",
+    "library.match_co": "Co-coreógrafo",
+
     // ---------- Auth ----------
     "auth.tab_signin": "Iniciar sesión",
     "auth.tab_signup": "Crear cuenta",
@@ -1313,6 +1323,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "dance.co_choreographers.popup_empty": "Aucune autre danse pour l’instant.",
     "dance.co_choreographers.popup_close": "Fermer",
     "dance.co_choreographers.loading": "Chargement…",
+
+    // ---------- Bibliothèque : contrôle segmenté du périmètre de recherche ----------
+    "library.match_all": "Tout",
+    "library.match_main": "Chorégraphe principal",
+    "library.match_co": "Co-chorégraphe",
 
     // ---------- Auth ----------
     "auth.tab_signin": "Se connecter",
@@ -1883,6 +1898,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "dance.co_choreographers.popup_close": "Schließen",
     "dance.co_choreographers.loading": "Wird geladen…",
 
+    // ---------- Bibliothek: Suchbereich-Umschalter ----------
+    "library.match_all": "Alle",
+    "library.match_main": "Hauptautor:in",
+    "library.match_co": "Co-Choreograf:in",
+
     // ---------- Auth ----------
     "auth.tab_signin": "Anmelden",
     "auth.tab_signup": "Konto erstellen",
@@ -2447,6 +2467,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "dance.co_choreographers.popup_empty": "Nog geen andere dansen.",
     "dance.co_choreographers.popup_close": "Sluiten",
     "dance.co_choreographers.loading": "Laden…",
+
+    // ---------- Bibliotheek: zoekbereik-segment ----------
+    "library.match_all": "Alles",
+    "library.match_main": "Hoofdartiest",
+    "library.match_co": "Mede-choreograaf",
 
     // ---------- Auth ----------
     "auth.tab_signin": "Inloggen",
@@ -3022,6 +3047,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "dance.co_choreographers.popup_close": "닫기",
     "dance.co_choreographers.loading": "불러오는 중…",
 
+    // ---------- 라이브러리: 검색 범위 세그먼트 ----------
+    "library.match_all": "전체",
+    "library.match_main": "메인 안무가",
+    "library.match_co": "공동 안무가",
+
     // ---------- Auth ----------
     "auth.tab_signin": "로그인",
     "auth.tab_signup": "계정 만들기",
@@ -3570,6 +3600,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "dance.co_choreographers.popup_close": "关闭",
     "dance.co_choreographers.loading": "加载中…",
 
+    // ---------- 舞蹈库：搜索范围切换 ----------
+    "library.match_all": "全部",
+    "library.match_main": "主编舞",
+    "library.match_co": "合作编舞",
+
     // ---------- Auth ----------
     "auth.tab_signin": "登录",
     "auth.tab_signup": "创建账号",
@@ -4104,6 +4139,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     "dance.co_choreographers.popup_empty": "目前沒有其他舞蹈。",
     "dance.co_choreographers.popup_close": "關閉",
     "dance.co_choreographers.loading": "載入中…",
+
+    // ---------- 舞蹈庫：搜尋範圍切換 ----------
+    "library.match_all": "全部",
+    "library.match_main": "主編舞",
+    "library.match_co": "合作編舞",
 
     // ---------- Auth ----------
     "auth.tab_signin": "登入",

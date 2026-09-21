@@ -14,6 +14,8 @@ const DIFFICULTY_ORDER: Record<string, number> = {
  * Client-side filter + sort for the dance library.
  * Kept in one place so the library screen stays presentational.
  */
+export type MatchScope = "all" | "main" | "co";
+
 export function filterAndSortDances(
   all: Dance[],
   {
@@ -22,12 +24,31 @@ export function filterAndSortDances(
     bpmBand,
     chor,
     sortBy,
+    matchScope = "all",
   }: {
     q: string;
     diff: string;
     bpmBand: BpmBand;
     chor: string | null;
     sortBy: SortKey;
+    /**
+     * Where the ``q`` string is matched.
+     * - ``"all"`` (default): name, song, artist, main choreographer AND
+     *   every entry in ``co_choreographers``. Mirrors the server-side
+     *   ``GET /api/dances?q=`` behaviour so a query never falls through
+     *   the cracks when the user isn't sure whether their target was
+     *   credited as main or a collaborator.
+     * - ``"main"``: everything EXCEPT the ``co_choreographers`` array.
+     *   Use when the caller wants to narrow to dances where the query
+     *   matches the main artist (or the dance title / song / artist).
+     * - ``"co"``: matches ONLY inside ``co_choreographers``. Dances
+     *   where the query matches the MAIN artist are hidden. Powers the
+     *   "Co-choreographer" segmented filter on the library screen so
+     *   users can find dances a specific person collaborated on
+     *   without also seeing everything they solo-choreographed.
+     * Ignored when ``q`` is empty.
+     */
+    matchScope?: MatchScope;
   }
 ): Dance[] {
   const query = q.trim().toLowerCase();
@@ -50,14 +71,28 @@ export function filterAndSortDances(
       if (!d.bpm) return false;
       if (!bpmMatcher(d.bpm)) return false;
     }
-    // Text search across name / song / artist / choreographer.
+    // Text search — haystack varies by ``matchScope``.
     if (query) {
-      const hay = [
-        d.name,
-        d.song,
-        d.artist,
-        d.choreographer,
-      ]
+      const coList = Array.isArray(d.co_choreographers)
+        ? d.co_choreographers
+        : [];
+      let parts: (string | undefined | null)[];
+      switch (matchScope) {
+        case "main":
+          parts = [d.name, d.song, d.artist, d.choreographer];
+          break;
+        case "co":
+          // Co-only: must match on at least one co-choreographer entry.
+          // Anything else (name / song / artist / main) doesn't count so
+          // the user only sees dances where the person collaborated.
+          parts = coList;
+          break;
+        case "all":
+        default:
+          parts = [d.name, d.song, d.artist, d.choreographer, ...coList];
+          break;
+      }
+      const hay = parts
         .map((v) => (v || "").toLowerCase())
         .join(" \u241F ");
       if (!hay.includes(query)) return false;

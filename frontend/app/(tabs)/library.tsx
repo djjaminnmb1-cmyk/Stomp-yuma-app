@@ -25,6 +25,7 @@ import DanceFilterModal, {
 import {
   filterAndSortDances,
   countActiveFilters,
+  type MatchScope,
 } from "@/src/lib/dance-filter";
 import { useTranslation } from "@/src/i18n";
 
@@ -38,6 +39,12 @@ const DIFFICULTY_KEYS: { code: string; key: string }[] = [
   { code: "Advanced", key: "library.diff_advanced" },
 ];
 
+const MATCH_SCOPES: { code: MatchScope; key: string }[] = [
+  { code: "all", key: "library.match_all" },
+  { code: "main", key: "library.match_main" },
+  { code: "co", key: "library.match_co" },
+];
+
 export default function Library() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -48,6 +55,10 @@ export default function Library() {
   const [chor, setChor] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("name-asc");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Segmented "match scope" — where the search query is applied.
+  // Appears only when ``q`` is non-empty; auto-resets to "all" when the
+  // query clears. See ``MatchScope`` docstring in ``dance-filter.ts``.
+  const [matchScope, setMatchScope] = useState<MatchScope>("all");
 
   // ---------- Data ----------
   const [all, setAll] = useState<Dance[]>([]);
@@ -69,6 +80,15 @@ export default function Library() {
     load();
   }, [load]);
 
+  // Auto-reset the segmented match-scope when the search box is cleared —
+  // the filter is meaningless without a query so users shouldn't have
+  // to hunt for it to reset. Fires on q → "" transitions only.
+  useEffect(() => {
+    if (q.trim().length === 0 && matchScope !== "all") {
+      setMatchScope("all");
+    }
+  }, [q, matchScope]);
+
   // Sorted list of choreographers by frequency for the filter modal.
   const choreographers = useMemo<[string, number][]>(() => {
     const map = new Map<string, number>();
@@ -80,8 +100,16 @@ export default function Library() {
   }, [all]);
 
   const items = useMemo(
-    () => filterAndSortDances(all, { q, diff, bpmBand, chor, sortBy }),
-    [all, q, diff, bpmBand, chor, sortBy]
+    () =>
+      filterAndSortDances(all, {
+        q,
+        diff,
+        bpmBand,
+        chor,
+        sortBy,
+        matchScope,
+      }),
+    [all, q, diff, bpmBand, chor, sortBy, matchScope]
   );
 
   const activeSecondaryCount = countActiveFilters({ bpmBand, chor, sortBy });
@@ -96,6 +124,7 @@ export default function Library() {
     setBpmBand("Any");
     setChor(null);
     setSortBy("name-asc");
+    setMatchScope("all");
   };
 
   const anyFilter = q.length > 0 || diff !== "All" || activeSecondaryCount > 0;
@@ -156,6 +185,46 @@ export default function Library() {
             ) : null}
           </Pressable>
         </View>
+
+        {/* Match-scope segmented control — appears only when the user
+            has typed a query. Lets them narrow the string match to
+            just the main artist or just the co-choreographer list
+            without touching the "Filters" modal. Defaults to "All"
+            and auto-resets when the query clears (see useEffect). */}
+        {q.trim().length > 0 ? (
+          <View style={styles.matchScopeRow} testID="match-scope">
+            {MATCH_SCOPES.map((m, idx) => {
+              const active = matchScope === m.code;
+              return (
+                <Pressable
+                  key={m.code}
+                  testID={`match-scope-${m.code}`}
+                  onPress={() => setMatchScope(m.code)}
+                  style={[
+                    styles.matchScopeSeg,
+                    idx === 0 && styles.matchScopeSegFirst,
+                    idx === MATCH_SCOPES.length - 1 &&
+                      styles.matchScopeSegLast,
+                    active && styles.matchScopeSegActive,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={t(m.key)}
+                >
+                  <Text
+                    style={[
+                      styles.matchScopeText,
+                      active && styles.matchScopeTextActive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {t(m.key)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
 
         {/* Inline difficulty chips (primary filter) */}
         <ScrollView
@@ -547,6 +616,39 @@ const styles = StyleSheet.create({
     borderColor: colors.surface,
   },
   filterBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+
+  // Match-scope segmented control (only rendered when a query is typed)
+  matchScopeRow: {
+    marginTop: spacing.sm,
+    flexDirection: "row",
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 2,
+  },
+  matchScopeSeg: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  matchScopeSegFirst: {},
+  matchScopeSegLast: {},
+  matchScopeSegActive: {
+    backgroundColor: colors.brandPrimary,
+  },
+  matchScopeText: {
+    color: colors.onSurface,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  matchScopeTextActive: {
+    color: colors.onBrandPrimary,
+    fontWeight: "700",
+  },
 
   chipsScroll: { height: 46, marginTop: spacing.sm },
   chipsContent: { gap: spacing.sm, paddingRight: spacing.lg, alignItems: "center" },
