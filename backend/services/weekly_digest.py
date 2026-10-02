@@ -60,8 +60,11 @@ _SECTION_FOR_KIND = {
     # Announcements (both immediate and scheduled "pins" land here)
     "announcement": _SECTION_LABEL_ANNOUNCEMENTS,
     # @mentions (keep chat_mention; raw chat_message is excluded to
-    # avoid flooding a dancer who skipped a chatty week).
+    # avoid flooding a dancer who skipped a chatty week). ``chat_reply``
+    # also lives here — a direct reply is semantically "someone's
+    # talking to me", same bucket as a mention.
     "chat_mention": _SECTION_LABEL_MENTIONS,
+    "chat_reply": _SECTION_LABEL_MENTIONS,
 }
 
 # Preserved display order so Classes always appears above Events, etc.

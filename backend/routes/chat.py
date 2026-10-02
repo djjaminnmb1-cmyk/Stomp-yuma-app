@@ -39,6 +39,7 @@ from services.chat_reads import (
     mark_read as chat_mark_read,
     read_state_for_room as chat_read_state,
 )
+from services.chat_replies import fan_out_chat_reply
 from services.link_previews import preview_for_message
 
 
@@ -285,17 +286,34 @@ async def post_chat(
             doc["mentioned_user_ids"] = mentioned
     except Exception:
         pass
+    # Fan-out "someone replied to your message" push to the ORIGINAL
+    # poster of the parent. Runs after @mentions so a reply that also
+    # tags the parent author via @ wins the mention path (single
+    # push, not double).
+    reply_notified: list[str] = []
+    if doc.get("parent_id"):
+        try:
+            reply_notified = await fan_out_chat_reply(
+                reply_message_id=doc["id"],
+                reply_text=doc["message"],
+                replier_user_id=instructor["user_id"],
+                replier_name=instructor.get("name", ""),
+                parent_id=doc["parent_id"],
+                already_notified=mentioned,
+            )
+        except Exception:
+            pass
     # Fan-out "someone posted" push to everyone else in the room who
     # hasn't opted out via ``notification_prefs.chat_alerts``. Users
-    # already notified by the mention fan-out above are skipped so a
-    # single ``@Erin nice one!`` never buzzes Erin twice.
+    # already notified by the mention OR reply fan-out above are
+    # skipped so a single ``@Erin nice one!`` never buzzes Erin twice.
     try:
         await fan_out_chat_post(
             message_id=doc["id"],
             message_text=doc["message"],
             poster_user_id=instructor["user_id"],
             poster_name=instructor.get("name", ""),
-            already_notified=mentioned,
+            already_notified=list({*mentioned, *reply_notified}),
         )
     except Exception:
         # Never let a push flake break the POST — chat still returns

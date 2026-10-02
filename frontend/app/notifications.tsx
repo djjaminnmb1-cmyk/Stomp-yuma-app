@@ -38,6 +38,7 @@ const KIND_ICON_MAP: Record<string, IconHint> = {
   admin_instructor_grant: { name: "ribbon", tint: "#6B21A8" },
   chat_mention: { name: "at", tint: "#D62828" },
   chat_message: { name: "chatbubbles", tint: "#2E7CD6" },
+  chat_reply: { name: "return-up-back", tint: "#D62828" },
   new_dance: { name: "musical-notes", tint: "#D97706" },
   new_class: { name: "school", tint: "#00A86B" },
   new_event: { name: "flag", tint: "#2E7CD6" },

@@ -68,6 +68,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         # Any new chat post (opt-out via ``chat_alerts``)
         "push.chat_message.title": "{sender} posted in chat",
         "push.chat_message.body": "{preview}",
+        "push.chat_reply.title": "{sender} replied to your message",
+        "push.chat_reply.body": "{preview}",
         # Pending-dance submission approved / rejected
         "push.pending_dance.approved.title": "🎉 Your dance was approved!",
         "push.pending_dance.approved.body": "\u201c{title}\u201d is now in the library. Tap to view.",
@@ -117,6 +119,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} escribió en el chat",
         "push.chat_message.body": "{preview}",
+        "push.chat_reply.title": "{sender} respondió a tu mensaje",
+        "push.chat_reply.body": "{preview}",
         # Pending-dance submission approved / rejected
         "push.pending_dance.approved.title": "🎉 ¡Tu baile fue aprobado!",
         "push.pending_dance.approved.body": "«{title}» ya está en la biblioteca. Toca para ver.",
@@ -166,6 +170,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} a écrit dans le chat",
         "push.chat_message.body": "{preview}",
+        "push.chat_reply.title": "{sender} a répondu à votre message",
+        "push.chat_reply.body": "{preview}",
         # Pending-dance submission approved / rejected
         "push.pending_dance.approved.title": "🎉 Votre danse a été approuvée !",
         "push.pending_dance.approved.body": "« {title} » est maintenant dans la bibliothèque. Touchez pour voir.",
@@ -216,6 +222,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} hat im Chat geschrieben",
         "push.chat_message.body": "{preview}",
+        "push.chat_reply.title": "{sender} hat auf deine Nachricht geantwortet",
+        "push.chat_reply.body": "{preview}",
         # Pending-dance submission approved / rejected
         "push.pending_dance.approved.title": "🎉 Dein Tanz wurde freigegeben!",
         "push.pending_dance.approved.body": "„{title}“ ist jetzt in der Bibliothek. Tippen zum Ansehen.",
@@ -266,6 +274,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} plaatste een chatbericht",
         "push.chat_message.body": "{preview}",
+        "push.chat_reply.title": "{sender} reageerde op je bericht",
+        "push.chat_reply.body": "{preview}",
         # Pending-dance submission approved / rejected
         "push.pending_dance.approved.title": "🎉 Je dans is goedgekeurd!",
         "push.pending_dance.approved.body": "'{title}' staat nu in de bibliotheek. Tik om te bekijken.",
@@ -316,6 +326,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender}님이 채팅에 글을 올렸어요",
         "push.chat_message.body": "{preview}",
+        "push.chat_reply.title": "{sender}님이 회원님의 메시지에 답장했어요",
+        "push.chat_reply.body": "{preview}",
         # Pending-dance submission approved / rejected
         "push.pending_dance.approved.title": "🎉 댄스가 승인되었어요!",
         "push.pending_dance.approved.body": "「{title}」이(가) 라이브러리에 추가되었어요. 눌러서 확인하세요.",
@@ -365,6 +377,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} 在聊天中发言",
         "push.chat_message.body": "{preview}",
+        "push.chat_reply.title": "{sender} 回复了你的消息",
+        "push.chat_reply.body": "{preview}",
         # Pending-dance submission approved / rejected
         "push.pending_dance.approved.title": "🎉 您的舞蹈已通过！",
         "push.pending_dance.approved.body": "「{title}」现在已在库中。点击查看。",
@@ -412,6 +426,8 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.chat_mention.body": "{preview}",
         "push.chat_message.title": "{sender} 在聊天中發言",
         "push.chat_message.body": "{preview}",
+        "push.chat_reply.title": "{sender} 回覆了你的訊息",
+        "push.chat_reply.body": "{preview}",
         # Pending-dance submission approved / rejected
         "push.pending_dance.approved.title": "🎉 您的舞蹈已通過！",
         "push.pending_dance.approved.body": "「{title}」現已在資料庫中。點選檢視。",

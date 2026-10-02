@@ -1250,6 +1250,74 @@ test_plan:
   stuck_tasks: []
   test_all: false
 
+#====================================================================================================
+# NEW: Chat Reply Push + In-App Notification — 2026-10-02
+#====================================================================================================
+
+backend:
+  - task: "Chat Reply Push + In-App Notification"
+    implemented: true
+    working: true
+    file: "backend/services/chat_replies.py, backend/routes/chat.py, backend/services/notification_feed.py, backend/services/weekly_digest.py, backend/core/i18n.py, backend/tests/test_chat_replies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Threaded replies already existed in chat (parent_id on
+          each message, frontend already sends it). This change adds
+          the "notify the ORIGINAL POSTER" leg — push + Notification
+          Center feed row.
+
+          Pieces:
+            * services/chat_replies.py (NEW) — fan_out_chat_reply.
+              Looks up parent, applies all guards (self-reply,
+              deleted parent, mutual-block, already-notified via
+              @mention, pref gate on mention_alerts), sends push +
+              log_event(kind="chat_reply").
+            * routes/chat.py — post_chat() calls fan_out_chat_reply
+              AFTER fan_out_mentions, BEFORE fan_out_chat_post. The
+              parent author is added to already_notified passed to
+              the general fan-out so one message never produces more
+              than one notification per recipient.
+            * services/notification_feed.py — chat_reply in KNOWN_KINDS.
+            * services/weekly_digest.py — chat_reply routed into the
+              💬 @Mentions digest section.
+            * core/i18n.py — push.chat_reply.title/body across all 8
+              locales (EN, ES, FR, DE, NL, KO, zh-Hans, zh-Hant).
+            * frontend/app/notifications.tsx — KIND_ICON_MAP gets
+              chat_reply: return-up-back icon, brand red.
+
+          Dedupe cascade (one message = one notification per recipient):
+          @mention wins > chat_reply wins > general chat_message.
+          Self-reply, deleted parent, mutual block = no notification.
+
+          Pref gate: mention_alerts (same gate as @mentions —
+          targeted engagement). Replies respect quiet hours.
+
+          Tests: tests/test_chat_replies.py — 6/6 pass.
+          Combined notification suites: 71/71 passing.
+          Live UI verified via screenshot.
+
+frontend:
+  - task: "Notification Center icon for chat_reply"
+    implemented: true
+    working: true
+    file: "frontend/app/notifications.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Added chat_reply to KIND_ICON_MAP: return-up-back icon,
+          brand red tint. Deeplink to /(tabs)/instructor handled by
+          existing router.push logic.
+
+
 old_frontend:
   - task: "Notification Center shows `new_class` and `new_event` rows"
 

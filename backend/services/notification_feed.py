@@ -59,6 +59,7 @@ KNOWN_KINDS = {
     "admin_instructor_grant",
     "chat_mention",
     "chat_message",
+    "chat_reply",            # direct-reply to your chat message
     "new_dance",             # follower-targeted
     "new_class",             # follower-targeted
     "new_event",             # follower-targeted

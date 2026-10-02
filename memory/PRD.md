@@ -2030,3 +2030,91 @@ pass**.
 * New collection `weekly_digest_sends` — one row per
   `(user_id, week_start)` with `sent_at` + `item_count`. Unique index
   guards against double-sends.
+
+---
+
+## iOS Push Notifications — CORRECTION (2026-10-02)
+
+Earlier handoff notes claimed iOS pushes were blocked pending the user
+providing a `GoogleService-Info.plist`. That was **wrong** — the app
+is wired to **Emergent-managed push notifications**, not self-managed
+Firebase. The user does NOT need to provide any iOS Firebase config
+file.
+
+### How Emergent-managed push actually works
+* Backend uses `core/push_service.py` which POSTs to Emergent's relay
+  (`/api/v1/push/trigger`) with the `EMERGENT_PUSH_KEY` from
+  `backend/.env`.
+* In preview/dev `EMERGENT_PUSH_KEY` is a placeholder → relay returns
+  401 → backend logs "skipping push" and the request succeeds anyway
+  (push is best-effort).
+* On **Publish → Build**, Emergent swaps the real key in automatically
+  and provisions APNs + FCM credentials on their side.
+* `frontend/google-services.json` already exists (688 bytes) for
+  Android. **No iOS plist is needed.**
+
+### What this means for testing
+* Expo Go: pushes will NEVER deliver (sandbox limitation).
+* Preview URL: pushes won't deliver (placeholder key).
+* **TestFlight / Play Store build** after Publish: pushes land
+  normally on real devices.
+
+Nothing to do code-wise. The "P1 blocked" item from previous handoff
+is dismissed.
+
+---
+
+## Chat Reply Push + In-App Notification — 2026-10-02
+
+### Why
+Chat already supported threaded replies (`parent_id` on each message,
+the frontend already sends it when the "Reply to X" picker is used),
+but when someone replied to your message, nothing told YOU. Threads
+died silently if you weren't currently looking at the chat tab.
+
+### What it does
+When any user hits Reply on another user's chat message and posts:
+* The **original poster** of the parent message gets a push
+  (localised to their language) with title "`<sender>` replied to
+  your message" and the first 100 chars of the reply as the body.
+* The push lands with `kind: "chat_reply"` and includes the parent
+  message id so the client can deep-link into the thread.
+* A `chat_reply` row is written to the **Notification Center** so
+  the alert survives beyond the OS banner. The row shows a red
+  reply-arrow icon.
+
+### Smart dedupe cascade
+Exactly ONE notification per recipient per message. Priority order:
+1. **@mention wins** — if the reply tags `@Erin`, only
+   `chat_mention` fires (not also `chat_reply`).
+2. **Reply wins** — the parent author gets `chat_reply`, not the
+   general "someone posted" `chat_message`.
+3. **General fan-out** — every other eligible chat-room member
+   gets `chat_message` (if they haven't opted out).
+
+### Edge cases handled
+* **Self-reply** — no notification (don't buzz yourself).
+* **Deleted / unknown parent** — no notification.
+* **Mutual block** — never pings across the block wall.
+* **Pref muted** — `notification_prefs.mention_alerts = false`
+  mutes replies too (replies are "someone talking to you", same
+  bucket as @mentions).
+* **Quiet hours** — replies respect the quiet window because
+  `mention_alerts` is in the quiet-hours category list.
+
+### Weekly digest integration
+`chat_reply` rows are included in the Monday-morning digest email
+under the 💬 @Mentions section (same bucket as `chat_mention`).
+
+### i18n push copy
+Full translations for all 8 supported locales:
+EN, ES, FR, DE, NL, KO, zh-Hans, zh-Hant.
+
+### Tests
+`tests/test_chat_replies.py` — 6/6 passing.
+Combined notification suites: 71/71 passing.
+
+### Data model
+No schema changes. Reuses existing `parent_id` field on
+`instructor_messages`. New notification kind `chat_reply` added to
+`notification_feed.KNOWN_KINDS` and to `weekly_digest._SECTION_FOR_KIND`.
