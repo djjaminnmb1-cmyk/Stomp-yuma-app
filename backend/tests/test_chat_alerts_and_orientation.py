@@ -25,6 +25,15 @@ import uuid
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL") or os.environ.get(
     "EXPO_BACKEND_URL"
 )
@@ -42,9 +51,9 @@ assert BASE_URL, "EXPO_PUBLIC_BACKEND_URL not set"
 BASE_URL = BASE_URL.rstrip("/")
 
 ADMIN_EMAIL = "admin@stompinground.com"
-ADMIN_PASSWORD = "C^c+9$ii4y@_L1mU4sl5BTOd"
+ADMIN_PASSWORD = ADMIN_PASSWORD
 ERIN_EMAIL = "erinboroughs@gmail.com"
-ERIN_PASSWORD = "Stompin2026!"
+ERIN_PASSWORD = ERIN_PASSWORD
 
 
 # ------------------------------ helpers ------------------------------

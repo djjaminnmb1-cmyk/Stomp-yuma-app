@@ -44,8 +44,23 @@ from typing import Optional
 
 from core.database import db
 from core.time_helpers import now_iso
+from fastapi import HTTPException
 from models.schemas import EVENT_SKILL_LEVELS, EVENT_TYPES, EventIn
 from services.geocoding import geocode_address, haversine_miles
+
+# P3 hardening — cap the base64 cover image so a single event can't
+# bloat the DB. Same 6MB ceiling used by suggestions.step_sheet_image
+# (see routes/suggestions.py). Instructor-gated, but a runaway
+# phone-picker export would still land here without a cap.
+_COVER_IMAGE_MAX_BYTES = 6_000_000
+
+
+def _validate_cover_image(inp: EventIn) -> None:
+    if inp.cover_image and len(inp.cover_image) > _COVER_IMAGE_MAX_BYTES:
+        raise HTTPException(
+            413,
+            "Cover image is too large — please pick a smaller file (max ~6MB).",
+        )
 
 
 def _default_country(c: Optional[str]) -> str:
@@ -90,6 +105,7 @@ async def _location_from_inp(inp: EventIn) -> tuple[Optional[dict], str]:
 
 
 async def create_event(inp: EventIn, instructor: dict) -> dict:
+    _validate_cover_image(inp)
     location_geo, display_name = await _location_from_inp(inp)
     now = now_iso()
     doc = {
@@ -129,6 +145,7 @@ async def update_event(event_id: str, inp: EventIn, instructor: dict) -> Optiona
     existing = await db.events.find_one({"id": event_id}, {"_id": 0})
     if not existing:
         return None
+    _validate_cover_image(inp)
     # Re-geocode only when the address changed — no wasted requests.
     addr_changed = (
         (inp.address or "").strip() != existing.get("address", "")

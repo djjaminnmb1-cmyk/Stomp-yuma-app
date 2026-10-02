@@ -15,12 +15,21 @@ from datetime import datetime, timedelta, timezone
 import pytest
 import requests
 
+
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 BASE = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://stompin-yuma-app.preview.emergentagent.com").rstrip("/")
 API = f"{BASE}/api"
 ERIN_EMAIL = "stompingroundyuma@gmail.com"
-ERIN_PASS = "Stompin2026!"
+ERIN_PASS = ERIN_PASSWORD
 
 
 def _headers(tok):

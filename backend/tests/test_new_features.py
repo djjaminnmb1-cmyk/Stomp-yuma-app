@@ -20,6 +20,15 @@ from pathlib import Path
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL as GEN_ADMIN_EMAIL,
+    ADMIN_PASSWORD as GEN_ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 
 # ---------- Config ----------
 def _load_backend_url() -> str:
@@ -39,12 +48,13 @@ def _load_backend_url() -> str:
 BASE_URL = _load_backend_url()
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "erinboroughs@gmail.com"
-ADMIN_PASSWORD = "Stompin2026!"
-GEN_ADMIN_EMAIL = "admin@stompinground.com"
-GEN_ADMIN_PASSWORD = "Admin123!"
-INSTRUCTOR_EMAIL = "luvtowork247@yahoo.com"
-INSTRUCTOR_PASSWORD = "BootsDance49!"
+# Primary admin for this suite = Erin. ``ADMIN_EMAIL`` / ``ADMIN_PASSWORD``
+# are kept local for backward-compat with assertions below.
+ADMIN_EMAIL = ERIN_EMAIL
+ADMIN_PASSWORD = ERIN_PASSWORD
+# GEN_ADMIN_* (admin@stompinground.com) come straight from _creds above.
+INSTRUCTOR_EMAIL = JAMIN_EMAIL
+INSTRUCTOR_PASSWORD = JAMIN_PASSWORD
 
 
 # ---------- Fixtures ----------

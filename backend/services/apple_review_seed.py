@@ -13,18 +13,23 @@ would immediately fail the App Review demo.
 
 CREDENTIALS
 -----------
-Passwords are read from environment variables — never hard-coded here.
-Set the following in ``backend/.env`` (or the equivalent secret store
-on prod) to enable the seed. If any of them is unset the corresponding
-account is silently skipped so a misconfigured deploy never blocks
-boot:
+Passwords are read from environment variables — never hard-coded here
+and never committed to the repository. Set the following in
+``backend/.env`` (or the equivalent secret store on prod) to enable
+the seed. If any of them is unset the corresponding account is
+silently skipped so a misconfigured deploy never blocks boot:
 
     SEED_PW_REVIEWER_STOMPINGROUND_COM
     SEED_PW_ADMINREVIEW_STOMPINGROUND_COM
     SEED_PW_SAMPLECONTENT_STOMPINGROUND_COM
 
-Values must MATCH the passwords documented in
-``/app/APPLE_REVIEW_NOTES.md`` verbatim so Apple's reviewer can log in.
+SECURITY (SEC-001) — the passwords MUST NOT appear anywhere in the
+tracked repo, including this file or ``APPLE_REVIEW_NOTES.md``. The
+authoritative copy lives in App Store Connect → App Review
+Information → Notes for the specific build under review; that field
+is only visible to the submitter and Apple's reviewers. Rotate the
+values in ``backend/.env`` before every submission and again after
+approval so any leaked note becomes inert.
 
 REMOVING THIS AFTER APPLE APPROVES
 ----------------------------------

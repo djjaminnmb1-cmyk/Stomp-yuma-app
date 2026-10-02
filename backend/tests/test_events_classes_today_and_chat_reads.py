@@ -19,6 +19,15 @@ from datetime import datetime
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 BASE_URL = os.environ.get(
     "EXPO_PUBLIC_BACKEND_URL",
     "https://stompin-yuma-app.preview.emergentagent.com",
@@ -26,10 +35,10 @@ BASE_URL = os.environ.get(
 
 # Two instructor accounts documented in /app/memory/test_credentials.md
 INSTRUCTOR_A_EMAIL = "luvtowork247@yahoo.com"      # Jamin Brown (instructor + admin)
-INSTRUCTOR_A_PASSWORD = "BootsDance49!"
+INSTRUCTOR_A_PASSWORD = JAMIN_PASSWORD
 
 INSTRUCTOR_B_EMAIL = "admin@stompinground.com"     # Generic admin (instructor + admin)
-INSTRUCTOR_B_PASSWORD = "C^c+9$ii4y@_L1mU4sl5BTOd"
+INSTRUCTOR_B_PASSWORD = ADMIN_PASSWORD
 
 TODAY_LOCAL = datetime.now().strftime("%Y-%m-%d")
 TIMEOUT = 30

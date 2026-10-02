@@ -15,10 +15,19 @@ import uuid
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://stompin-yuma-app.preview.emergentagent.com").rstrip("/")
 
-ERIN = {"email": "erinboroughs@gmail.com", "password": "Stompin2026!"}
-JAMIN = {"email": "luvtowork247@yahoo.com", "password": "BootsDance49!"}
+ERIN = {"email": "erinboroughs@gmail.com", "password": ERIN_PASSWORD}
+JAMIN = {"email": "luvtowork247@yahoo.com", "password": JAMIN_PASSWORD}
 
 
 def _login(email: str, password: str) -> tuple[str, dict]:

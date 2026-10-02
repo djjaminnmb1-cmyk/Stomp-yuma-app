@@ -867,7 +867,7 @@ agent_communication:
            - POST same source+ref again → 409 code=already_pending
            - Repeat submits with 5 DIFFERENT refs from popular, then the
              6th should return 429 with code=daily_limit_reached
-        2. As ADMIN (`admin@stompinground.com` / `C^c+9$ii4y@_L1mU4sl5BTOd`):
+        2. As ADMIN (`admin@stompinground.com` / `<redacted-SEC-001>`):
            - GET /api/admin/pending-dances?status=pending → shows the rows
            - POST /api/admin/pending-dances/{id}/reject {reason:"test"}
              → 200; then GET pending shows one less, GET rejected shows it
@@ -1123,5 +1123,5 @@ agent_communication:
       4. Profile shows a "Safety Center" row (before the feedback row).
       5. Admin profile shows "Moderation Queue" (renamed from Reports).
 
-      CREDENTIALS: admin@stompinground.com / C^c+9$ii4y@_L1mU4sl5BTOd
+      CREDENTIALS: admin@stompinground.com / <redacted-SEC-001>
       (see /app/memory/test_credentials.md)

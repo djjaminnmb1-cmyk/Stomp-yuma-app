@@ -27,6 +27,15 @@ import time
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 # Make backend modules importable for unit-level tests
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -36,7 +45,7 @@ BASE_URL = os.environ.get(
 ).rstrip("/")
 
 ADMIN_EMAIL = "admin@stompinground.com"
-ADMIN_PASS = "C^c+9$ii4y@_L1mU4sl5BTOd"
+ADMIN_PASS = ADMIN_PASSWORD
 
 TEST_PREFIX = f"TEST_SOLO_{int(time.time())}_"
 

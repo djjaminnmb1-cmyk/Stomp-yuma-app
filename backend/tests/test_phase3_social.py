@@ -45,6 +45,15 @@ DB_NAME = os.environ["DB_NAME"]
 # Direct Mongo (sync) client so tests can seed feed events / verify purges.
 from pymongo import MongoClient  # noqa: E402
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 _mongo = MongoClient(MONGO_URL)
 _db = _mongo[DB_NAME]
 
@@ -110,12 +119,12 @@ def login_user(email: str, password: str) -> dict:
 # ------------------------------------------------------------------
 @pytest.fixture(scope="session")
 def admin():
-    return login_user("admin@stompinground.com", "Admin123!")
+    return login_user(ADMIN_EMAIL, ADMIN_PASSWORD)
 
 
 @pytest.fixture(scope="session")
 def erin():
-    return login_user("erinboroughs@gmail.com", "Stompin2026!")
+    return login_user(ERIN_EMAIL, ERIN_PASSWORD)
 
 
 # ==================================================================

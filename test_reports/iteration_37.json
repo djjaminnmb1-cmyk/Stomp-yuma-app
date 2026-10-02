@@ -25,6 +25,6 @@
   "seed_data_creation": "One TEST_chatalerts_<uuid>@example.com user created via /api/auth/register for opt-out semantics check. Prefixed with TEST_ for later cleanup. Erin's chat_alerts was toggled off then restored to True at end of the fan-out test.",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Reuse /app/backend/tests/test_chat_alerts_and_orientation.py for regression. Public URL comes from /app/frontend/.env EXPO_PUBLIC_BACKEND_URL. Admin creds admin@stompinground.com / C^c+9$ii4y@_L1mU4sl5BTOd and erinboroughs@gmail.com / Stompin2026! are current. Note: the service-level test imports from /app/backend directly (sys.path.insert) — it will still work in a subsequent agent's environment because backend/ is on disk.",
+  "context_for_next_testing_agent": "Reuse /app/backend/tests/test_chat_alerts_and_orientation.py for regression. Public URL comes from /app/frontend/.env EXPO_PUBLIC_BACKEND_URL. Admin creds admin@stompinground.com / <redacted-SEC-001> and erinboroughs@gmail.com / <redacted-SEC-001> are current. Note: the service-level test imports from /app/backend directly (sys.path.insert) — it will still work in a subsequent agent's environment because backend/ is on disk.",
   "rca_of_issue": "N/A — feature verification, no bug fix required."
 }

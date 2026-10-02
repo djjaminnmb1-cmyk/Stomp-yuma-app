@@ -31,6 +31,6 @@
   "seed_data_creation": "Created + deleted test events during pytest lifecycle and one UI-created event (evt_28a3f2832ed3) which was cleaned up via API after the run. No lingering TEST_ data.",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Backend regression suite for events lives in /app/backend/tests/test_events.py — run with `pytest backend/tests/test_events.py -v` from /app after exporting EXPO_PUBLIC_BACKEND_URL. Auth uses erinboroughs@gmail.com/Stompin2026! (admin+instructor) and luvtowork247@yahoo.com/BootsDance49! (instructor-only). Regular users are minted per-run via /api/auth/register.",
+  "context_for_next_testing_agent": "Backend regression suite for events lives in /app/backend/tests/test_events.py — run with `pytest backend/tests/test_events.py -v` from /app after exporting EXPO_PUBLIC_BACKEND_URL. Auth uses erinboroughs@gmail.com/<redacted-SEC-001> (admin+instructor) and luvtowork247@yahoo.com/<redacted-SEC-001> (instructor-only). Regular users are minted per-run via /api/auth/register.",
   "rca_of_issue": "No functional bug surfaced. Two pre-existing non-blocking React Native Web warnings (whitespace text-node on /auth; shadow*/textShadow* deprecation) noted for future cleanup."
 }

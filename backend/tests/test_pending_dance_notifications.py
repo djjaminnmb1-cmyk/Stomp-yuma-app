@@ -23,6 +23,15 @@ from pathlib import Path
 import pytest
 import requests
 
+
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
 # Make the backend package importable for the in-process i18n / helper
 # tests (pytest is run from /app/backend/tests but the module lives
 # under /app/backend).
@@ -36,7 +45,7 @@ BASE_URL = os.environ.get(
 ).rstrip("/")
 
 ADMIN_EMAIL = "admin@stompinground.com"
-ADMIN_PASSWORD = "C^c+9$ii4y@_L1mU4sl5BTOd"
+ADMIN_PASSWORD = ADMIN_PASSWORD
 
 ALL_LOCALES = ("en", "es", "fr", "de", "nl", "ko", "zh-Hans", "zh-Hant")
 NEW_KEYS = (

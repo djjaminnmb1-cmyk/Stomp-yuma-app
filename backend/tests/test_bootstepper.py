@@ -10,10 +10,19 @@ import uuid
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://stompin-yuma-app.preview.emergentagent.com").rstrip("/")
 
 ADMIN_EMAIL = "erinboroughs@gmail.com"
-ADMIN_PW = "Stompin2026!"
+ADMIN_PW = ERIN_PASSWORD
 
 # Known BootStepper dance IDs (per task spec)
 BS_COPPERHEAD_ID = "D36J5744FRQ364N"

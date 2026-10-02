@@ -19,6 +19,15 @@ import pytest
 import requests
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 def _load_frontend_backend_url() -> str:
     p = "/app/frontend/.env"
     if os.path.exists(p):
@@ -54,7 +63,7 @@ MONGO_URL = _load_backend_env_var("MONGO_URL")
 DB_NAME = _load_backend_env_var("DB_NAME")
 
 ERIN_EMAIL = "erinboroughs@gmail.com"
-ERIN_PW = "Stompin2026!"
+ERIN_PW = ERIN_PASSWORD
 
 CREATED_CLASS_IDS: list[str] = []
 CREATED_EVENT_IDS: list[str] = []

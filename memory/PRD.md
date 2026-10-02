@@ -1379,10 +1379,10 @@ This section documents the full response package delivered back to Apple.
   the "reachable in ≤ 2 taps" requirement for profile-level UGC.
 - **Reviewer seed script** (`backend/scripts/seed_apple_review.py`)
   — idempotent, creates:
-  1. `reviewer@stompinground.com` / `AppleReview!2026` (dancer,
+  1. `reviewer@stompinground.com` / `<password from App Store Connect Notes; SEC-001>` (dancer,
      instructor-flagged, `accepted_terms_version` **set to a stale
      value** so Demo 1B trips the gate).
-  2. `adminreview@stompinground.com` / `AppleReview!2026#` (admin,
+  2. `adminreview@stompinground.com` / `<password from App Store Connect Notes; SEC-001>` (admin,
      terms up-to-date so Demo 4 lands directly on the queue).
   3. `samplecontent@stompinground.com` (never signs in — used as
      the author of a pinned demo chat message the reviewer can
@@ -1506,3 +1506,61 @@ re-runs on every startup so legacy rows converge.
 - No changes to the existing choreographers/index or detail pages —
   they keep working exactly as before because the grouping key is
   unchanged.
+
+
+
+## Session (June 2026) — SEC-001 Test-File Credential Cleanup (follow-up)
+
+Follow-up to the SEC-001 mass credential refactor. The initial scrub
+rotated prod passwords and introduced `backend/tests/_creds.py` as the
+single source for seed-account passwords (read from `backend/.env`),
+but a handful of test files still held stale references.
+
+### What was fixed
+- **`test_version_pin.py`** — the `TestListFeedback::test_403_non_admin`
+  test logged in as `luvtowork247@yahoo.com` and expected a 403; but
+  that account was promoted to admin during the June rotation, so the
+  endpoint now returns 200 for Jamin. The fixture was changed to
+  **register a brand-new regular user** (with `accepted_terms_version`)
+  per test module, so the 403 assertion is now meaningful again.
+  Standalone run: 16/16 passing.
+- **`test_instructor_features.py`** — removed hard-coded
+  `ADMIN_PASS = "Admin123!"` and the override to the non-existent
+  `stompingroundyuma@gmail.com` email. Now reads `ADMIN_EMAIL` +
+  `ADMIN_PASSWORD` directly from `_creds`. Standalone: 13 passed + 4
+  pre-existing errors (unrelated — `terms_not_accepted`).
+- **`test_certificate_and_clamps.py`** — removed hard-coded
+  `"Admin123!"` for the generic-admin login test; now imports from
+  `_creds` via `GENERIC_ADMIN`. Standalone: 21/21 passing (was 3
+  passed + 15 errors before).
+- **`test_gamification.py` / `test_practice_history.py`** — removed
+  `ADMIN_PASSWORD = "Admin123!"` module constants; now imported from
+  `_creds`.
+- **`test_phase3_social.py`** — the `admin` fixture called
+  `login_user("admin@stompinground.com", "Admin123!")` directly; now
+  uses `ADMIN_EMAIL` + `ADMIN_PASSWORD` from `_creds`.
+- **`test_new_features.py` / `test_refactor_regression.py`** — the
+  module-level `GEN_ADMIN_PASSWORD = "Admin123!"` was replaced with
+  an aliased import `ADMIN_PASSWORD as GEN_ADMIN_PASSWORD`. Erin
+  stays as the suite's primary admin via `ADMIN_EMAIL = ERIN_EMAIL`
+  so the existing assertions still read the right email.
+
+### What was intentionally left
+- `test_sec_audit_regression.py::ADMIN_OLD_PW = "Admin123!"` — this
+  is a positive-security assertion that the rotated password rejects
+  the OLD value with a 401. Keeping the literal here is part of the
+  test contract.
+
+### Net test-suite impact (before → after)
+- `test_version_pin.py`: 2 → 16 passing (+14)
+- `test_instructor_features.py`: 5 → 13 passing (+8)
+- `test_certificate_and_clamps.py`: 3 → 21 passing (+18)
+- `test_phase3_social.py`: 5 → 8 passing (+3)
+- `test_new_features.py`: 10 → 27 passing (+17)
+- `test_refactor_regression.py`: 24 → 42 passing (+18)
+- `test_solo_choreographer_library.py`: 30/30 still green (unchanged)
+- `test_sec_audit_regression.py`: 21/23 (2 pre-existing
+  `terms_not_accepted` failures unrelated to credentials)
+
+Net: **+78 more tests passing** across the suite after this cleanup
+with no regressions attributable to the credential refactor.

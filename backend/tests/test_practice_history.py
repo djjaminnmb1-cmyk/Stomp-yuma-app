@@ -36,8 +36,10 @@ if not BASE:
 assert BASE, "EXPO_PUBLIC_BACKEND_URL must be set for tests"
 BASE = BASE.rstrip("/")
 
-ADMIN_EMAIL = "admin@stompinground.com"
-ADMIN_PASSWORD = "Admin123!"
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+)
 
 
 # ------------ Helpers / Fixtures ------------

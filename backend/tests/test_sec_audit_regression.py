@@ -17,6 +17,15 @@ import uuid
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 # So we can import backend modules for SEC-003 unit-invocation
 sys.path.insert(0, "/app/backend")
 
@@ -30,12 +39,12 @@ if not BASE_URL:
                 break
 
 ADMIN_EMAIL = "admin@stompinground.com"
-ADMIN_NEW_PW = "C^c+9$ii4y@_L1mU4sl5BTOd"
+ADMIN_NEW_PW = ADMIN_PASSWORD
 ADMIN_OLD_PW = "Admin123!"
 ERIN_EMAIL = "erinboroughs@gmail.com"
-ERIN_PW = "Stompin2026!"
+ERIN_PW = ERIN_PASSWORD
 JAMIN_EMAIL = "luvtowork247@yahoo.com"
-JAMIN_PW = "BootsDance49!"
+JAMIN_PW = JAMIN_PASSWORD
 
 
 @pytest.fixture(scope="module")

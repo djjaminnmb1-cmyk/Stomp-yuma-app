@@ -11,6 +11,11 @@ import uuid
 import pytest
 import requests
 
+
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+)
 BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL") or os.environ.get(
     "EXPO_BACKEND_URL"
 )
@@ -24,10 +29,16 @@ if not BASE_URL:
 BASE_URL = (BASE_URL or "").rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "erinboroughs@gmail.com"
-ADMIN_PASSWORD = "Stompin2026!"
-NON_ADMIN_EMAIL = "luvtowork247@yahoo.com"
-NON_ADMIN_PASSWORD = "BootsDance49!"
+# Admin: Erin is both admin + step-sheet editor, perfect for the
+# admin-only feedback endpoints below (she's also expected as
+# ``resolved_by`` on the PATCH assertion later).
+ADMIN_EMAIL = ERIN_EMAIL
+ADMIN_PASSWORD = ERIN_PASSWORD
+# Non-admin: `luvtowork247@yahoo.com` (Jamin) was promoted to admin in
+# the June-2026 SEC-001 remediation, so we can't reuse him here —
+# instead we register a brand-new regular user per test run.
+NON_ADMIN_EMAIL = f"TEST_feedback_user_{uuid.uuid4().hex[:8]}@example.com"
+NON_ADMIN_PASSWORD = "TestNonAdmin123!"
 
 DIAG_HEADERS = {
     "X-Client-App-Version": "9.9.9",
@@ -57,13 +68,34 @@ def admin_token():
 
 @pytest.fixture(scope="module")
 def non_admin_token():
-    r = requests.post(
-        f"{API}/auth/login",
-        json={"email": NON_ADMIN_EMAIL, "password": NON_ADMIN_PASSWORD},
+    """Register a fresh regular user (NOT admin, NOT instructor) and
+    return their auth token. We can't reuse any of the seeded operator
+    accounts because they were all promoted to admin during the
+    SEC-001 remediation, so the 403 assertion needs a user with
+    ``is_admin=False``.
+    """
+    # Register (must include ``accepted_terms_version`` or the server
+    # 400s with ``terms_not_accepted``).
+    reg = requests.post(
+        f"{API}/auth/register",
+        json={
+            "email": NON_ADMIN_EMAIL,
+            "password": NON_ADMIN_PASSWORD,
+            "name": "TEST Non-Admin",
+            "accepted_terms_version": "2026-06-24",
+        },
         timeout=30,
     )
-    assert r.status_code == 200, f"non-admin login failed: {r.status_code} {r.text}"
-    return r.json()["token"]
+    assert reg.status_code == 200, (
+        f"non-admin register failed: {reg.status_code} {reg.text}"
+    )
+    reg_json = reg.json()
+    # Safety-net: fail loudly if the test user somehow gets admin
+    # (e.g. email landed in ADMIN_EMAILS by accident).
+    assert reg_json["user"]["is_admin"] is False, (
+        f"test user unexpectedly admin: {reg_json['user']}"
+    )
+    return reg_json["token"]
 
 
 # ------------------ POST /api/feedback ------------------

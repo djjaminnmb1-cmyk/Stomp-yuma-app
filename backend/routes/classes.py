@@ -27,6 +27,20 @@ from services.instructor_notifications import notify_followers_of_new_class
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+# P3 hardening — cap the base64 flyer image so a single class can't
+# bloat the DB. Same 6MB ceiling used by suggestions.step_sheet_image.
+# Whitelist-gated at the write site (Erin/Jamin only), but a runaway
+# phone-picker export would still land here without a cap.
+_FLYER_IMAGE_MAX_BYTES = 6_000_000
+
+
+def _validate_flyer_image(inp: ClassSessionIn) -> None:
+    if inp.flyer_image and len(inp.flyer_image) > _FLYER_IMAGE_MAX_BYTES:
+        raise HTTPException(
+            413,
+            "Flyer image is too large — please pick a smaller file (max ~6MB).",
+        )
+
 
 @router.get("/classes")
 async def list_classes(
@@ -74,6 +88,7 @@ async def create_class(
 ):
     if not inp.date:
         raise HTTPException(400, "Date is required")
+    _validate_flyer_image(inp)
     # Resolve dance names for display
     dance_docs = await db.dances.find(
         {"id": {"$in": inp.dance_ids}}, {"_id": 0}
@@ -132,6 +147,7 @@ async def update_class(
     is_owner = doc["instructor_id"] == user["user_id"]
     if not (is_owner or user.get("is_admin") or user_can_edit_step_sheets(user)):
         raise HTTPException(403, "Not allowed")
+    _validate_flyer_image(inp)
     dance_docs = await db.dances.find(
         {"id": {"$in": inp.dance_ids}}, {"_id": 0}
     ).to_list(500)

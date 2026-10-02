@@ -12,10 +12,20 @@ import uuid
 import pytest
 import requests
 
+
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
 BASE_URL = "http://localhost:8001/api"
 
-ADMIN = {"email": "erinboroughs@gmail.com", "password": "Stompin2026!"}
-INSTRUCTOR = {"email": "luvtowork247@yahoo.com", "password": "BootsDance49!"}
+ADMIN = {"email": ERIN_EMAIL, "password": ERIN_PASSWORD}
+INSTRUCTOR = {"email": JAMIN_EMAIL, "password": JAMIN_PASSWORD}
+GENERIC_ADMIN = {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
 
 
 # -------- helpers --------
@@ -112,7 +122,7 @@ class TestSanitySmoke:
     def test_login_generic_admin(self):
         r = requests.post(
             f"{BASE_URL}/auth/login",
-            json={"email": "admin@stompinground.com", "password": "Admin123!"},
+            json=GENERIC_ADMIN,
             timeout=10,
         )
         assert r.status_code == 200

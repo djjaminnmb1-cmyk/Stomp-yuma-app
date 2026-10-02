@@ -12,10 +12,19 @@ import uuid
 import pytest
 import requests
 
+
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
 BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://stompin-yuma-app.preview.emergentagent.com").rstrip("/")
 
 ADMIN_EMAIL = "admin@stompinground.com"
-ADMIN_PASSWORD = "C^c+9$ii4y@_L1mU4sl5BTOd"
+ADMIN_PASSWORD = ADMIN_PASSWORD
 TERMS_VERSION = "2026-06-24"
 
 TIMEOUT = 30

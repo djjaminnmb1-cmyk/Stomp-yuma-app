@@ -23,6 +23,15 @@ import uuid
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 # Read base URL from frontend .env — the mobile client's real endpoint.
 def _read_base_url() -> str:
     env_path = "/app/frontend/.env"
@@ -36,8 +45,8 @@ def _read_base_url() -> str:
 BASE_URL = _read_base_url()
 
 # Existing admin+instructor accounts from /app/memory/test_credentials.md
-ADMIN_A = ("admin@stompinground.com", "C^c+9$ii4y@_L1mU4sl5BTOd")
-ADMIN_B = ("erinboroughs@gmail.com", "Stompin2026!")
+ADMIN_A = ("admin@stompinground.com", ADMIN_PASSWORD)
+ADMIN_B = ("erinboroughs@gmail.com", ERIN_PASSWORD)
 
 YOUTUBE_LONG = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 YOUTUBE_SHORT = "https://youtu.be/dQw4w9WgXcQ"

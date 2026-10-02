@@ -10,13 +10,20 @@ import uuid
 import pytest
 import requests
 
+
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
 BASE = os.environ.get("EXPO_PUBLIC_BACKEND_URL").rstrip("/")
 API = f"{BASE}/api"
 
-JAMIN_EMAIL = "luvtowork247@yahoo.com"
-JAMIN_PASS = "BootsDance49!"
-ADMIN_EMAIL = "admin@stompinground.com"
-ADMIN_PASS = "Admin123!"
+JAMIN_PASS = JAMIN_PASSWORD
+ADMIN_PASS = ADMIN_PASSWORD
 INSTRUCTOR_CODE = "lineup4life"
 
 

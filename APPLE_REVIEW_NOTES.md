@@ -15,8 +15,14 @@ Report mechanism, and (d) a Block mechanism. All reports are reviewed by
 a human moderator within 24 hours.
 
 TEST ACCOUNTS (both have full UGC access):
-  Regular dancer:  reviewer@stompinground.com  /  AppleReview!2026
-  Admin/moderator: adminreview@stompinground.com  /  AppleReview!2026#
+  Regular dancer:  reviewer@stompinground.com   /  <password provided in App Store Connect → App Review Information → Notes>
+  Admin/moderator: adminreview@stompinground.com /  <password provided in App Store Connect → App Review Information → Notes>
+
+  ⚠️  For security the passwords are NOT stored in the repository or the
+  build. They are pasted directly into App Store Connect's "Notes" field
+  when this build is submitted for review, and rotated after every
+  approval cycle. If you need the current passwords, please email
+  security@stompinground.com and we will respond within 4 hours.
 
 Please use the DANCER account for demos 1–3, and the ADMIN account for
 demo 4 (the moderation queue).
@@ -38,7 +44,7 @@ DEMO 1 — Terms of Use / EULA acceptance
        Guidelines" are tappable links that open the full text.
 
   Case B: Existing user (uses the reviewer account above)
-    1. Sign in with reviewer@stompinground.com / AppleReview!2026.
+    1. Sign in with reviewer@stompinground.com (password in App Store Connect Notes).
     2. The app immediately shows a mandatory "Updated Terms" screen
        (this account was pre-set to a stale terms version so you can
        see the gate). You cannot reach any UGC surface until you tick
@@ -46,7 +52,7 @@ DEMO 1 — Terms of Use / EULA acceptance
        signs you out.
 
 DEMO 2 — Report objectionable user-generated content
-  1. Sign in with reviewer@stompinground.com / AppleReview!2026.
+  1. Sign in with reviewer@stompinground.com (password in App Store Connect Notes).
   2. Tap the "Chat" tab (bottom nav) → open the "Yuma Line Dancers"
      room. You will see a pinned test message from user "Sample User"
      that reads: "This is sample content for App Review — long-press
@@ -68,7 +74,7 @@ DEMO 2 — Report objectionable user-generated content
     • Comments:      long-press the comment → Report.
 
 DEMO 3 — Block an abusive user
-  1. Sign in with reviewer@stompinground.com / AppleReview!2026.
+  1. Sign in with reviewer@stompinground.com (password in App Store Connect Notes).
   2. Tap the ⋯ (top-right) on any dancer's profile OR long-press
      one of their messages / posts → tap "Block".
   3. Confirm the destructive alert. The user is added to your block
@@ -79,8 +85,8 @@ DEMO 3 — Block an abusive user
      "Blocked users" → Unblock.
 
 DEMO 4 — Moderator review queue (24-hour SLA)
-  1. Sign out. Sign back in with adminreview@stompinground.com /
-     AppleReview!2026#.
+  1. Sign out. Sign back in with adminreview@stompinground.com
+     (password in App Store Connect Notes).
   2. Tap Profile → "Admin" → "Moderation Queue".
   3. You will see a list of every open report with the reporter,
      the reported user/content, the reason, and a red "Overdue"
@@ -128,7 +134,7 @@ Do this on a real iPhone or iPad (TestFlight build or dev build) — Apple's rev
 - [ ] Delete the app if it was previously installed.
 - [ ] Reinstall a fresh build.
 - [ ] **Demo 1 (Case A — new user):** Complete the register form, confirm the "Create Account" button is greyed out, tick the checkbox, confirm the button turns yellow, confirm both "Terms of Service" and "Community Guidelines" links open readable full-text screens.
-- [ ] **Demo 1 (Case B — existing user):** Sign in with `reviewer@stompinground.com` → confirm the "Updated Terms" screen intercepts you and blocks the rest of the app.
+- [ ] **Demo 1 (Case B — existing user):** Sign in with `reviewer@stompinground.com` (password provided via App Store Connect Notes / security@stompinground.com) → confirm the "Updated Terms" screen intercepts you and blocks the rest of the app.
 - [ ] **Demo 2:** Long-press the seeded test message in the "Yuma Line Dancers" chat → Report → submit with reason "Harassment" → confirm the "reviewed within 24 hours" toast.
 - [ ] **Demo 3:** Tap ⋯ on any dancer profile → Block → confirm their messages disappear from your feed.
 - [ ] **Demo 4:** Sign in as admin → Profile → Admin → Moderation Queue → confirm the report from Demo 2 is at the top of the queue with a fresh timestamp.
@@ -144,7 +150,15 @@ You **don't** need to run any seed script manually. The backend's startup compos
 2. `adminreview@stompinground.com` — admin, terms up-to-date.
 3. A pinned message in the instructor chat from a placeholder "Sample User" account, body: `"This is sample content for App Review — long-press me to Report or Block."`
 
-> When Apple approves the build, remove the `await seed_apple_review_accounts()` line from `backend/services/startup.py` and delete the three `@stompinground.com` accounts from production. See the top of `backend/services/apple_review_seed.py` for the checklist.
+### 🔒 Credential rotation policy (SEC-001 remediation)
+Reviewer passwords are **never committed** — they live only in the untracked `backend/.env` as `SEED_PW_REVIEWER_STOMPINGROUND_COM`, `SEED_PW_ADMINREVIEW_STOMPINGROUND_COM`, `SEED_PW_SAMPLECONTENT_STOMPINGROUND_COM`. Workflow for each Apple submission:
+
+1. Rotate all three passwords in `backend/.env` to fresh 24-char random strings.
+2. Redeploy the backend so the seed re-hashes on next boot.
+3. Paste the fresh passwords into **App Store Connect → App Review Information → Notes** on this build only.
+4. After Apple approves the build, rotate again so any leaked note is dead.
+
+> When Apple approves the build (and you no longer plan to submit further UGC-scoped updates), remove the `await seed_apple_review_accounts()` line from `backend/services/startup.py`, delete the three `SEED_PW_*STOMPINGROUND_COM` env vars, and delete the three reviewer accounts from the production `users` collection. See the top of `backend/services/apple_review_seed.py` for the checklist.
 
 If you ever need to re-seed on demand (e.g. after locally deleting the accounts): `python /app/backend/scripts/seed_apple_review.py`.
 

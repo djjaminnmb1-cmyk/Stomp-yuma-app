@@ -10,6 +10,15 @@ import uuid
 import pytest
 import requests
 
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
+
 BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "").rstrip("/") or \
     os.environ.get("EXPO_BACKEND_URL", "").rstrip("/")
 
@@ -31,12 +40,12 @@ def _login(api, email, password):
 
 @pytest.fixture(scope="session")
 def admin_token(api):
-    return _login(api, "erinboroughs@gmail.com", "Stompin2026!")
+    return _login(api, "erinboroughs@gmail.com", ERIN_PASSWORD)
 
 
 @pytest.fixture(scope="session")
 def instructor_token(api):
-    return _login(api, "luvtowork247@yahoo.com", "BootsDance49!")
+    return _login(api, "luvtowork247@yahoo.com", JAMIN_PASSWORD)
 
 
 @pytest.fixture(scope="session")

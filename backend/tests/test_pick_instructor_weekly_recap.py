@@ -15,15 +15,24 @@ import time
 import pytest
 import requests
 
+
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
 BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
     # Fall back to internal loopback if env not present in test container
     BASE_URL = "http://localhost:8001"
 
 ERIN_EMAIL = "erinboroughs@gmail.com"
-ERIN_PASSWORD = "Stompin2026!"
+ERIN_PASSWORD = ERIN_PASSWORD
 JAMIN_EMAIL = "luvtowork247@yahoo.com"
-JAMIN_PASSWORD = "BootsDance49!"
+JAMIN_PASSWORD = JAMIN_PASSWORD
 INSTRUCTOR_CODE = "lineup4life"
 
 

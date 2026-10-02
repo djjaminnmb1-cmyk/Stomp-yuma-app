@@ -16,10 +16,19 @@ import uuid
 import pytest
 import requests
 
+
+from _creds import (  # SEC-001 remediation — passwords from .env
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    ERIN_EMAIL,
+    ERIN_PASSWORD,
+    JAMIN_EMAIL,
+    JAMIN_PASSWORD,
+)
 BASE = os.environ["EXPO_PUBLIC_BACKEND_URL"].rstrip("/")
 
-ERIN = ("erinboroughs@gmail.com", "Stompin2026!")
-JAMIN = ("luvtowork247@yahoo.com", "BootsDance49!")
+ERIN = ("erinboroughs@gmail.com", ERIN_PASSWORD)
+JAMIN = ("luvtowork247@yahoo.com", JAMIN_PASSWORD)
 
 REACTION_KINDS = {"high_five", "dancer", "yeehaw", "heart"}
 
