@@ -157,6 +157,20 @@ def start_scheduler() -> None:
             replace_existing=True,
             next_run_time=datetime.now(timezone.utc) + timedelta(days=30),
         )
+        # Weekly digest email — Monday 08:00 America/Phoenix (UTC-7,
+        # no DST). The scheduler ticks in UTC so 15:00 Monday here =
+        # 08:00 AZ. Uses CronTrigger (not interval) so a mid-week
+        # restart doesn't shift the send to Wednesday. The service
+        # layer has its own per-user per-ISO-week idempotency ledger
+        # so a double-fire from a pod restart is a no-op.
+        from apscheduler.triggers.cron import CronTrigger
+        from services.weekly_digest import send_weekly_digest
+        scheduler.add_job(
+            send_weekly_digest,
+            CronTrigger(day_of_week="mon", hour=15, minute=0, timezone="UTC"),
+            id="weekly_digest_email",
+            replace_existing=True,
+        )
         if not scheduler.running:
             scheduler.start()
         logger.info("Reminder scheduler started (hourly + daily drift scan + monthly library sync)")

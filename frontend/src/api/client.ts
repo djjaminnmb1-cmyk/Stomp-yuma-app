@@ -669,6 +669,8 @@ export type NotificationPrefs = {
   admin_requests: boolean;
   announcements: boolean;
   library_updates: boolean;
+  // October 2026 — Monday-morning weekly digest email.
+  weekly_digest: boolean;
   quiet_hours: {
     enabled: boolean;
     start_hour: number;   // 0-23 inclusive

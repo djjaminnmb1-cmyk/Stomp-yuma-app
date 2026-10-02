@@ -51,6 +51,8 @@ class NotificationPrefsIn(BaseModel):
     admin_requests: Optional[bool] = None
     announcements: Optional[bool] = None
     library_updates: Optional[bool] = None
+    # October 2026 — Monday-morning weekly digest email.
+    weekly_digest: Optional[bool] = None
     quiet_hours: Optional[QuietHoursIn] = None
 
 

@@ -143,6 +143,14 @@ const ROWS: Row[] = [
     subtitle:
       "Pinned updates and news from Stompin' Ground Yuma admins",
   },
+  // ---- October 2026 — weekly email digest ----
+  {
+    key: "weekly_digest",
+    icon: "mail",
+    title: "Weekly email digest",
+    subtitle:
+      "Monday-morning recap of unread notifications so you never miss a new class, event, or @mention",
+  },
 ];
 
 // Admin-only row (hidden for non-admin users).

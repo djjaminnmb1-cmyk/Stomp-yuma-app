@@ -1121,6 +1121,138 @@ frontend:
           blue). The screen auto-renders the new rows and deep-links
           via the existing `router.push(deeplink)` handler.
 
+#====================================================================================================
+# NEW: Weekly Digest Email — Monday-morning unread-notifications recap — 2026-10-02
+#====================================================================================================
+
+backend:
+  - task: "Weekly Digest Email (service + scheduler + admin endpoints)"
+    implemented: true
+    working: true
+    file: "backend/services/weekly_digest.py, backend/routes/weekly_digest.py, backend/services/scheduler.py, backend/services/notification_prefs.py, backend/routes/notification_prefs.py, backend/routes/auth.py, backend/routes/__init__.py, backend/tests/test_weekly_digest.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Builds a Monday 08:00-America/Phoenix (15:00 UTC — Arizona
+          has no DST) weekly email summarising every UNREAD
+          notification from the last 7 days, grouped into 4 sections:
+          Classes (new_class / library_new_class / class_reminder),
+          Events (new_event), Announcements & Pins (announcement),
+          @Mentions (chat_mention). Caps 5 items per section with a
+          "+N more in the app →" tail linking to /notifications.
+
+          Pieces delivered:
+            * services/weekly_digest.py — collect_user_digest,
+              send_digest_for_user, send_weekly_digest sweep,
+              branded HTML + plain-text renderers, per-ISO-week
+              idempotency ledger in `weekly_digest_sends`
+              (unique on user_id + week_start).
+            * services/notification_prefs.py — added `weekly_digest`
+              to ALL_CATEGORIES tuple so the merge-PATCH in
+              routes/notification_prefs auto-handles it. Default is
+              True (opt-out).
+            * routes/notification_prefs.py — added
+              `weekly_digest: Optional[bool]` to NotificationPrefsIn.
+            * routes/weekly_digest.py — new admin router with:
+                - POST /api/admin/weekly-digest/preview
+                  (force=True, bypasses prefs + ledger + empty-skip
+                  so an admin can preview any time)
+                - POST /api/admin/weekly-digest/run-now (manual
+                  sweep trigger with full guards)
+                - GET /api/admin/weekly-digest/status
+            * services/scheduler.py — new CronTrigger job
+              `weekly_digest_email` at Monday 15:00 UTC. CronTrigger
+              (not interval=weeks=1) so a mid-week restart doesn't
+              shift the send.
+            * routes/auth.py — account-delete flow now also purges
+              `weekly_digest_sends` rows for the deleted user.
+
+          Guards:
+            * Skips users with `email_is_synthetic: True` (Apple
+              private-relay accounts whose email is `apple:<sub>`).
+            * Skips users whose pref is explicitly False.
+            * Skips users with zero unread items in the window
+              (silence is a feature).
+            * Idempotency: one send per user per ISO week — a pod
+              restart around 15:00 UTC Monday is a no-op.
+
+          Email template:
+            * Red→orange gradient brand header "Stompin' Ground Yuma
+              — Your week on the dance floor".
+            * Personal greeting ("Hey {first_name} 👋") with unread
+              count.
+            * Section cards with emoji headers, item titles+bodies,
+              relative-time stamps ("13m ago", "3d ago"), truncation
+              tail.
+            * Red "Open the Notification Center" CTA.
+            * Footer link to /settings/notifications for pref change.
+            * Plain-text alternative part is included for text-only
+              email clients.
+
+          Tests: tests/test_weekly_digest.py — 15 cases covering
+          pref defaults + patch, grouping/cap/truncation, 4 short-
+          circuit reasons (empty / pref-off / synthetic / already-
+          sent), force bypasses ledger write, admin-only guards on
+          all 3 endpoints, status endpoint shape. 15/15 pass.
+
+          Combined with existing suites — 65/65 pass
+          (test_weekly_digest + test_instructor_notifications +
+          test_notifications_v2 + test_dotd_streak_and_audience).
+
+          Live verification: rendered HTML preview saved and
+          screenshotted — brand gradient header, "Hey Erin 👋", 📚
+          Classes with Jamin's new class, 📣 Announcements & Pins
+          with 5 items + "+50 more in the app →" tail, CTA button,
+          settings link, "Yuma, AZ · Where line dancing is
+          community" tagline.
+
+          SMTP sending blocked only by test-env firewall (production
+          Resend / outbound SMTP will deliver). Logged cleanly as
+          [EMAIL:FAILED] with a correlation id — no secrets logged.
+
+frontend:
+  - task: "Settings → Notifications gains the weekly-digest toggle"
+    implemented: true
+    working: true
+    file: "frontend/app/settings/notifications.tsx, frontend/src/api/client.ts"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Added `weekly_digest: boolean` to the NotificationPrefs
+          type in `client.ts` and a new row to the Settings UI:
+            * Icon: mail (envelope)
+            * Title: "Weekly email digest"
+            * Subtitle: "Monday-morning recap of unread
+              notifications so you never miss a new class, event,
+              or @mention"
+          Default ON (opt-out), toggles via the existing PATCH
+          /users/me/notification-prefs endpoint. Verified via
+          screenshot — the new row appears between "Admin
+          announcements" and the admin-only "Admin: pending-review
+          alerts" row.
+
+metadata:
+  test_sequence: 45
+  test_priority: "high_first"
+
+test_plan:
+  current_focus:
+    - "Weekly Digest Email (service + scheduler + admin endpoints)"
+    - "Settings → Notifications gains the weekly-digest toggle"
+  stuck_tasks: []
+  test_all: false
+
+old_frontend:
+  - task: "Notification Center shows `new_class` and `new_event` rows"
+
 metadata:
   test_sequence: 44
   test_priority: "high_first"

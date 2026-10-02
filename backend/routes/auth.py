@@ -743,6 +743,12 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
         await purge_dotd(uid)
     except Exception:  # pragma: no cover
         logger.exception("dotd_streak purge failed for %s", uid)
+    # Weekly-digest send ledger
+    try:
+        from services.weekly_digest import purge_user as purge_digest
+        await purge_digest(uid)
+    except Exception:  # pragma: no cover
+        logger.exception("weekly_digest purge failed for %s", uid)
     # Event RSVPs authored by this user
     await db.event_rsvps.delete_many({"user_id": uid})
 

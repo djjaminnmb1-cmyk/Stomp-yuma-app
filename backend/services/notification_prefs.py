@@ -61,6 +61,8 @@ ALL_CATEGORIES = (
     "admin_requests",       # admin-only — pending-dance + instructor-grant
     "announcements",        # admin "pin" fan-out to every user
     "library_updates",      # any new dance / class added to the library
+    # October 2026 — weekly email digest of unread notifications.
+    "weekly_digest",        # Monday-morning recap email (opt-out)
 )
 
 # Only these categories are silenced during quiet hours — reminders /

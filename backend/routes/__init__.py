@@ -45,6 +45,7 @@ from . import (
     song_preview,
     suggestions,
     tracking,
+    weekly_digest,
     weekly_recap,
 )
 
@@ -89,6 +90,7 @@ api_router.include_router(legal.router)
 api_router.include_router(announcements.router)
 api_router.include_router(notifications.router)
 api_router.include_router(dance_of_the_day.router)
+api_router.include_router(weekly_digest.router)
 api_router.include_router(misc.router)
 
 __all__ = ["api_router"]

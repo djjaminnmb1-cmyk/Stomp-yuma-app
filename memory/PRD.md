@@ -1952,3 +1952,81 @@ tweak in `routes/classes.py`):
 No change required. `app/notifications.tsx` already maps `new_class`
 and `new_event` to the right icon/tint (school/green and flag/blue)
 and routes any deeplink through `router.push`.
+
+---
+
+## Weekly Digest Email — Monday-morning unread recap — 2026-10-02
+
+### Why
+Dancers who travel, take a week off, or just skip notifications for a
+busy stretch were quietly missing new classes and events from the
+instructors they follow. OS push is great for in-the-moment, but has
+no "catch up later" affordance. A Monday-morning digest email closes
+that gap without adding a single new push.
+
+### What it does
+Every Monday at 08:00 America/Phoenix (15:00 UTC — Arizona skips DST
+so this is stable year-round), the server scans every user with the
+new `weekly_digest` pref ON and sends them one branded HTML email
+summarising their UNREAD notifications from the past 7 days.
+
+Four digest sections (same ordering as the Notification Center icons):
+* 📚 **Classes** — `new_class`, `library_new_class`, `class_reminder`
+* 🎉 **Events** — `new_event`
+* 📣 **Announcements & Pins** — `announcement`
+* 💬 **@Mentions** — `chat_mention`
+
+Each section caps at 5 items; anything over shows "+N more in the app →"
+linking back to the Notification Center. If a user has zero unread
+items in the window, the email is skipped entirely (no spam).
+
+### Safeguards
+* **Opt-out** — pref default is True; dancers can mute in Settings.
+* **Deliverability** — Apple private-relay accounts flagged
+  `email_is_synthetic: True` are skipped (their `apple:<sub>` address
+  isn't deliverable).
+* **Idempotency** — one send per user per ISO week via a unique
+  `(user_id, week_start)` ledger in `weekly_digest_sends`. A pod
+  restart around the cron window is a no-op.
+* **Account deletion** — the ledger is purged alongside the user.
+
+### Admin tools
+* `POST /api/admin/weekly-digest/preview` — fires a real email to the
+  caller RIGHT NOW with `force=True`, bypassing all guards (useful
+  for Erin to preview the look). Doesn't write a ledger row so the
+  Monday sweep still fires.
+* `POST /api/admin/weekly-digest/run-now` — manual trigger of the
+  full sweep with normal guards, in case the cron missed its window.
+* `GET  /api/admin/weekly-digest/status` — this week's send count,
+  opted-in / opted-out totals, last send timestamp.
+
+### Frontend
+* `settings/notifications.tsx` — new row:
+  "📧 Weekly email digest — Monday-morning recap of unread
+  notifications so you never miss a new class, event, or @mention"
+* `src/api/client.ts` — `weekly_digest: boolean` added to
+  `NotificationPrefs` type.
+
+### Email template
+Mobile-first HTML with inline styles for maximum client support
+(Gmail / Apple Mail / Outlook):
+* Red→orange gradient brand header.
+* Personal greeting and unread count.
+* Section cards with emoji headers, title + body + relative time
+  per item, truncation tail link.
+* Red "Open the Notification Center" CTA button.
+* Settings-change link in the footer.
+* Plain-text alternative part for text-only clients.
+
+### Tests
+`tests/test_weekly_digest.py` — **15 cases**, all passing. Combined
+with the sibling notification suites (`test_instructor_notifications`,
+`test_notifications_v2`, `test_dotd_streak_and_audience`) — **65/65
+pass**.
+
+### Data model additions
+* `weekly_digest` added to `notification_prefs` sub-doc (bool,
+  default True).
+* New collection `weekly_digest_sends` — one row per
+  `(user_id, week_start)` with `sent_at` + `item_count`. Unique index
+  guards against double-sends.
