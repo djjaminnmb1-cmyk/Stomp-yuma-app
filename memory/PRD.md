@@ -1778,3 +1778,177 @@ test_version_pin` = **60/60 passing**.
   types + 8 new API wrappers (list / unread / read / read-all /
   delete / get-DOTD / list-scheduled / update-announcement).
 
+
+
+## Session (June 2026) — DOTD Streak + Audience Picker
+
+Two companion features that extend Notifications 2.1:
+
+### A. DOTD Streak
+
+Dancers earn a "Daily Devotee" badge for opening today's featured
+Dance Of The Day three days in a row — specifically **from the hero
+card on Home**. A seven-day run unlocks "Weekly Devotee". Both badges
+are plugged into the existing `badges.py` catalog via a new
+`"dotd_streak"` category so the generic `evaluate_badges()` pipeline
+awards them automatically.
+
+Backend
+* `services/dotd_streak.py` — new module. `record_open(user_id,
+  dance_id)` validates the submitted id matches today's DOTD pick
+  (prevents stale clients from spoofing streaks), upserts a per-day
+  row into `dotd_opens`, and bumps `users.dotd_streak_current` /
+  `users.dotd_streak_longest`. Also triggers `evaluate_badges()` so
+  the hero celebration can land in the same response.
+* `services/badges.py` — added `BadgeDef("dotd_daily_devotee", ...)`
+  requirement=3 and `BadgeDef("dotd_weekly_devotee", ...)`
+  requirement=7, plus a new `"dotd_streak"` branch in `_progress_for`
+  mirroring the existing `"streak"` branch but reading the DOTD
+  counters.
+* `routes/dance_of_the_day.py` — new `GET /streak` and `POST /open`
+  endpoints alongside the original `GET /dance-of-the-day`.
+* `services/startup.py` + `routes/auth.py` — DOTD index on first
+  boot; account-delete purges `dotd_opens` + unsets the streak fields.
+
+Frontend
+* `components/DanceOfTheDayCard.tsx` — hero card now fetches both
+  DOTD + streak in parallel on mount, calls `recordDotdOpen` on tap
+  BEFORE navigating (so the next focus reads the bumped value), and
+  shows a flame pill: lit orange when today's done, dim grey with
+  a `·` suffix as a nudge otherwise. Newly-earned badges pop in an
+  `Alert.alert` with the title + description.
+* `src/api/client.ts` — 2 new types (`DotdStreak`, `DotdOpenResponse`)
+  + 2 new API wrappers (`getDotdStreak`, `recordDotdOpen`).
+
+### B. Admin Audience Picker
+
+Announcements can now target a subset of dancers instead of the
+entire userbase. Three audience modes with combinable filters:
+
+1. **Everyone** (default) — full fan-out.
+2. **Instructor's followers** — multi-select instructor picker.
+3. **Difficulty tier** — multi-select chips using the dancer's
+   **most-practiced difficulty in the last 30 days**.
+
+The two custom filters are intersected server-side — "Erin's
+followers AT Beginner tier" reaches only dancers who match BOTH.
+
+Backend
+* `services/difficulty_tier.py` — new module. `tier_for_user()` and
+  `user_ids_matching_tiers()` run a single-pass Mongo aggregate over
+  `practice_sessions` → `dances.difficulty` to resolve each user's
+  current tier (grouped by count, sorted desc). 30-day lookback.
+* `services/announcements.py`:
+  - New `_normalize_audience()` that canonicalises the payload shape
+    (`{scope: "everyone"|"custom", instructor_user_ids, difficulty_tiers}`).
+  - New `_resolve_audience()` resolver — base pool from instructor
+    follower graph (`db.follows.followee_id ∈ picks`) or all users,
+    then intersect with `user_ids_matching_tiers` when a tier filter
+    is set.
+  - `_broadcast_now()` now routes through `_resolve_audience` so
+    tier/instructor-scoped pins only fan out to the matching pool.
+  - `create_and_broadcast()` + `update_scheduled()` both accept an
+    optional `audience` arg that persists on the announcement doc.
+  - New `preview_audience()` returns `{count, sample_names: [..5..]}`.
+* `routes/announcements.py`:
+  - `AnnouncementIn` / `AnnouncementPatch` now accept `audience`.
+  - `POST /admin/announcements/audience/preview` — dry-run count.
+  - `GET  /admin/announcements/instructor-picker` — admin picker list.
+  - `GET  /admin/announcements/difficulty-tiers` — static tier chips.
+
+Frontend
+* `components/AudiencePicker.tsx` — new reusable component. Three
+  mode buttons (Everyone / Followers / Difficulty). Each custom
+  mode shows its filter block, and if the admin has data in BOTH
+  filters, both blocks stay visible (so combining is first-class).
+  Debounced 500ms preview call renders "Will reach N dancers · e.g.
+  Alice, Bob, Carol" below.
+* `admin/announcements.tsx` — composer now holds an `audience`
+  state object that:
+  - Resets to `{scope: "everyone"}` on compose-fresh.
+  - Restores from `ann.audience` when editing a scheduled draft
+    (so pencil → save never silently widens the fan-out).
+  - Flows into both `createAnnouncement` and `updateAnnouncement`.
+  - Added an `AudienceTag` next to each scheduled + sent row's
+    header so admins can see at a glance what the pin was scoped to
+    ("Everyone" / "2 inst. · Beginner" / "Advanced").
+
+### Tests
+`backend/tests/test_dotd_streak_and_audience.py` — 19/19 passing.
+* 6 DOTD endpoint tests (auth, default state, open bumps, wrong-
+  id rejects, missing-id 400, same-day no-rebump).
+* 2 DOTD badge award tests (seeds 3- and 7-day streaks via DB and
+  verifies `evaluate_badges` returns the right ids).
+* 2 Metadata endpoint tests (instructor-picker admin-only,
+  difficulty-tiers admin-only + canonical tier list intact).
+* 4 Audience preview tests (everyone count, custom-no-filters
+  defaults to everyone count, tier filter narrows ≤ everyone,
+  non-admin 403).
+* 5 Full-cycle audience-on-announcement tests (create persists
+  scope, PATCH round-trip, backward-compat default="everyone",
+  tier filter actually narrows the recipient pool).
+
+Full combined run with previous suites:
+`test_dotd_streak_and_audience + test_notifications_v2 +
+test_push_notifications_expansion + test_version_pin` = **79/79 passing**.
+
+### Data model additions
+* `dotd_opens` collection — one row per `(user_id, day)`, unique
+  index on the pair. Fields: `dance_id`, `opens` (count), `first_open_at`,
+  `last_open_at`. Pruned on account delete.
+* `users` — three new optional fields: `dotd_streak_current`,
+  `dotd_streak_longest`, `dotd_last_open_day`.
+* `announcements.audience` — nested doc:
+  `{scope, instructor_user_ids?, difficulty_tiers?}`. Nullable for
+  backward-compat with pre-June rows (treated as `scope=everyone`).
+
+
+---
+
+## Follower push notifications now land in Notification Center + double-push fix — 2026-10-02
+
+### Why
+A follower who missed the OS banner for a new class/event had no way
+to find it after the fact. The push helpers (`notify_followers_of_new_class` /
+`notify_followers_of_new_event`) sent the push + wrote a dedupe ledger
+row but never wrote a row into `notification_events`, so the bell-icon
+Notification Center was blank for those events. Separately, the
+class-create route always passed an empty `skip_user_ids` list to the
+library-wide `broadcast_new_class`, meaning a follower who already got
+the instructor push ALSO got the "A new class was added" library push —
+double-buzz for the same class.
+
+### What changed
+Edits in `services/instructor_notifications.py` only (plus a plumbing
+tweak in `routes/classes.py`):
+
+* `notify_followers_of_new_class` and `notify_followers_of_new_event`
+  now call `notification_feed.log_event(...)` after push, with kinds
+  `new_class` / `new_event`. Metadata carries `entity_id` and
+  `instructor_id`. Deeplinks target `/classes` and `/events/{event_id}`
+  respectively.
+* Both helpers now return `list[str]` of pushed user_ids (previously
+  returned `int`). Return is backward-compat tolerated by the route
+  which still falls through to the broadcast's own ledger dedupe when
+  it receives a legacy int.
+* `routes/classes.py` captures the returned list and forwards it as
+  `skip_user_ids=follower_recipients` to `broadcast_new_class`,
+  guaranteeing a single push per follower per class.
+
+### Verification
+* Smoke test: fresh follower user → picks Erin as instructor → Erin
+  creates class + event → 1 feed row for each, 1 follower-push ledger
+  row, 0 library-broadcast ledger rows.
+* Live UI: Notification Center shows "New class from Jamin Brown —
+  Thursday Night Line Dancing · 2026-10-03" at the top with the
+  green school icon.
+* Tests: `tests/test_instructor_notifications.py` grows from 7 → 10
+  passing cases (new: `TestFeedCenterLogging` × 2 and
+  `TestNoDoublePushDedupe` × 1). Also fixed a pre-existing bug in the
+  test's `_mk_dancer` helper that was missing `accepted_terms_version`
+  since the Apple UGC 1.2 rollout.
+
+### Frontend
+No change required. `app/notifications.tsx` already maps `new_class`
+and `new_event` to the right icon/tint (school/green and flag/blue)
+and routes any deeplink through `router.push`.

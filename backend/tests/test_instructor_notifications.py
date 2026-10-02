@@ -113,7 +113,12 @@ def _mk_dancer(api, erin_uid: str, follows_erin: bool) -> dict:
     pw = "DancerPass1!"
     r = api.post(
         f"{API}/auth/register",
-        json={"email": email, "password": pw, "name": "Test Dancer"},
+        json={
+            "email": email,
+            "password": pw,
+            "name": "Test Dancer",
+            "accepted_terms_version": "2026-06-24",
+        },
     )
     assert r.status_code == 200, f"register failed: {r.status_code} {r.text}"
     data = r.json()
@@ -352,6 +357,126 @@ class TestEventFanOut:
         assert _run(_find_ledger(follower["user_id"], "event", eid)) is None
 
 
+async def _find_feed_row(user_id: str, kind: str, entity_id: str) -> dict | None:
+    db = _mongo()
+    return await db.notification_events.find_one(
+        {
+            "user_id": user_id,
+            "kind": kind,
+            "metadata.entity_id": entity_id,
+        },
+        {"_id": 0},
+    )
+
+
+async def _find_lib_broadcast_row(user_id: str, entity_id: str) -> dict | None:
+    """The library_broadcast ledger uses the ``library_broadcasts``
+    collection to dedupe its own send. If a follower appears in there
+    for a class they ALSO got a follower push for, it would mean the
+    skip_user_ids plumbing broke and the phone would buzz twice."""
+    db = _mongo()
+    for coll in ("library_broadcasts", "library_broadcast_log"):
+        row = await db[coll].find_one(
+            {
+                "user_id": user_id,
+                "entity_type": "class",
+                "entity_id": entity_id,
+            },
+            {"_id": 0},
+        )
+        if row:
+            return row
+    return None
+
+
+class TestFeedCenterLogging:
+    """Every follower push must also land in the in-app Notification
+    Center so the user can scroll back after the OS banner fades."""
+
+    def test_new_class_writes_feed_row(
+        self, api, erin_auth, dance_ids, follower
+    ):
+        payload = {
+            "date": _future_date(16),
+            "session_label": "TEST Feed Logging Class",
+            "dance_ids": dance_ids,
+        }
+        r = api.post(f"{API}/classes", headers=erin_auth["headers"], json=payload)
+        assert r.status_code == 200
+        cid = r.json()["id"]
+        CREATED_CLASS_IDS.append(cid)
+        time.sleep(0.5)
+
+        row = _run(_find_feed_row(follower["user_id"], "new_class", cid))
+        assert row is not None, "Follower must have a notification feed row"
+        assert row["title"], "Feed row must have a title"
+        assert cid in str(row.get("metadata", {})), "entity_id must be in metadata"
+        assert row["deeplink"].startswith("/classes"), (
+            f"Class feed row should deeplink to /classes, got {row['deeplink']!r}"
+        )
+
+    def test_new_event_writes_feed_row(
+        self, api, erin_auth, follower
+    ):
+        payload = {
+            "name": "TEST Feed Logging Event",
+            "description": "feed test",
+            "event_type": "workshop",
+            "skill_level": "Beginner",
+            "date": _future_date(23),
+            "address": "123 Feed Rd",
+            "city": "Yuma",
+            "state": "AZ",
+            "zip_code": "85364",
+            "country": "US",
+            "is_published": True,
+        }
+        r = api.post(f"{API}/events", headers=erin_auth["headers"], json=payload)
+        assert r.status_code == 200
+        eid = r.json()["id"]
+        CREATED_EVENT_IDS.append(eid)
+        time.sleep(0.5)
+
+        row = _run(_find_feed_row(follower["user_id"], "new_event", eid))
+        assert row is not None, "Follower must have a notification feed row for event"
+        assert row["deeplink"] == f"/events/{eid}", (
+            f"Event feed row deeplink mismatch: {row['deeplink']!r}"
+        )
+
+
+class TestNoDoublePushDedupe:
+    """Followers who got the instructor-fan-out push MUST NOT also get
+    the library-wide "new class" broadcast push — otherwise their phone
+    buzzes twice for the same class.
+
+    The route passes the follower-recipients list as ``skip_user_ids``
+    to ``broadcast_new_class``; this test proves that plumbing works."""
+
+    def test_follower_not_library_broadcast_on_class_create(
+        self, api, erin_auth, dance_ids, follower
+    ):
+        payload = {
+            "date": _future_date(17),
+            "session_label": "TEST Dedupe Class",
+            "dance_ids": dance_ids,
+        }
+        r = api.post(f"{API}/classes", headers=erin_auth["headers"], json=payload)
+        assert r.status_code == 200
+        cid = r.json()["id"]
+        CREATED_CLASS_IDS.append(cid)
+        time.sleep(0.5)
+
+        # Follower MUST have the instructor-fan-out push ledger row.
+        assert _run(_find_ledger(follower["user_id"], "class", cid)) is not None
+
+        # Follower MUST NOT have a library-broadcast ledger row (dedupe worked).
+        lib_row = _run(_find_lib_broadcast_row(follower["user_id"], cid))
+        assert lib_row is None, (
+            f"Follower was ALSO library-broadcast — double push!\n"
+            f"  lib_row={lib_row!r}"
+        )
+
+
 # ---------------- Cleanup ----------------
 @pytest.fixture(scope="module", autouse=True)
 def _cleanup():
@@ -365,14 +490,23 @@ def _cleanup():
             await db.instructor_notifications.delete_many(
                 {"entity_type": "class", "entity_id": {"$in": CREATED_CLASS_IDS}}
             )
+            await db.notification_events.delete_many(
+                {"kind": "new_class", "metadata.entity_id": {"$in": CREATED_CLASS_IDS}}
+            )
         if CREATED_EVENT_IDS:
             await db.events.delete_many({"id": {"$in": CREATED_EVENT_IDS}})
             await db.instructor_notifications.delete_many(
                 {"entity_type": "event", "entity_id": {"$in": CREATED_EVENT_IDS}}
             )
+            await db.notification_events.delete_many(
+                {"kind": "new_event", "metadata.entity_id": {"$in": CREATED_EVENT_IDS}}
+            )
         if CREATED_USER_IDS:
             await db.users.delete_many({"user_id": {"$in": CREATED_USER_IDS}})
             await db.instructor_notifications.delete_many(
+                {"user_id": {"$in": CREATED_USER_IDS}}
+            )
+            await db.notification_events.delete_many(
                 {"user_id": {"$in": CREATED_USER_IDS}}
             )
 

@@ -1050,6 +1050,94 @@ agent_communication:
       rejection response is complete. Please run the following
       acceptance tests:
 
+#====================================================================================================
+# NEW: Follower notifications now land in Notification Center + double-push fix — 2026-10-02
+#====================================================================================================
+
+backend:
+  - task: "Follower notifications: Notification Center logging + double-push dedupe"
+    implemented: true
+    working: true
+    file: "backend/services/instructor_notifications.py, backend/routes/classes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Two gaps closed in a single edit of
+          `services/instructor_notifications.py`:
+
+          1) NOTIFICATION CENTER logging: both
+             `notify_followers_of_new_class` and
+             `notify_followers_of_new_event` now call
+             `notification_feed.log_event(...)` after a successful push
+             with kinds `new_class` / `new_event`. Followers who tap
+             away before the OS banner lands can still find the alert
+             in the bell icon. Rows carry metadata.entity_id so the
+             frontend icon map (`new_class` = school/green, `new_event`
+             = flag/blue) is used and tapping deep-links to `/classes`
+             or `/events/{event_id}`.
+
+          2) DOUBLE-PUSH FIX: both helpers now RETURN a `list[str]` of
+             user_ids that were just pushed (previously returned int).
+             `routes/classes.py` captures this list and passes it as
+             `skip_user_ids=` to `broadcast_new_class`, so followers
+             already pinged via the instructor fan-out are NEVER
+             library-broadcast on the same class. Backwards-compat:
+             the route defensively still accepts an int return and
+             falls through to the broadcast's own dedupe ledger when
+             the helper hasn't been upgraded.
+
+          Verified end-to-end:
+            * Smoke script (register follower → pick instructor →
+              create class → create event) confirms 1 feed row per
+              recipient per entity, 1 follower push ledger row, and
+              0 library-broadcast ledger rows for that user.
+            * pytest suite `tests/test_instructor_notifications.py`
+              extended with `TestFeedCenterLogging` (2 cases) and
+              `TestNoDoublePushDedupe` (1 case). All 10 tests pass.
+            * Live UI screenshot: Erin's Notification Center now shows
+              "New class from Jamin Brown — Thursday Night Line
+              Dancing · 2026-10-03 — class" at the top with the green
+              school icon.
+
+frontend:
+  - task: "Notification Center shows `new_class` and `new_event` rows"
+    implemented: true
+    working: true
+    file: "frontend/app/notifications.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          No code change required — the Notification Center icon/tint
+          map (`KIND_ICON_MAP`) already included entries for
+          `new_class` (school icon, green) and `new_event` (flag icon,
+          blue). The screen auto-renders the new rows and deep-links
+          via the existing `router.push(deeplink)` handler.
+
+metadata:
+  test_sequence: 44
+  test_priority: "high_first"
+
+test_plan:
+  current_focus:
+    - "Follower notifications: Notification Center logging + double-push dedupe"
+  stuck_tasks: []
+  test_all: false
+
+old_agent_communication:
+    -agent: "main"
+    -message: |
+      Backend + frontend implementation for Apple Guideline 1.2 UGC
+      rejection response is complete. Please run the following
+      acceptance tests:
+
       BACKEND:
       1. Terms enforcement:
          a. POST /api/auth/register with NO accepted_terms_version

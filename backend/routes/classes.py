@@ -126,23 +126,27 @@ async def create_class(
     # Fan-out to FOLLOWERS of this instructor only (per "My instructors"
     # picker). Replaces the old "notify every user" broadcast — dancers
     # who never opted-in to Erin's classes shouldn't get pinged.
-    # Helper handles: upcoming-only date check, idempotency, and swallows
-    # push-relay failures so a bad outage never blocks the CRUD path.
+    # Helper handles: upcoming-only date check, idempotency, swallows
+    # push-relay failures so a bad outage never blocks the CRUD path,
+    # AND writes a Notification Center row per recipient.
     follower_recipients: list[str] = []
     try:
         res = await notify_followers_of_new_class(doc)
-        if isinstance(res, int):
+        if isinstance(res, list):
+            follower_recipients = res
+        elif isinstance(res, int):
             # Legacy return — int count only. Follower set already got
-            # the push; library broadcast will still skip them via the
-            # idempotency ledger even if we can't list them here.
+            # the push; library broadcast will fall back to its own
+            # idempotency ledger (one row per recipient) so phones
+            # still only buzz once.
             pass
     except Exception as e:  # noqa: BLE001
         logger.warning(f"Class notification failed (non-blocking): {e}")
 
     # ALSO broadcast to every opted-in user (``library_updates`` pref)
     # — "A new class was added" nudge for dancers who don't yet follow
-    # the posting instructor. The helper skips any user already in the
-    # follower ledger via its own dedupe table so phones only buzz once.
+    # the posting instructor. Skip anyone who already received the
+    # follower push via ``skip_user_ids`` so phones only buzz once.
     try:
         from services.library_broadcast import broadcast_new_class
         await broadcast_new_class(doc, skip_user_ids=follower_recipients)

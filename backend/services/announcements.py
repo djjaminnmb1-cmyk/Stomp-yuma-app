@@ -59,6 +59,101 @@ _ANN_MAX_TITLE = 120
 _ANN_MAX_BODY = 2000
 
 
+def _normalize_audience(value: Optional[dict]) -> dict:
+    """Normalize an audience payload into the canonical stored form.
+
+    Shape (both filters optional, intersection semantics when both set):
+    ``{
+        "scope": "everyone" | "custom",
+        "instructor_user_ids": [str, ...]  # only when scope=custom
+        "difficulty_tiers":    [str, ...]  # only when scope=custom
+    }``
+
+    ``None`` or empty → ``{"scope": "everyone"}`` (backward-compat with
+    announcements written before this field existed).
+    """
+    if not value or not isinstance(value, dict):
+        return {"scope": "everyone"}
+    scope = (value.get("scope") or "everyone").strip().lower()
+    if scope not in ("everyone", "custom"):
+        scope = "everyone"
+    if scope == "everyone":
+        return {"scope": "everyone"}
+    instructor_ids = [
+        str(x).strip()
+        for x in (value.get("instructor_user_ids") or [])
+        if x and isinstance(x, str)
+    ]
+    tiers = [
+        str(x).strip()
+        for x in (value.get("difficulty_tiers") or [])
+        if x and isinstance(x, str)
+    ]
+    # If "custom" was asked but no filters supplied, fall back to
+    # everyone — a filter-less custom scope is semantically "everyone"
+    # and would just add a confusing admin-side special case.
+    if not instructor_ids and not tiers:
+        return {"scope": "everyone"}
+    return {
+        "scope": "custom",
+        "instructor_user_ids": instructor_ids,
+        "difficulty_tiers": tiers,
+    }
+
+
+async def _resolve_audience(audience: dict, *, exclude_user_id: str = "") -> list[str]:
+    """Return the set of user_ids an announcement should fan out to,
+    based on the (normalized) ``audience`` filter.
+
+    When BOTH filters are set we intersect them — the admin picked
+    "Erin's followers AT Beginner level" and we honour the AND.
+    """
+    scope = audience.get("scope") or "everyone"
+
+    # Step 1 — base pool.
+    if scope == "everyone":
+        base_ids: set[str] = set()
+        async for row in db.users.find({}, {"_id": 0, "user_id": 1}):
+            uid = row.get("user_id")
+            if uid:
+                base_ids.add(uid)
+    else:
+        base_ids = set()
+        instructor_ids = audience.get("instructor_user_ids") or []
+        if instructor_ids:
+            # Union: followers of any of the picked instructors.
+            # The ``follows`` collection stores user→user with fields
+            # ``follower_id`` + ``followee_id`` (see services.social).
+            async for row in db.follows.find(
+                {"followee_id": {"$in": instructor_ids}},
+                {"_id": 0, "follower_id": 1},
+            ):
+                fid = row.get("follower_id")
+                if fid:
+                    base_ids.add(fid)
+            # If NO difficulty filter is also set, this IS the pool.
+            if not audience.get("difficulty_tiers"):
+                pass
+        else:
+            # No instructor picked → start with every user (so the
+            # difficulty filter applies to the whole base).
+            async for row in db.users.find({}, {"_id": 0, "user_id": 1}):
+                uid = row.get("user_id")
+                if uid:
+                    base_ids.add(uid)
+
+        # Step 2 — intersect with the difficulty tier matcher if set.
+        tiers = audience.get("difficulty_tiers") or []
+        if tiers:
+            from services.difficulty_tier import user_ids_matching_tiers
+            tier_set = await user_ids_matching_tiers(tiers)
+            base_ids &= tier_set
+
+    if exclude_user_id and exclude_user_id in base_ids:
+        base_ids.discard(exclude_user_id)
+    return list(base_ids)
+
+
 def _normalize_scheduled_for(value: Optional[str]) -> Optional[str]:
     """Accept an ISO-8601 string and return the normalized UTC-ISO
     form, or ``None`` if the input is falsy. Raises ``ValueError`` on
@@ -97,12 +192,12 @@ async def _broadcast_now(
     author_id = doc.get("created_by") or ""
     title = doc.get("title") or ""
     body = doc.get("body") or ""
+    audience = _normalize_audience(doc.get("audience"))
 
-    pool: list[str] = []
-    async for row in db.users.find({}, {"_id": 0, "user_id": 1}):
-        uid = row.get("user_id")
-        if uid and uid != author_id:
-            pool.append(uid)
+    # Build the target pool from the stored audience filter — defaults
+    # to "everyone minus the author" for backward-compat with pre-
+    # audience announcements (``audience=None``).
+    pool = await _resolve_audience(audience, exclude_user_id=author_id)
     if not pool:
         return doc
 
@@ -156,10 +251,15 @@ async def create_and_broadcast(
     body: str,
     author: dict,
     scheduled_for: Optional[str] = None,
+    audience: Optional[dict] = None,
 ) -> dict:
     """Insert the announcement row AND (unless scheduled) fan out the
     push. For scheduled rows the push waits for the minute-interval
     scheduler job.
+
+    ``audience`` is normalized via ``_normalize_audience`` — see
+    docstring there for the shape. Omit for backward-compat "everyone"
+    behaviour.
 
     Returns the stored announcement dict so the admin UI can show the
     just-created item at the top of its list without a second GET.
@@ -173,6 +273,7 @@ async def create_and_broadcast(
         or "Admin"
     )
     normalized_scheduled = _normalize_scheduled_for(scheduled_for)
+    normalized_audience = _normalize_audience(audience)
     now = now_iso()
 
     doc = {
@@ -184,6 +285,7 @@ async def create_and_broadcast(
         "created_at": now,
         "scheduled_for": normalized_scheduled,  # None = immediate
         "broadcasted_at": None,
+        "audience": normalized_audience,
     }
     await db.announcements.insert_one(doc)
     doc.pop("_id", None)
@@ -245,6 +347,7 @@ async def update_scheduled(
     title: Optional[str] = None,
     body: Optional[str] = None,
     scheduled_for: Optional[str] = None,
+    audience: Optional[dict] = None,
 ) -> Optional[dict]:
     """Edit a scheduled (not-yet-broadcast) announcement. Returns the
     updated row, or ``None`` if the row doesn't exist / already sent.
@@ -262,10 +365,40 @@ async def update_scheduled(
         patch["body"] = body.strip()[:_ANN_MAX_BODY]
     if scheduled_for is not None:
         patch["scheduled_for"] = _normalize_scheduled_for(scheduled_for)
+    if audience is not None:
+        patch["audience"] = _normalize_audience(audience)
     if patch:
         await db.announcements.update_one({"id": ann_id}, {"$set": patch})
         row.update(patch)
     return row
+
+
+async def preview_audience(audience: Optional[dict]) -> dict:
+    """Admin-side preview — "how many dancers would this reach?"
+
+    Returns ``{"count": N, "sample_names": [..]}``.  Applies the same
+    announcement-pref filter the actual broadcast would, so the count
+    reflects true delivery (minus push-relay flakes).
+    """
+    norm = _normalize_audience(audience or {})
+    pool = await _resolve_audience(norm)
+    if not pool:
+        return {"count": 0, "sample_names": []}
+    try:
+        pool = await filter_recipients(pool, "announcements")
+    except Exception:
+        pass
+    # Sample up to 5 names for the UI hover-reveal.
+    sample: list[str] = []
+    if pool:
+        async for row in db.users.find(
+            {"user_id": {"$in": pool[:5]}},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1},
+        ).limit(5):
+            sample.append(
+                row.get("name") or row.get("email") or "A dancer"
+            )
+    return {"count": len(pool), "sample_names": sample}
 
 
 async def list_recent(limit: int = 50) -> list[dict]:

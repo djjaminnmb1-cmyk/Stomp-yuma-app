@@ -686,6 +686,23 @@ export type Announcement = {
   created_at: string;
   scheduled_for?: string | null;   // ISO datetime (UTC) or null = immediate
   broadcasted_at?: string | null;  // ISO datetime (UTC) or null = scheduled draft
+  audience?: AnnouncementAudience | null;
+};
+
+// Audience filter for an announcement broadcast.
+// scope=everyone  → no filter, full fan-out (default when omitted).
+// scope=custom    → optional filter on instructor-followers and/or
+//                   difficulty-tier. If both are set, intersection.
+export type AnnouncementAudience = {
+  scope: "everyone" | "custom";
+  instructor_user_ids?: string[];
+  difficulty_tiers?: string[];
+};
+
+export type InstructorPickerItem = {
+  user_id: string;
+  name: string;
+  picture: string;
 };
 
 // --- Notification Center ---
@@ -715,6 +732,24 @@ export type DanceOfTheDay = {
     tags?: string[];
   } | null;
   source: "cached" | "unpracticed" | "caught_up" | null;
+};
+
+export type DotdStreak = {
+  current: number;
+  longest: number;
+  today_done: boolean;
+};
+
+export type DotdOpenResponse = {
+  streak: DotdStreak;
+  newly_earned: {
+    badge_id: string;
+    title?: string;
+    description?: string;
+    icon?: string;
+    color?: string;
+  }[];
+  dance_matches: boolean;
 };
 
 export type RsvpCounts = {
@@ -1604,6 +1639,7 @@ export const api = {
     title: string,
     body: string,
     scheduled_for?: string | null,
+    audience?: AnnouncementAudience | null,
   ) =>
     req<{ ok: boolean; announcement: Announcement }>(
       "/admin/announcements",
@@ -1613,6 +1649,7 @@ export const api = {
           title,
           body,
           ...(scheduled_for ? { scheduled_for } : {}),
+          ...(audience ? { audience } : {}),
         }),
       },
       token
@@ -1624,11 +1661,33 @@ export const api = {
       title?: string;
       body?: string;
       scheduled_for?: string | null;
+      audience?: AnnouncementAudience | null;
     },
   ) =>
     req<{ ok: boolean; announcement: Announcement }>(
       `/admin/announcements/${encodeURIComponent(id)}`,
       { method: "PATCH", body: JSON.stringify(patch) },
+      token
+    ),
+  previewAnnouncementAudience: (
+    token: string,
+    audience: AnnouncementAudience,
+  ) =>
+    req<{ count: number; sample_names: string[] }>(
+      "/admin/announcements/audience/preview",
+      { method: "POST", body: JSON.stringify(audience) },
+      token
+    ),
+  listAnnouncementInstructorPicker: (token: string) =>
+    req<{ items: InstructorPickerItem[] }>(
+      "/admin/announcements/instructor-picker",
+      {},
+      token
+    ),
+  listAnnouncementDifficultyTiers: (token: string) =>
+    req<{ items: string[] }>(
+      "/admin/announcements/difficulty-tiers",
+      {},
       token
     ),
   deleteAnnouncement: (token: string, id: string) =>
@@ -1675,6 +1734,14 @@ export const api = {
   // ---------------- Dance Of The Day ----------------
   getDanceOfTheDay: (token: string) =>
     req<DanceOfTheDay>("/dance-of-the-day", {}, token),
+  getDotdStreak: (token: string) =>
+    req<DotdStreak>("/dance-of-the-day/streak", {}, token),
+  recordDotdOpen: (token: string, dance_id: string) =>
+    req<DotdOpenResponse>(
+      "/dance-of-the-day/open",
+      { method: "POST", body: JSON.stringify({ dance_id }) },
+      token
+    ),
 
   // ---------------- Instructor follow (push-alert graph) ----------------
   followInstructor: (instructor_id: string, token: string) =>

@@ -33,9 +33,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-import { api, Announcement } from "@/src/api/client";
+import { api, Announcement, AnnouncementAudience } from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { colors, radius, spacing } from "@/src/theme";
+import { AudiencePicker } from "@/src/components/AudiencePicker";
 
 const TITLE_MAX = 120;
 const BODY_MAX = 2000;
@@ -53,6 +54,42 @@ function formatSchedule(iso: string | null | undefined): string {
   } catch {
     return iso;
   }
+}
+
+
+function audienceLabel(a: AnnouncementAudience | null | undefined): string {
+  if (!a || a.scope === "everyone") return "Everyone";
+  const parts: string[] = [];
+  const insts = a.instructor_user_ids?.length ?? 0;
+  const tiers = a.difficulty_tiers?.length ?? 0;
+  if (insts > 0) parts.push(`${insts} inst.`);
+  if (tiers > 0) parts.push(a.difficulty_tiers!.join(", "));
+  return parts.length > 0 ? parts.join(" · ") : "Everyone";
+}
+
+
+function AudienceTag({
+  audience,
+}: {
+  audience?: AnnouncementAudience | null;
+}) {
+  const label = audienceLabel(audience);
+  const custom = audience && audience.scope === "custom";
+  return (
+    <View style={[styles.audTag, custom && styles.audTagCustom]}>
+      <Ionicons
+        name={custom ? "funnel" : "people"}
+        size={10}
+        color={custom ? colors.brandPrimary : colors.muted}
+      />
+      <Text
+        style={[styles.audTagText, custom && styles.audTagTextCustom]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </View>
+  );
 }
 
 
@@ -80,6 +117,13 @@ export default function AdminAnnouncementsScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+
+  // Audience state — defaults to "everyone". Preserved on edit so
+  // tapping the pencil on a scheduled pin re-loads whatever filter
+  // was on it.
+  const [audience, setAudience] = useState<AnnouncementAudience>(
+    { scope: "everyone" },
+  );
 
   // Edit state — null = creating new; set = editing existing scheduled
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -110,6 +154,7 @@ export default function AdminAnnouncementsScreen() {
     setBody("");
     setMode("now");
     setEditingId(null);
+    setAudience({ scope: "everyone" });
     const d = new Date();
     d.setHours(d.getHours() + 1);
     d.setMinutes(0, 0, 0);
@@ -128,6 +173,17 @@ export default function AdminAnnouncementsScreen() {
       } catch {
         // keep default
       }
+    }
+    // Restore the saved audience so an edit doesn't silently widen
+    // the fan-out from "Erin's followers" to "everyone".
+    if (ann.audience) {
+      setAudience({
+        scope: ann.audience.scope ?? "everyone",
+        instructor_user_ids: ann.audience.instructor_user_ids ?? [],
+        difficulty_tiers: ann.audience.difficulty_tiers ?? [],
+      });
+    } else {
+      setAudience({ scope: "everyone" });
     }
     setSendError(null);
   }, []);
@@ -163,6 +219,7 @@ export default function AdminAnnouncementsScreen() {
           title: t,
           body: b,
           scheduled_for: sched,
+          audience,
         });
         if (r.announcement) {
           setScheduledItems((prev) =>
@@ -176,7 +233,7 @@ export default function AdminAnnouncementsScreen() {
         return;
       }
 
-      const r = await api.createAnnouncement(token, t, b, sched);
+      const r = await api.createAnnouncement(token, t, b, sched, audience);
       const newAnn = r.announcement;
       if (newAnn) {
         if (newAnn.broadcasted_at) {
@@ -217,6 +274,7 @@ export default function AdminAnnouncementsScreen() {
     scheduledAt,
     scheduledInPast,
     editingId,
+    audience,
     resetComposer,
   ]);
 
@@ -500,6 +558,11 @@ export default function AdminAnnouncementsScreen() {
               />
             )}
 
+            {/* Audience picker — Everyone / Followers / Difficulty.
+                Lives below the schedule picker so admins fix WHEN
+                first, then WHO. */}
+            <AudiencePicker value={audience} onChange={setAudience} />
+
             {sendError ? (
               <View style={styles.errBanner} testID="ann-send-error">
                 <Ionicons
@@ -583,6 +646,7 @@ export default function AdminAnnouncementsScreen() {
                       <Text style={styles.scheduledWhen}>
                         {formatSchedule(ann.scheduled_for)}
                       </Text>
+                      <AudienceTag audience={ann.audience} />
                     </View>
                     <Text style={styles.annTitle}>{ann.title}</Text>
                     <Text style={styles.annBody} numberOfLines={4}>
@@ -656,6 +720,9 @@ export default function AdminAnnouncementsScreen() {
                 testID={`ann-row-${ann.id}`}
               >
                 <View style={{ flex: 1, paddingRight: spacing.md }}>
+                  <View style={styles.sentHeaderRow}>
+                    <AudienceTag audience={ann.audience} />
+                  </View>
                   <Text style={styles.annTitle}>{ann.title}</Text>
                   <Text style={styles.annBody} numberOfLines={6}>
                     {ann.body}
@@ -939,6 +1006,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     marginBottom: 4,
+    flexWrap: "wrap",
+  },
+  sentHeaderRow: {
+    marginBottom: 4,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  audTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceSecondary,
+    marginLeft: 4,
+    maxWidth: 180,
+  },
+  audTagCustom: {
+    backgroundColor: colors.brandPrimary + "14",
+  },
+  audTagText: {
+    fontSize: 10,
+    color: colors.muted,
+    fontWeight: "700",
+  },
+  audTagTextCustom: {
+    color: colors.brandPrimary,
   },
   scheduledWhen: {
     fontSize: 12,

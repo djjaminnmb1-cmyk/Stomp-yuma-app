@@ -115,24 +115,26 @@ async def _write_ledger(
 
 
 # ---------------- Classes ----------------
-async def notify_followers_of_new_class(class_doc: dict) -> int:
+async def notify_followers_of_new_class(class_doc: dict) -> list[str]:
     """Fan-out to followers of the class instructor. Only fires for
     UPCOMING classes (past-dated ones are silent — no point pinging
     dancers about a session that already happened).
 
-    Returns the number of fresh pushes actually sent.
+    Returns the list of ``user_id``s that just received a push. Callers
+    can use this to dedupe downstream broadcasts (e.g. the library-wide
+    "new class" push) so the same phone doesn't buzz twice.
     """
     if not class_doc:
-        return 0
+        return []
     instructor_id = class_doc.get("instructor_id") or ""
     class_id = class_doc.get("id") or ""
     date = (class_doc.get("date") or "").strip()
     if not instructor_id or not class_id:
-        return 0
+        return []
     # Cheap upcoming check — string compare on ISO-formatted date.
     today = now_iso()[:10]
     if date and date < today:
-        return 0
+        return []
 
     followers = await _follower_ids(instructor_id)
     # Respect per-user push preferences — a dancer who muted "class
@@ -143,7 +145,7 @@ async def notify_followers_of_new_class(class_doc: dict) -> int:
     followers = await filter_recipients(followers, "class_alerts")
     fresh = await _dedupe_fresh(followers, "class", class_id)
     if not fresh:
-        return 0
+        return []
 
     instructor_name = class_doc.get("instructor_name") or "Your instructor"
     label = (class_doc.get("session_label") or "").strip() or "New class"
@@ -152,6 +154,7 @@ async def notify_followers_of_new_class(class_doc: dict) -> int:
     ) or "class"
     remainder = len(class_doc.get("dances", [])) - 3
     more = f" +{remainder} more" if remainder > 0 else ""
+    when_bits = f"{date} — {dance_names}{more}".strip()
 
     await _write_ledger(fresh, "class", class_id, instructor_id)
     try:
@@ -164,43 +167,69 @@ async def notify_followers_of_new_class(class_doc: dict) -> int:
             params={
                 "instructor": instructor_name,
                 "class_title": label,
-                "when": f"{date} — {dance_names}{more}".strip(),
+                "when": when_bits,
             },
             data={
                 "deeplink": "/classes",
                 "action_url": "/classes",
+                "kind": "new_class",
+                "class_id": class_id,
+                "instructor_id": instructor_id,
             },
             idempotency_key=f"class-new-{class_id}",
         )
     except Exception as e:  # noqa: BLE001
         logger.warning(f"class-new push failed: {e}")
-    return len(fresh)
+
+    # Also persist to each recipient's Notification Center so they can
+    # scroll back to it after the OS banner fades. Best-effort — the
+    # push already landed, the feed write is purely for in-app history.
+    try:
+        from services.notification_feed import log_event
+        await log_event(
+            recipients=fresh,
+            kind="new_class",
+            title=f"New class from {instructor_name}",
+            body=f"{label} · {when_bits}" if when_bits else label,
+            deeplink="/classes",
+            metadata={
+                "entity_id": class_id,
+                "entity_type": "class",
+                "instructor_id": instructor_id,
+            },
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"class-new feed log failed: {e}")
+
+    return list(fresh)
 
 
 # ---------------- Events ----------------
-async def notify_followers_of_new_event(event_doc: dict) -> int:
+async def notify_followers_of_new_event(event_doc: dict) -> list[str]:
     """Fan-out to followers of the event's host instructor. Only fires
     for PUBLISHED, upcoming events. Idempotent per (user, event_id).
+
+    Returns the list of ``user_id``s that just received a push.
     """
     if not event_doc:
-        return 0
+        return []
     if not event_doc.get("is_published", True):
-        return 0
+        return []
     instructor_id = event_doc.get("instructor_id") or ""
     event_id = event_doc.get("id") or ""
     date = (event_doc.get("date") or "").strip()
     if not instructor_id or not event_id:
-        return 0
+        return []
     today = now_iso()[:10]
     if date and date < today:
-        return 0
+        return []
 
     followers = await _follower_ids(instructor_id)
     from services.notification_prefs import filter_recipients
     followers = await filter_recipients(followers, "event_alerts")
     fresh = await _dedupe_fresh(followers, "event", event_id)
     if not fresh:
-        return 0
+        return []
 
     instructor_name = event_doc.get("instructor_name") or "Your instructor"
     ev_name = (event_doc.get("name") or "").strip() or "New event"
@@ -237,13 +266,35 @@ async def notify_followers_of_new_event(event_doc: dict) -> int:
                 # confirm attendance without opening the app.
                 "categoryIdentifier": "event_new",
                 "category_identifier": "event_new",
+                "kind": "new_event",
                 "event_id": event_id,
+                "instructor_id": instructor_id,
             },
             idempotency_key=f"event-new-{event_id}",
         )
     except Exception as e:  # noqa: BLE001
         logger.warning(f"event-new push failed: {e}")
-    return len(fresh)
+
+    # Also persist to each recipient's Notification Center so they can
+    # scroll back to it after the OS banner fades.
+    try:
+        from services.notification_feed import log_event
+        await log_event(
+            recipients=fresh,
+            kind="new_event",
+            title=f"New event from {instructor_name}",
+            body=f"{ev_name} · {when} @ {where}",
+            deeplink=f"/events/{event_id}",
+            metadata={
+                "entity_id": event_id,
+                "entity_type": "event",
+                "instructor_id": instructor_id,
+            },
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"event-new feed log failed: {e}")
+
+    return list(fresh)
 
 
 # ---------------- Cleanup ----------------

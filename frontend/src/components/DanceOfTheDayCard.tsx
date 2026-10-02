@@ -21,11 +21,17 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
-import { api, DanceOfTheDay } from "@/src/api/client";
+import {
+  api,
+  DanceOfTheDay,
+  DotdOpenResponse,
+  DotdStreak,
+} from "@/src/api/client";
 import { useAuth } from "@/src/context/auth-context";
 import { colors, radius, spacing } from "@/src/theme";
 import { useTranslation } from "@/src/i18n";
@@ -44,6 +50,7 @@ export function DanceOfTheDayCard() {
   const { token } = useAuth();
   const { t } = useTranslation();
   const [data, setData] = useState<DanceOfTheDay | null>(null);
+  const [streak, setStreak] = useState<DotdStreak | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -53,8 +60,15 @@ export function DanceOfTheDayCard() {
       return;
     }
     try {
-      const r = await api.getDanceOfTheDay(token);
-      setData(r);
+      // Parallel fetch — one round-trip delay instead of two.
+      const [d, s] = await Promise.all([
+        api.getDanceOfTheDay(token),
+        api.getDotdStreak(token).catch(
+          () => ({ current: 0, longest: 0, today_done: false }) as DotdStreak,
+        ),
+      ]);
+      setData(d);
+      setStreak(s);
     } catch {
       // Non-fatal — hide the card on error, home doesn't need to shout.
       setData(null);
@@ -66,6 +80,48 @@ export function DanceOfTheDayCard() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Refresh the streak on every Home focus — if the dancer came
+  // back from the dance detail page we want to immediately reflect
+  // the newly-credited day without a hard reload.
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return;
+      api
+        .getDotdStreak(token)
+        .then(setStreak)
+        .catch(() => {});
+    }, [token]),
+  );
+
+  const openDance = useCallback(async () => {
+    if (!token || !data?.dance) return;
+    const danceId = data.dance.id;
+    // Fire the open-credit BEFORE navigating so the next DOTD streak
+    // read on Home focus returns the bumped value. The request is
+    // small (~200 bytes); we don't block the navigation on it —
+    // ``then`` chain handles the badge celebration.
+    api
+      .recordDotdOpen(token, danceId)
+      .then((r: DotdOpenResponse) => {
+        setStreak(r.streak);
+        // Celebrate newly-earned badges with a native alert — a full
+        // confetti modal belongs on the Badges screen, but surfacing
+        // the title here is a lightweight nudge dancers can tap through.
+        if (r.newly_earned && r.newly_earned.length > 0) {
+          const first = r.newly_earned[0];
+          Alert.alert(
+            `🏅 ${first.title ?? "Badge unlocked!"}`,
+            first.description ??
+              "Keep the streak going — tomorrow's dance is waiting.",
+          );
+        }
+      })
+      .catch(() => {
+        // Non-fatal — streak will reconcile on the next poll.
+      });
+    router.push(`/dance/${danceId}`);
+  }, [token, data?.dance, router]);
 
   // Signed-out users don't see the hero — nothing to track against,
   // and the empty state would be awkward above the welcome strip.
@@ -96,7 +152,7 @@ export function DanceOfTheDayCard() {
   return (
     <Pressable
       testID="home-dotd-card"
-      onPress={() => router.push(`/dance/${dance.id}`)}
+      onPress={openDance}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       accessibilityRole="button"
       accessibilityLabel={`${t("home.dance_of_the_day")}: ${dance.name}`}
@@ -108,6 +164,34 @@ export function DanceOfTheDayCard() {
             {t("home.dance_of_the_day")}
           </Text>
         </View>
+        {streak && streak.current > 0 ? (
+          <View
+            style={[
+              styles.streakPill,
+              streak.today_done
+                ? styles.streakPillLit
+                : styles.streakPillDim,
+            ]}
+            testID="dotd-streak-pill"
+          >
+            <Ionicons
+              name="flame"
+              size={14}
+              color={streak.today_done ? "#D9502A" : colors.muted}
+            />
+            <Text
+              style={[
+                styles.streakText,
+                streak.today_done
+                  ? { color: "#D9502A" }
+                  : { color: colors.muted },
+              ]}
+            >
+              {streak.current}
+              {streak.today_done ? "" : "·"}
+            </Text>
+          </View>
+        ) : null}
         {caughtUp && (
           <View style={styles.caughtUpPill}>
             <Ionicons name="checkmark-circle" size={12} color="#00A86B" />
@@ -210,6 +294,31 @@ const styles = StyleSheet.create({
     color: "#00A86B",
     fontWeight: "700",
     fontSize: 10,
+  },
+  // Streak flame pill — lit (orange) when today's open has been
+  // credited, dim (grey) when the dancer hasn't tapped the hero yet
+  // today. The ``·`` suffix is a tiny visual nudge "there's still
+  // a step to take today" when dim.
+  streakPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  streakPillLit: {
+    backgroundColor: "#FDECE2",
+    borderColor: "#F2A68A",
+  },
+  streakPillDim: {
+    backgroundColor: colors.surfaceSecondary,
+    borderColor: colors.border,
+  },
+  streakText: {
+    fontWeight: "800",
+    fontSize: 11,
   },
   danceName: {
     fontSize: 20,

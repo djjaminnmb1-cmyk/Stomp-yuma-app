@@ -90,6 +90,18 @@ BADGES: List[BadgeDef] = [
     BadgeDef("wishlist_dreamer", "Wishlist Dreamer",
              "Add 10 dances to your wishlist.",
              "bookmark", "#A66F1F", "variety", 10, "wishlisted"),
+
+    # ---------------- Dance Of The Day streak ----------------
+    # Rewards for showing up to the daily featured pick on the hero.
+    # Separate from the generic practice-streak so a dancer can lose
+    # the practice streak while still keeping their DOTD streak alive,
+    # and vice versa — two distinct habit loops.
+    BadgeDef("dotd_daily_devotee", "Daily Devotee",
+             "Open Dance Of The Day three days in a row from the hero.",
+             "flame", "#E8823E", "dotd_streak", 3, "day DOTD streak"),
+    BadgeDef("dotd_weekly_devotee", "Weekly Devotee",
+             "Open Dance Of The Day seven days in a row from the hero.",
+             "flame", "#C4442A", "dotd_streak", 7, "day DOTD streak"),
 ]
 
 BADGE_BY_ID: dict[str, BadgeDef] = {b.id: b for b in BADGES}
@@ -128,6 +140,21 @@ async def _progress_for(user_id: str, badge: BadgeDef) -> int:
             max(
                 (user or {}).get("current_streak", 0) or 0,
                 (user or {}).get("longest_streak", 0) or 0,
+            )
+        )
+    if badge.category == "dotd_streak":
+        # DOTD open streak — separate counter from the generic
+        # practice streak above. Mirrors the "either current or best"
+        # rule so losing a day doesn't retro-strip the Daily Devotee
+        # badge.
+        user = await db.users.find_one(
+            {"user_id": user_id},
+            {"_id": 0, "dotd_streak_current": 1, "dotd_streak_longest": 1},
+        )
+        return int(
+            max(
+                (user or {}).get("dotd_streak_current", 0) or 0,
+                (user or {}).get("dotd_streak_longest", 0) or 0,
             )
         )
     if badge.category == "variety":

@@ -203,6 +203,13 @@ async def _ensure_indexes() -> None:
     except Exception as e:
         logger.warning(f"notification_feed index issue: {e}")
     try:
+        from services.dotd_streak import (
+            ensure_indexes as ensure_dotd_streak_indexes,
+        )
+        await ensure_dotd_streak_indexes()
+    except Exception as e:
+        logger.warning(f"dotd_opens index issue: {e}")
+    try:
         # Event RSVPs — one row per (event, user); upsert-based.
         await db.event_rsvps.create_index(
             [("event_id", 1), ("user_id", 1)],

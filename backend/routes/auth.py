@@ -737,6 +737,12 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
         await purge_feed(uid)
     except Exception:  # pragma: no cover
         logger.exception("notification_feed purge failed for %s", uid)
+    # DOTD streak ledger + user doc flags.
+    try:
+        from services.dotd_streak import purge_user as purge_dotd
+        await purge_dotd(uid)
+    except Exception:  # pragma: no cover
+        logger.exception("dotd_streak purge failed for %s", uid)
     # Event RSVPs authored by this user
     await db.event_rsvps.delete_many({"user_id": uid})
 
