@@ -397,6 +397,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile.notification_prefs": "Notification preferences",
     "profile.notification_prefs_sub":
       "Mute event, class, or mention pings independently",
+    "profile.announcements": "Announcements",
+    "profile.announcements_sub": "Pinned updates from Stompin' Ground Yuma admins",
+    "profile.admin_announcements": "Admin · Send announcement",
+    "profile.admin_announcements_sub": "Compose a push for every opted-in dancer",
     "profile.language": "Language",
     "profile.boot_scoot_board": "Boot Scoot Board",
     "profile.boot_scoot_visible": "You're visible on the board.",
@@ -1067,6 +1071,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile.notification_prefs": "Preferencias de notificación",
     "profile.notification_prefs_sub":
       "Silencia eventos, clases o menciones por separado",
+    "profile.announcements": "Anuncios",
+    "profile.announcements_sub": "Avisos fijados de los administradores de Stompin' Ground Yuma",
+    "profile.admin_announcements": "Admin · Enviar anuncio",
+    "profile.admin_announcements_sub": "Redacta un envío para todos los que han optado",
     "profile.language": "Idioma",
     "profile.boot_scoot_board": "Ranking Boot Scoot",
     "profile.boot_scoot_visible": "Apareces en el ranking.",
@@ -1636,6 +1644,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile.notification_prefs": "Préférences de notification",
     "profile.notification_prefs_sub":
       "Désactivez événements, cours ou mentions séparément",
+    "profile.announcements": "Annonces",
+    "profile.announcements_sub": "Les mises à jour épinglées des admins Stompin' Ground Yuma",
+    "profile.admin_announcements": "Admin · Envoyer une annonce",
+    "profile.admin_announcements_sub": "Rédige une notification pour toutes les danseuses abonnées",
     "profile.language": "Langue",
     "profile.boot_scoot_board": "Classement Boot Scoot",
     "profile.boot_scoot_visible":
@@ -2214,6 +2226,10 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Benachrichtigungseinstellungen",
     "profile.notification_prefs_sub":
       "Event, Kurs oder Erwähnungen einzeln stummschalten",
+    "profile.announcements": "Ankündigungen",
+    "profile.announcements_sub": "Angeheftete Updates der Stompin' Ground Yuma Admins",
+    "profile.admin_announcements": "Admin · Ankündigung senden",
+    "profile.admin_announcements_sub": "Verfasse eine Push für alle angemeldeten Dancer",
     "profile.language": "Sprache",
     "profile.boot_scoot_board": "Boot-Scoot-Rangliste",
     "profile.boot_scoot_visible":
@@ -2799,6 +2815,10 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Meldings­voorkeuren",
     "profile.notification_prefs_sub":
       "Zet events, lessen of vermeldingen afzonderlijk uit",
+    "profile.announcements": "Aankondigingen",
+    "profile.announcements_sub": "Vastgezette updates van de Stompin' Ground Yuma admins",
+    "profile.admin_announcements": "Admin · Aankondiging sturen",
+    "profile.admin_announcements_sub": "Schrijf een pushbericht voor elke aangemelde danser",
     "profile.language": "Taal",
     "profile.boot_scoot_board": "Boot-Scoot-ranglijst",
     "profile.boot_scoot_visible":
@@ -3371,6 +3391,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile.notification_prefs": "알림 설정",
     "profile.notification_prefs_sub":
       "이벤트, 수업, 언급 알림을 개별로 음소거",
+    "profile.announcements": "공지사항",
+    "profile.announcements_sub": "Stompin' Ground Yuma 관리자가 고정한 업데이트",
+    "profile.admin_announcements": "관리자 · 공지 보내기",
+    "profile.admin_announcements_sub": "알림을 켠 모든 댄서에게 보낼 메시지 작성",
     "profile.language": "언어",
     "profile.boot_scoot_board": "부트 스쿠트 랭킹",
     "profile.boot_scoot_visible": "랭킹에 표시돼요.",
@@ -3920,6 +3944,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile.notification_prefs": "通知偏好",
     "profile.notification_prefs_sub":
       "分别静音活动、课程或提及通知",
+    "profile.announcements": "公告",
+    "profile.announcements_sub": "Stompin' Ground Yuma 管理员的置顶更新",
+    "profile.admin_announcements": "管理员 · 发送公告",
+    "profile.admin_announcements_sub": "向所有开启通知的舞者发送推送",
     "profile.language": "语言",
     "profile.boot_scoot_board": "Boot Scoot 排行榜",
     "profile.boot_scoot_visible": "您在排行榜上可见。",
@@ -4465,6 +4493,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "profile.notification_prefs": "通知偏好",
     "profile.notification_prefs_sub":
       "分別靜音活動、課程或提及通知",
+    "profile.announcements": "公告",
+    "profile.announcements_sub": "Stompin' Ground Yuma 管理員的置頂更新",
+    "profile.admin_announcements": "管理員 · 發送公告",
+    "profile.admin_announcements_sub": "向所有開啟通知的舞者發送推播",
     "profile.language": "語言",
     "profile.boot_scoot_board": "Boot Scoot 排行榜",
     "profile.boot_scoot_visible": "您在排行榜上可見。",

@@ -110,6 +110,18 @@ async def register(inp: RegisterIn, request: Request):
         user["is_instructor"] = True
         # Reset the throttle on success — good actors shouldn't be penalised
         throttle_reset(f"code:{client_ip(request)}")
+        # Ping admins so they can audit the grant from the admin panel.
+        # Best-effort — never block the registration response.
+        try:
+            from services.admin_notifications import (
+                notify_admins_of_instructor_grant,
+            )
+            await notify_admins_of_instructor_grant(user)
+        except Exception:
+            logger.exception(
+                "Failed to notify admins of instructor grant for %s",
+                user.get("email"),
+            )
     token = make_jwt(user["user_id"], pwd_ver=int(user.get("pwd_ver") or 0))
     return {
         "token": token,
@@ -146,6 +158,18 @@ async def set_instructor(
     # Success — reset the per-user throttle so future legitimate uses are free
     throttle_reset(f"code-user:{user['user_id']}")
     fresh = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    # Ping admins so they can audit the grant. Best-effort — must never
+    # block the primary response.
+    try:
+        from services.admin_notifications import (
+            notify_admins_of_instructor_grant,
+        )
+        await notify_admins_of_instructor_grant(fresh or user)
+    except Exception:
+        logger.exception(
+            "Failed to notify admins of self-serve instructor grant for %s",
+            (fresh or user).get("email"),
+        )
     return {"ok": True, "user": user_to_out(fresh)}
 
 
@@ -701,6 +725,12 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
     # Follower push ledger for classes/events posted BY or seen BY user
     from services.instructor_notifications import purge_user as purge_inst_notif
     await purge_inst_notif(uid)
+    # Library-wide broadcast ledger (new dance / new class to all users).
+    try:
+        from services.library_broadcast import purge_user as purge_lib_bc
+        await purge_lib_bc(uid)
+    except Exception:  # pragma: no cover
+        logger.exception("library_broadcast purge failed for %s", uid)
     # Event RSVPs authored by this user
     await db.event_rsvps.delete_many({"user_id": uid})
 

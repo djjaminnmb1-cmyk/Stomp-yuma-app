@@ -57,6 +57,10 @@ ALL_CATEGORIES = (
     "mention_alerts",
     "reminder_alerts",
     "chat_alerts",
+    # June 2026 — admin + broadcast categories.
+    "admin_requests",       # admin-only — pending-dance + instructor-grant
+    "announcements",        # admin "pin" fan-out to every user
+    "library_updates",      # any new dance / class added to the library
 )
 
 # Only these categories are silenced during quiet hours — reminders /

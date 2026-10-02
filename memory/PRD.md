@@ -1564,3 +1564,95 @@ but a handful of test files still held stale references.
 
 Net: **+78 more tests passing** across the suite after this cleanup
 with no regressions attributable to the credential refactor.
+
+
+## Session (June 2026) — Notifications 2.0
+
+Added five new push-notification trigger points on top of the existing
+Emergent-managed push stack. The infra was already fully wired (Android
+``google-services.json`` in place, Firebase relay via EMERGENT_PUSH_KEY,
+`send_push_localised` helper, 6 original pref categories). This session
+only added NEW triggers + a lightweight admin "pin" screen.
+
+### New admin notifications ("member requests")
+* **Pending-dance submission** — `routes/pending_dances.py::submit_pending`
+  now calls ``services.admin_notifications.notify_admins_of_pending_dance``
+  right after the insert. Deeplinks admins to ``/admin/pending-dances``.
+* **Self-serve instructor grant** — both the signup instructor_code
+  path and ``POST /auth/set-instructor`` fire
+  ``notify_admins_of_instructor_grant`` on success so admins can audit
+  the promotion from the admin panel.
+
+### New user-facing broadcasts
+* **New dance in the library** — any newly published dance (direct
+  create, publish toggle, CSV bulk-import with publish_all, pending-
+  dance approval) also fires ``services.library_broadcast.broadcast_new_dance``
+  to every opted-in user, skipping choreographer-followers who already
+  got the targeted push.
+* **New class scheduled** — ``routes/classes.py::create_class`` fires
+  ``broadcast_new_class`` after the existing follower-only
+  ``notify_followers_of_new_class``.
+* **Admin announcements** — new ``services/announcements.py`` + routes
+  ``POST /api/admin/announcements`` (admin creates+broadcasts),
+  ``GET  /api/announcements`` (any signed-in user reads the feed),
+  ``DELETE /api/admin/announcements/{id}`` (admin retracts a mistake).
+
+### New notification_prefs categories
+Added to ``ALL_CATEGORIES`` + ``NotificationPrefsIn``:
+* ``admin_requests`` — admin-only; pending-dance + instructor-grant.
+* ``announcements``  — admin pin fan-out to every user.
+* ``library_updates`` — any new dance / class library-wide.
+
+All three default to True (opt-out, not opt-in — matches the existing
+contract). Chat triggers already covered via ``chat_alerts`` /
+``mention_alerts`` — the existing ``fan_out_chat_post`` ships
+"any new message" and the ``@mention`` fan-out was already wired.
+
+### Frontend
+* `/settings/notifications` — adds the three new toggle rows; the
+  ``admin_requests`` row only renders for ``user.is_admin``.
+* `/announcements` — read-only feed of recent admin pins; this is the
+  deeplink target of the ``push.announcement`` push.
+* `/admin/announcements` — admin composer + history; shows a trash
+  icon per row for retraction.
+* `app/(tabs)/profile.tsx` — added two rows (Announcements for all
+  users, Admin · Send announcement for admins).
+* `src/api/client.ts` — new `Announcement` type + `listAnnouncements`
+  / `createAnnouncement` / `deleteAnnouncement` wrappers.
+* `src/i18n/translations.ts` — 4 new UI keys localised to 8 languages.
+* `core/i18n.py` — 10 new push keys (5 titles + 5 bodies) × 8 locales
+  = 80 new string entries.
+
+### Testing
+`backend/tests/test_push_notifications_expansion.py` — 23 tests,
+23/23 passing on a clean backend. Covers:
+* 6 pref-roundtrip tests (defaults, PATCH merge, no cross-leak)
+* 10 announcement CRUD tests (admin-only, 403 non-admin, 422 invalid,
+  404 unknown id)
+* 2 pending-dance trigger regression tests
+* 2 instructor-grant trigger regression tests
+* 3 library-broadcast trigger regression tests
+
+### Build / platform caveat
+Push notifications only fire on NATIVE builds — they do NOT work in
+Expo Go or the web preview. The user has `google-services.json` in
+place for Android. iOS requires `GoogleService-Info.plist` which the
+user is still waiting on from Emergent Support. Until then, Android
+APK builds fire pushes; iOS builds are a no-op.
+
+### Data model additions
+* `announcements` collection — one row per admin pin.
+* `library_broadcasts` collection — idempotency ledger, unique on
+  `(user_id, entity_type, entity_id)`. Prevents double-pushing the
+  same user when a dance / class is re-published.
+* `users.notification_prefs.{admin_requests,announcements,library_updates}`
+  — three new boolean subdoc keys, default True.
+
+### Known limitation
+The Emergent push relay is a black-box external service with the dev
+`EMERGENT_PUSH_KEY=placeholder` — none of the backend tests assert the
+user's phone actually buzzes. They only verify DB side-effects, response
+shapes, and that fan-out helpers never raise. Real end-to-end push
+testing happens post-deploy on a physical Android device with a real
+`EMERGENT_PUSH_KEY` set by the Emergent build pipeline.
+

@@ -73,6 +73,17 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.pending_dance.approved.body": "\u201c{title}\u201d is now in the library. Tap to view.",
         "push.pending_dance.rejected.title": "Your submission wasn\u2019t approved",
         "push.pending_dance.rejected.body": "\u201c{title}\u201d \u2014 {reason}",
+        # June 2026 — admin/library/announcement broadcast categories.
+        "push.admin_pending_dance.title": "📥 New dance submission",
+        "push.admin_pending_dance.body": "{submitter} submitted “{title}” — review it in the pending queue.",
+        "push.admin_instructor_grant.title": "🪪 New instructor on the floor",
+        "push.admin_instructor_grant.body": "{who} just unlocked the Instructor role. Audit if needed.",
+        "push.announcement.title": "📣 {title}",
+        "push.announcement.body": "{preview}",
+        "push.library_new_dance.title": "✨ New dance in the library",
+        "push.library_new_dance.body": "“{dance_name}” by {choreographer} — tap to open.",
+        "push.library_new_class.title": "📅 New class on the schedule",
+        "push.library_new_class.body": "{instructor}: {class_title} — {when}",
 
         # ---------- Password-reset email ----------
         "email.reset.subject": "Reset your Stompin' Ground Yuma password",
@@ -111,6 +122,17 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.pending_dance.approved.body": "«{title}» ya está en la biblioteca. Toca para ver.",
         "push.pending_dance.rejected.title": "Tu envío no fue aprobado",
         "push.pending_dance.rejected.body": "«{title}» — {reason}",
+        # June 2026 — admin/library/announcement broadcast categories.
+        "push.admin_pending_dance.title": "📥 Nuevo baile enviado",
+        "push.admin_pending_dance.body": "{submitter} envió «{title}» — revísalo en la cola.",
+        "push.admin_instructor_grant.title": "🪪 Nuevo instructor",
+        "push.admin_instructor_grant.body": "{who} desbloqueó el rol de instructor. Audita si es necesario.",
+        "push.announcement.title": "📣 {title}",
+        "push.announcement.body": "{preview}",
+        "push.library_new_dance.title": "✨ Nuevo baile en la biblioteca",
+        "push.library_new_dance.body": "«{dance_name}» de {choreographer} — toca para abrir.",
+        "push.library_new_class.title": "📅 Nueva clase programada",
+        "push.library_new_class.body": "{instructor}: {class_title} — {when}",
 
         # ---------- Correo de restablecimiento ----------
         "email.reset.subject": "Restablece tu contraseña de Stompin' Ground Yuma",
@@ -149,6 +171,17 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.pending_dance.approved.body": "« {title} » est maintenant dans la bibliothèque. Touchez pour voir.",
         "push.pending_dance.rejected.title": "Votre proposition a été refusée",
         "push.pending_dance.rejected.body": "« {title} » — {reason}",
+        # June 2026 — admin/library/announcement broadcast categories.
+        "push.admin_pending_dance.title": "📥 Nouvelle soumission de danse",
+        "push.admin_pending_dance.body": "{submitter} a soumis « {title} » — à vérifier dans la file.",
+        "push.admin_instructor_grant.title": "🪪 Nouveau profe sur la piste",
+        "push.admin_instructor_grant.body": "{who} vient de passer Instructeur. À auditer au besoin.",
+        "push.announcement.title": "📣 {title}",
+        "push.announcement.body": "{preview}",
+        "push.library_new_dance.title": "✨ Nouvelle danse en bibliothèque",
+        "push.library_new_dance.body": "« {dance_name} » de {choreographer} — appuyez pour ouvrir.",
+        "push.library_new_class.title": "📅 Nouveau cours programmé",
+        "push.library_new_class.body": "{instructor} : {class_title} — {when}",
 
         # ---------- Email de réinitialisation ----------
         "email.reset.subject": "Réinitialisez votre mot de passe Stompin' Ground Yuma",
@@ -188,6 +221,17 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.pending_dance.approved.body": "„{title}“ ist jetzt in der Bibliothek. Tippen zum Ansehen.",
         "push.pending_dance.rejected.title": "Dein Vorschlag wurde abgelehnt",
         "push.pending_dance.rejected.body": "„{title}“ — {reason}",
+        # June 2026 — admin/library/announcement broadcast categories.
+        "push.admin_pending_dance.title": "📥 Neue Tanz-Einreichung",
+        "push.admin_pending_dance.body": "{submitter} hat „{title}“ eingereicht — in der Warteschlange prüfen.",
+        "push.admin_instructor_grant.title": "🪪 Neue Trainerin / neuer Trainer",
+        "push.admin_instructor_grant.body": "{who} hat gerade die Trainerrolle freigeschaltet. Bei Bedarf prüfen.",
+        "push.announcement.title": "📣 {title}",
+        "push.announcement.body": "{preview}",
+        "push.library_new_dance.title": "✨ Neuer Tanz in der Bibliothek",
+        "push.library_new_dance.body": "„{dance_name}“ von {choreographer} — tippe zum Öffnen.",
+        "push.library_new_class.title": "📅 Neuer Kurs im Plan",
+        "push.library_new_class.body": "{instructor}: {class_title} — {when}",
 
         # ---------- Passwort-Reset-E-Mail ----------
         "email.reset.subject": "Setze dein Stompin' Ground Yuma Passwort zurück",
@@ -227,6 +271,17 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.pending_dance.approved.body": "'{title}' staat nu in de bibliotheek. Tik om te bekijken.",
         "push.pending_dance.rejected.title": "Je inzending is afgewezen",
         "push.pending_dance.rejected.body": "'{title}' — {reason}",
+        # June 2026 — admin/library/announcement broadcast categories.
+        "push.admin_pending_dance.title": "📥 Nieuwe dansinzending",
+        "push.admin_pending_dance.body": "{submitter} stuurde '{title}' — bekijk de wachtrij.",
+        "push.admin_instructor_grant.title": "🪪 Nieuwe instructeur",
+        "push.admin_instructor_grant.body": "{who} heeft net de instructeursrol vrijgespeeld. Controleer indien nodig.",
+        "push.announcement.title": "📣 {title}",
+        "push.announcement.body": "{preview}",
+        "push.library_new_dance.title": "✨ Nieuwe dans in de bibliotheek",
+        "push.library_new_dance.body": "'{dance_name}' van {choreographer} — tik om te openen.",
+        "push.library_new_class.title": "📅 Nieuwe les gepland",
+        "push.library_new_class.body": "{instructor}: {class_title} — {when}",
 
         # ---------- Wachtwoord reset e-mail ----------
         "email.reset.subject": "Reset je Stompin' Ground Yuma wachtwoord",
@@ -266,6 +321,17 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.pending_dance.approved.body": "「{title}」이(가) 라이브러리에 추가되었어요. 눌러서 확인하세요.",
         "push.pending_dance.rejected.title": "제출이 승인되지 않았어요",
         "push.pending_dance.rejected.body": "「{title}」 — {reason}",
+        # June 2026 — admin/library/announcement broadcast categories.
+        "push.admin_pending_dance.title": "📥 새 댄스 제출",
+        "push.admin_pending_dance.body": "{submitter}님이 「{title}」을(를) 제출했어요 — 대기열에서 확인하세요.",
+        "push.admin_instructor_grant.title": "🪪 새 강사",
+        "push.admin_instructor_grant.body": "{who}님이 강사 역할을 활성화했어요. 필요하면 확인하세요.",
+        "push.announcement.title": "📣 {title}",
+        "push.announcement.body": "{preview}",
+        "push.library_new_dance.title": "✨ 라이브러리에 새 댄스",
+        "push.library_new_dance.body": "{choreographer}님의 「{dance_name}」 — 눌러서 열어보세요.",
+        "push.library_new_class.title": "📅 새 수업 일정",
+        "push.library_new_class.body": "{instructor}: {class_title} — {when}",
 
         # ---------- 비밀번호 재설정 이메일 ----------
         "email.reset.subject": "Stompin' Ground Yuma 비밀번호 재설정",
@@ -304,6 +370,17 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.pending_dance.approved.body": "「{title}」现在已在库中。点击查看。",
         "push.pending_dance.rejected.title": "您的提交未通过",
         "push.pending_dance.rejected.body": "「{title}」 — {reason}",
+        # June 2026 — admin/library/announcement broadcast categories.
+        "push.admin_pending_dance.title": "📥 新的舞蹈提交",
+        "push.admin_pending_dance.body": "{submitter} 提交了「{title}」— 请在待审队列查看。",
+        "push.admin_instructor_grant.title": "🪪 新讲师",
+        "push.admin_instructor_grant.body": "{who} 刚刚解锁了讲师角色。如需要可审查。",
+        "push.announcement.title": "📣 {title}",
+        "push.announcement.body": "{preview}",
+        "push.library_new_dance.title": "✨ 库里新舞上线",
+        "push.library_new_dance.body": "{choreographer} 的「{dance_name}」— 点击打开。",
+        "push.library_new_class.title": "📅 新课程已排",
+        "push.library_new_class.body": "{instructor}:{class_title} — {when}",
 
         # ---------- 密码重置邮件 ----------
         "email.reset.subject": "重置您的 Stompin' Ground Yuma 密码",
@@ -340,6 +417,17 @@ _CATALOG: dict[str, dict[str, str]] = {
         "push.pending_dance.approved.body": "「{title}」現已在資料庫中。點選檢視。",
         "push.pending_dance.rejected.title": "您的提交未通過",
         "push.pending_dance.rejected.body": "「{title}」 — {reason}",
+        # June 2026 — admin/library/announcement broadcast categories.
+        "push.admin_pending_dance.title": "📥 新的舞蹈投稿",
+        "push.admin_pending_dance.body": "{submitter} 投稿了「{title}」— 請於待審佇列中查看。",
+        "push.admin_instructor_grant.title": "🪪 新教練",
+        "push.admin_instructor_grant.body": "{who} 剛剛解鎖教練角色,如有需要可審查。",
+        "push.announcement.title": "📣 {title}",
+        "push.announcement.body": "{preview}",
+        "push.library_new_dance.title": "✨ 資料庫新增舞蹈",
+        "push.library_new_dance.body": "{choreographer} 的「{dance_name}」— 點擊開啟。",
+        "push.library_new_class.title": "📅 新課程已排定",
+        "push.library_new_class.body": "{instructor}:{class_title} — {when}",
 
         # ---------- 密碼重設信件 ----------
         "email.reset.subject": "重設您的 Stompin' Ground Yuma 密碼",

@@ -45,6 +45,12 @@ class NotificationPrefsIn(BaseModel):
     mention_alerts: Optional[bool] = None
     reminder_alerts: Optional[bool] = None
     chat_alerts: Optional[bool] = None
+    # June 2026 — new categories (admin requests only applies to admins,
+    # library-updates = broadcast of any new dance / class, announcements
+    # = admin "pin" posts).
+    admin_requests: Optional[bool] = None
+    announcements: Optional[bool] = None
+    library_updates: Optional[bool] = None
     quiet_hours: Optional[QuietHoursIn] = None
 
 

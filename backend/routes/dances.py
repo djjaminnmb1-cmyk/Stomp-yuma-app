@@ -254,6 +254,13 @@ async def create_dance(inp: DanceIn, user: dict = Depends(require_instructor)):
     # published inline. Best-effort — swallowed inside the helper.
     if doc.get("is_published"):
         await notify_followers_of_new_dance(doc)
+        # Library-wide broadcast to every opted-in user (dedup inside
+        # the helper's ledger).
+        try:
+            from services.library_broadcast import broadcast_new_dance
+            await broadcast_new_dance(doc)
+        except Exception as _bre:  # noqa: BLE001
+            logger.warning(f"library new-dance broadcast failed: {_bre}")
     return dance_to_out(doc, user["user_id"])
 
 
@@ -340,6 +347,11 @@ async def import_dances(inp: DanceImportBody, user: dict = Depends(require_instr
         if bool(inp.publish_all):
             for _row in to_insert:
                 await notify_followers_of_new_dance(_row)
+                try:
+                    from services.library_broadcast import broadcast_new_dance
+                    await broadcast_new_dance(_row)
+                except Exception as _bre:  # noqa: BLE001
+                    logger.warning(f"library new-dance broadcast failed: {_bre}")
     return {
         "imported": len(to_insert),
         "skipped_duplicates": skipped,
@@ -415,6 +427,11 @@ async def update_dance(dance_id: str, inp: DanceIn, user: dict = Depends(require
     )
     if is_now_published and (not was_published or chor_changed):
         await notify_followers_of_new_dance(d)
+        try:
+            from services.library_broadcast import broadcast_new_dance
+            await broadcast_new_dance(d)
+        except Exception as _bre:  # noqa: BLE001
+            logger.warning(f"library new-dance broadcast failed: {_bre}")
     return dance_to_out(d, user["user_id"])
 
 
@@ -431,6 +448,11 @@ async def publish_dance(dance_id: str, user: dict = Depends(require_instructor))
     # Fan-out — the helper's ledger stops repeat fires on unpublish→
     # re-publish so a follower only ever gets one push per dance.
     await notify_followers_of_new_dance(d)
+    try:
+        from services.library_broadcast import broadcast_new_dance
+        await broadcast_new_dance(d)
+    except Exception as _bre:  # noqa: BLE001
+        logger.warning(f"library new-dance broadcast failed: {_bre}")
     return dance_to_out(d, user["user_id"])
 
 

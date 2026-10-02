@@ -266,6 +266,16 @@ async def submit_pending(
     }
     await db.pending_dances.insert_one(doc)
 
+    # Ping every admin — a new row just landed in the review queue.
+    # Best-effort: never block the submit response on a push flake.
+    try:
+        from services.admin_notifications import notify_admins_of_pending_dance
+        await notify_admins_of_pending_dance(doc)
+    except Exception:
+        logger.exception(
+            "Failed to notify admins of new pending dance %s", doc.get("id")
+        )
+
     return {
         "submission": _display_dict(doc),
         "quota": {
@@ -430,6 +440,16 @@ async def admin_approve(
         await notify_followers_of_new_dance(doc)
     except Exception:  # never let a follower-notify hiccup break approval
         logger.exception("Failed to notify choreographer followers for %s", doc["id"])
+
+    # ALSO broadcast to every opted-in user via ``library_updates``.
+    try:
+        from services.library_broadcast import broadcast_new_dance
+        await broadcast_new_dance(doc)
+    except Exception:
+        logger.exception(
+            "Failed to broadcast new dance %s to library_updates subscribers",
+            doc["id"],
+        )
 
     # Ping the submitter so they don't have to check the app to see the
     # good news. Push is best-effort — failure never blocks approval.

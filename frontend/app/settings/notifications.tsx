@@ -128,14 +128,42 @@ const ROWS: Row[] = [
     subtitle:
       "When any instructor posts in the class chat — turn off to only hear about @mentions",
   },
+  // ---- June 2026 — library & announcement broadcasts ----
+  {
+    key: "library_updates",
+    icon: "sparkles",
+    title: "New dances & classes",
+    subtitle:
+      "Any new dance added to the library or any new class scheduled — not just the people you follow",
+  },
+  {
+    key: "announcements",
+    icon: "megaphone",
+    title: "Admin announcements",
+    subtitle:
+      "Pinned updates and news from Stompin' Ground Yuma admins",
+  },
 ];
+
+// Admin-only row (hidden for non-admin users).
+const ADMIN_ROW: Row = {
+  key: "admin_requests",
+  icon: "shield-checkmark",
+  title: "Admin: pending-review alerts",
+  subtitle:
+    "Ping me when a dancer submits a new dance for review or unlocks the instructor role",
+};
 
 export default function NotificationSettings() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Admin-only row is appended at the END of the list so dancers don't
+  // see it. Memoised so an auth refresh doesn't recompute every render.
+  const visibleRows: Row[] = user?.is_admin ? [...ROWS, ADMIN_ROW] : ROWS;
 
   useEffect(() => {
     if (!token) return;
@@ -242,7 +270,7 @@ export default function NotificationSettings() {
               <Text style={styles.errBannerText}>{saveError}</Text>
             </View>
           ) : null}
-          {ROWS.map((row) => (
+          {visibleRows.map((row) => (
             <View
               key={row.key}
               testID={`notif-row-${row.key}`}

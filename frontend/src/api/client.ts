@@ -665,12 +665,25 @@ export type NotificationPrefs = {
   mention_alerts: boolean;
   reminder_alerts: boolean;
   chat_alerts: boolean;
+  // June 2026 — admin & broadcast categories.
+  admin_requests: boolean;
+  announcements: boolean;
+  library_updates: boolean;
   quiet_hours: {
     enabled: boolean;
     start_hour: number;   // 0-23 inclusive
     end_hour: number;     // 0-23 exclusive; may wrap past midnight
     tz_offset_minutes: number;
   };
+};
+
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  created_by: string;
+  created_by_name: string;
+  created_at: string;
 };
 
 export type RsvpCounts = {
@@ -1535,6 +1548,28 @@ export const api = {
     req<{ prefs: NotificationPrefs }>(
       "/users/me/notification-prefs",
       { method: "PATCH", body: JSON.stringify(prefs) },
+      token
+    ),
+
+  // ---------------- Admin announcements ("pin" posts) ----------------
+  // Admin creates + broadcasts a push to every opted-in user. Any
+  // signed-in user can read the recent feed via listAnnouncements.
+  listAnnouncements: (token: string, limit = 50) =>
+    req<{ items: Announcement[]; count: number }>(
+      `/announcements?limit=${limit}`,
+      {},
+      token
+    ),
+  createAnnouncement: (token: string, title: string, body: string) =>
+    req<{ ok: boolean; announcement: Announcement }>(
+      "/admin/announcements",
+      { method: "POST", body: JSON.stringify({ title, body }) },
+      token
+    ),
+  deleteAnnouncement: (token: string, id: string) =>
+    req<{ ok: boolean }>(
+      `/admin/announcements/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
       token
     ),
 

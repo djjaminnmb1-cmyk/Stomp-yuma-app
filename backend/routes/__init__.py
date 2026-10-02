@@ -10,6 +10,7 @@ from fastapi import APIRouter
 
 from . import (
     admin_refresh_recommendations,
+    announcements,
     auth,
     activity,
     admin_bulk_import,
@@ -83,6 +84,7 @@ api_router.include_router(pending_dances.router)
 api_router.include_router(moderation.router)
 api_router.include_router(weekly_recap.router)
 api_router.include_router(legal.router)
+api_router.include_router(announcements.router)
 api_router.include_router(misc.router)
 
 __all__ = ["api_router"]

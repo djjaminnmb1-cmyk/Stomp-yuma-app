@@ -690,6 +690,60 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
 
+          {/* Announcements feed — pinned admin updates for every user. */}
+          <Pressable
+            testID="profile-announcements-row"
+            style={styles.row}
+            onPress={() => router.push("/announcements")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="megaphone-outline"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>
+                  {i18nT("profile.announcements")}
+                </Text>
+                <Text style={styles.deleteSub}>
+                  {i18nT("profile.announcements_sub")}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
+          {/* Admin-only: compose announcements. */}
+          {user?.is_admin ? (
+            <Pressable
+              testID="profile-admin-announcements-row"
+              style={styles.row}
+              onPress={() => router.push("/admin/announcements")}
+            >
+              <View style={styles.rowLeft}>
+                <Ionicons
+                  name="create-outline"
+                  size={22}
+                  color={colors.brandPrimary}
+                />
+                <View>
+                  <Text style={styles.rowText}>
+                    {i18nT("profile.admin_announcements")}
+                  </Text>
+                  <Text style={styles.deleteSub}>
+                    {i18nT("profile.admin_announcements_sub")}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={colors.muted}
+              />
+            </Pressable>
+          ) : null}
+
           {/* My Submissions — user's own CopperKnob/BootStepper dance
               requests: pending, approved, rejected. */}
           <Pressable

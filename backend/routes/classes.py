@@ -128,10 +128,26 @@ async def create_class(
     # who never opted-in to Erin's classes shouldn't get pinged.
     # Helper handles: upcoming-only date check, idempotency, and swallows
     # push-relay failures so a bad outage never blocks the CRUD path.
+    follower_recipients: list[str] = []
     try:
-        await notify_followers_of_new_class(doc)
+        res = await notify_followers_of_new_class(doc)
+        if isinstance(res, int):
+            # Legacy return — int count only. Follower set already got
+            # the push; library broadcast will still skip them via the
+            # idempotency ledger even if we can't list them here.
+            pass
     except Exception as e:  # noqa: BLE001
         logger.warning(f"Class notification failed (non-blocking): {e}")
+
+    # ALSO broadcast to every opted-in user (``library_updates`` pref)
+    # — "A new class was added" nudge for dancers who don't yet follow
+    # the posting instructor. The helper skips any user already in the
+    # follower ledger via its own dedupe table so phones only buzz once.
+    try:
+        from services.library_broadcast import broadcast_new_class
+        await broadcast_new_class(doc, skip_user_ids=follower_recipients)
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"Class library broadcast failed (non-blocking): {e}")
 
     return doc
 
