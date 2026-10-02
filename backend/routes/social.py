@@ -114,6 +114,27 @@ async def post_follow(
         raise HTTPException(404, "User not found.")
     created = await follow(user["user_id"], other_user_id)
     counts = await follow_counts(other_user_id)
+    # Log a Notification Center event for the person being followed —
+    # only on the FIRST follow (``created=True``) so re-following after
+    # an unfollow→refollow doesn't spam. In-app only; no push (would be
+    # too noisy for popular instructors).
+    if created:
+        try:
+            from services.notification_feed import log_event
+            await log_event(
+                recipients=[other_user_id],
+                kind="new_follower",
+                title=f"{user.get('name') or 'A dancer'} started following you",
+                body="Tap to see their profile.",
+                deeplink=f"/profile/{user['user_id']}",
+                metadata={
+                    "entity_id": user["user_id"],
+                    "entity_type": "user",
+                },
+            )
+        except Exception:
+            # Best-effort — the follow itself must still succeed.
+            pass
     return {
         "ok": True,
         "created": created,

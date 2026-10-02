@@ -25,6 +25,7 @@ from . import (
     choreographer_follows,
     classes,
     copperknob,
+    dance_of_the_day,
     dances,
     dashboard,
     events,
@@ -35,6 +36,7 @@ from . import (
     legal,
     misc,
     notification_prefs,
+    notifications,
     pending_dances,
     moderation,
     prizes,
@@ -85,6 +87,8 @@ api_router.include_router(moderation.router)
 api_router.include_router(weekly_recap.router)
 api_router.include_router(legal.router)
 api_router.include_router(announcements.router)
+api_router.include_router(notifications.router)
+api_router.include_router(dance_of_the_day.router)
 api_router.include_router(misc.router)
 
 __all__ = ["api_router"]

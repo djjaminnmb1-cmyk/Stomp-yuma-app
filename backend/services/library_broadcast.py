@@ -182,6 +182,20 @@ async def broadcast_new_dance(
     except Exception as e:  # noqa: BLE001
         logger.warning(f"library new-dance broadcast push failed: {e}")
 
+    # Also persist to each recipient's Notification Center.
+    try:
+        from services.notification_feed import log_event
+        await log_event(
+            recipients=fresh,
+            kind="library_new_dance",
+            title="New dance in the library",
+            body=f"{name} — {chor or 'the local line-up'}",
+            deeplink=f"/dance/{dance_id}",
+            metadata={"entity_id": dance_id, "entity_type": "dance"},
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"library new-dance feed log failed: {e}")
+
     return len(fresh)
 
 
@@ -248,6 +262,20 @@ async def broadcast_new_class(
         )
     except Exception as e:  # noqa: BLE001
         logger.warning(f"library new-class broadcast push failed: {e}")
+
+    # Notification Center row.
+    try:
+        from services.notification_feed import log_event
+        await log_event(
+            recipients=fresh,
+            kind="library_new_class",
+            title=f"New class: {label}",
+            body=f"{instructor_name} · {date} — {dance_names}{more}".strip(),
+            deeplink="/classes",
+            metadata={"entity_id": class_id, "entity_type": "class"},
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"library new-class feed log failed: {e}")
 
     return len(fresh)
 

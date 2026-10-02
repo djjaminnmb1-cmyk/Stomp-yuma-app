@@ -196,6 +196,13 @@ async def _ensure_indexes() -> None:
     except Exception as e:
         logger.warning(f"library_broadcasts index issue: {e}")
     try:
+        from services.notification_feed import (
+            ensure_indexes as ensure_notif_feed_indexes,
+        )
+        await ensure_notif_feed_indexes()
+    except Exception as e:
+        logger.warning(f"notification_feed index issue: {e}")
+    try:
         # Event RSVPs — one row per (event, user); upsert-based.
         await db.event_rsvps.create_index(
             [("event_id", 1), ("user_id", 1)],

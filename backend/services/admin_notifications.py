@@ -88,6 +88,23 @@ async def notify_admins_of_pending_dance(pd_row: dict) -> list[str]:
         )
     except Exception as e:  # pragma: no cover — network / relay flake
         logger.warning(f"admin pending-dance push failed: {e}")
+
+    # Notification Center row — admins see this in their feed too.
+    try:
+        from services.notification_feed import log_event
+        await log_event(
+            recipients=pool,
+            kind="admin_pending_dance",
+            title="New dance submission",
+            body=f"{submitter} submitted \"{title}\"",
+            deeplink="/admin/pending-dances",
+            metadata={
+                "entity_id": pd_row.get("id") or "",
+                "entity_type": "pending_dance",
+            },
+        )
+    except Exception as e:
+        logger.warning(f"admin pending-dance feed log failed: {e}")
     return pool
 
 
@@ -126,4 +143,17 @@ async def notify_admins_of_instructor_grant(user_doc: dict) -> list[str]:
         )
     except Exception as e:  # pragma: no cover — network / relay flake
         logger.warning(f"admin instructor-grant push failed: {e}")
+
+    try:
+        from services.notification_feed import log_event
+        await log_event(
+            recipients=pool,
+            kind="admin_instructor_grant",
+            title="New instructor on the floor",
+            body=f"{who} just unlocked the Instructor role.",
+            deeplink="/admin/users",
+            metadata={"entity_id": actor_id, "entity_type": "user"},
+        )
+    except Exception as e:
+        logger.warning(f"admin instructor-grant feed log failed: {e}")
     return pool

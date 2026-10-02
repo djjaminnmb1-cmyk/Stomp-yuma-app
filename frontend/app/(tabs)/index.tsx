@@ -11,6 +11,7 @@ import { StreakCard } from "@/src/components/StreakCard";
 import { FeedEventCard } from "@/src/components/FeedEventCard";
 import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
 import { WeeklyRecapCard } from "@/src/components/WeeklyRecapCard";
+import { DanceOfTheDayCard } from "@/src/components/DanceOfTheDayCard";
 import { useTranslation } from "@/src/i18n";
 
 export default function Home() {
@@ -26,6 +27,7 @@ export default function Home() {
   const [feedPreview, setFeedPreview] = useState<FeedEvent[]>([]);
   const [mainInstructorName, setMainInstructorName] = useState<string>("");
   const [showPickInstructor, setShowPickInstructor] = useState(false);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
 
   useEffect(() => {
     api
@@ -57,6 +59,10 @@ export default function Home() {
       api.getFeed(token, 3).then((r) => {
         setFeedPreview(r.events || []);
       }).catch(() => {});
+      api
+        .getUnreadNotificationCount(token)
+        .then((r) => setUnreadNotifs(r.unread))
+        .catch(() => {});
     }, [token])
   );
 
@@ -107,7 +113,43 @@ export default function Home() {
             contentFit="cover"
             contentPosition="top"
           />
+          {/* Floating bell icon with unread badge — sits over the hero
+              so it's reachable with one thumb above the first scroll.
+              Only renders for signed-in users. */}
+          {token ? (
+            <Pressable
+              testID="home-notif-bell"
+              onPress={() => router.push("/notifications")}
+              style={styles.bellBtn}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={
+                unreadNotifs > 0
+                  ? `Notifications, ${unreadNotifs} unread`
+                  : "Notifications"
+              }
+            >
+              <Ionicons
+                name="notifications"
+                size={22}
+                color={colors.onBrandPrimary}
+              />
+              {unreadNotifs > 0 ? (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {unreadNotifs > 99 ? "99+" : unreadNotifs}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+          ) : null}
         </View>
+
+        {/* Dance Of The Day — one featured dance each day, prioritising
+            unpracticed library content. Hero sized card that lives
+            above every other section so it's the first thing dancers
+            see when they open the app in the morning. */}
+        <DanceOfTheDayCard />
 
         <View style={styles.section}>
           <Text style={styles.helloText}>
@@ -454,6 +496,45 @@ const styles = StyleSheet.create({
     aspectRatio: 1024 / 1536,
     backgroundColor: "#F4E7CE",
     overflow: "hidden",
+  },
+  // Floating bell overlay anchored to the top-right of the hero.
+  // Positioned absolutely so it doesn't move the hero image. Dark pill
+  // + white icon gives it enough contrast against both light and dark
+  // poster regions.
+  bellBtn: {
+    position: "absolute",
+    top: 10,
+    right: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.brandPrimary + "DD",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  bellBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    backgroundColor: colors.brand ?? colors.brandSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  bellBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "800",
   },
   section: { padding: spacing.xl, gap: spacing.md },
   helloText: { fontFamily: "serif", fontSize: 28, color: colors.onSurface, fontWeight: "700" },

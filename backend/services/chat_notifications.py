@@ -111,4 +111,24 @@ async def fan_out_chat_post(
     except Exception as e:  # pragma: no cover — network/relay flake
         logger.warning(f"chat post push failed: {e}")
 
+    # Notification Center row — so the chat ping lives beyond the OS
+    # banner. Deeplinks to the instructor tab (which is where the chat
+    # lives for the admin/instructor pool this helper fans to).
+    try:
+        from services.notification_feed import log_event
+        await log_event(
+            recipients=pool,
+            kind="chat_message",
+            title=f"{sender} posted in chat",
+            body=preview or "Tap to view",
+            deeplink="/(tabs)/instructor",
+            metadata={
+                "entity_id": message_id,
+                "entity_type": "chat_message",
+                "poster_id": poster_user_id,
+            },
+        )
+    except Exception as e:
+        logger.warning(f"chat post feed log failed: {e}")
+
     return pool

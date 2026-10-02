@@ -684,6 +684,37 @@ export type Announcement = {
   created_by: string;
   created_by_name: string;
   created_at: string;
+  scheduled_for?: string | null;   // ISO datetime (UTC) or null = immediate
+  broadcasted_at?: string | null;  // ISO datetime (UTC) or null = scheduled draft
+};
+
+// --- Notification Center ---
+export type NotificationEvent = {
+  id: string;
+  user_id: string;
+  kind: string;
+  title: string;
+  body: string;
+  deeplink: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  read_at: string | null;
+};
+
+// --- Dance Of The Day ---
+export type DanceOfTheDay = {
+  dance: {
+    id: string;
+    name: string;
+    choreographer: string;
+    co_choreographers?: string[];
+    difficulty: string;
+    song?: string;
+    artist?: string;
+    bpm?: number | null;
+    tags?: string[];
+  } | null;
+  source: "cached" | "unpracticed" | "caught_up" | null;
 };
 
 export type RsvpCounts = {
@@ -1554,16 +1585,50 @@ export const api = {
   // ---------------- Admin announcements ("pin" posts) ----------------
   // Admin creates + broadcasts a push to every opted-in user. Any
   // signed-in user can read the recent feed via listAnnouncements.
+  // ``scheduled_for`` (ISO datetime UTC) delays the broadcast to a
+  // future tick of the scheduler — leave null/omitted for immediate.
   listAnnouncements: (token: string, limit = 50) =>
     req<{ items: Announcement[]; count: number }>(
       `/announcements?limit=${limit}`,
       {},
       token
     ),
-  createAnnouncement: (token: string, title: string, body: string) =>
+  listScheduledAnnouncements: (token: string) =>
+    req<{ items: Announcement[]; count: number }>(
+      "/admin/announcements/scheduled",
+      {},
+      token
+    ),
+  createAnnouncement: (
+    token: string,
+    title: string,
+    body: string,
+    scheduled_for?: string | null,
+  ) =>
     req<{ ok: boolean; announcement: Announcement }>(
       "/admin/announcements",
-      { method: "POST", body: JSON.stringify({ title, body }) },
+      {
+        method: "POST",
+        body: JSON.stringify({
+          title,
+          body,
+          ...(scheduled_for ? { scheduled_for } : {}),
+        }),
+      },
+      token
+    ),
+  updateAnnouncement: (
+    token: string,
+    id: string,
+    patch: {
+      title?: string;
+      body?: string;
+      scheduled_for?: string | null;
+    },
+  ) =>
+    req<{ ok: boolean; announcement: Announcement }>(
+      `/admin/announcements/${encodeURIComponent(id)}`,
+      { method: "PATCH", body: JSON.stringify(patch) },
       token
     ),
   deleteAnnouncement: (token: string, id: string) =>
@@ -1572,6 +1637,44 @@ export const api = {
       { method: "DELETE" },
       token
     ),
+
+  // ---------------- Notification Center ----------------
+  listNotifications: (token: string, limit = 50, before?: string) =>
+    req<{
+      items: NotificationEvent[];
+      count: number;
+      has_more: boolean;
+    }>(
+      `/notifications?limit=${limit}${
+        before ? `&before=${encodeURIComponent(before)}` : ""
+      }`,
+      {},
+      token
+    ),
+  getUnreadNotificationCount: (token: string) =>
+    req<{ unread: number }>("/notifications/unread-count", {}, token),
+  markNotificationRead: (token: string, id: string) =>
+    req<{ ok: boolean }>(
+      `/notifications/${encodeURIComponent(id)}/read`,
+      { method: "POST" },
+      token
+    ),
+  markAllNotificationsRead: (token: string) =>
+    req<{ ok: boolean; marked_read: number }>(
+      "/notifications/read-all",
+      { method: "POST" },
+      token
+    ),
+  deleteNotification: (token: string, id: string) =>
+    req<{ ok: boolean }>(
+      `/notifications/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+      token
+    ),
+
+  // ---------------- Dance Of The Day ----------------
+  getDanceOfTheDay: (token: string) =>
+    req<DanceOfTheDay>("/dance-of-the-day", {}, token),
 
   // ---------------- Instructor follow (push-alert graph) ----------------
   followInstructor: (instructor_id: string, token: string) =>

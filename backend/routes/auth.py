@@ -731,6 +731,12 @@ async def delete_my_account(user: dict = Depends(get_current_user)):
         await purge_lib_bc(uid)
     except Exception:  # pragma: no cover
         logger.exception("library_broadcast purge failed for %s", uid)
+    # Notification Center feed rows for this user.
+    try:
+        from services.notification_feed import purge_user as purge_feed
+        await purge_feed(uid)
+    except Exception:  # pragma: no cover
+        logger.exception("notification_feed purge failed for %s", uid)
     # Event RSVPs authored by this user
     await db.event_rsvps.delete_many({"user_id": uid})
 

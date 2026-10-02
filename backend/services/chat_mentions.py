@@ -220,6 +220,24 @@ async def fan_out_mentions(
             except Exception as e:
                 logger.warning(f"mention push failed: {e}")
 
+            # Also persist to the Notification Center.
+            try:
+                from services.notification_feed import log_event
+                await log_event(
+                    recipients=push_recipients,
+                    kind="chat_mention",
+                    title=f"{mentioner_name or 'An instructor'} mentioned you",
+                    body=snippet or "Tap to view",
+                    deeplink="/mentions",
+                    metadata={
+                        "entity_id": message_id,
+                        "entity_type": "chat_message",
+                        "mentioner_id": mentioner_id,
+                    },
+                )
+            except Exception as e:
+                logger.warning(f"mention feed log failed: {e}")
+
     return notified
 
 

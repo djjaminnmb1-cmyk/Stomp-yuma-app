@@ -673,6 +673,20 @@ async def notify_followers_of_new_dance(dance: dict) -> int:
     except Exception as e:
         logger.warning(f"choreographer push failed: {e}")
 
+    # Notification Center row.
+    try:
+        from services.notification_feed import log_event
+        await log_event(
+            recipients=fresh,
+            kind="new_dance",
+            title=f"New dance by {choreographer}",
+            body=f"{dance_name} — tap to open",
+            deeplink=f"/dance/{dance_id}",
+            metadata={"entity_id": dance_id, "entity_type": "dance"},
+        )
+    except Exception as e:
+        logger.warning(f"choreographer feed log failed: {e}")
+
     return len(fresh)
 
 

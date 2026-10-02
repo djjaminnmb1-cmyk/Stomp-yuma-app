@@ -668,6 +668,28 @@ export default function Profile() {
               the same endpoint. */}
           <MentionsProfileRow />
 
+          {/* Notification Center — persistent list of pushes + in-app events. */}
+          <Pressable
+            testID="profile-notification-center-row"
+            style={styles.row}
+            onPress={() => router.push("/notifications")}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color={colors.brandPrimary}
+              />
+              <View>
+                <Text style={styles.rowText}>Notifications</Text>
+                <Text style={styles.deleteSub}>
+                  Your push history (kept 90 days)
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+
           {/* Notification preferences — per-category push mutes */}
           <Pressable
             testID="profile-notification-prefs-row"

@@ -236,10 +236,19 @@ async def rsvp_event(
     status = (body.status or "").strip().lower()
     if status not in _RSVP_STATUSES:
         raise HTTPException(400, "Invalid RSVP status.")
-    event = await db.events.find_one({"id": event_id}, {"_id": 0, "id": 1})
+    # Fetch the full event so we can log the creator-facing event
+    # notification with meaningful context (title + date + rsvper).
+    event = await db.events.find_one({"id": event_id}, {"_id": 0})
     if not event:
         raise HTTPException(404, "Event not found.")
     now = now_iso()
+    # Is this a NEW RSVP or a status-change? Only new "going"/"maybe"
+    # should ping the event creator — a user flipping between statuses
+    # on the same event shouldn't spam them, nor should a decline.
+    prior = await db.event_rsvps.find_one(
+        {"event_id": event_id, "user_id": user["user_id"]},
+        {"_id": 0, "status": 1},
+    )
     await db.event_rsvps.update_one(
         {"event_id": event_id, "user_id": user["user_id"]},
         {
@@ -249,6 +258,35 @@ async def rsvp_event(
         upsert=True,
     )
     counts = await _rsvp_counts(event_id)
+    # Fire a Notification Center entry for the event creator on the
+    # FIRST positive RSVP (going/maybe). No push — too noisy for busy
+    # events, and users can scroll back through the feed anytime.
+    if (
+        status in ("going", "maybe")
+        and (prior is None or prior.get("status") != status)
+    ):
+        try:
+            creator_id = event.get("created_by") or ""
+            if creator_id and creator_id != user["user_id"]:
+                from services.notification_feed import log_event
+                rsvper = user.get("name") or user.get("email") or "A dancer"
+                verb = "is going to" if status == "going" else "might come to"
+                title = event.get("title") or "your event"
+                await log_event(
+                    recipients=[creator_id],
+                    kind="event_rsvp",
+                    title=f"{rsvper} {verb} {title}",
+                    body=f"Date: {event.get('date') or 'TBD'}",
+                    deeplink=f"/event/{event_id}",
+                    metadata={
+                        "entity_id": event_id,
+                        "entity_type": "event",
+                        "rsvper_id": user["user_id"],
+                        "status": status,
+                    },
+                )
+        except Exception:
+            pass
     return {"ok": True, "status": status, "counts": counts}
 
 

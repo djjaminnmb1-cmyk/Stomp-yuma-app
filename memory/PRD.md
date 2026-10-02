@@ -1656,3 +1656,125 @@ shapes, and that fan-out helpers never raise. Real end-to-end push
 testing happens post-deploy on a physical Android device with a real
 `EMERGENT_PUSH_KEY` set by the Emergent build pipeline.
 
+
+
+## Session (June 2026) — Notifications 2.1
+
+Shipped three stacked features in one pass: Dance Of The Day,
+Notification Center, and Announcement Scheduling.
+
+### A. Dance Of The Day (`/dance-of-the-day`)
+`services/dance_of_the_day.py` picks ONE dance per user per day:
+
+1. **Cached**: if we already picked for ``(user_id, today)``, return
+   the cached row (same selection on refresh — no mid-day flipping).
+2. **Unpracticed-first**: filter published dances to those the user
+   has NOT practiced (``practice_sessions.dance_id`` set subtract),
+   then pick deterministically via ``sha1(user_id|day) mod len(pool)``.
+3. **Caught-up fallback**: if the user has practiced the entire
+   library (🎉), rotate through ALL published dances using the same
+   deterministic hash. Hero shows a "Caught up — fresh rotation" tag.
+
+Routes
+* `GET /api/dance-of-the-day` — returns `{dance, source}` where source
+  is `cached | unpracticed | caught_up`.
+
+Collections
+* `dance_of_the_day` — one row per `(user_id, day)` cache. Natural
+  tomorrow-overwrites-today behavior via upsert.
+
+Frontend
+* `src/components/DanceOfTheDayCard.tsx` — hero card at top of home.
+  Difficulty-coloured pill, optional BPM pill, Practice CTA → routes
+  to `/dance/{id}`. Hides itself when the library is empty or the
+  user is signed out.
+
+### B. Notification Center (`/notifications`)
+`services/notification_feed.py` persists one row per recipient per
+push, plus some in-app events that never fire a push.
+
+Row shape::
+    { id, user_id, kind, title, body, deeplink, metadata,
+      created_at, read_at }
+
+Kinds covered
+* `announcement`, `library_new_dance`, `library_new_class`,
+  `admin_pending_dance`, `admin_instructor_grant`, `chat_mention`,
+  `chat_message`, `new_dance`, `new_class`, `new_event`,
+  `class_reminder`
+* **In-app only (no push)**: `new_follower`, `event_rsvp` — ping the
+  user you follow / the event creator so dancers see social events
+  in their feed without their phone buzzing.
+
+Routes
+* `GET    /api/notifications?limit=50&before=<iso>` — keyset-paginated
+* `GET    /api/notifications/unread-count` — tiny badge query
+* `POST   /api/notifications/{id}/read` — flip one row
+* `POST   /api/notifications/read-all` — flip everything
+* `DELETE /api/notifications/{id}` — delete one row
+
+Retention
+* 90-day sweep via `services.scheduler.purge_expired` (daily job).
+* Account-deletion also purges the user's rows.
+
+Frontend
+* `/notifications` — FlatList, 50-row pages, pull-to-refresh,
+  mark-all-read, long-press-to-delete. Kind-coded Ionicon per row,
+  unread dot, relative-time stamp.
+* Home hero bell (top-right of poster) with unread badge. Refreshed
+  on every Home focus via `getUnreadNotificationCount`.
+* `profile.tsx` — added "Notifications" row.
+
+### C. Announcement Scheduling
+`services/announcements.py` extended with `scheduled_for` (optional
+ISO datetime). Behavior:
+
+* `scheduled_for = None`  → broadcast now (backward-compat).
+* `scheduled_for > now`   → insert as draft, scheduler fires later.
+* `scheduled_for ≤ now`   → create_and_broadcast fires immediately
+  (backdated schedules don't wait for the minute tick).
+
+Scheduler
+* `services.scheduler.start_scheduler` registers
+  `broadcast_pending_announcements` as a 60s interval job. Each tick
+  claims pending rows via `broadcasted_at: None` → stamp pattern so
+  concurrent ticks never double-fire.
+
+Routes
+* `POST   /api/admin/announcements` — now accepts `scheduled_for`
+* `PATCH  /api/admin/announcements/{id}` — edit a scheduled draft
+  (400 if already broadcast — "delete + recreate" instead)
+* `GET    /api/admin/announcements/scheduled` — admin-only pending list
+* Users-facing `GET /api/announcements` filters on `broadcasted_at`
+  so dancers never see scheduled drafts.
+
+Frontend
+* `/admin/announcements` — "Send now" / "Schedule for later"
+  segmented control, native `DateTimePicker` for date + time, past-
+  time inline warning, scheduled section with edit (pencil) and
+  cancel (×) buttons. Edit flow reuses the composer with a "Save
+  changes" / "Cancel edit" footer.
+
+### Tests
+`backend/tests/test_notifications_v2.py` — 21/21 passing.
+* 4 Dance Of The Day tests (shape, auth, stability within day,
+  per-user independence).
+* 8 Notification Center tests (auth, feed log on announcement,
+  newest-first ordering, mark-single-read, mark-all-read, delete,
+  404 on unknown id, cross-user scope enforcement).
+* 9 Scheduling tests (future schedule hides from user feed, admin-
+  only scheduled list, PATCH edit flow, 400 on already-sent patch,
+  404 unknown id, delete-scheduled, backdated-schedule-fires-now,
+  422 invalid-scheduled-for format).
+
+Full combined run: `test_notifications_v2 + test_push_notifications_expansion +
+test_version_pin` = **60/60 passing**.
+
+### i18n
+* `src/i18n/translations.ts` — 3 new home keys
+  (`home.dance_of_the_day`, `home.practice_now`, `home.dotd_caught_up`)
+  localised to all 8 languages.
+* `src/api/client.ts` — new `NotificationEvent`, `DanceOfTheDay`
+  types + 8 new API wrappers (list / unread / read / read-all /
+  delete / get-DOTD / list-scheduled / update-announcement).
+
