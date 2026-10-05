@@ -12,6 +12,7 @@ import { FeedEventCard } from "@/src/components/FeedEventCard";
 import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
 import { WeeklyRecapCard } from "@/src/components/WeeklyRecapCard";
 import { DanceOfTheDayCard } from "@/src/components/DanceOfTheDayCard";
+import { FollowedInstructorHub } from "@/src/components/FollowedInstructorHub";
 import { useTranslation } from "@/src/i18n";
 
 export default function Home() {
@@ -150,6 +151,14 @@ export default function Home() {
             above every other section so it's the first thing dancers
             see when they open the app in the morning. */}
         <DanceOfTheDayCard />
+
+        {/* Followed-Instructor Hub — upcoming classes + events from
+            every instructor the signed-in dancer follows, pulled
+            from `users.instructor_ids` server-side. Renders nothing
+            at all for signed-out users / dancers with zero follows
+            / weeks with no upcoming items, so Home doesn't gain a
+            dead card. */}
+        <FollowedInstructorHub />
 
         <View style={styles.section}>
           <Text style={styles.helloText}>

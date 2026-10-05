@@ -2169,3 +2169,79 @@ every chat room, leaderboard, etc.) and a mild attack surface
    `backend/services/startup.py::run_startup()`.
 2. Restart backend. Accounts + demo chat message re-seed from
    `SEED_PW_*` env vars in `backend/.env` on next boot.
+
+---
+
+## Followed-Instructor Hub on Home — 2026-10-05
+
+### Why
+Dancers already pick their favorite instructors via "My instructors"
+(stored in `users.instructor_ids`), but Home's Weekly Recap, Boot
+Scoot Board, and Browse Dances all surface community-wide activity.
+There was no path from Home → "what's my instructor doing this
+week?" without hopping to the Classes tab or the Events screen.
+
+### What it does
+New `FollowedInstructorHub` card renders directly below the Dance of
+the Day. It lists up to 4 upcoming classes + events authored by
+instructors the signed-in dancer follows, sorted chronologically.
+
+Each row shows:
+* CLASS or EVENT pill (brand tertiary vs. brand secondary)
+* Title (session_label for classes, name for events)
+* Metadata chain: instructor name · time · venue · dance count
+* Relative date label (Today / Tomorrow / "Thu, Oct 8")
+* Chevron → deep-links to `/classes` or `/events/{id}`
+
+Below the rows, a "+N more" link appears when more than 4 upcoming
+items exist, routing to the Instructor tab.
+
+### Hidden states (no dead card)
+* Signed-out users.
+* Dancers following nobody (`has_follows=false`).
+* Dancers whose follows have nothing upcoming.
+
+### Backend
+New `routes/followed_instructors.py` with
+`GET /api/followed-instructors/upcoming?limit=10`:
+* Reads `users.instructor_ids` for the authenticated user.
+* Pulls upcoming classes (`date >= today`) matching those IDs.
+* Pulls PUBLISHED upcoming events matching those IDs
+  (`is_published=True`).
+* Merges + normalises into a unified `{kind, id, title, date,
+  start_time, venue_name, city, dance_count, deeplink, ...}` shape.
+* Sorts `(date asc, start_time asc)` — classes before timed events
+  on the same day.
+* Returns `{items, total, has_follows, today}` with `total`
+  reflecting pre-truncation count so the client can show "+N more".
+
+### Frontend
+* `src/components/FollowedInstructorHub.tsx` — the card component,
+  wrapped in a `useFocusEffect` so new classes/events appear
+  without a relaunch.
+* `src/api/client.ts` — new `getFollowedUpcoming` wrapper +
+  `FollowedUpcomingItem` + `FollowedUpcomingResponse` types.
+* `app/(tabs)/index.tsx` — card inserted right after `<DanceOfTheDayCard />`,
+  before the Hello/Weekly Recap section.
+* `src/i18n/translations.ts` — ~10 new keys per locale across all 8
+  supported languages (EN, ES, FR, DE, NL, KO, zh-Hans, zh-Hant).
+
+### Tests
+`tests/test_followed_instructor_hub.py` — **9/9 passing**:
+auth-required, no-follows empty payload, followed class visible,
+published event visible, draft event hidden, past class hidden,
+chronological sort, limit cap with total unchanged, cross-user
+isolation.
+
+Combined notification + hub suites: **80/80 passing**.
+
+### Live verification
+Screenshot confirms Erin's Home now shows the hub with 3 real
+upcoming items from Jamin (whom she follows): Thursday Night Line
+Dancing (CLASS, Tomorrow), Beginner Boot-Scootin' Workshop (EVENT,
+Wed Oct 7 · 19:00 · Yuma Civic Center), Friday Night Dance Social
+(CLASS, Thu Oct 8 · 2 dances).
+
+### Data model
+No schema changes. Reuses existing `users.instructor_ids`,
+`db.classes`, `db.events`.

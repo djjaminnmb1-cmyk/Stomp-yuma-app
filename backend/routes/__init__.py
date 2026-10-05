@@ -31,6 +31,7 @@ from . import (
     events,
     external_search,
     feedback,
+    followed_instructors,
     instructors,
     leaderboard,
     legal,
@@ -91,6 +92,7 @@ api_router.include_router(announcements.router)
 api_router.include_router(notifications.router)
 api_router.include_router(dance_of_the_day.router)
 api_router.include_router(weekly_digest.router)
+api_router.include_router(followed_instructors.router)
 api_router.include_router(misc.router)
 
 __all__ = ["api_router"]

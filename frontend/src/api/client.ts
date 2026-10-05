@@ -754,6 +754,29 @@ export type DotdOpenResponse = {
   dance_matches: boolean;
 };
 
+// Followed-Instructor Hub — upcoming classes + events from the
+// instructors the caller follows (via `users.instructor_ids`).
+export type FollowedUpcomingItem = {
+  kind: "class" | "event";
+  id: string;
+  instructor_id: string;
+  instructor_name: string;
+  title: string;
+  date: string;         // YYYY-MM-DD
+  start_time: string;   // "HH:MM" (events) or "" (classes)
+  venue_name: string;
+  city: string;
+  dance_count: number;  // classes only
+  deeplink: string;     // "/classes" or "/events/{id}"
+};
+
+export type FollowedUpcomingResponse = {
+  items: FollowedUpcomingItem[];
+  total: number;
+  has_follows: boolean;
+  today: string;
+};
+
 export type RsvpCounts = {
   going: number;
   maybe: number;
@@ -1742,6 +1765,14 @@ export const api = {
     req<DotdOpenResponse>(
       "/dance-of-the-day/open",
       { method: "POST", body: JSON.stringify({ dance_id }) },
+      token
+    ),
+
+  // ---------------- Followed-Instructor Hub ----------------
+  getFollowedUpcoming: (token: string, limit = 10) =>
+    req<FollowedUpcomingResponse>(
+      `/followed-instructors/upcoming?limit=${limit}`,
+      {},
       token
     ),
 

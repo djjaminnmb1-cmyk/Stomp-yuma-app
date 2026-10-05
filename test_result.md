@@ -1336,6 +1336,116 @@ backend:
           Apple approved the build; the 3 seeded reviewer accounts
           (reviewer@, adminreview@, samplecontent@stompinground.com)
           + the demo chat message no longer need to be live.
+          Verified: all 3 → 401 on login, zero rows after restart,
+          3 other admins active (last-admin guard safe), 71/71
+          notification tests still pass.
+
+#====================================================================================================
+# NEW: Followed-Instructor Hub on Home — 2026-10-05
+#====================================================================================================
+
+backend:
+  - task: "Followed-Instructor Hub (upcoming from followed instructors)"
+    implemented: true
+    working: true
+    file: "backend/routes/followed_instructors.py, backend/routes/__init__.py, backend/tests/test_followed_instructor_hub.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          New endpoint GET /api/followed-instructors/upcoming reads
+          the caller's users.instructor_ids, pulls every upcoming
+          class and PUBLISHED event authored by those instructors,
+          merges them into a unified shape, and returns the list
+          sorted chronologically (date asc, start_time asc).
+
+          Response shape: {items[], total, has_follows, today}. Each
+          item has kind (class|event), id, instructor_id,
+          instructor_name, title, date, start_time, venue_name,
+          city, dance_count, deeplink — enough for one renderer to
+          handle both.
+
+          Guards:
+            * has_follows=false if caller follows nobody (client
+              hides the card gracefully, no "pick an instructor"
+              nag).
+            * Draft events hidden (is_published must be true).
+            * Past-dated items hidden (date >= today_utc).
+            * limit= caps items but total reflects pre-truncation
+              count so client can show "+N more".
+            * Non-followed instructors' content never leaks in.
+            * Unknown/deleted instructor ids silently skipped.
+
+          Tests: tests/test_followed_instructor_hub.py — 9/9 pass:
+            1. Requires auth (401 without token).
+            2. No-follows caller → has_follows=false.
+            3. Followed class shows up with class shape.
+            4. Published event shows up with event shape + time + venue.
+            5. Draft event hidden.
+            6. Past class hidden.
+            7. Items sorted chronologically.
+            8. limit= caps items, total unchanged.
+            9. Non-followed caller never sees anything.
+
+          Full suite: 80/80 pass (hub + chat_replies + weekly_digest
+          + instructor_notifications + notifications_v2 +
+          dotd_streak_and_audience).
+
+frontend:
+  - task: "Followed-Instructor Hub card on Home"
+    implemented: true
+    working: true
+    file: "frontend/src/components/FollowedInstructorHub.tsx, frontend/app/(tabs)/index.tsx, frontend/src/api/client.ts, frontend/src/i18n/translations.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          New FollowedInstructorHub component on Home right after
+          the DOTD card. Shows up to 4 upcoming classes + events
+          from the dancer's followed instructors. Each row has a
+          CLASS/EVENT pill, title, instructor name, time/venue/
+          city/dance-count metadata chain, and relative-date label
+          ("Tomorrow", "Thu, Oct 8", etc.). Rows deep-link to
+          /classes or /events/{id}. If more than 4 items exist, a
+          "+N more" footer links to the Instructor tab.
+
+          Hidden entirely when:
+            * User is signed out.
+            * User follows nobody (has_follows=false).
+            * No upcoming items this cycle.
+
+          Refreshes on Home focus so new classes from followed
+          instructors show up without a relaunch.
+
+          i18n: ~10 new keys per locale (home.hub_title, hub_sub,
+          hub_view_all, hub_class_pill, hub_event_pill,
+          hub_class_dances / hub_class_dances_one, hub_more,
+          hub_date_today, hub_date_tomorrow) across all 8 locales
+          (EN, ES, FR, DE, NL, KO, zh-Hans, zh-Hant).
+
+          Verified via screenshot: Erin's Home now shows "From Your
+          Instructors — Upcoming classes and events" with 3 live
+          rows for Jamin's seeded classes + event.
+
+metadata:
+  test_sequence: 48
+  test_priority: "high_first"
+
+test_plan:
+  current_focus:
+    - "Followed-Instructor Hub (upcoming from followed instructors)"
+    - "Followed-Instructor Hub card on Home"
+  stuck_tasks: []
+  test_all: false
+
+obsolete_remove_apple_block:
+  - task: "Remove Apple App Review seeded accounts from live DB (dup block above)"
 
           Done:
           * Commented out the seed_apple_review_accounts() call in
