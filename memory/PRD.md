@@ -2118,3 +2118,54 @@ Combined notification suites: 71/71 passing.
 No schema changes. Reuses existing `parent_id` field on
 `instructor_messages`. New notification kind `chat_reply` added to
 `notification_feed.KNOWN_KINDS` and to `weekly_digest._SECTION_FOR_KIND`.
+
+---
+
+## Apple App Review accounts REMOVED — 2026-10-02
+
+### Why
+Apple approved the build. The three seeded reviewer accounts are no
+longer needed on live infrastructure:
+* `reviewer@stompinground.com` (regular dancer, terms-gate demo)
+* `adminreview@stompinground.com` (admin moderator, moderation queue demo)
+* `samplecontent@stompinground.com` (author of the seeded demo message)
+
+Leaving them in place was both a privacy signal (strange accounts in
+every chat room, leaderboard, etc.) and a mild attack surface
+(known-email + rotated-password combo that could be fished).
+
+### What changed
+* **Backend auto-seed disabled** — `services/startup.py::run_startup()`:
+  the `seed_apple_review_accounts()` import + call are commented out
+  with a clear note on how to re-enable for a future re-review.
+* **Seed files kept dormant** — `services/apple_review_seed.py` and
+  `scripts/seed_apple_review.py` remain on disk, as do the three
+  `SEED_PW_*` env vars in `backend/.env`. Un-commenting the two
+  lines in `startup.py` is enough to bring the seed back if Apple
+  requests another review.
+* **DB purged** — new script `scripts/purge_apple_review_seeds.py`
+  mirrors the full `delete_my_account` sweep (sessions, tracking,
+  attendance, chat messages/reactions/reads/mentions, follow
+  graph, choreographer follows, instructor notification ledger,
+  library broadcast ledger, notification feed, DOTD streak,
+  weekly digest ledger, badges, practice logs, event RSVPs,
+  authored content anonymisation). Idempotent — safe to re-run.
+* **test_credentials.md updated** — the reviewer section is replaced
+  with a "REMOVED 2026-10-02" block that records the previously-used
+  emails and the re-enable procedure.
+
+### Verification
+* All 3 target emails return `401` on `/api/auth/login` post-purge.
+* Zero rows remain for the 3 emails after a backend restart (the
+  commented-out seed does not re-create them).
+* 3 other admins (Erin, Admin, Jamin) remain in the DB — the
+  last-admin guard is not tripped.
+* Zero references to `reviewer@stompinground`, `adminreview@`, or
+  `samplecontent@` remain in the pytest suite.
+* 71/71 notification tests still pass after the change.
+
+### Re-enable procedure (if needed)
+1. Uncomment the two lines in
+   `backend/services/startup.py::run_startup()`.
+2. Restart backend. Accounts + demo chat message re-seed from
+   `SEED_PW_*` env vars in `backend/.env` on next boot.

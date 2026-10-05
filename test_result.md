@@ -1317,6 +1317,66 @@ frontend:
           brand red tint. Deeplink to /(tabs)/instructor handled by
           existing router.push logic.
 
+#====================================================================================================
+# APPLE REVIEW ACCOUNTS — REMOVED FROM LIVE DB — 2026-10-02
+#====================================================================================================
+
+backend:
+  - task: "Remove Apple App Review seeded accounts from live DB"
+    implemented: true
+    working: true
+    file: "backend/services/startup.py, backend/scripts/purge_apple_review_seeds.py, memory/test_credentials.md"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Apple approved the build; the 3 seeded reviewer accounts
+          (reviewer@, adminreview@, samplecontent@stompinground.com)
+          + the demo chat message no longer need to be live.
+
+          Done:
+          * Commented out the seed_apple_review_accounts() call in
+            services/startup.py::run_startup() so the accounts can't
+            come back on backend restart. Seed source files are
+            kept dormant on disk (user chose "re-enable later if
+            Apple asks for another review" option) — re-enabling
+            is just un-commenting the two lines.
+          * New scripts/purge_apple_review_seeds.py — mirrors the
+            full delete_my_account purge for each of the 3 users:
+            sessions, tracking, attendance, practice logs, event
+            RSVPs, chat (messages/reactions/reads/mentions), social
+            follows, choreographer follows, instructor notification
+            ledger, library broadcast ledger, notification feed,
+            DOTD streak, weekly digest ledger, badges — then
+            anonymises any content they authored and deletes the
+            user doc. Idempotent.
+          * memory/test_credentials.md updated — reviewer section
+            replaced with a "REMOVED 2026-10-02" block that records
+            the re-enable procedure.
+
+          Verification:
+          * All 3 emails → 401 on login post-purge.
+          * Zero rows remain in users / instructor_messages for
+            these accounts after a backend restart.
+          * 3 other admins still active (last-admin guard safe).
+          * 71/71 notification tests still pass.
+
+metadata:
+  test_sequence: 47
+  test_priority: "high_first"
+
+test_plan:
+  current_focus:
+    - "Remove Apple App Review seeded accounts from live DB"
+  stuck_tasks: []
+  test_all: false
+
+obsolete_chat_reply_block:
+  - task: "Notification Center icon for chat_reply (duplicate — see latest block above)"
+
 
 old_frontend:
   - task: "Notification Center shows `new_class` and `new_event` rows"
