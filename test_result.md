@@ -1535,18 +1535,94 @@ frontend:
 
           Lint: clean. Backend tests: 32/32 passing (no regression).
 
+#====================================================================================================
+# NEW: Thank-you Toast + Streak Save nudge — 2026-10-08
+#====================================================================================================
+
+frontend:
+  - task: "Thank-you toast after Share Your Win"
+    implemented: true
+    working: true
+    file: "frontend/app/celebrate.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          handleShare on /celebrate now watches whether the share
+          actually reached the OS sheet / clipboard. On success,
+          calls toast.success("Thanks for spreading the word! 🎉",
+          {duration: 2600}) via the existing useToast() context.
+          User-cancels (AbortError on web, Share.dismissedAction on
+          native) stay silent — no fake gratitude for closed sheets.
+          Toast context has a NOOP fallback so the call is safe in
+          test envs where ToastProvider isn't mounted.
+
+backend:
+  - task: "Streak at-risk flags on /dance-of-the-day/streak"
+    implemented: true
+    working: true
+    file: "backend/services/dotd_streak.py, backend/tests/test_dotd_streak_and_audience.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          get_streak() return shape expanded with `last_day`,
+          `at_risk`, `grace_days`. at_risk=True iff
+          (current>=1 AND today_done=False AND last_day==yesterday)
+          — the one calendar day where opening today's DOTD would
+          still preserve the stored streak. record_open() returns
+          the updated get_streak() so new fields propagate without
+          a caller change. 3 new pytest cases:
+            * at_risk True when last_open_was_yesterday
+            * at_risk False when last_open_was_today
+            * at_risk False when last_open_was_two_days_ago
+          Combined 7-suite regression: 85/85 passing.
+
+frontend:
+  - task: "Streak Save card on Home"
+    implemented: true
+    working: true
+    file: "frontend/src/components/StreakSaveCard.tsx, frontend/app/(tabs)/index.tsx, frontend/src/api/client.ts, frontend/src/i18n/translations.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          New StreakSaveCard component renders ONLY when the backend
+          flags at_risk=true. Uses DOTD-matching flame orange
+          (#D9502A) in warm ember-tinted panel ("One dance keeps
+          your streak alive 🔥") with CTA that deep-links to the
+          DOTD's dance detail page. Inserted on Home between the
+          DOTD card and the Followed-Instructor Hub. 3 new i18n
+          keys per locale × 8 locales. useFocusEffect refresh so
+          the card disappears instantly after opening the DOTD
+          elsewhere. Verified live via screenshot: Home shows DOTD
+          at top with 🔥 5 pill, Streak Save card directly beneath
+          with orange flame bubble, "5-day streak at..." title,
+          "One dance keeps y..." body, orange CTA.
+
 metadata:
-  test_sequence: 50
+  test_sequence: 51
   test_priority: "high_first"
 
 test_plan:
   current_focus:
-    - "Simplify completion celebration layout"
+    - "Thank-you toast after Share Your Win"
+    - "Streak at-risk flags on /dance-of-the-day/streak"
+    - "Streak Save card on Home"
   stuck_tasks: []
   test_all: false
 
-obsolete_security_block:
-  - task: "SEC-002 — .env now covered by .gitignore (dup — see latest block above)"
+obsolete_celebrate_block:
+  - task: "Simplify completion celebration layout (dup — see latest block above)"
 
 
 metadata:

@@ -88,7 +88,7 @@ async def get_streak(user_id: str) -> dict:
     """Public read — the hero card asks for this on mount so it can
     render "🔥 Day N" even when the dancer hasn't tapped yet today.
 
-    Returns ``{current, longest, today_done}``:
+    Returns ``{current, longest, today_done, last_day, at_risk, grace_days}``:
 
     * ``current`` is the streak as it stands RIGHT NOW. A dancer who
       hit 5 days in a row and skipped yesterday is still shown as
@@ -97,13 +97,56 @@ async def get_streak(user_id: str) -> dict:
       broke" scares when the user has done nothing wrong.)
     * ``today_done`` is True iff ``dotd_last_open_day == today`` —
       the hero uses this to render the flame as "solid" vs "dotted".
+    * ``last_day`` is the ISO date (``YYYY-MM-DD``) of the most recent
+      credited open, or ``None`` if the dancer has never opened a
+      DOTD. Lets the frontend render relative-day messaging ("Opened
+      yesterday") without a second round-trip.
+    * ``at_risk`` is True when the dancer currently HAS a streak but
+      hasn't opened today's DOTD yet AND their last open is already
+      yesterday-or-older. One more missed day will reset them to
+      1 on their next open. This is what the Home "Streak Save"
+      nudge card watches for.
+    * ``grace_days`` is the number of calendar days remaining before
+      the streak would reset on next open. 0 when `today_done=True`
+      (no save needed); 1 when `last_day=yesterday` (today is the
+      save-your-streak day); 0 again when `last_day` is 2+ days
+      ago (streak is effectively dead already — the nudge still
+      offers to kick off a new one but with a softer message).
     """
     s = await _get_user_streak(user_id)
-    today_done = s["last_day"] == _today_iso()
+    today = _today_iso()
+    yesterday = _yesterday_iso()
+    last_day = s["last_day"]
+    today_done = last_day == today
+    current = s["current"]
+    # at_risk = user has a streak worth saving AND they haven't done
+    # today AND their next open would RESET if they skip today.
+    # Specifically: last_day == yesterday — this is the single day
+    # that still preserves the streak when opened. If `last_day` is
+    # already older than yesterday, the streak is cosmetically alive
+    # (we show the number) but mechanically dead (next open resets).
+    at_risk = (
+        current >= 1
+        and not today_done
+        and last_day == yesterday
+    )
+    # grace_days: how many more calendar days a dancer has before
+    # the stored streak will reset on next open. Only meaningful
+    # when today_done is False. Capped at 1 since the streak logic
+    # only forgives a single-day gap.
+    if today_done:
+        grace_days = 0
+    elif last_day == yesterday:
+        grace_days = 1
+    else:
+        grace_days = 0
     return {
-        "current": s["current"],
+        "current": current,
         "longest": s["longest"],
         "today_done": today_done,
+        "last_day": last_day,
+        "at_risk": at_risk,
+        "grace_days": grace_days,
     }
 
 

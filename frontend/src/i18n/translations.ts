@@ -227,6 +227,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "home.hub_more": "+{count} more",
     "home.hub_date_today": "Today",
     "home.hub_date_tomorrow": "Tomorrow",
+    "home.streak_save_title": "{count}-day streak at risk",
+    "home.streak_save_body": "One dance keeps your streak alive 🔥",
+    "home.streak_save_cta": "Open today's dance",
     "home.community_activity": "Community Activity",
     "home.feed_empty_title": "Follow other dancers",
     "home.feed_empty_sub":
@@ -904,6 +907,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "home.hub_more": "+{count} más",
     "home.hub_date_today": "Hoy",
     "home.hub_date_tomorrow": "Mañana",
+    "home.streak_save_title": "Racha de {count} días en riesgo",
+    "home.streak_save_body": "Un baile y mantienes tu racha 🔥",
+    "home.streak_save_cta": "Abrir el baile de hoy",
     "home.community_activity": "Actividad de la comunidad",
     "home.feed_empty_title": "Sigue a otros bailarines",
     "home.feed_empty_sub":
@@ -1478,6 +1484,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "home.hub_more": "+{count} de plus",
     "home.hub_date_today": "Aujourd'hui",
     "home.hub_date_tomorrow": "Demain",
+    "home.streak_save_title": "Série de {count} jours en péril",
+    "home.streak_save_body": "Une danse pour sauver ta série 🔥",
+    "home.streak_save_cta": "Ouvrir la danse du jour",
     "home.community_activity": "Activité de la communauté",
     "home.feed_empty_title": "Suivez d'autres danseurs",
     "home.feed_empty_sub":
@@ -2075,6 +2084,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "home.hub_more": "+{count} weitere",
     "home.hub_date_today": "Heute",
     "home.hub_date_tomorrow": "Morgen",
+    "home.streak_save_title": "{count}-Tage-Serie in Gefahr",
+    "home.streak_save_body": "Ein Tanz rettet deine Serie 🔥",
+    "home.streak_save_cta": "Heutigen Tanz öffnen",
     "home.community_activity": "Community-Aktivität",
     "home.feed_empty_title": "Folge anderen Tänzer:innen",
     "home.feed_empty_sub":
@@ -2667,6 +2679,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "home.hub_more": "+{count} meer",
     "home.hub_date_today": "Vandaag",
     "home.hub_date_tomorrow": "Morgen",
+    "home.streak_save_title": "Reeks van {count} dagen in gevaar",
+    "home.streak_save_body": "Eén dans houdt je reeks levend 🔥",
+    "home.streak_save_cta": "Open de dans van vandaag",
     "home.community_activity": "Community-activiteit",
     "home.feed_empty_title": "Volg andere dansers",
     "home.feed_empty_sub":
@@ -3265,6 +3280,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "home.hub_more": "+{count}개 더",
     "home.hub_date_today": "오늘",
     "home.hub_date_tomorrow": "내일",
+    "home.streak_save_title": "{count}일 연속 기록 위기",
+    "home.streak_save_body": "댄스 한 번이면 기록이 이어져요 🔥",
+    "home.streak_save_cta": "오늘의 댄스 열기",
     "home.community_activity": "커뮤니티 활동",
     "home.feed_empty_title": "다른 댄서를 팔로우해 보세요",
     "home.feed_empty_sub":
@@ -3840,6 +3858,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "home.hub_more": "还有 {count} 项",
     "home.hub_date_today": "今天",
     "home.hub_date_tomorrow": "明天",
+    "home.streak_save_title": "{count}天连打记录即将中断",
+    "home.streak_save_body": "再跳一次就能延续 🔥",
+    "home.streak_save_cta": "打开今日舞曲",
     "home.community_activity": "社区动态",
     "home.feed_empty_title": "关注其他舞者",
     "home.feed_empty_sub":
@@ -4402,6 +4423,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "home.hub_more": "還有 {count} 項",
     "home.hub_date_today": "今天",
     "home.hub_date_tomorrow": "明天",
+    "home.streak_save_title": "{count}天連打紀錄即將中斷",
+    "home.streak_save_body": "再跳一次就能延續 🔥",
+    "home.streak_save_cta": "打開今日舞曲",
     "home.community_activity": "社群動態",
     "home.feed_empty_title": "追蹤其他舞者",
     "home.feed_empty_sub":

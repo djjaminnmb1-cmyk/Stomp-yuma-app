@@ -27,6 +27,7 @@ import { useAuth } from "@/src/context/auth-context";
 import { downloadCertificate } from "@/src/lib/certificate";
 import CertificateThemePicker from "@/src/components/CertificateThemePicker";
 import { api, Badge } from "@/src/api/client";
+import { useToast } from "@/src/context/toast-context";
 
 /**
  * Celebration screen shown when a user marks a dance completed. Same visual
@@ -67,6 +68,10 @@ export default function CelebrateScreen() {
   const rawCount = parseInt((params.count as string) || "", 10);
   const totalCount = Number.isFinite(rawCount) && rawCount > 0 ? rawCount : null;
   const { token, user, updateUser } = useAuth();
+  // Toast for the "Thanks for spreading the word!" moment after Share.
+  // Called defensively — in some test harnesses the provider isn't
+  // mounted so handleShare wraps the call in try/catch.
+  const toast = useToast();
   const [selectedTheme, setSelectedTheme] = useState<string>(
     user?.certificate_theme || "classic"
   );
@@ -160,6 +165,10 @@ export default function CelebrateScreen() {
     if (sharing) return;
     cancelAutoDismiss(); // Never dismiss underneath the user while sharing.
     setSharing(true);
+    // Track whether the share actually reached the OS sheet / clipboard
+    // so we can show the gratitude toast ONLY when the dancer followed
+    // through — not on silent failures or user-cancels.
+    let shared = false;
     try {
       const label = danceName ? `"${danceName}"` : "a new dance";
       const milestoneLine =
@@ -177,9 +186,10 @@ export default function CelebrateScreen() {
         if (nav?.share) {
           try {
             await nav.share({ title: "Stompin' Ground Yuma", text: message });
+            shared = true;
             return;
           } catch (e: any) {
-            if (e?.name === "AbortError") return; // user cancelled
+            if (e?.name === "AbortError") return; // user cancelled — no toast
             // Fall through to clipboard on any other error.
           }
         }
@@ -187,21 +197,37 @@ export default function CelebrateScreen() {
           await nav.clipboard.writeText(message);
           setCopied(true);
           setTimeout(() => setCopied(false), 2500);
+          shared = true;
           return;
         }
         Alert.alert("Shareable text", message);
+        shared = true;
         return;
       }
 
-      // Native path
-      await Share.share(
+      // Native path — Share.share resolves with {action} that tells us
+      // whether the OS sheet was used or dismissed. action === "dismissedAction"
+      // means the user tapped Cancel — don't gush at them in that case.
+      const res = await Share.share(
         { message, title: "Stompin' Ground Yuma" },
         { dialogTitle: "Share your dance" }
       );
+      shared = res?.action !== Share.dismissedAction;
     } catch {
       /* Silently ignore — sharing is a nice-to-have, never a blocker. */
     } finally {
       setSharing(false);
+      if (shared) {
+        // Gratitude toast — a brief "we saw you spread the word" moment
+        // that lives above the celebration until it auto-dismisses.
+        try {
+          toast.success("Thanks for spreading the word! 🎉", {
+            duration: 2600,
+          });
+        } catch {
+          /* Toast context missing in some test envs — safe no-op */
+        }
+      }
     }
   };
 

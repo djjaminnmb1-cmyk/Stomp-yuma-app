@@ -13,6 +13,7 @@ import { PickInstructorSheet } from "@/src/components/PickInstructorSheet";
 import { WeeklyRecapCard } from "@/src/components/WeeklyRecapCard";
 import { DanceOfTheDayCard } from "@/src/components/DanceOfTheDayCard";
 import { FollowedInstructorHub } from "@/src/components/FollowedInstructorHub";
+import { StreakSaveCard } from "@/src/components/StreakSaveCard";
 import { useTranslation } from "@/src/i18n";
 
 export default function Home() {
@@ -151,6 +152,13 @@ export default function Home() {
             above every other section so it's the first thing dancers
             see when they open the app in the morning. */}
         <DanceOfTheDayCard />
+
+        {/* Streak Save nudge — only renders on the ONE day the dancer
+            can still save their streak (yesterday was their last open,
+            today is undone). Lives right under the DOTD card so the
+            CTA leads directly to the dance that would preserve the
+            streak. Hidden by default — no nudge, no card. */}
+        <StreakSaveCard />
 
         {/* Followed-Instructor Hub — upcoming classes + events from
             every instructor the signed-in dancer follows, pulled

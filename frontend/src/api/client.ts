@@ -740,6 +740,18 @@ export type DotdStreak = {
   current: number;
   longest: number;
   today_done: boolean;
+  // ISO date (YYYY-MM-DD) of the most recent credited open, or null
+  // when the dancer has never opened a DOTD. Added 2026-10-05 for the
+  // Streak Save Home nudge card.
+  last_day?: string | null;
+  // True when the dancer has a streak worth saving AND they haven't
+  // opened today yet AND their last open was exactly yesterday — i.e.
+  // the "save-your-streak day". Home watches this to decide whether
+  // to render the StreakSaveCard nudge.
+  at_risk?: boolean;
+  // How many calendar days remain before the stored streak would
+  // reset on next open. 1 on the save-your-streak day; 0 otherwise.
+  grace_days?: number;
 };
 
 export type DotdOpenResponse = {

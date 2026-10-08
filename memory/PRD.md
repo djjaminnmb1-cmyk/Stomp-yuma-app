@@ -2386,3 +2386,73 @@ On the dance-completion celebration screen (`/celebrate`):
   next dance · Done ✓). No overlap, no competing big text.
 * Lint: ✅ no issues
 * Backend suite regressions: 32/32 still passing.
+
+---
+
+## Thank-you toast after Share + Streak Save nudge — 2026-10-08
+
+### 1. Gratitude toast after Share Your Win
+Problem: tapping Share Your Win on `/celebrate` opened the system share
+sheet (or clipboard on web) but left the dancer wondering if anything
+happened once they returned to the app.
+
+Fix in `app/celebrate.tsx::handleShare`:
+* Track whether the share actually REACHED the OS sheet or clipboard
+  (`shared = res?.action !== Share.dismissedAction` on native;
+  `shared = true` on successful nav.share / clipboard write).
+* After a successful share AND only after it, call
+  `toast.success("Thanks for spreading the word! 🎉", {duration: 2600})`
+  via the existing `useToast()` from `src/context/toast-context.tsx`.
+* User-cancels (`AbortError` on web, `dismissedAction` on native)
+  stay silent — no fake gratitude for people who closed the sheet.
+* Toast provider has a NOOP fallback context, so the call is safe
+  even in test harnesses where the provider isn't mounted.
+
+### 2. Streak Save nudge on Home
+Problem: dancers who missed a day lost their streak silently because
+the server only reconciles the counter on the NEXT open. No in-app
+hint ever said "you have one more day to save it."
+
+Backend (`services/dotd_streak.py::get_streak`):
+* Return shape now includes `last_day`, `at_risk`, `grace_days`.
+* `at_risk = True` iff `current >= 1 AND today_done == False AND
+  last_day == yesterday` — the single calendar day where opening
+  today's DOTD would still preserve the streak.
+* `grace_days` is 1 on the at-risk day, 0 otherwise.
+* `record_open` returns the updated streak which now carries the new
+  fields automatically — no caller change needed.
+
+Frontend:
+* New type fields `last_day?`, `at_risk?`, `grace_days?` on
+  `DotdStreak` in `src/api/client.ts`.
+* New component `src/components/StreakSaveCard.tsx` — renders
+  ONLY when the backend flags `at_risk=true`. Uses the DOTD-matching
+  flame orange (`#D9502A`) in a warm ember-tinted panel, with a
+  "Open today's dance" CTA that deep-links to the DOTD's dance
+  detail page (where the practice flow credits the streak).
+* Inserted on Home between `<DanceOfTheDayCard />` and
+  `<FollowedInstructorHub />` — right under the DOTD it protects.
+* Full i18n: 3 new keys per locale across all 8 supported languages
+  (EN/ES/FR/DE/NL/KO/zh-Hans/zh-Hant).
+* `useFocusEffect` refresh so the card disappears instantly after
+  the dancer opens the DOTD from elsewhere.
+
+### Tests
+`tests/test_dotd_streak_and_audience.py` grows from 19 → 22 cases:
+* `test_streak_at_risk_true_when_last_open_was_yesterday`
+* `test_streak_at_risk_false_when_last_open_was_today`
+* `test_streak_at_risk_false_when_last_open_was_two_days_ago`
+All 22 pass. Combined 7-suite run: **85/85 passing** (SEC-001 +
+followed-hub + chat_replies + weekly_digest + instructor_notifications
++ notifications_v2 + dotd_streak_and_audience).
+
+### Verified live
+Screenshot at `/` with Erin's `last_day = yesterday` simulated: Home
+shows the DOTD card at top (with 🔥 5 flame pill) and the Streak Save
+card directly beneath — orange flame icon, "5-day streak at…" title,
+"One dance keeps y…" body, orange "Open today's dance →" CTA button.
+Clean, matches the DOTD's visual language, no overlap.
+
+### Data model
+No schema changes. Reuses existing `users.dotd_streak_current`,
+`dotd_streak_longest`, `dotd_last_open_day`.

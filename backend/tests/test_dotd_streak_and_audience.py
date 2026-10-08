@@ -120,6 +120,158 @@ class TestDotdStreakEndpoints:
         assert data["current"] == 0
         assert data["longest"] == 0
         assert data["today_done"] is False
+        # Streak Save fields — new user has nothing to save.
+        assert data.get("last_day") is None
+        assert data.get("at_risk") is False
+        assert data.get("grace_days") == 0
+
+    def test_streak_at_risk_true_when_last_open_was_yesterday(self):
+        """Simulate "last open = yesterday" via direct DB write so we
+        can verify the Streak Save at_risk fires on the correct day.
+        """
+        u = _register_regular()
+        from pymongo import MongoClient
+        from pathlib import Path
+        mongo_url = os.environ.get("MONGO_URL") or next(
+            (
+                line.split("=", 1)[1].strip().strip('"')
+                for line in Path("/app/backend/.env").read_text().splitlines()
+                if line.startswith("MONGO_URL=")
+            ),
+            "mongodb://localhost:27017",
+        )
+        db_name = os.environ.get("DB_NAME") or next(
+            (
+                line.split("=", 1)[1].strip().strip('"')
+                for line in Path("/app/backend/.env").read_text().splitlines()
+                if line.startswith("DB_NAME=")
+            ),
+            "test_database",
+        )
+        client = MongoClient(mongo_url)
+        db = client[db_name]
+        yesterday = (
+            datetime.now(timezone.utc).date() - timedelta(days=1)
+        ).isoformat()
+        db.users.update_one(
+            {"user_id": u["user_id"]},
+            {
+                "$set": {
+                    "dotd_streak_current": 4,
+                    "dotd_streak_longest": 7,
+                    "dotd_last_open_day": yesterday,
+                }
+            },
+        )
+        r = requests.get(
+            f"{API}/dance-of-the-day/streak",
+            headers=_hdr(u["token"]),
+            timeout=15,
+        )
+        data = r.json()
+        assert data["current"] == 4
+        assert data["today_done"] is False
+        assert data.get("last_day") == yesterday
+        assert data.get("at_risk") is True, (
+            "last_day=yesterday AND today_done=False must flag at_risk"
+        )
+        assert data.get("grace_days") == 1
+
+    def test_streak_at_risk_false_when_last_open_was_today(self):
+        u = _register_regular()
+        from pymongo import MongoClient
+        from pathlib import Path
+        mongo_url = os.environ.get("MONGO_URL") or next(
+            (
+                line.split("=", 1)[1].strip().strip('"')
+                for line in Path("/app/backend/.env").read_text().splitlines()
+                if line.startswith("MONGO_URL=")
+            ),
+            "mongodb://localhost:27017",
+        )
+        db_name = os.environ.get("DB_NAME") or next(
+            (
+                line.split("=", 1)[1].strip().strip('"')
+                for line in Path("/app/backend/.env").read_text().splitlines()
+                if line.startswith("DB_NAME=")
+            ),
+            "test_database",
+        )
+        client = MongoClient(mongo_url)
+        db = client[db_name]
+        today = datetime.now(timezone.utc).date().isoformat()
+        db.users.update_one(
+            {"user_id": u["user_id"]},
+            {
+                "$set": {
+                    "dotd_streak_current": 3,
+                    "dotd_streak_longest": 3,
+                    "dotd_last_open_day": today,
+                }
+            },
+        )
+        r = requests.get(
+            f"{API}/dance-of-the-day/streak",
+            headers=_hdr(u["token"]),
+            timeout=15,
+        )
+        data = r.json()
+        assert data["today_done"] is True
+        assert data.get("at_risk") is False, (
+            "today_done=True means nothing to save; at_risk must be False"
+        )
+        assert data.get("grace_days") == 0
+
+    def test_streak_at_risk_false_when_last_open_was_two_days_ago(self):
+        """Streak is COSMETICALLY alive (current stays) but mechanically
+        dead — the next open will reset to 1. at_risk should be False
+        because the "save your streak today" ship has sailed."""
+        u = _register_regular()
+        from pymongo import MongoClient
+        from pathlib import Path
+        mongo_url = os.environ.get("MONGO_URL") or next(
+            (
+                line.split("=", 1)[1].strip().strip('"')
+                for line in Path("/app/backend/.env").read_text().splitlines()
+                if line.startswith("MONGO_URL=")
+            ),
+            "mongodb://localhost:27017",
+        )
+        db_name = os.environ.get("DB_NAME") or next(
+            (
+                line.split("=", 1)[1].strip().strip('"')
+                for line in Path("/app/backend/.env").read_text().splitlines()
+                if line.startswith("DB_NAME=")
+            ),
+            "test_database",
+        )
+        client = MongoClient(mongo_url)
+        db = client[db_name]
+        two_days_ago = (
+            datetime.now(timezone.utc).date() - timedelta(days=2)
+        ).isoformat()
+        db.users.update_one(
+            {"user_id": u["user_id"]},
+            {
+                "$set": {
+                    "dotd_streak_current": 5,
+                    "dotd_streak_longest": 7,
+                    "dotd_last_open_day": two_days_ago,
+                }
+            },
+        )
+        r = requests.get(
+            f"{API}/dance-of-the-day/streak",
+            headers=_hdr(u["token"]),
+            timeout=15,
+        )
+        data = r.json()
+        assert data["current"] == 5  # cosmetic — hasn't reconciled yet
+        assert data.get("at_risk") is False, (
+            "when last_day is 2+ days ago, the stored streak is mechanically "
+            "dead; opening won't preserve it, so no save-the-streak nudge"
+        )
+        assert data.get("grace_days") == 0
 
     def test_open_bumps_streak_to_one(self):
         """First open of today's DOTD → current=1, longest=1,
