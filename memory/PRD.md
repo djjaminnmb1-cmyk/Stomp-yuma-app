@@ -2245,3 +2245,82 @@ Wed Oct 7 · 19:00 · Yuma Civic Center), Friday Night Dance Social
 ### Data model
 No schema changes. Reuses existing `users.instructor_ids`,
 `db.classes`, `db.events`.
+
+---
+
+## Security Audit — SEC-001 + SEC-002 Fixes — 2026-10-05
+
+### Audit outcome
+Read-only security audit returned **CONDITIONAL PASS** — no P0/P1
+vulnerabilities. Two P2 (medium) findings worth fixing before launch
+plus three P3 nits.
+
+### SEC-001 (P2) — Moderation blind spot — FIXED
+**Finding**: A troll could block every admin via `POST /blocks` and
+their abusive chat messages would disappear from the admins' live
+`/chat/messages` view, weakening proactive moderation. Reactive
+moderation (reports + remove) still worked.
+
+**Fix**: `routes/chat.py::list_chat` now skips the mutual-block
+filter when the viewer is admin (`instructor.get("is_admin")`).
+Non-admin viewers still have their block preference respected
+everywhere. Personal block preferences still apply to admins
+across the rest of the app (profile views, DMs, mentions).
+
+**Verified**:
+* Smoke test: Jamin blocks the admin, admin posts a chat, admin
+  still sees the message (while non-admin does not).
+* New regression suite `tests/test_sec001_moderation_blind_spot.py`
+  — 2 cases: admin-sees-canary-from-blocker, nonadmin-still-hidden.
+  Both pass.
+* Full affected suite 82/82 passing.
+
+### SEC-002 (P2) — `.env` not git-ignored — FIXED
+**Finding**: `backend/.env` (holding SMTP password, JWT signing
+secret, seed passwords) was NOT covered by any `.gitignore` rule.
+One careless `git add .` would publish production secrets to
+history. No present leak (file was untracked), but latent risk.
+
+**Fix**: Added comprehensive env-ignore rules to `/app/.gitignore`:
+```
+.env
+.env.*
+!.env.example
+!.env.sample
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+*.env
+!*.env.example
+!*.env.sample
+```
+`.env.example` / `.env.sample` templates stay trackable.
+
+**Verified**: `git check-ignore backend/.env` → "backend/.env"
+(now ignored). `git check-ignore frontend/.env` → ignored.
+`.env.example` would NOT be ignored (safe for sharing templates).
+
+### Collateral fix — stray mutual block in dev DB — CLEANED
+During the SEC-001 smoke test, a block row was created between
+Jamin and Erin and Jamin and the admin account before cleanup
+could run. This caused the chat_replies notification tests to
+start failing because `fan_out_mentions` + `fan_out_chat_reply`
+respect mutual blocks. Purged 2 stray `user_blocks` rows; all
+notification tests now pass again.
+
+### P3 items (deferred — can be addressed later)
+- **Email service logs recipient PII** (`core/email_service.py:65,70`):
+  logs full email address on SENT/FAILED lines. Secrets/tokens are
+  already redacted. Minor PII hygiene fix (hash/truncate email).
+- **Starlette 0.37.2**: predates the 0.40 multipart-DoS fix.
+  Reachability not proven exploitable. Bump on next deps refresh.
+- **JWT 30-day expiry**: documented as 7-day in notes but code uses
+  30. Confirmed no exploit path; doc the policy update.
+
+### Review coverage
+Backend `auth.py` (brute-force, enumeration, last-admin, pwd_ver
+rotation), every `/api/admin/*` route (Depends chain), chat IDOR,
+weekly digest XSS/cross-user, NoSQL injection via `$regex` / `$in`,
+secrets handling, seed scripts, test credentials, frontend token
+storage. All CLEAN beyond the two P2s above.

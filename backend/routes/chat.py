@@ -72,8 +72,18 @@ async def list_chat(
     We over-fetch a little when a block list exists so a viewer with
     many blocks doesn't end up with a suspiciously short room. Cap is
     still ``limit`` after filtering.
+
+    SEC-001 fix (2026-10-05): admins/moderators are EXEMPT from the
+    mutual-block filter when viewing the chat. The chat tab is the
+    primary proactive-moderation surface — a troll who blocks every
+    admin to escape their live view must still be visible to those
+    admins. Personal block preferences still take effect everywhere
+    else in the app (DMs, mentions, profile views). An admin who
+    personally wants a user hidden from THEIR chat can suspend or
+    moderate that user via the admin panel instead.
     """
-    hidden = await hidden_user_ids(instructor["user_id"])
+    is_admin = bool(instructor.get("is_admin"))
+    hidden = set() if is_admin else await hidden_user_ids(instructor["user_id"])
     lim = max(1, min(int(limit or 200), 500))
 
     if hidden:

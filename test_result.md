@@ -1433,6 +1433,56 @@ frontend:
           Instructors — Upcoming classes and events" with 3 live
           rows for Jamin's seeded classes + event.
 
+#====================================================================================================
+# SECURITY AUDIT FIXES — SEC-001 + SEC-002 — 2026-10-05
+#====================================================================================================
+
+backend:
+  - task: "SEC-001 — admins exempt from chat mutual-block filter"
+    implemented: true
+    working: true
+    file: "backend/routes/chat.py, backend/tests/test_sec001_moderation_blind_spot.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Audit flagged a moderation blind spot: a troll could
+          block every admin via POST /blocks and their abusive
+          chat messages would drop out of admins' live
+          /chat/messages view. Reactive moderation still worked;
+          proactive did not. Fix in routes/chat.py::list_chat —
+          bypass hidden_user_ids when viewer is admin
+          (instructor.get("is_admin") == True). Non-admins
+          keep block preferences; admins' personal blocks still
+          apply everywhere else (profile, DMs, mentions) — only
+          the chat tab (their moderation surface) is unfiltered.
+          Regression suite 2/2 pass; full affected suite 82/82.
+
+  - task: "SEC-002 — .env now covered by .gitignore"
+    implemented: true
+    working: true
+    file: ".gitignore"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Audit flagged latent exposure: backend/.env holds SMTP
+          password, JWT signing secret, seed passwords, but was
+          NOT covered by any .gitignore. One `git add .` would
+          publish those to history. No present leak (untracked).
+          Fix: added .env, .env.*, backend/.env*, frontend/.env*,
+          *.env — with !.env.example / !.env.sample negations so
+          template files stay trackable. Verified via
+          `git check-ignore backend/.env` → path printed (now
+          ignored); .env.example NOT ignored.
+
+
 metadata:
   test_sequence: 48
   test_priority: "high_first"
