@@ -2324,3 +2324,65 @@ rotation), every `/api/admin/*` route (Depends chain), chat IDOR,
 weekly digest XSS/cross-user, NoSQL injection via `$regex` / `$in`,
 secrets handling, seed scripts, test credentials, frontend token
 storage. All CLEAN beyond the two P2s above.
+
+---
+
+## Simplify completion celebration — 2026-10-05
+
+### UX problem (from design review)
+On the dance-completion celebration screen (`/celebrate`):
+1. The newly-earned badge card floated at `top: 26%` of the screen,
+   covering the "You danced …" headline.
+2. The headline + "N dances completed" + milestone label all competed
+   for visual weight — three large-ish lines fighting the eye.
+3. No fast path to pick a NEXT dance; users had to dismiss back
+   through dance detail and reopen the Library tab.
+
+### Fix
+`frontend/app/celebrate.tsx` + `frontend/src/components/BadgeUnlockedOverlay.tsx`:
+
+1. **ONE clear headline**: `You completed ${danceName}!`
+   (previous: `You danced ${danceName}`). Falls back to
+   `You completed a dance!` when `danceName` is missing.
+2. **Compact single-line secondary**: milestone label when available
+   (e.g. "5 dances strong — you're finding your groove!") else
+   `Dance #N` else default encouragement. Replaces the old
+   `count` + `milestone` double-stack (two competing large-ish
+   lines).
+3. **Badge rendered BELOW the headline, in flex-flow**:
+   added `inline` prop to `BadgeUnlockedOverlay`. When `inline`,
+   the component skips its `position: absolute, top: 26%` wrap
+   and participates in normal flex-column layout so the parent
+   places it under the headline, never over it. Default
+   behaviour (`inline={false}`) remains backward-compat for any
+   future callers that want the floating overlay.
+4. **New "Choose your next dance" button**: adds a tap-to-Library
+   action next to Certificate / Share, so completers can roll
+   straight into the next practice. Uses `musical-notes` icon,
+   routes to `/(tabs)/library`.
+5. **Orbit polish**: shifted logo orbit center from 62% → 72% of
+   screen height and shrank radius 130 → 110 so the one-time
+   logo flourish never visits the headline band.
+6. **Web rendering robustness**: shared value `t` initialises at
+   `1` on web (end-state) with the entry animation disabled.
+   Reanimated's `withDelay` adapter on web occasionally fails to
+   fire, which would leave the hero stuck at opacity 0. Native
+   path is unchanged (still animates 0 → 1 with the delay/scale
+   polish).
+
+### What stayed
+* Fireworks overlay (shows achievement moment).
+* Orbiting-logo flourish on first load.
+* Certificate download with theme picker.
+* Platform-native share sheet / web clipboard fallback.
+* Auto-dismiss timer (9s / 14s with badges).
+* Tap-anywhere-to-dismiss affordance.
+
+### Verified
+* Screenshot: hero shows "NICE WORK!" eyebrow → "You completed
+  Dance With Me!" headline (big serif, white, two lines on
+  narrow phones) → compact orange milestone subtitle → clean
+  gap → button row at bottom (Share your win · Choose your
+  next dance · Done ✓). No overlap, no competing big text.
+* Lint: ✅ no issues
+* Backend suite regressions: 32/32 still passing.

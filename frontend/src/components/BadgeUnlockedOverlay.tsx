@@ -29,21 +29,36 @@ const { width: SCREEN_W } = Dimensions.get("window");
  * - Delightful: each card gets a mini pop-in + accent-colored trophy.
  * - Accessible: cards can be dismissed by tap.
  *
+ * Layout modes:
+ * - `inline={false}` (default, legacy): the cascade floats at `top: 26%`
+ *   of the screen so the parent doesn't need to allocate space.
+ * - `inline={true}` (new, 2026-10-05): the cascade participates in normal
+ *   flex flow — the parent decides where it lives. Fixes the "badge
+ *   overlaps the success message" complaint on the celebration screen
+ *   by letting the parent place the badges BELOW the headline instead
+ *   of covering it.
+ *
  * Usage:
  *   {newBadges.length > 0 && (
- *     <BadgeUnlockedOverlay badges={newBadges} onAllDismissed={...} />
+ *     <BadgeUnlockedOverlay badges={newBadges} inline onAllDismissed={...} />
  *   )}
  */
 export function BadgeUnlockedOverlay({
   badges,
   onAllDismissed,
+  inline = false,
 }: {
   badges: Badge[];
   onAllDismissed?: () => void;
+  inline?: boolean;
 }) {
   if (!badges.length) return null;
   return (
-    <View style={styles.wrap} pointerEvents="box-none" testID="badge-overlay">
+    <View
+      style={inline ? styles.wrapInline : styles.wrap}
+      pointerEvents="box-none"
+      testID="badge-overlay"
+    >
       {badges.map((b, i) => (
         <BadgeCardAnim
           key={b.id}
@@ -150,6 +165,14 @@ const styles = StyleSheet.create({
     gap: 8,
     // Anchor near top-middle where the "Nice work!" text lives so cards
     // cascade DOWN below the celebration headline, above the buttons.
+  },
+  wrapInline: {
+    // Flex-flow variant — parent allocates space. Fixes the celebration
+    // screen overlap where the absolute 26% positioning sat ON TOP of
+    // the "You completed …" headline. Keeps the same card look.
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
   },
   card: {
     width: CARD_W,

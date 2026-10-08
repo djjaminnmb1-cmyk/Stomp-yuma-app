@@ -1482,6 +1482,72 @@ backend:
           `git check-ignore backend/.env` → path printed (now
           ignored); .env.example NOT ignored.
 
+#====================================================================================================
+# NEW: Simplify completion celebration — 2026-10-05
+#====================================================================================================
+
+frontend:
+  - task: "Simplify completion celebration layout"
+    implemented: true
+    working: true
+    file: "frontend/app/celebrate.tsx, frontend/src/components/BadgeUnlockedOverlay.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: |
+          Design review flagged three issues on /celebrate:
+          1. Newly-earned badge floated at `top: 26%` of screen,
+             covering the "You danced …" headline (overlap bug).
+          2. headline + "N dances completed" + milestone label were
+             all large-ish text lines competing for the eye.
+          3. No fast path to pick a NEXT dance; users had to
+             dismiss back through dance detail.
+
+          Fixes:
+          * ONE clear headline — "You completed {danceName}!"
+            (was: "You danced {danceName}"). Fallback: "You
+            completed a dance!" when name is missing.
+          * Compact single-line secondary — milestone > "Dance #N"
+            > default encouragement. Replaces the old count +
+            milestone double-stack.
+          * BadgeUnlockedOverlay gets a new `inline` prop that
+            skips its position:absolute,top:26% wrap and
+            participates in flex flow. Parent places the badges
+            BELOW the headline, never over it.
+          * New "Choose your next dance" button in the bottom row,
+            routes to /(tabs)/library with musical-notes icon.
+          * Orbit polish — center 62%→72%, radius 130→110 so the
+            one-time logo flourish never visits the headline band.
+          * Web rendering robustness — shared value `t`
+            initialises at 1 on web (end state) with the entry
+            animation disabled. Reanimated's withDelay adapter on
+            web was occasionally leaving the hero at opacity 0.
+            Native path unchanged.
+
+          Verified via screenshot: hero now shows NICE WORK! →
+          "You completed Dance With Me!" (big, serif, white) →
+          compact orange milestone → gap → Share your win ·
+          Choose your next dance · Done ✓. No overlap. No
+          competing big text.
+
+          Lint: clean. Backend tests: 32/32 passing (no regression).
+
+metadata:
+  test_sequence: 50
+  test_priority: "high_first"
+
+test_plan:
+  current_focus:
+    - "Simplify completion celebration layout"
+  stuck_tasks: []
+  test_all: false
+
+obsolete_security_block:
+  - task: "SEC-002 — .env now covered by .gitignore (dup — see latest block above)"
+
 
 metadata:
   test_sequence: 48

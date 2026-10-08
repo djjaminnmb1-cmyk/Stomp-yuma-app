@@ -41,11 +41,14 @@ import { api, Badge } from "@/src/api/client";
  */
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 const CENTER_X = SCREEN_W / 2;
-// Orbit the logo a bit below the vertical middle so the greeting text at
-// screen-center never gets covered by the logo pass at any orbit angle.
-const ORBIT_CENTER_Y = SCREEN_H * 0.62;
-const ORBIT_RADIUS = Math.min(SCREEN_W * 0.32, 130);
-const LOGO_SIZE = 110;
+// Orbit the logo in the UPPER band so it never touches the bottom panel
+// (and so after the one-time sweep settles, the logo rests above the
+// hero column instead of inside it where it would compete with the
+// "You completed …" message). Settle angle = -π/2 → directly above
+// ORBIT_CENTER_Y, which lives behind the eyebrow/headline shadow.
+const ORBIT_CENTER_Y = SCREEN_H * 0.72;
+const ORBIT_RADIUS = Math.min(SCREEN_W * 0.26, 110);
+const LOGO_SIZE = 88;
 const CIRCLE_MS = 2500;
 const AUTO_DISMISS_MS = 9000; // Enough time for Certificate + Share + read the milestone.
 const AUTO_DISMISS_WITH_BADGES_MS = 14000; // Extra time so users can absorb each earned badge.
@@ -83,7 +86,14 @@ export default function CelebrateScreen() {
 
   const [showBadges, setShowBadges] = useState<boolean>(earnedBadges.length > 0);
 
-  const t = useSharedValue(0);
+  // Start the hero at the end-state (opacity 1, no offset) so the
+  // text is visible on web even if the Reanimated web adapter
+  // doesn't fire withDelay/withTiming cleanly. On native, the
+  // useEffect below re-sets to 0 and animates in — the brief
+  // start-at-visible is imperceptible there (one frame). On web,
+  // we skip the entry animation entirely so content never gets
+  // stuck invisible.
+  const t = useSharedValue(Platform.OS === "web" ? 1 : 0);
   const orbit = useSharedValue(0);
   // Auto-dismiss timer handle — kept in a ref so Share can cancel it.
   const dismissTimerRef = useRef<any>(null);
@@ -100,10 +110,16 @@ export default function CelebrateScreen() {
   };
 
   useEffect(() => {
-    t.value = withDelay(
-      120,
-      withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) })
-    );
+    // Only play the entry animation on native where Reanimated is
+    // reliable. On web the shared value already defaults to 1 so
+    // content is visible immediately.
+    if (Platform.OS !== "web") {
+      t.value = 0;
+      t.value = withDelay(
+        120,
+        withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) })
+      );
+    }
     orbit.value = withTiming(1, {
       duration: CIRCLE_MS,
       easing: Easing.inOut(Easing.cubic),
@@ -256,6 +272,25 @@ export default function CelebrateScreen() {
 
   const milestone = getMilestoneLabel(totalCount);
 
+  // Compact secondary line under the headline. Replaces the old
+  // "{count} dances completed" + milestone double-stack that competed
+  // for attention with the main message. Picks the richest single
+  // string available: milestone > count > motivational default.
+  const secondaryLine =
+    milestone ||
+    (totalCount === 1
+      ? "Your first completed dance 🎉"
+      : totalCount && totalCount > 1
+        ? `Dance #${totalCount}`
+        : "Boot-scoot on 💃");
+
+  // Headline — one clear, present-tense sentence. If the backend lost
+  // the dance name (deeplink missing param) we fall back to a generic
+  // "You completed a dance!" rather than something ambiguous.
+  const headline = danceName
+    ? `You completed ${danceName}!`
+    : "You completed a dance!";
+
   return (
     <ImageBackground
       source={require("../assets/images/welcome-bg.jpg")}
@@ -265,39 +300,43 @@ export default function CelebrateScreen() {
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <View style={styles.scrim} pointerEvents="none" />
 
+        {/* Orbiting logo as a background flourish. Positioned below the
+            headline/badge stack so it never covers the main message
+            after the one-time 2.5s sweep settles. */}
         <Animated.Image
           source={require("../assets/images/logo.png")}
           resizeMode="contain"
           style={[styles.logo, logoStyle]}
         />
 
-        <View style={styles.content} pointerEvents="none">
+        {/* ONE clear hero section: eyebrow → headline → compact
+            secondary line → inline badge cascade. Everything laid out
+            in normal flex-flow so the badge can never overlap the
+            headline (the pre-2026-10-05 bug the UX review flagged). */}
+        <View style={styles.hero} pointerEvents="box-none">
           <Animated.Text style={[styles.eyebrow, subStyle]}>
             Nice work!
           </Animated.Text>
           <Animated.Text
             style={[styles.greeting, bigStyle]}
-            numberOfLines={2}
+            numberOfLines={3}
             adjustsFontSizeToFit
             testID="celebrate-headline"
           >
-            {danceName ? `You danced ${danceName}` : "You danced!"}
+            {headline}
           </Animated.Text>
-          {totalCount ? (
-            <Animated.Text style={[styles.count, subStyle]}>
-              {totalCount === 1
-                ? "Your first completed dance 🎉"
-                : `${totalCount} dances completed`}
-            </Animated.Text>
-          ) : (
-            <Animated.Text style={[styles.count, subStyle]}>
-              Boot-scoot on 💃
-            </Animated.Text>
-          )}
-          {milestone ? (
-            <Animated.Text style={[styles.milestone, subStyle]}>
-              {milestone}
-            </Animated.Text>
+          <Animated.Text style={[styles.secondary, subStyle]} numberOfLines={1}>
+            {secondaryLine}
+          </Animated.Text>
+
+          {/* Newly-earned badges cascade in BELOW the headline — no
+              more top-of-screen float that covered the message. */}
+          {showBadges && earnedBadges.length > 0 ? (
+            <BadgeUnlockedOverlay
+              badges={earnedBadges}
+              inline
+              onAllDismissed={() => setShowBadges(false)}
+            />
           ) : null}
         </View>
 
@@ -308,13 +347,6 @@ export default function CelebrateScreen() {
           }}
         />
 
-        {/* Newly-earned badges cascade in above the buttons */}
-        {showBadges && earnedBadges.length > 0 ? (
-          <BadgeUnlockedOverlay
-            badges={earnedBadges}
-            onAllDismissed={() => setShowBadges(false)}
-          />
-        ) : null}
         {/* Tap anywhere on the screen (outside the logo) to dismiss early.
             The fireworks overlay itself uses pointerEvents="box-none" so
             taps pass through to this Pressable underneath. */}
@@ -386,6 +418,25 @@ export default function CelebrateScreen() {
                     : "Share your win"}
               </Text>
             </Pressable>
+            {/* "Choose your next dance" — fast-path to the Library tab so
+                dancers can roll straight into their next practice without
+                dismissing back through dance detail. */}
+            <Pressable
+              onPress={() => {
+                cancelAutoDismiss();
+                try {
+                  router.replace("/(tabs)/library");
+                } catch {
+                  router.push("/(tabs)/library" as never);
+                }
+              }}
+              style={styles.shareBtn}
+              testID="celebrate-next-dance"
+              accessibilityLabel="Choose your next dance"
+            >
+              <Ionicons name="musical-notes" size={18} color="#fff" />
+              <Text style={styles.shareBtnText}>Choose your next dance</Text>
+            </Pressable>
             <Pressable
               onPress={goBack}
               style={styles.doneBtn}
@@ -425,14 +476,18 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.38)",
   },
-  content: {
+  // Hero column — eyebrow, headline, compact secondary, and (optionally)
+  // the inline badge cascade. Everything flows top-down with gaps so
+  // nothing overlaps the main message. Positioned in the top ~55% of
+  // the screen with alignItems: center so wide phones still center it.
+  hero: {
     position: "absolute",
     left: 0,
     right: 0,
-    top: SCREEN_H * 0.14,
-    height: SCREEN_H * 0.34,
+    top: SCREEN_H * 0.1,
+    maxHeight: SCREEN_H * 0.55,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     gap: spacing.sm,
     paddingHorizontal: spacing.xl,
   },
@@ -452,7 +507,7 @@ const styles = StyleSheet.create({
         }),
   },
   eyebrow: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     color: "#FFF6DA",
     letterSpacing: 3,
@@ -463,7 +518,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontFamily: "serif",
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: "800",
     color: "#FFFFFF",
     textAlign: "center",
@@ -471,29 +526,22 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.55)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 10,
-    marginTop: spacing.sm,
+    marginTop: 4,
   },
-  count: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#FFFDF6",
-    textAlign: "center",
-    letterSpacing: 0.3,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
-    marginTop: spacing.md,
-  },
-  milestone: {
-    fontSize: 13,
+  // Compact single-line subtitle. Takes over the role of the old
+  // `count` + `milestone` double-stack, which was two competing
+  // "large background lettering" lines that fought the headline.
+  secondary: {
+    fontSize: 14,
     fontWeight: "700",
     color: "#F2A628",
     textAlign: "center",
-    letterSpacing: 0.5,
-    textShadowColor: "rgba(0,0,0,0.6)",
+    letterSpacing: 0.6,
+    textShadowColor: "rgba(0,0,0,0.55)",
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    textShadowRadius: 6,
     marginTop: 4,
+    textTransform: "uppercase",
   },
   // ---- Bottom panel (theme picker + action buttons stacked) ----
   // Absolutely-pinned to the bottom of the screen so the fireworks and
