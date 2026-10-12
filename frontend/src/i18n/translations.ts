@@ -311,6 +311,12 @@ export const translations: Record<Locale, Record<string, string>> = {
       "New dances start as **Drafts** — only you can see them. Tap **Publish** to share with everyone in the app.",
     "instructor.no_dances":
       'No dances yet. Tap "+ New" to upload a dance with its step sheet, or log a class in the Classes tab.',
+    "instructor.view_drafts": "Drafts ({count})",
+    "instructor.view_published": "Published ({count})",
+    "instructor.drafts_empty": "All caught up — no drafts waiting to be published",
+    "instructor.published_empty": "No published dances yet.",
+    "instructor.published_toast": "\"{name}\" is published 🎉",
+    "instructor.unpublished_toast": "\"{name}\" moved back to Drafts",
     "instructor.no_classes_yet": "You haven't logged any classes yet.",
     "instructor.go_to_classes": "Go to Classes",
     "instructor.class_session_default": "Class session",
@@ -996,6 +1002,12 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Los bailes nuevos empiezan como **Borrador** — solo tú los ves. Toca **Publicar** para compartirlos con todos.",
     "instructor.no_dances":
       'Aún no hay bailes. Toca "+ Nuevo" para subir un baile con su hoja de pasos o registra una clase en la pestaña Clases.',
+    "instructor.view_drafts": "Borradores ({count})",
+    "instructor.view_published": "Publicados ({count})",
+    "instructor.drafts_empty": "Todo al día — no hay borradores pendientes de publicar",
+    "instructor.published_empty": "Aún no hay bailes publicados.",
+    "instructor.published_toast": "\"{name}\" se ha publicado 🎉",
+    "instructor.unpublished_toast": "\"{name}\" volvió a Borradores",
     "instructor.no_classes_yet": "Aún no has registrado clases.",
     "instructor.go_to_classes": "Ir a Clases",
     "instructor.class_session_default": "Sesión de clase",
@@ -1576,6 +1588,12 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Les nouvelles danses commencent en **Brouillon** — vous seul·e les voyez. Appuyez sur **Publier** pour les partager.",
     "instructor.no_dances":
       'Pas encore de danses. Appuyez sur "+ Nouveau" pour ajouter une danse avec sa fiche, ou enregistrez un cours.',
+    "instructor.view_drafts": "Brouillons ({count})",
+    "instructor.view_published": "Publiées ({count})",
+    "instructor.drafts_empty": "Tout est à jour — aucun brouillon en attente de publication",
+    "instructor.published_empty": "Aucune danse publiée pour l'instant.",
+    "instructor.published_toast": "« {name} » est publiée 🎉",
+    "instructor.unpublished_toast": "« {name} » est revenue en Brouillon",
     "instructor.no_classes_yet":
       "Vous n'avez encore enregistré aucun cours.",
     "instructor.go_to_classes": "Aller aux Cours",
@@ -2176,6 +2194,12 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Neue Tänze starten als **Entwurf** – nur du siehst sie. Tippe **Veröffentlichen**, um sie mit allen zu teilen.",
     "instructor.no_dances":
       'Noch keine Tänze. Tippe "+ Neu", um einen Tanz mit Schrittzettel hochzuladen, oder erfasse einen Kurs im Kurse-Tab.',
+    "instructor.view_drafts": "Entwürfe ({count})",
+    "instructor.view_published": "Veröffentlicht ({count})",
+    "instructor.drafts_empty": "Alles erledigt — keine Entwürfe warten auf Veröffentlichung",
+    "instructor.published_empty": "Noch keine veröffentlichten Tänze.",
+    "instructor.published_toast": "„{name}“ ist veröffentlicht 🎉",
+    "instructor.unpublished_toast": "„{name}“ ist wieder ein Entwurf",
     "instructor.no_classes_yet":
       "Du hast noch keine Kurse erfasst.",
     "instructor.go_to_classes": "Zu den Kursen",
@@ -2777,6 +2801,12 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Nieuwe dansen starten als **Concept** – alleen jij ziet ze. Tik op **Publiceren** om ze met iedereen te delen.",
     "instructor.no_dances":
       'Nog geen dansen. Tik op "+ Nieuw" om een dans met stapkaart te uploaden, of registreer een les in het Lessen-tab.',
+    "instructor.view_drafts": "Concepten ({count})",
+    "instructor.view_published": "Gepubliceerd ({count})",
+    "instructor.drafts_empty": "Helemaal bij — geen concepten die op publicatie wachten",
+    "instructor.published_empty": "Nog geen gepubliceerde dansen.",
+    "instructor.published_toast": "\"{name}\" is gepubliceerd 🎉",
+    "instructor.unpublished_toast": "\"{name}\" is terug naar Concepten",
     "instructor.no_classes_yet":
       "Je hebt nog geen lessen geregistreerd.",
     "instructor.go_to_classes": "Naar Lessen",
@@ -3375,6 +3405,12 @@ export const translations: Record<Locale, Record<string, string>> = {
       "새 댄스는 **초안**으로 시작해요 – 본인만 볼 수 있어요. **게시**를 누르면 모두와 공유돼요.",
     "instructor.no_dances":
       '아직 댄스가 없어요. "+ 새로 만들기"를 눌러 스텝시트와 함께 댄스를 업로드하거나 수업 탭에서 수업을 기록하세요.',
+    "instructor.view_drafts": "초안 ({count})",
+    "instructor.view_published": "게시됨 ({count})",
+    "instructor.drafts_empty": "모두 완료! 게시를 기다리는 초안이 없어요",
+    "instructor.published_empty": "아직 게시된 댄스가 없어요.",
+    "instructor.published_toast": "\"{name}\" 게시 완료 🎉",
+    "instructor.unpublished_toast": "\"{name}\"이(가) 초안으로 돌아갔어요",
     "instructor.no_classes_yet":
       "아직 기록한 수업이 없어요.",
     "instructor.go_to_classes": "수업으로 이동",
@@ -3949,6 +3985,12 @@ export const translations: Record<Locale, Record<string, string>> = {
       "新舞蹈会先以**草稿**形式保存——仅您可见。点击**发布**即可与所有人分享。",
     "instructor.no_dances":
       '还没有舞蹈。点击"+ 新建"上传舞蹈及其步谱,或在课程标签页记录一节课。',
+    "instructor.view_drafts": "草稿 ({count})",
+    "instructor.view_published": "已发布 ({count})",
+    "instructor.drafts_empty": "全部完成——没有等待发布的草稿",
+    "instructor.published_empty": "还没有已发布的舞蹈。",
+    "instructor.published_toast": "「{name}」已发布 🎉",
+    "instructor.unpublished_toast": "「{name}」已移回草稿",
     "instructor.no_classes_yet": "您还没有记录任何课程。",
     "instructor.go_to_classes": "前往课程",
     "instructor.class_session_default": "课程",
@@ -4514,6 +4556,12 @@ export const translations: Record<Locale, Record<string, string>> = {
       "新舞蹈會先以**草稿**形式保存——僅您可見。點按**發佈**即可與所有人分享。",
     "instructor.no_dances":
       '還沒有舞蹈。點按「+ 新增」上傳舞蹈及其步譜,或在「課程」分頁記錄一堂課。',
+    "instructor.view_drafts": "草稿 ({count})",
+    "instructor.view_published": "已發佈 ({count})",
+    "instructor.drafts_empty": "全部完成——沒有等待發佈的草稿",
+    "instructor.published_empty": "還沒有已發佈的舞蹈。",
+    "instructor.published_toast": "「{name}」已發佈 🎉",
+    "instructor.unpublished_toast": "「{name}」已移回草稿",
     "instructor.no_classes_yet": "您還沒有記錄任何課程。",
     "instructor.go_to_classes": "前往課程",
     "instructor.class_session_default": "課程",

@@ -1,0 +1,22 @@
+{
+  "summary": "Frontend-only test of instructor dances Drafts/Published toggle flow. All 7 criteria verified: (1) instr-tab-dances renders, (2) toggle chips 'Drafts (N)' + 'Published (N)' visible with correct counts, (3) Drafts view shows only is_published=false cards, (4) tapping Publish removes card instantly, decrements Drafts count, increments Published count, and shows success toast '\"ZZ Test Draft...\" is published 🎉', (5) Published view shows card with 'Unpublish' button; tapping shows info toast 'moved back to Drafts' and card leaves list, (6) empty states render correctly — 'All caught up — no drafts waiting to be published' (testID instr-drafts-empty) and 'No published dances yet.' (testID instr-published-empty), (7) test dance deleted via DELETE /api/dances/{id} (404 confirmed). No regressions, no console errors blocking the flow.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_46.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "instructor.tsx is 3280 lines — exceeds the 700-line guideline; consider splitting dances/classes/events/chat subsections into separate components (not blocking this feature, flagged in prior iterations)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100%"},
+  "seed_data_creation": "Created test draft dance_a2f73ce0b5 'ZZ Test Draft 1791814089' via POST /api/dances with admin token; deleted after test (DELETE returned ok:true, subsequent GET=404).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Flow verified end-to-end on mobile viewport (390x844) using admin@stompinground.com. Toggle chips render correctly, counts update reactively on publish/unpublish, toasts appear with correct i18n strings, empty states show expected copy and testIDs. Pre-existing TS/lint FileSystem.EncodingType warning around instructor.tsx:2234 was ignored per request.",
+  "rca_of_issue": "N/A — feature works as specified."
+}

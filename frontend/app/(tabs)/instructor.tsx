@@ -39,6 +39,7 @@ import { ReportContentSheet } from "@/src/components/ReportContentSheet";
 import { useDraftCount } from "@/src/context/draft-count-context";
 import { parseCsv } from "@/src/lib/csv";
 import { useTranslation } from "@/src/i18n";
+import { useToast } from "@/src/context/toast-context";
 
 const DIFFICULTIES = ["Absolute Beginner", "Beginner", "Improver", "High Improver", "Intermediate", "Advanced"];
 
@@ -47,7 +48,10 @@ export default function InstructorTab() {
   const { user, token } = useAuth();
   const { t } = useTranslation();
   const { refresh: refreshDrafts } = useDraftCount();
+  const toast = useToast();
   const [tab, setTab] = useState<"dances" | "classes" | "events" | "chat">("dances");
+  // Drafts = my unpublished dances awaiting Publish; Published = everything live.
+  const [danceView, setDanceView] = useState<"drafts" | "published">("drafts");
   const [myClasses, setMyClasses] = useState<ClassSession[]>([]);
   const [myDances, setMyDances] = useState<Dance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,12 +103,21 @@ export default function InstructorTab() {
         : await api.publishDance(d.id, token);
       setMyDances((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
       refreshDrafts();
+      if (updated.is_published) {
+        toast.success(t("instructor.published_toast", { name: updated.name }));
+      } else {
+        toast.info(t("instructor.unpublished_toast", { name: updated.name }));
+      }
     } catch (e: any) {
       Alert.alert("Error", e?.message || "Could not update publish state");
     } finally {
       setBusyId(null);
     }
   };
+
+  const draftDances = myDances.filter((d) => !d.is_published);
+  const publishedDances = myDances.filter((d) => d.is_published);
+  const visibleDances = danceView === "drafts" ? draftDances : publishedDances;
 
   if (!user || (!user.is_admin && !user.is_instructor)) {
     return (
@@ -220,15 +233,55 @@ export default function InstructorTab() {
                 })()}
               </Text>
             </View>
-            {myDances.length === 0 ? (
-              <View style={styles.empty}>
-                <Ionicons name="musical-notes-outline" size={44} color={colors.muted} />
+            {myDances.length > 0 ? (
+              <View style={styles.viewToggle}>
+                {(["drafts", "published"] as const).map((v) => {
+                  const active = danceView === v;
+                  return (
+                    <Pressable
+                      key={v}
+                      testID={`instr-view-${v}`}
+                      onPress={() => setDanceView(v)}
+                      style={[styles.viewChip, active && styles.viewChipActive]}
+                    >
+                      <Ionicons
+                        name={v === "drafts" ? "document-text-outline" : "eye-outline"}
+                        size={13}
+                        color={active ? colors.onBrandPrimary : colors.onSurface}
+                      />
+                      <Text style={[styles.viewChipText, active && styles.viewChipTextActive]}>
+                        {v === "drafts"
+                          ? t("instructor.view_drafts", { count: draftDances.length })
+                          : t("instructor.view_published", { count: publishedDances.length })}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+            {visibleDances.length === 0 ? (
+              <View style={styles.empty} testID={`instr-${danceView}-empty`}>
+                <Ionicons
+                  name={
+                    myDances.length === 0
+                      ? "musical-notes-outline"
+                      : danceView === "drafts"
+                      ? "checkmark-done-circle-outline"
+                      : "eye-off-outline"
+                  }
+                  size={44}
+                  color={myDances.length > 0 && danceView === "drafts" ? colors.success : colors.muted}
+                />
                 <Text style={styles.emptyText}>
-                  {t("instructor.no_dances")}
+                  {myDances.length === 0
+                    ? t("instructor.no_dances")
+                    : danceView === "drafts"
+                    ? t("instructor.drafts_empty")
+                    : t("instructor.published_empty")}
                 </Text>
               </View>
             ) : (
-              myDances.map((d) => {
+              visibleDances.map((d) => {
                 const hasSheet = !!(d.step_sheet && d.step_sheet.trim()) || !!d.step_sheet_image;
                 const isMine = d.created_by === user.user_id;
                 return (
@@ -2387,6 +2440,21 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   legendText: { flex: 1, color: colors.onSurfaceSecondary, fontSize: 12, lineHeight: 17 },
+  viewToggle: { flexDirection: "row", gap: spacing.sm },
+  viewChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  viewChipActive: { backgroundColor: colors.brandPrimary, borderColor: colors.brandPrimary },
+  viewChipText: { color: colors.onSurface, fontWeight: "700", fontSize: 12 },
+  viewChipTextActive: { color: colors.onBrandPrimary },
   danceCard: {
     flexDirection: "row",
     alignItems: "center",

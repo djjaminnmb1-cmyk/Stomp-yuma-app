@@ -2456,3 +2456,9 @@ Clean, matches the DOTD's visual language, no overlap.
 ### Data model
 No schema changes. Reuses existing `users.dotd_streak_current`,
 `dotd_streak_longest`, `dotd_last_open_day`.
+
+## Instructor Dances: Drafts / Published split — 2026-10-12
+- Instructor → Dances list now defaults to **Drafts** (unpublished only). Publishing a dance removes it from the list instantly + success toast.
+- "Drafts (N)" / "Published (N)" toggle chips (testIDs `instr-view-drafts`, `instr-view-published`); Published view lists all live dances (own + taught) with Unpublish for own dances (info toast, returns to Drafts).
+- Empty states: "All caught up — no drafts waiting to be published" / "No published dances yet." (i18n keys added for all 8 locales).
+- Frontend-only change (`app/(tabs)/instructor.tsx`, `src/i18n/translations.ts`). Tested: iteration_46 — all pass.
