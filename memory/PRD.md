@@ -2462,3 +2462,9 @@ No schema changes. Reuses existing `users.dotd_streak_current`,
 - "Drafts (N)" / "Published (N)" toggle chips (testIDs `instr-view-drafts`, `instr-view-published`); Published view lists all live dances (own + taught) with Unpublish for own dances (info toast, returns to Drafts).
 - Empty states: "All caught up — no drafts waiting to be published" / "No published dances yet." (i18n keys added for all 8 locales).
 - Frontend-only change (`app/(tabs)/instructor.tsx`, `src/i18n/translations.ts`). Tested: iteration_46 — all pass.
+
+## URGENT: Registration Terms checkbox fix (Apple 1.2 kept) — 2026-10-12
+- Root cause: customer's installed Android build predates the signup Terms checkbox (added 2026-09-17; OTA updates disabled) while the live backend enforces `accepted_terms_version`. Old client JSON-stringified object `detail` → raw JSON shown.
+- Backend: `/auth/register` & `/legal/accept-terms` errors now return a string `detail` + top-level `code`/`required_version` (enforcement unchanged). New public `GET /api/legal/terms-version`.
+- Frontend `auth.tsx`: prominent Terms card + 44pt checkbox, "Terms of Use"/"Community Guidelines" links, Create Account tappable when unticked → red highlight + friendly message, no request sent; KeyboardAwareScrollView (Android edge-to-edge keyboard); server version fetched. `client.ts`: `ApiError`, never stringifies JSON. i18n for 8 locales.
+- Tested: iteration_47 + manual checks (instructor flow, guidelines link, invalid email, sign in). New Android/iOS builds REQUIRED for customers.

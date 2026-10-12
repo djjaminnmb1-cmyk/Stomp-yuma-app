@@ -82,15 +82,24 @@ class TestTerms:
         r = _register(api, f"test_notv_{uuid.uuid4().hex[:8]}@example.com",
                       "TEST NoTerms", "GoodPass!123", accepted_terms_version=None)
         assert r.status_code == 400, r.text
-        detail = r.json().get("detail")
-        assert isinstance(detail, dict) and detail.get("code") == "terms_not_accepted", detail
+        body = r.json()
+        # detail must be a human-readable string (never a raw object)
+        assert isinstance(body.get("detail"), str) and "Terms of Use" in body["detail"], body
+        assert body.get("code") == "terms_not_accepted", body
+        assert body.get("required_version") == TERMS_VERSION, body
 
     def test_register_wrong_terms_400(self, api):
         r = _register(api, f"test_wrongtv_{uuid.uuid4().hex[:8]}@example.com",
                       "TEST WrongTerms", "GoodPass!123", accepted_terms_version="wrong")
         assert r.status_code == 400, r.text
-        detail = r.json().get("detail")
-        assert isinstance(detail, dict) and detail.get("code") == "terms_not_accepted", detail
+        body = r.json()
+        assert isinstance(body.get("detail"), str), body
+        assert body.get("code") == "terms_not_accepted", body
+
+    def test_public_terms_version(self, api):
+        r = api.get(f"{BASE_URL}/api/legal/terms-version", timeout=TIMEOUT)
+        assert r.status_code == 200, r.text
+        assert r.json() == {"required_version": TERMS_VERSION}
 
     def test_register_correct_terms_200_and_persist(self, api):
         email = f"test_tv_ok_{uuid.uuid4().hex[:8]}@example.com"
@@ -123,8 +132,9 @@ class TestTerms:
                      headers={"Authorization": f"Bearer {user_fixture['token']}"},
                      timeout=TIMEOUT)
         assert r.status_code == 400, r.text
-        detail = r.json().get("detail")
-        assert isinstance(detail, dict) and detail.get("code") == "stale_terms_version", detail
+        body = r.json()
+        assert isinstance(body.get("detail"), str), body
+        assert body.get("code") == "stale_terms_version", body
 
 
 # --------------- 2. Content filter (chat + feedback) ---------------

@@ -978,11 +978,41 @@ async function req<T>(
     data = text;
   }
   if (!res.ok) {
-    const msg =
-      (data && (data.detail || data.message)) || `HTTP ${res.status}`;
-    throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    throw new ApiError(
+      errorMessage(data, res.status),
+      res.status,
+      data?.code ?? data?.detail?.code,
+      data,
+    );
   }
   return data as T;
+}
+
+/** Error thrown by every API call. ``message`` is always human-readable
+ *  (raw backend JSON is never surfaced); ``code`` carries the backend's
+ *  machine-readable reason (e.g. ``terms_not_accepted``) when present. */
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  data: any;
+  constructor(message: string, status: number, code?: string, data?: any) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.data = data;
+  }
+}
+
+function errorMessage(data: any, status: number): string {
+  const d = data?.detail ?? data?.message ?? data;
+  if (typeof d === "string" && d.trim() && !d.trim().startsWith("<")) return d;
+  // FastAPI validation errors: [{ loc, msg, type }, ...]
+  if (Array.isArray(d) && typeof d[0]?.msg === "string") {
+    return d[0].msg.replace(/^Value error,\s*/i, "");
+  }
+  if (d && typeof d === "object" && typeof d.message === "string") return d.message;
+  return `Something went wrong (error ${status}). Please try again.`;
 }
 
 export const api = {
@@ -1003,6 +1033,8 @@ export const api = {
         accepted_terms_version,
       }),
     }),
+  getTermsVersion: () =>
+    req<{ required_version: string }>("/legal/terms-version"),
   login: (email: string, password: string) =>
     req<{ token: string; user: User; is_new_user?: boolean }>("/auth/login", {
       method: "POST",

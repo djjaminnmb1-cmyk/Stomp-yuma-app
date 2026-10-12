@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   TextInput,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   ActivityIndicator,
@@ -13,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Image } from "expo-image";
@@ -22,7 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/src/context/auth-context";
 import { AppleSignInButton } from "@/src/components/AppleSignInButton";
-import { api } from "@/src/api/client";
+import { api, ApiError } from "@/src/api/client";
 import { colors, spacing, radius } from "@/src/theme";
 import { useTranslation } from "@/src/i18n";
 import { TERMS_VERSION } from "@/src/lib/terms";
@@ -44,6 +44,31 @@ export default function AuthScreen() {
   // Create Account is enabled. We do NOT default to true; the user
   // has to affirmatively opt in.
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // Highlights the Terms card when the user tries to sign up unticked.
+  const [termsError, setTermsError] = useState(false);
+  // Live version from the server; the bundled constant is only the
+  // offline fallback so signup never sends a stale version.
+  const [termsVersion, setTermsVersion] = useState(TERMS_VERSION);
+  const scrollRef = useRef<ScrollView>(null);
+  const termsY = useRef(0);
+
+  useEffect(() => {
+    if (mode !== "register") return;
+    api
+      .getTermsVersion()
+      .then((r) => r?.required_version && setTermsVersion(r.required_version))
+      .catch(() => {});
+  }, [mode]);
+
+  const flagTerms = () => {
+    setTermsError(true);
+    scrollRef.current?.scrollTo({ y: Math.max(0, termsY.current - 120), animated: true });
+  };
+
+  const toggleTerms = () => {
+    setAcceptedTerms((v) => !v);
+    setTermsError(false);
+  };
 
   const submitEmail = async () => {
     setErr(null);
@@ -51,8 +76,9 @@ export default function AuthScreen() {
       setErr(t("auth.error_fill_all"));
       return;
     }
+    // Client-side gate: never send a registration the server will reject.
     if (mode === "register" && !acceptedTerms) {
-      setErr(t("auth.error_accept_terms"));
+      flagTerms();
       return;
     }
     if (mode === "register" && isInstructor && !instructorCode.trim()) {
@@ -69,7 +95,7 @@ export default function AuthScreen() {
               pw,
               name.trim(),
               isInstructor ? instructorCode.trim() : undefined,
-              TERMS_VERSION,
+              termsVersion,
             );
       await signIn(res.token, res.user);
       // Warn (via Alert so it survives the navigation) if instructor toggle
@@ -88,7 +114,17 @@ export default function AuthScreen() {
         router.replace("/(tabs)");
       }
     } catch (e: any) {
-      setErr(e?.message || t("auth.error_generic"));
+      if (e instanceof ApiError && e.code === "terms_not_accepted") {
+        // Server is the source of truth — adopt its live version and
+        // ask the user to re-confirm the (possibly updated) Terms.
+        if (e.data?.required_version) setTermsVersion(e.data.required_version);
+        setAcceptedTerms(false);
+        flagTerms();
+      } else if (e instanceof ApiError && e.status === 422) {
+        setErr(t("auth.error_invalid_email"));
+      } else {
+        setErr(e?.message || t("auth.error_generic"));
+      }
     } finally {
       setBusy(false);
     }
@@ -173,14 +209,16 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
+      {/* KeyboardAwareScrollView (keyboard-controller) works with
+          Android edge-to-edge, where the old KeyboardAvoidingView
+          (behavior undefined on Android) left the Terms checkbox and
+          Create Account button trapped behind the keyboard. */}
+      <KeyboardAwareScrollView
+        ref={scrollRef as any}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={32}
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
           {/* Login hero — bespoke portrait artwork with the SGY logo
               already baked in. We do NOT re-render the BrandLogo
               here (it would fight with the printed one). Instead
@@ -407,66 +445,86 @@ export default function AuthScreen() {
               </>
             )}
 
+            {mode === "register" && (
+              <View
+                testID="auth-terms-card"
+                onLayout={(e) => {
+                  termsY.current = e.nativeEvent.layout.y;
+                }}
+                style={[styles.termsCard, termsError && styles.termsCardError]}
+              >
+                <View style={styles.termsCheckboxRow}>
+                  {/* Square is its own 44pt target; the sentence also
+                      toggles, while the two links inside it navigate. */}
+                  <Pressable
+                    testID="auth-accept-terms-checkbox"
+                    onPress={toggleTerms}
+                    hitSlop={12}
+                    style={styles.termsCheckboxHit}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: acceptedTerms }}
+                    accessibilityLabel={t("auth.accept_terms_a11y")}
+                  >
+                    <View
+                      style={[
+                        styles.termsCheckbox,
+                        acceptedTerms && styles.termsCheckboxChecked,
+                        termsError && styles.termsCheckboxError,
+                      ]}
+                    >
+                      {acceptedTerms ? (
+                        <Ionicons name="checkmark" size={18} color={colors.onBrandPrimary} />
+                      ) : null}
+                    </View>
+                  </Pressable>
+                  <Text
+                    style={styles.termsCheckboxText}
+                    onPress={toggleTerms}
+                    testID="auth-accept-terms-label"
+                  >
+                    {tRaw("auth.accept_terms_checkbox").split("{terms}")[0]}
+                    <Text
+                      testID="auth-accept-terms-link"
+                      style={styles.legalLink}
+                      onPress={() => router.push("/terms")}
+                    >
+                      {t("auth.terms_of_use")}
+                    </Text>
+                    {tRaw("auth.accept_terms_checkbox")
+                      .split("{terms}")[1]
+                      ?.split("{guidelines}")[0]}
+                    <Text
+                      testID="auth-accept-guidelines-link"
+                      style={styles.legalLink}
+                      onPress={() => router.push("/community-guidelines")}
+                    >
+                      {t("auth.community_guidelines")}
+                    </Text>
+                    {tRaw("auth.accept_terms_checkbox").split("{guidelines}")[1]}
+                  </Text>
+                </View>
+                {termsError ? (
+                  <View style={styles.termsErrorRow}>
+                    <Ionicons name="alert-circle" size={16} color={colors.error} />
+                    <Text testID="auth-terms-error" style={styles.termsErrorText}>
+                      {t("auth.error_accept_terms")}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
+
             {err ? (
               <Text testID="auth-error" style={styles.err}>
                 {err}
               </Text>
             ) : null}
 
-            {mode === "register" && (
-              <Pressable
-                testID="auth-accept-terms-checkbox"
-                onPress={() => setAcceptedTerms((v) => !v)}
-                style={styles.termsCheckboxRow}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: acceptedTerms }}
-              >
-                <View
-                  style={[
-                    styles.termsCheckbox,
-                    acceptedTerms && styles.termsCheckboxChecked,
-                  ]}
-                >
-                  {acceptedTerms ? (
-                    <Ionicons
-                      name="checkmark"
-                      size={16}
-                      color={colors.onBrandPrimary}
-                    />
-                  ) : null}
-                </View>
-                <Text style={styles.termsCheckboxText}>
-                  {tRaw("auth.accept_terms_checkbox").split("{terms}")[0]}
-                  <Text
-                    style={styles.legalLink}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      router.push("/terms");
-                    }}
-                  >
-                    {t("auth.terms_of_service")}
-                  </Text>
-                  {tRaw("auth.accept_terms_checkbox")
-                    .split("{terms}")[1]
-                    ?.split("{guidelines}")[0]}
-                  <Text
-                    style={styles.legalLink}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      router.push("/community-guidelines");
-                    }}
-                  >
-                    {t("auth.community_guidelines")}
-                  </Text>
-                  {tRaw("auth.accept_terms_checkbox").split("{guidelines}")[1]}
-                </Text>
-              </Pressable>
-            )}
-
             <Pressable
               testID="auth-submit-button"
               onPress={submitEmail}
-              disabled={busy || (mode === "register" && !acceptedTerms)}
+              disabled={busy}
+              accessibilityState={{ disabled: busy }}
               style={[
                 styles.primaryBtn,
                 (busy || (mode === "register" && !acceptedTerms)) && {
@@ -558,8 +616,7 @@ export default function AuthScreen() {
               )}
             </Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
@@ -822,30 +879,64 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textDecorationLine: "underline",
   },
+  termsCard: {
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  termsCardError: {
+    borderColor: colors.error,
+    borderWidth: 2,
+    backgroundColor: colors.error + "14",
+  },
   termsCheckboxRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  termsCheckboxHit: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   termsCheckbox: {
-    width: 22,
-    height: 22,
+    width: 26,
+    height: 26,
     borderRadius: 6,
     borderWidth: 2,
     borderColor: colors.brandPrimary,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 2,
   },
   termsCheckboxChecked: {
     backgroundColor: colors.brandPrimary,
   },
+  termsCheckboxError: {
+    borderColor: colors.error,
+  },
   termsCheckboxText: {
     flex: 1,
     color: colors.onSurface,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  termsErrorRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    paddingBottom: 4,
+  },
+  termsErrorText: {
+    flex: 1,
+    color: colors.error,
     fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 18,
+    fontWeight: "600",
   },
 });

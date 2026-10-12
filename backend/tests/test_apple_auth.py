@@ -35,6 +35,7 @@ if str(BACKEND_DIR) not in sys.path:
 from server import app  # noqa: E402
 from services import apple_auth  # noqa: E402
 from core.database import db  # noqa: E402
+from core.terms import TERMS_VERSION  # noqa: E402
 
 APPLE_BUNDLE_AUD = "com.emergent.stompinyumaapp.uyr5zg"
 TEST_KID = "test-kid-1"
@@ -250,6 +251,7 @@ async def test_legacy_linking_by_email(client, rsa_keys):
             "email": email,
             "password": "TestApple1!",
             "name": "Legacy User",
+            "accepted_terms_version": TERMS_VERSION,
         })
         assert reg.status_code == 200, reg.text
         original_uid = reg.json()["user"]["user_id"]
@@ -342,6 +344,7 @@ async def test_register_and_login_regression(client):
             "email": email,
             "password": "TestPass1!",
             "name": "Reg User",
+            "accepted_terms_version": TERMS_VERSION,
         })
         assert reg.status_code == 200
         assert reg.json()["token"]

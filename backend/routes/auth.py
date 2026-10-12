@@ -12,6 +12,7 @@ from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 
 from core.config import (
     APP_PUBLIC_URL,
@@ -57,15 +58,28 @@ async def register(inp: RegisterIn, request: Request):
     # doesn't match, refuse the registration with a clear code the
     # UI can react to.
     from core.terms import TERMS_VERSION
-    if (inp.accepted_terms_version or "").strip() != TERMS_VERSION:
-        raise HTTPException(
-            400,
-            {
+    sent_version = (inp.accepted_terms_version or "").strip()
+    if sent_version != TERMS_VERSION:
+        # ``detail`` is a plain human-readable STRING so that older
+        # installed builds (which render ``detail`` verbatim) never show
+        # a raw JSON object. Machine-readable ``code`` /
+        # ``required_version`` live at the top level for current clients.
+        # A request with NO version at all can only come from a build that
+        # predates the signup checkbox, so tell those users to update.
+        message = (
+            "Please read and agree to the Terms of Use and Community "
+            "Guidelines before creating your account."
+            if sent_version
+            else "Please update the app to the latest version, then read "
+            "and agree to the Terms of Use and Community Guidelines before "
+            "creating your account."
+        )
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": message,
+                "message": message,
                 "code": "terms_not_accepted",
-                "message": (
-                    "You must read and agree to the Terms of Use and "
-                    "Community Guidelines to create an account."
-                ),
                 "required_version": TERMS_VERSION,
             },
         )

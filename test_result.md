@@ -1775,3 +1775,8 @@ old_agent_communication:
 
       CREDENTIALS: admin@stompinground.com / <redacted-SEC-001>
       (see /app/memory/test_credentials.md)
+
+## 2026-10-12 — URGENT: Registration Terms checkbox (Apple 1.2) hardening
+- Root cause: installed Android build predates the signup Terms checkbox (added 2026-09-17, OTA updates disabled) while live backend enforces accepted_terms_version → old build shows no checkbox; old client JSON.stringify'd the object `detail` → raw JSON in UI.
+- Backend: /auth/register + /legal/accept-terms now return string `detail` + top-level `code`/`required_version` (enforcement unchanged). New public GET /api/legal/terms-version.
+- Frontend: auth.tsx — prominent Terms card (testIDs auth-terms-card, auth-accept-terms-checkbox, auth-accept-terms-label, auth-accept-terms-link, auth-accept-guidelines-link, auth-terms-error); Create Account tappable when unticked → highlights card + friendly msg, NO request sent; KeyboardAwareScrollView (Android edge-to-edge keyboard fix); version fetched from server. client.ts — ApiError, never stringifies JSON.

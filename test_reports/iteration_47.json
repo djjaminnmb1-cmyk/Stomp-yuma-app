@@ -1,0 +1,27 @@
+{
+  "summary": "URGENT REGISTRATION BUG — Terms-of-Use gate fix verified end-to-end. BACKEND (7/7 pytest green, test_terms_registration.py): GET /api/legal/terms-version public (no auth) returns {required_version:'2026-06-24'}; POST /api/auth/register with missing OR wrong accepted_terms_version → 400 with STRING `detail`, `code=='terms_not_accepted'`, `required_version=='2026-06-24'`; with correct version → 200 + token, and GET /api/legal/terms-status (Bearer) returns accepted_version=='2026-06-24', up_to_date=true, accepted_at set; POST /api/legal/accept-terms with 'wrong' → 400 string detail + code 'stale_terms_version'; with correct version → 200 ok. FRONTEND (Playwright @360x740 Android-like AND @390x844 iOS-like): on /auth → Create Account tab, the auth-terms-card + auth-accept-terms-checkbox + label with tappable auth-accept-terms-link & auth-accept-guidelines-link are all visible and sit directly above auth-submit-button. NEGATIVE path: filling name/email/password and tapping Create Account WITHOUT checking the box fires 0 requests to /api/auth/register, surfaces auth-terms-error with the exact copy 'Please read and agree to the Terms of Use and Community Guidelines before creating your account.', and no raw JSON ('{', '\"detail\"') is rendered anywhere. LINK + STATE: tapping auth-accept-terms-link navigates to /terms; terms-back testID exists; after going back, name, email, password, instructor toggle ON and instructor code ('lineup4life') are all still populated. HAPPY PATH dancer: ticking the checkbox + Create Account with a fresh email fires exactly ONE POST /api/auth/register with payload keys ['accepted_terms_version','email','name','password'] (instructor_code absent), accepted_terms_version=='2026-06-24', account is created, user is redirected to home (/), NOT bounced to /terms-accept.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_terms_registration.py",
+    "/app/test_reports/pytest/terms_registration.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auth.tsx: register() payload sends instructor_code as `undefined` when toggle is off — JSON.stringify silently omits the key (confirmed in captured payload). Matches spec.",
+    "legal.py accept-terms returns JSONResponse with string detail + code — correct, mirrors register() pattern; FastAPI default HTTPException would have returned a serialised dict, which is why JSONResponse is used.",
+    "auth.tsx is 942 lines — exceeds the 700-line soft cap; consider extracting the terms card + hero into subcomponents (pre-existing, not blocking)."
+  ],
+  "updated_files": ["/app/backend/tests/test_terms_registration.py"],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% (all 4 scenarios across 2 viewports)"},
+  "seed_data_creation": "Created several TEST_term_* accounts via POST /api/auth/register during pytest (all cleaned up via DELETE /api/auth/me in test teardown). One happy-path dancer account (TEST_term_dancer_<ts>@example.com) was left behind by the Playwright run since there is no auto-cleanup in the UI flow — safe to ignore or delete manually.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend TERMS_VERSION is pinned to '2026-06-24' in core/terms.py. Frontend reads live version from GET /api/legal/terms-version on register tab open (useEffect in auth.tsx:55-61) and falls back to bundled TERMS_VERSION constant. Payload omits instructor_code when toggle is off (undefined → JSON.stringify drops the key). Onboarding modals (language picker + age check) must be bypassed via localStorage seed (sgy.onboarding.language='en', sgy.onboarding.age_confirmed='1', age_confirmed='true') to reach /auth cleanly in web preview. Admin login was NOT exercised to avoid the 5-attempts/15-min throttle flagged by E1.",
+  "rca_of_issue": "Original Android crash was caused by (a) the create-account screen not rendering any Terms checkbox so dancers had no way to send accepted_terms_version in the payload, and (b) the client surfacing the raw backend 400 JSON {detail:{...}} because errorMessage() fell through on non-string detail. Fix in place: backend returns `detail` as a plain STRING (JSONResponse in routes/auth.py:77-85 and routes/legal.py:720-729), client gates submit on acceptedTerms with flagTerms() + auth-terms-error (auth.tsx:80-83, 506-512), and ApiError.code handling in catch block (auth.tsx:117-127) adopts the server's required_version if it changes. All verified working on both viewports."
+}

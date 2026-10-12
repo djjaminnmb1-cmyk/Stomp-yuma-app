@@ -31,6 +31,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from core.database import db
@@ -685,6 +686,14 @@ class AcceptTermsBody(BaseModel):
     version: str
 
 
+@router.get("/terms-version")
+async def terms_version():
+    """Public (no auth) — the Terms version a NEW account must accept.
+    The Create Account screen reads this so the signup payload always
+    carries the server's live version instead of a stale bundled one."""
+    return {"required_version": TERMS_VERSION}
+
+
 @router.get("/terms-status")
 async def terms_status(user: dict = Depends(get_current_user)):
     """Return the current required version + whether this user has
@@ -707,11 +716,14 @@ async def accept_terms(body: AcceptTermsBody, user: dict = Depends(get_current_u
     else is rejected 400 so a stale build can't record a fake accept.
     """
     if body.version.strip() != TERMS_VERSION:
-        raise HTTPException(
-            400,
-            {
+        # String ``detail`` so no client build ever renders raw JSON.
+        message = "Our Terms have been updated. Please update the app and try again."
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": message,
+                "message": message,
                 "code": "stale_terms_version",
-                "message": "Terms have been updated. Please reload the app.",
                 "required_version": TERMS_VERSION,
             },
         )
