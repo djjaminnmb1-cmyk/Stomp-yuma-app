@@ -25,6 +25,7 @@ import * as FileSystem from "expo-file-system";
 import { colors, spacing, radius, difficultyColor } from "@/src/theme";
 import {
   api,
+  ApiError,
   ChatLinkPreview,
   ChatMessage,
   ChatReadRow,
@@ -147,7 +148,7 @@ export default function InstructorTab() {
         </Pressable>
         {tab === "dances" ? (
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
-            {user.can_edit_step_sheets ? (
+            {user.is_admin || user.can_edit_step_sheets ? (
               <Pressable
                 testID="restore-dance-btn"
                 onPress={() => setRestoreOpen(true)}
@@ -3087,6 +3088,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandPrimary,
   },
   restorePillText: { color: colors.onBrandPrimary, fontWeight: "700", fontSize: 12 },
+  restoreActions: { gap: 6, alignItems: "stretch" },
+  restoreRemoveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.error,
+    backgroundColor: colors.surface,
+  },
+  restoreRemoveText: { color: colors.error, fontWeight: "700", fontSize: 12 },
   restoreSearchWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -3188,10 +3203,40 @@ function RestoreDancesModal({
       setItems((prev) => prev.filter((d) => d.name !== name));
       onRestored();
     } catch (e: any) {
+      if (e instanceof ApiError && e.status === 409) {
+        // Already in the library — the server has now cleared it from
+        // the archive, so drop it here too.
+        setItems((prev) => prev.filter((d) => d.name !== name));
+      }
       Alert.alert("Couldn't restore", e?.message || "Try again.");
     } finally {
       setBusyName(null);
     }
+  };
+
+  const doRemove = async (name: string) => {
+    setBusyName(name);
+    try {
+      await api.dismissRemovedDance(name, token);
+      setItems((prev) => prev.filter((d) => d.name !== name));
+    } catch (e: any) {
+      Alert.alert("Couldn't remove", e?.message || "Try again.");
+    } finally {
+      setBusyName(null);
+    }
+  };
+
+  const confirmRemove = (name: string) => {
+    const title = "Remove from archive?";
+    const msg = `"${name}" will be cleared from this list for good. It won't be added to the library.`;
+    if (Platform.OS === "web") {
+      if (globalThis.confirm?.(`${title}\n\n${msg}`)) doRemove(name);
+      return;
+    }
+    Alert.alert(title, msg, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => doRemove(name) },
+    ]);
   };
 
   return (
@@ -3206,7 +3251,7 @@ function RestoreDancesModal({
           <View style={{ flex: 1 }}>
             <Text style={styles.modalTitle}>Restore Removed Dances</Text>
             <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
-              {items.length} in the archive. Tap Restore to bring any back.
+              {items.length} in the archive. Restore to bring one back, or Remove to clear it.
             </Text>
           </View>
           <Pressable onPress={onClose} testID="restore-close">
@@ -3254,21 +3299,34 @@ function RestoreDancesModal({
                     {item.artist ? ` — ${item.artist}` : ""}
                   </Text>
                 </View>
-                <Pressable
-                  testID={`restore-${item.name}`}
-                  onPress={() => restore(item.name)}
-                  disabled={busyName === item.name}
-                  style={[styles.restorePillBtn, busyName === item.name && { opacity: 0.5 }]}
-                >
-                  {busyName === item.name ? (
-                    <ActivityIndicator color={colors.onBrandPrimary} size="small" />
-                  ) : (
-                    <>
-                      <Ionicons name="arrow-undo" size={12} color={colors.onBrandPrimary} />
-                      <Text style={styles.restorePillText}>Restore</Text>
-                    </>
-                  )}
-                </Pressable>
+                <View style={styles.restoreActions}>
+                  <Pressable
+                    testID={`restore-${item.name}`}
+                    onPress={() => restore(item.name)}
+                    disabled={busyName === item.name}
+                    style={[styles.restorePillBtn, busyName === item.name && { opacity: 0.5 }]}
+                  >
+                    {busyName === item.name ? (
+                      <ActivityIndicator color={colors.onBrandPrimary} size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="arrow-undo" size={12} color={colors.onBrandPrimary} />
+                        <Text style={styles.restorePillText}>Restore</Text>
+                      </>
+                    )}
+                  </Pressable>
+                  <Pressable
+                    testID={`restore-remove-${item.name}`}
+                    onPress={() => confirmRemove(item.name)}
+                    disabled={busyName === item.name}
+                    hitSlop={6}
+                    accessibilityLabel={`Remove ${item.name} from archive`}
+                    style={[styles.restoreRemoveBtn, busyName === item.name && { opacity: 0.5 }]}
+                  >
+                    <Ionicons name="trash-outline" size={12} color={colors.error} />
+                    <Text style={styles.restoreRemoveText}>Remove</Text>
+                  </Pressable>
+                </View>
               </View>
             )}
           />

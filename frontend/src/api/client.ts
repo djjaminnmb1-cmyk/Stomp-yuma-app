@@ -1482,6 +1482,12 @@ export const api = {
       { method: "POST", body: JSON.stringify({ name }) },
       token
     ),
+  dismissRemovedDance: (name: string, token: string) =>
+    req<{ ok: boolean; name: string }>(
+      "/dances/removed/dismiss",
+      { method: "POST", body: JSON.stringify({ name }) },
+      token
+    ),
   publishDance: (id: string, token: string) =>
     req<Dance>(`/dances/${id}/publish`, { method: "PUT" }, token),
   unpublishDance: (id: string, token: string) =>

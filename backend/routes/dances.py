@@ -21,6 +21,7 @@ from core.security import (
 from core.serialize import dance_to_out, youtube_search_url
 from core.time_helpers import now_iso
 from models.schemas import DanceImportBody, DanceIn
+from services.dance_dedupe import _normalise
 from services.choreographer_follows import (
     inject_choreographer_key,
     notify_followers_of_new_dance,
@@ -36,6 +37,9 @@ _BACKUP_PATH = _ROOT_DIR / "backups" / "dances_before_prune.json"
 
 
 def _load_blocklist() -> list[str]:
+    """Names pruned by the original LLM verification pass. Read-only seed:
+    the file resets on every redeploy, so restore/remove decisions are
+    persisted in Mongo (``dance_archive_actions``) instead."""
     if not _BLOCKLIST_PATH.exists():
         return []
     try:
@@ -45,10 +49,6 @@ def _load_blocklist() -> list[str]:
         return []
 
 
-def _save_blocklist(names: list[str]) -> None:
-    _BLOCKLIST_PATH.write_text(_json.dumps(sorted(set(names)), indent=2))
-
-
 def _load_backup() -> list[dict]:
     if not _BACKUP_PATH.exists():
         return []
@@ -56,6 +56,30 @@ def _load_backup() -> list[dict]:
         return _json.loads(_BACKUP_PATH.read_text())
     except Exception:
         return []
+
+
+async def _archive_hidden_keys() -> set[str]:
+    """Normalised names that must NOT appear in the Restore archive:
+    anything already in the library, plus anything an admin/editor has
+    restored or removed (persisted so redeploys don't resurrect them)."""
+    lib = await db.dances.find({}, {"_id": 0, "name": 1}).to_list(10000)
+    acted = await db.dance_archive_actions.find({}, {"_id": 0, "name_key": 1}).to_list(10000)
+    return {_normalise(d.get("name") or "") for d in lib} | {a["name_key"] for a in acted}
+
+
+async def _record_archive_action(name: str, action: str, user: dict) -> None:
+    await db.dance_archive_actions.update_one(
+        {"name_key": _normalise(name)},
+        {"$set": {
+            "name_key": _normalise(name),
+            "name": name,
+            "action": action,  # "restored" | "removed"
+            "by_user_id": user["user_id"],
+            "by_email": user.get("email", ""),
+            "at": now_iso(),
+        }},
+        upsert=True,
+    )
 
 
 @router.get("/dances")
@@ -119,13 +143,14 @@ async def list_dances(
 @router.get("/dances/removed")
 async def list_removed_dances(user: dict = Depends(require_admin_or_editor)):
     """Return every dance that was pruned by the LLM verification pass but
-    is still available in the pre-prune backup. Editors can call
-    POST /dances/restore-by-name to bring one back."""
+    is still available in the pre-prune backup — minus dances already in
+    the library and ones an editor restored/removed."""
     blocklist = set(_load_blocklist())
+    hidden = await _archive_hidden_keys()
     backup = _load_backup()
     out = []
     for d in backup:
-        if d.get("name") in blocklist:
+        if d.get("name") in blocklist and _normalise(d.get("name") or "") not in hidden:
             out.append({
                 "id": d.get("id"),
                 "name": d.get("name"),
@@ -142,28 +167,46 @@ async def list_removed_dances(user: dict = Depends(require_admin_or_editor)):
     return out
 
 
+async def _archived_entry_or_404(name: str) -> dict:
+    """The backup entry for an archived dance that is still listed."""
+    if not name:
+        raise HTTPException(400, "Dance name is required")
+    if name not in _load_blocklist():
+        raise HTTPException(404, "That dance is not in the removed list")
+    acted = await db.dance_archive_actions.find_one({"name_key": _normalise(name)})
+    if acted:
+        raise HTTPException(404, "That dance is not in the removed list")
+    src = next((d for d in _load_backup() if d.get("name") == name), None)
+    if not src:
+        raise HTTPException(404, "No backup entry for that dance name")
+    return src
+
+
+@router.post("/dances/removed/dismiss")
+async def dismiss_removed_dance(
+    body: dict, user: dict = Depends(require_admin_or_editor)
+):
+    """Permanently clear a dance from the Restore archive (no library change)."""
+    name = ((body or {}).get("name") or "").strip()
+    await _archived_entry_or_404(name)
+    await _record_archive_action(name, "removed", user)
+    logger.info("Removed archived dance %r from restore list by %s", name, user.get("email"))
+    return {"ok": True, "name": name}
+
+
 @router.post("/dances/restore-by-name")
 async def restore_dance_by_name(
     body: dict, user: dict = Depends(require_admin_or_editor)
 ):
     """Restore a specific removed dance by name."""
     name = ((body or {}).get("name") or "").strip()
-    if not name:
-        raise HTTPException(400, "Dance name is required")
+    src = await _archived_entry_or_404(name)
 
-    blocklist = _load_blocklist()
-    if name not in blocklist:
-        raise HTTPException(404, "That dance is not in the removed list")
-
-    backup = _load_backup()
-    src = next((d for d in backup if d.get("name") == name), None)
-    if not src:
-        raise HTTPException(404, "No backup entry for that dance name")
-
-    # Guard: don't create a duplicate if it's already been restored
-    if await db.dances.find_one({"name": name}, {"_id": 0, "id": 1}):
-        blocklist = [n for n in blocklist if n != name]
-        _save_blocklist(blocklist)
+    # Guard: don't create a duplicate if it's already in the library
+    # (case/punctuation-insensitive). Record it so it leaves the archive.
+    lib = await db.dances.find({}, {"_id": 0, "name": 1}).to_list(10000)
+    if _normalise(name) in {_normalise(d.get("name") or "") for d in lib}:
+        await _record_archive_action(name, "restored", user)
         raise HTTPException(409, "That dance is already in the library")
 
     new_doc = {
@@ -189,8 +232,7 @@ async def restore_dance_by_name(
     }
     inject_choreographer_key(new_doc)
     await db.dances.insert_one(new_doc)
-    blocklist = [n for n in blocklist if n != name]
-    _save_blocklist(blocklist)
+    await _record_archive_action(name, "restored", user)
     logger.info("Restored dance %r by %s", name, user.get("email"))
     new_doc.pop("_id", None)
     return dance_to_out(new_doc, user["user_id"])

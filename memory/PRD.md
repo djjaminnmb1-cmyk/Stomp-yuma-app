@@ -2468,3 +2468,9 @@ No schema changes. Reuses existing `users.dotd_streak_current`,
 - Backend: `/auth/register` & `/legal/accept-terms` errors now return a string `detail` + top-level `code`/`required_version` (enforcement unchanged). New public `GET /api/legal/terms-version`.
 - Frontend `auth.tsx`: prominent Terms card + 44pt checkbox, "Terms of Use"/"Community Guidelines" links, Create Account tappable when unticked → red highlight + friendly message, no request sent; KeyboardAwareScrollView (Android edge-to-edge keyboard); server version fetched. `client.ts`: `ApiError`, never stringifies JSON. i18n for 8 locales.
 - Tested: iteration_47 + manual checks (instructor flow, guidelines link, invalid email, sign in). New Android/iOS builds REQUIRED for customers.
+
+## Restore Removed Dances archive — Remove + auto-hide — 2026-10-12
+- Root cause: archive state lived in `dance_blocklist.json`, which resets on every redeploy → restored dances (e.g. Achy Breaky Heart, Ah Si) reappeared in the archive.
+- Backend (`routes/dances.py`): `GET /api/dances/removed` now hides any archived dance already in the library (normalised name match via `services/dance_dedupe._normalise`) and anything restored/removed. New `POST /api/dances/removed/dismiss {name}` (admin or step-sheet editor). Restore/remove decisions persist in Mongo `dance_archive_actions` {name_key, name, action: restored|removed, by_user_id, by_email, at}; blocklist file is now read-only.
+- Frontend (`instructor.tsx` RestoreDancesModal): red-outline "Remove" button under Restore on each row (confirm dialog); Restore button now visible to admins too (was editors only).
+- Tests: `backend/tests/test_restore_archive.py` (4) + regression restore tests pass; UI verified via screenshot (preview archive 297 → 273).
