@@ -135,13 +135,10 @@ const baseExpo = {
           "tiktok",
         ],
       },
-      // iOS Firebase for push. Drop your `GoogleService-Info.plist`
-      // (downloaded from the Firebase console for the iOS app that
-      // matches `bundleIdentifier` above) at `frontend/GoogleService-Info.plist`
-      // and this key wires it into every native iOS build. Guarded
-      // above with `fs.existsSync` so the config still validates when
-      // the plist hasn't been dropped in yet — iOS push simply stays
-      // dormant until the file lands.
+      // Optional: only wired in if a GoogleService-Info.plist is ever
+      // added (e.g. for Firebase Analytics). iOS PUSH does NOT need it —
+      // Emergent delivers iOS pushes via APNs using the .p8 key uploaded
+      // in the build UI.
       ...(iosGoogleServicesFile ? { googleServicesFile: iosGoogleServicesFile } : {}),
     },
     android: {

@@ -2500,3 +2500,7 @@ No schema changes. Reuses existing `users.dotd_streak_current`,
 ## Android EAS build fix — 2026-10-13
 - Build failed at `eas project:init`: "Cannot automatically write to dynamic config at: app.config.js" — app.config.js exported a static object, ignoring the pipeline-written app.json (extra.eas.projectId, slug, version, versionCode).
 - Fix: app.config.js now exports a function that merges pipeline app.json fields: name (unless "App"), slug, higher of the two versions, android.versionCode, ios.buildNumber, extra.eas. Store identifiers (android.package com.stompinyuma.app, iOS bundleIdentifier) stay from app.config.js. Verified with `npx expo config` in a simulated pipeline dir.
+
+## iOS push enabled — 2026-10-13
+- Per Emergent push playbook: iOS uses native APNs token (`getDevicePushTokenAsync`) via the Emergent relay; NO GoogleService-Info.plist / Firebase needed. Removed the `if (Platform.OS === "ios") return;` early-exit in `src/lib/push.ts`. User must upload an APNs `.p8` auth key in the build UI when generating the iOS build.
+- Not yet built: denied-permission weekly "Open Settings" nudge (playbook checklist item).
