@@ -1195,6 +1195,21 @@ export default function Profile() {
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
+            <Pressable
+              testID="profile-admin-app-version-cta"
+              onPress={() => router.push("/admin/app-version")}
+              style={styles.websiteRow}
+            >
+              <View style={styles.rowLeft}>
+                <Ionicons
+                  name="phone-portrait-outline"
+                  size={22}
+                  color={colors.brandPrimary}
+                />
+                <Text style={styles.rowText}>{i18nT("profile.app_version_admin")}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+            </Pressable>
             <RefreshRecommendationsAdminRow />
           </View>
         ) : null}

@@ -54,7 +54,7 @@ module.exports = {
   expo: {
     name: "Stompin' Ground Yuma",
     slug: "stompin-ground-yuma",
-    version: "1.0.0",
+    version: "1.1.0",
     // ``default`` lets the OS pick the natural orientation — portrait
     // stays the primary layout (phones open in portrait), but users
     // who rotate the device sideways get a proper landscape reflow

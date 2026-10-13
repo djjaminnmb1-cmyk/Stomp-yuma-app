@@ -988,6 +988,16 @@ async function req<T>(
   return data as T;
 }
 
+/** Server-driven app version policy (Admin → App Version). */
+export type VersionPolicy = {
+  min_version: string;
+  latest_version: string;
+  ios_url: string;
+  android_url: string;
+  updated_at?: string | null;
+  updated_by_email?: string | null;
+};
+
 /** Error thrown by every API call. ``message`` is always human-readable
  *  (raw backend JSON is never surfaced); ``code`` carries the backend's
  *  machine-readable reason (e.g. ``terms_not_accepted``) when present. */
@@ -1486,6 +1496,36 @@ export const api = {
     req<{ ok: boolean; name: string }>(
       "/dances/removed/dismiss",
       { method: "POST", body: JSON.stringify({ name }) },
+      token
+    ),
+  restoreDancesBulk: (names: string[], token: string) =>
+    req<{ restored: string[]; skipped: string[] }>(
+      "/dances/restore-bulk",
+      { method: "POST", body: JSON.stringify({ names }) },
+      token
+    ),
+  dismissRemovedDancesBulk: (names: string[], token: string) =>
+    req<{ removed: string[]; skipped: string[] }>(
+      "/dances/removed/dismiss-bulk",
+      { method: "POST", body: JSON.stringify({ names }) },
+      token
+    ),
+  undoRemovedDances: (names: string[], token: string) =>
+    req<{ undone: number }>(
+      "/dances/removed/undo",
+      { method: "POST", body: JSON.stringify({ names }) },
+      token
+    ),
+  getVersionPolicy: () => req<VersionPolicy>("/app/version-policy"),
+  adminGetVersionPolicy: (token: string) =>
+    req<VersionPolicy>("/admin/app-version", {}, token),
+  adminSetVersionPolicy: (
+    body: Pick<VersionPolicy, "min_version" | "latest_version" | "ios_url" | "android_url">,
+    token: string
+  ) =>
+    req<VersionPolicy>(
+      "/admin/app-version",
+      { method: "PUT", body: JSON.stringify(body) },
       token
     ),
   publishDance: (id: string, token: string) =>

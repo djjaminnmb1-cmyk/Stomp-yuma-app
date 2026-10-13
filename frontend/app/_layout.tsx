@@ -17,6 +17,7 @@ import { DraftCountProvider } from "@/src/context/draft-count-context";
 import { AgeGateModal } from "@/src/components/AgeGateModal";
 import { LanguagePickerModal } from "@/src/components/LanguagePickerModal";
 import { UpdateBanner } from "@/src/components/UpdateBanner";
+import { AppVersionGate } from "@/src/components/AppVersionGate";
 import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 import { useI18nBootstrap } from "@/src/i18n";
 
@@ -166,6 +167,9 @@ export default function RootLayout() {
                     {/* Sticks to the top of the app; only renders on native
                         when expo-updates has a bundle ready. Hidden on web. */}
                     <UpdateBanner />
+                    {/* Server-driven "Update required" screen / "New
+                        version available" banner (Admin → App Version). */}
+                    <AppVersionGate />
                   </DraftCountProvider>
                 </PendingSubmissionsProvider>
               </AuthProvider>

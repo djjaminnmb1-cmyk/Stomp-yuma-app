@@ -2480,3 +2480,12 @@ No schema changes. Reuses existing `users.dotd_streak_current`,
 - `.gitignore`: removed `.env` exclusions (deployment flow needs them; supersedes SEC-002 ignore rules).
 - Health check: no blockers. Remaining WARNs (not fixed, user decisions): iOS push disabled in `src/lib/push.ts` (needs GoogleService-Info.plist); Apple review seed disabled per user request (APPLE_REVIEW_NOTES.md out of date).
 - Known stale tests: 23 older backend test files register users without `accepted_terms_version` → 400 (pre-existing since Terms enforcement; not a regression).
+
+## Update-Required Prompt + Bulk Archive Cleanup + Undo — 2026-10-13
+- App version bumped to **1.1.0** (app.config.js) — bump every store release.
+- Backend `routes/app_version.py`: public `GET /api/app/version-policy`; admin `GET/PUT /api/admin/app-version` (X.Y.Z validation, min ≤ latest, https links; blank links → defaults iOS `https://apps.apple.com/us/app/stompin-ground-dance-hq/id6805265437`, Android `https://play.google.com/store/apps/details?id=com.stompinyuma.app`). Mongo `app_settings {_id:"app_version"}`.
+- Frontend `src/components/AppVersionGate.tsx` (mounted in `_layout.tsx`): below min → full-screen non-dismissible "Update required" (admins get a banner instead; logged-out "Admin? Sign in" bypass so admins can't be locked out); below latest → dismissible banner (dismissal remembered per latest version in AsyncStorage `appVersion.dismissedLatest`). Rechecks on app foreground. i18n 8 locales.
+- Admin screen `app/admin/app-version.tsx` (Profile → admin section → "App Version & Updates").
+- Restore archive: Select mode + Select-all (respects search) + bulk Restore/Remove bar; single Remove has no confirm; in-modal Undo bar (6s). Endpoints `POST /api/dances/restore-bulk`, `/api/dances/removed/dismiss-bulk`, `/api/dances/removed/undo`.
+- Tests: `tests/test_app_version_and_archive_bulk.py` + `test_restore_archive.py` 10/10; UI self-tested via screenshots (banner, dismiss persistence, blocking screen, admin bypass, admin screen validation, bulk remove+undo, single remove+undo).
+- Note: old builds (≤1.0.0) don't contain the gate — only builds from 1.1.0 onward react to the policy. Web preview needed Metro cache refresh to pick up the version bump.

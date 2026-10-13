@@ -11,6 +11,7 @@ from fastapi import APIRouter
 from . import (
     admin_refresh_recommendations,
     announcements,
+    app_version,
     auth,
     activity,
     admin_bulk_import,
@@ -93,6 +94,7 @@ api_router.include_router(notifications.router)
 api_router.include_router(dance_of_the_day.router)
 api_router.include_router(weekly_digest.router)
 api_router.include_router(followed_instructors.router)
+api_router.include_router(app_version.router)
 api_router.include_router(misc.router)
 
 __all__ = ["api_router"]

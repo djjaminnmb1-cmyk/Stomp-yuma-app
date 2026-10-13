@@ -3102,6 +3102,78 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   restoreRemoveText: { color: colors.error, fontWeight: "700", fontSize: 12 },
+  restoreToolbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    minHeight: 44,
+  },
+  restoreToolbarHint: { color: colors.muted, fontSize: 12 },
+  restoreToolbarText: { color: colors.onSurface, fontWeight: "700", fontSize: 13 },
+  restoreToolbarLink: { color: colors.brandPrimary, fontWeight: "800", fontSize: 13 },
+  restoreSelectAll: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: 44 },
+  restoreSelectBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.brandPrimary,
+  },
+  restoreSelectBtnText: { color: colors.brandPrimary, fontWeight: "800", fontSize: 12 },
+  restoreCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.brandPrimary,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  restoreCheckboxOn: { backgroundColor: colors.brandPrimary },
+  restoreListRowSelected: { borderColor: colors.brandPrimary, backgroundColor: colors.surfaceSecondary },
+  restoreUndoBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.xs,
+    minHeight: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceInverse,
+  },
+  restoreUndoText: { flex: 1, color: colors.onSurfaceInverse, fontWeight: "600", fontSize: 13 },
+  restoreUndoBtn: { paddingHorizontal: spacing.md, minHeight: 44, justifyContent: "center" },
+  restoreUndoBtnText: { color: colors.warning, fontWeight: "900", fontSize: 13, letterSpacing: 0.6 },
+  restoreBulkBar: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  restoreBulkBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    minHeight: 48,
+    borderRadius: radius.pill,
+  },
+  restoreBulkBtnDanger: { borderWidth: 1.5, borderColor: colors.error, backgroundColor: colors.surface },
+  restoreBulkBtnText: { fontWeight: "800", fontSize: 14 },
   restoreSearchWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -3163,6 +3235,14 @@ function RestoreDancesModal({
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
   const [busyName, setBusyName] = useState<string | null>(null);
+  // Bulk "Select" mode
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  // Undo bar for the latest Remove. Lives INSIDE the modal because a
+  // native Modal renders above the app-wide toast layer.
+  const [undo, setUndo] = useState<RemovedDance[] | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -3180,9 +3260,19 @@ function RestoreDancesModal({
   useEffect(() => {
     if (visible) {
       setQ("");
+      setSelectMode(false);
+      setSelected(new Set());
+      setUndo(null);
       load();
     }
   }, [visible, load]);
+
+  useEffect(
+    () => () => {
+      if (undoTimer.current) clearTimeout(undoTimer.current);
+    },
+    []
+  );
 
   const filtered = q.trim()
     ? items.filter((d) => {
@@ -3196,17 +3286,67 @@ function RestoreDancesModal({
       })
     : items;
 
+  const dropNames = (names: string[]) => {
+    const gone = new Set(names);
+    setItems((prev) => prev.filter((d) => !gone.has(d.name)));
+    setSelected((prev) => new Set([...prev].filter((n) => !gone.has(n))));
+  };
+
+  const showUndo = (rows: RemovedDance[]) => {
+    if (!rows.length) return;
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    setUndo(rows);
+    undoTimer.current = setTimeout(() => setUndo(null), 6000);
+  };
+
+  const doUndo = async () => {
+    if (!undo) return;
+    const rows = undo;
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    setUndo(null);
+    try {
+      await api.undoRemovedDances(
+        rows.map((r) => r.name),
+        token
+      );
+      setItems((prev) =>
+        [...prev, ...rows].sort((a, b) =>
+          a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+        )
+      );
+    } catch (e: any) {
+      Alert.alert("Couldn't undo", e?.message || "Try again.");
+    }
+  };
+
+  const confirmThen = (
+    title: string,
+    msg: string,
+    actionLabel: string,
+    destructive: boolean,
+    fn: () => void
+  ) => {
+    if (Platform.OS === "web") {
+      if (globalThis.confirm?.(`${title}\n\n${msg}`)) fn();
+      return;
+    }
+    Alert.alert(title, msg, [
+      { text: "Cancel", style: "cancel" },
+      { text: actionLabel, style: destructive ? "destructive" : "default", onPress: fn },
+    ]);
+  };
+
   const restore = async (name: string) => {
     setBusyName(name);
     try {
       await api.restoreDanceByName(name, token);
-      setItems((prev) => prev.filter((d) => d.name !== name));
+      dropNames([name]);
       onRestored();
     } catch (e: any) {
       if (e instanceof ApiError && e.status === 409) {
         // Already in the library — the server has now cleared it from
         // the archive, so drop it here too.
-        setItems((prev) => prev.filter((d) => d.name !== name));
+        dropNames([name]);
       }
       Alert.alert("Couldn't restore", e?.message || "Try again.");
     } finally {
@@ -3214,11 +3354,13 @@ function RestoreDancesModal({
     }
   };
 
-  const doRemove = async (name: string) => {
-    setBusyName(name);
+  // Single Remove has no confirm — the Undo bar is the safety net.
+  const remove = async (row: RemovedDance) => {
+    setBusyName(row.name);
     try {
-      await api.dismissRemovedDance(name, token);
-      setItems((prev) => prev.filter((d) => d.name !== name));
+      await api.dismissRemovedDance(row.name, token);
+      dropNames([row.name]);
+      showUndo([row]);
     } catch (e: any) {
       Alert.alert("Couldn't remove", e?.message || "Try again.");
     } finally {
@@ -3226,17 +3368,89 @@ function RestoreDancesModal({
     }
   };
 
-  const confirmRemove = (name: string) => {
-    const title = "Remove from archive?";
-    const msg = `"${name}" will be cleared from this list for good. It won't be added to the library.`;
-    if (Platform.OS === "web") {
-      if (globalThis.confirm?.(`${title}\n\n${msg}`)) doRemove(name);
-      return;
-    }
-    Alert.alert(title, msg, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => doRemove(name) },
-    ]);
+  const selectedRows = items.filter((d) => selected.has(d.name));
+  const allShownSelected =
+    filtered.length > 0 && filtered.every((d) => selected.has(d.name));
+  const plural = (n: number) => `${n} dance${n === 1 ? "" : "s"}`;
+
+  const toggleOne = (name: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+
+  const toggleAllShown = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      filtered.forEach((d) => (allShownSelected ? next.delete(d.name) : next.add(d.name)));
+      return next;
+    });
+
+  const exitSelect = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const bulkRestore = () => {
+    const names = selectedRows.map((r) => r.name);
+    if (!names.length) return;
+    confirmThen(
+      `Restore ${plural(names.length)}?`,
+      "They'll be added back to the library.",
+      "Restore",
+      false,
+      async () => {
+        setBulkBusy(true);
+        try {
+          const res = await api.restoreDancesBulk(names, token);
+          // Skipped = already in the library / no longer archived — both
+          // are gone from the archive now.
+          dropNames([...res.restored, ...res.skipped]);
+          if (res.restored.length) onRestored();
+          if (res.skipped.length) {
+            Alert.alert(
+              "Some were skipped",
+              `${plural(res.skipped.length)} were already in the library or no longer in the archive.`
+            );
+          }
+          exitSelect();
+        } catch (e: any) {
+          Alert.alert("Couldn't restore", e?.message || "Try again.");
+        } finally {
+          setBulkBusy(false);
+        }
+      }
+    );
+  };
+
+  const bulkRemove = () => {
+    const rows = selectedRows;
+    if (!rows.length) return;
+    confirmThen(
+      `Remove ${plural(rows.length)} from the archive?`,
+      "They won't be added to the library. You can undo right after.",
+      "Remove",
+      true,
+      async () => {
+        setBulkBusy(true);
+        try {
+          const res = await api.dismissRemovedDancesBulk(
+            rows.map((r) => r.name),
+            token
+          );
+          const removed = new Set(res.removed);
+          dropNames([...res.removed, ...res.skipped]);
+          showUndo(rows.filter((r) => removed.has(r.name)));
+          exitSelect();
+        } catch (e: any) {
+          Alert.alert("Couldn't remove", e?.message || "Try again.");
+        } finally {
+          setBulkBusy(false);
+        }
+      }
+    );
   };
 
   return (
@@ -3272,13 +3486,54 @@ function RestoreDancesModal({
           <Text style={styles.restoreCountBadge}>{filtered.length}</Text>
         </View>
 
+        <View style={styles.restoreToolbar}>
+          {selectMode ? (
+            <>
+              <Pressable
+                testID="restore-select-all"
+                onPress={toggleAllShown}
+                disabled={!filtered.length}
+                style={styles.restoreSelectAll}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: allShownSelected }}
+              >
+                <View style={[styles.restoreCheckbox, allShownSelected && styles.restoreCheckboxOn]}>
+                  {allShownSelected ? (
+                    <Ionicons name="checkmark" size={14} color={colors.onBrandPrimary} />
+                  ) : null}
+                </View>
+                <Text style={styles.restoreToolbarText}>
+                  {q.trim() ? `Select all ${filtered.length} shown` : `Select all ${filtered.length}`}
+                </Text>
+              </Pressable>
+              <Pressable testID="restore-select-cancel" onPress={exitSelect} hitSlop={8}>
+                <Text style={styles.restoreToolbarLink}>Cancel</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={styles.restoreToolbarHint}>Tidy up several at once?</Text>
+              <Pressable
+                testID="restore-select-toggle"
+                onPress={() => setSelectMode(true)}
+                style={styles.restoreSelectBtn}
+              >
+                <Ionicons name="checkbox-outline" size={14} color={colors.brandPrimary} />
+                <Text style={styles.restoreSelectBtnText}>Select</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+
         {loading ? (
           <View style={{ padding: spacing.xl, alignItems: "center" }}>
             <ActivityIndicator color={colors.brandPrimary} />
           </View>
         ) : (
           <FlatList
+            style={{ flex: 1 }}
             data={filtered}
+            extraData={[selected, selectMode, busyName]}
             keyExtractor={(item) => item.name}
             contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm, paddingBottom: 40 }}
             ListEmptyComponent={
@@ -3289,48 +3544,133 @@ function RestoreDancesModal({
                 </Text>
               </View>
             }
-            renderItem={({ item }) => (
-              <View style={styles.restoreListRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.restoreName}>{item.name}</Text>
-                  <Text style={styles.restoreMeta}>
-                    {item.choreographer || "Unknown choreographer"}
-                    {item.song ? ` · ${item.song}` : ""}
-                    {item.artist ? ` — ${item.artist}` : ""}
-                  </Text>
-                </View>
-                <View style={styles.restoreActions}>
-                  <Pressable
-                    testID={`restore-${item.name}`}
-                    onPress={() => restore(item.name)}
-                    disabled={busyName === item.name}
-                    style={[styles.restorePillBtn, busyName === item.name && { opacity: 0.5 }]}
+            renderItem={({ item }) =>
+              selectMode ? (
+                <Pressable
+                  testID={`restore-row-${item.name}`}
+                  onPress={() => toggleOne(item.name)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected.has(item.name) }}
+                  style={[
+                    styles.restoreListRow,
+                    selected.has(item.name) && styles.restoreListRowSelected,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.restoreCheckbox,
+                      selected.has(item.name) && styles.restoreCheckboxOn,
+                    ]}
                   >
-                    {busyName === item.name ? (
-                      <ActivityIndicator color={colors.onBrandPrimary} size="small" />
-                    ) : (
-                      <>
-                        <Ionicons name="arrow-undo" size={12} color={colors.onBrandPrimary} />
-                        <Text style={styles.restorePillText}>Restore</Text>
-                      </>
-                    )}
-                  </Pressable>
-                  <Pressable
-                    testID={`restore-remove-${item.name}`}
-                    onPress={() => confirmRemove(item.name)}
-                    disabled={busyName === item.name}
-                    hitSlop={6}
-                    accessibilityLabel={`Remove ${item.name} from archive`}
-                    style={[styles.restoreRemoveBtn, busyName === item.name && { opacity: 0.5 }]}
-                  >
-                    <Ionicons name="trash-outline" size={12} color={colors.error} />
-                    <Text style={styles.restoreRemoveText}>Remove</Text>
-                  </Pressable>
+                    {selected.has(item.name) ? (
+                      <Ionicons name="checkmark" size={14} color={colors.onBrandPrimary} />
+                    ) : null}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.restoreName}>{item.name}</Text>
+                    <Text style={styles.restoreMeta}>
+                      {item.choreographer || "Unknown choreographer"}
+                      {item.song ? ` · ${item.song}` : ""}
+                      {item.artist ? ` — ${item.artist}` : ""}
+                    </Text>
+                  </View>
+                </Pressable>
+              ) : (
+                <View style={styles.restoreListRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.restoreName}>{item.name}</Text>
+                    <Text style={styles.restoreMeta}>
+                      {item.choreographer || "Unknown choreographer"}
+                      {item.song ? ` · ${item.song}` : ""}
+                      {item.artist ? ` — ${item.artist}` : ""}
+                    </Text>
+                  </View>
+                  <View style={styles.restoreActions}>
+                    <Pressable
+                      testID={`restore-${item.name}`}
+                      onPress={() => restore(item.name)}
+                      disabled={busyName === item.name}
+                      style={[styles.restorePillBtn, busyName === item.name && { opacity: 0.5 }]}
+                    >
+                      {busyName === item.name ? (
+                        <ActivityIndicator color={colors.onBrandPrimary} size="small" />
+                      ) : (
+                        <>
+                          <Ionicons name="arrow-undo" size={12} color={colors.onBrandPrimary} />
+                          <Text style={styles.restorePillText}>Restore</Text>
+                        </>
+                      )}
+                    </Pressable>
+                    <Pressable
+                      testID={`restore-remove-${item.name}`}
+                      onPress={() => remove(item)}
+                      disabled={busyName === item.name}
+                      hitSlop={6}
+                      accessibilityLabel={`Remove ${item.name} from archive`}
+                      style={[styles.restoreRemoveBtn, busyName === item.name && { opacity: 0.5 }]}
+                    >
+                      <Ionicons name="trash-outline" size={12} color={colors.error} />
+                      <Text style={styles.restoreRemoveText}>Remove</Text>
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
-            )}
+              )
+            }
           />
         )}
+
+        {undo ? (
+          <View style={styles.restoreUndoBar} testID="restore-undo-bar">
+            <Ionicons name="trash-outline" size={16} color={colors.onSurfaceInverse} />
+            <Text style={styles.restoreUndoText} numberOfLines={1}>
+              {undo.length === 1 ? `Removed “${undo[0].name}”` : `Removed ${plural(undo.length)}`}
+            </Text>
+            <Pressable testID="restore-undo" onPress={doUndo} hitSlop={10} style={styles.restoreUndoBtn}>
+              <Text style={styles.restoreUndoBtnText}>UNDO</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {selectMode ? (
+          <View style={styles.restoreBulkBar}>
+            <Pressable
+              testID="restore-bulk-restore"
+              onPress={bulkRestore}
+              disabled={!selectedRows.length || bulkBusy}
+              style={[
+                styles.restoreBulkBtn,
+                { backgroundColor: colors.brandPrimary },
+                (!selectedRows.length || bulkBusy) && { opacity: 0.45 },
+              ]}
+            >
+              {bulkBusy ? (
+                <ActivityIndicator color={colors.onBrandPrimary} size="small" />
+              ) : (
+                <>
+                  <Ionicons name="arrow-undo" size={16} color={colors.onBrandPrimary} />
+                  <Text style={[styles.restoreBulkBtnText, { color: colors.onBrandPrimary }]}>
+                    Restore ({selectedRows.length})
+                  </Text>
+                </>
+              )}
+            </Pressable>
+            <Pressable
+              testID="restore-bulk-remove"
+              onPress={bulkRemove}
+              disabled={!selectedRows.length || bulkBusy}
+              style={[
+                styles.restoreBulkBtn,
+                styles.restoreBulkBtnDanger,
+                (!selectedRows.length || bulkBusy) && { opacity: 0.45 },
+              ]}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.error} />
+              <Text style={[styles.restoreBulkBtnText, { color: colors.error }]}>
+                Remove ({selectedRows.length})
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
       </SafeAreaView>
     </Modal>
   );

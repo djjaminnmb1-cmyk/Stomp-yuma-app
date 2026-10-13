@@ -5,6 +5,7 @@ import json as _json
 import logging
 import re
 import uuid
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 
@@ -36,6 +37,7 @@ _BLOCKLIST_PATH = _ROOT_DIR / "dance_blocklist.json"
 _BACKUP_PATH = _ROOT_DIR / "backups" / "dances_before_prune.json"
 
 
+@lru_cache(maxsize=1)
 def _load_blocklist() -> list[str]:
     """Names pruned by the original LLM verification pass. Read-only seed:
     the file resets on every redeploy, so restore/remove decisions are
@@ -49,6 +51,7 @@ def _load_blocklist() -> list[str]:
         return []
 
 
+@lru_cache(maxsize=1)
 def _load_backup() -> list[dict]:
     if not _BACKUP_PATH.exists():
         return []
@@ -200,12 +203,22 @@ async def restore_dance_by_name(
 ):
     """Restore a specific removed dance by name."""
     name = ((body or {}).get("name") or "").strip()
+    return await _restore_one(name, user, await _library_keys())
+
+
+async def _library_keys() -> set[str]:
+    lib = await db.dances.find({}, {"_id": 0, "name": 1}).to_list(10000)
+    return {_normalise(d.get("name") or "") for d in lib}
+
+
+async def _restore_one(name: str, user: dict, lib_keys: set[str]) -> dict:
+    """Insert one archived dance back into the library. ``lib_keys`` is
+    the caller's normalised-name snapshot (updated in place)."""
     src = await _archived_entry_or_404(name)
 
     # Guard: don't create a duplicate if it's already in the library
     # (case/punctuation-insensitive). Record it so it leaves the archive.
-    lib = await db.dances.find({}, {"_id": 0, "name": 1}).to_list(10000)
-    if _normalise(name) in {_normalise(d.get("name") or "") for d in lib}:
+    if _normalise(name) in lib_keys:
         await _record_archive_action(name, "restored", user)
         raise HTTPException(409, "That dance is already in the library")
 
@@ -233,9 +246,70 @@ async def restore_dance_by_name(
     inject_choreographer_key(new_doc)
     await db.dances.insert_one(new_doc)
     await _record_archive_action(name, "restored", user)
+    lib_keys.add(_normalise(name))
     logger.info("Restored dance %r by %s", name, user.get("email"))
     new_doc.pop("_id", None)
     return dance_to_out(new_doc, user["user_id"])
+
+
+_BULK_MAX = 500
+
+
+def _bulk_names(body: dict) -> list[str]:
+    names = (body or {}).get("names")
+    if not isinstance(names, list) or not names:
+        raise HTTPException(400, "names must be a non-empty list")
+    if len(names) > _BULK_MAX:
+        raise HTTPException(400, f"At most {_BULK_MAX} dances at a time")
+    return list(dict.fromkeys(str(n).strip() for n in names if str(n).strip()))
+
+
+@router.post("/dances/restore-bulk")
+async def restore_dances_bulk(
+    body: dict, user: dict = Depends(require_admin_or_editor)
+):
+    """Restore many archived dances at once. Names that are no longer
+    listed (or already in the library) are reported in ``skipped``."""
+    lib_keys = await _library_keys()
+    restored, skipped = [], []
+    for name in _bulk_names(body):
+        try:
+            await _restore_one(name, user, lib_keys)
+            restored.append(name)
+        except HTTPException:
+            skipped.append(name)
+    return {"restored": restored, "skipped": skipped}
+
+
+@router.post("/dances/removed/dismiss-bulk")
+async def dismiss_removed_bulk(
+    body: dict, user: dict = Depends(require_admin_or_editor)
+):
+    """Clear many dances from the Restore archive at once."""
+    removed, skipped = [], []
+    for name in _bulk_names(body):
+        try:
+            await _archived_entry_or_404(name)
+        except HTTPException:
+            skipped.append(name)
+            continue
+        await _record_archive_action(name, "removed", user)
+        removed.append(name)
+    logger.info("Removed %d archived dances by %s", len(removed), user.get("email"))
+    return {"removed": removed, "skipped": skipped}
+
+
+@router.post("/dances/removed/undo")
+async def undo_removed_dances(
+    body: dict, user: dict = Depends(require_admin_or_editor)
+):
+    """Undo a Remove — puts the dances back in the Restore archive.
+    Only ``removed`` decisions are undone (restores stay in the library)."""
+    keys = [_normalise(n) for n in _bulk_names(body)]
+    res = await db.dance_archive_actions.delete_many(
+        {"name_key": {"$in": keys}, "action": "removed"}
+    )
+    return {"undone": int(res.deleted_count or 0)}
 
 @router.get("/dances/{dance_id}")
 async def get_dance(dance_id: str, authorization: Optional[str] = Header(None)):
