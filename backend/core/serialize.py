@@ -60,6 +60,8 @@ def user_to_out(u: dict) -> dict:
         "suspend_until": u.get("suspend_until", "") or "",
         "is_banned": bool(u.get("is_banned", False)),
         "moderation_reason": u.get("moderation_reason", "") or "",
+        # Lets the client skip "What's new" for brand-new sign-ups.
+        "created_at": u.get("created_at", "") or "",
     }
 
 

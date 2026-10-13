@@ -205,9 +205,106 @@ export default function AdminAppVersionScreen() {
               {meta.by ? ` by ${meta.by}` : ""}
             </Text>
           ) : null}
+
+          {token ? <WhatsNewEditor token={token} /> : null}
         </KeyboardAwareScrollView>
       )}
     </SafeAreaView>
+  );
+}
+
+/** "What's new" notes for one version — one line per item, shown once
+ *  on Home to existing members after they update to that version. */
+function WhatsNewEditor({ token }: { token: string }) {
+  const toast = useToast();
+  const [version, setVersion] = useState(APP_VERSION);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const loadNotes = useCallback(async (v: string) => {
+    setErr(null);
+    setLoading(true);
+    try {
+      const r = await api.getWhatsNew(v.trim());
+      setText(r.items.join("\n"));
+    } catch (e: any) {
+      setErr(e?.message || "Couldn't load notes.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadNotes(APP_VERSION);
+  }, [loadNotes]);
+
+  const saveNotes = async () => {
+    setErr(null);
+    setSaving(true);
+    try {
+      const items = text.split("\n").map((l) => l.trim()).filter(Boolean);
+      const r = await api.adminSetWhatsNew(version.trim(), items, token);
+      setText(r.items.join("\n"));
+      toast.success(`What's new for v${r.version} saved`);
+    } catch (e: any) {
+      setErr(e?.message || "Couldn't save notes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.label}>What&apos;s new card</Text>
+      <Text style={styles.help}>
+        Shown once on Home to existing members after they update to this version. Brand-new
+        sign-ups skip it. One item per line; leave empty to hide the card.
+      </Text>
+      <Text style={styles.subLabel}>Version</Text>
+      <TextInput
+        testID="appver-notes-version"
+        value={version}
+        onChangeText={setVersion}
+        onEndEditing={() => loadNotes(version)}
+        autoCapitalize="none"
+        keyboardType="numbers-and-punctuation"
+        style={styles.input}
+      />
+      <Text style={styles.subLabel}>Notes</Text>
+      {loading ? (
+        <ActivityIndicator color={colors.brandPrimary} />
+      ) : (
+        <TextInput
+          testID="appver-notes"
+          value={text}
+          onChangeText={setText}
+          multiline
+          textAlignVertical="top"
+          placeholder={"Smoother sign-up\nFaster dance search"}
+          placeholderTextColor={colors.muted}
+          style={[styles.input, styles.notesInput]}
+        />
+      )}
+      {err ? (
+        <Text testID="appver-notes-error" style={styles.err}>
+          {err}
+        </Text>
+      ) : null}
+      <Pressable
+        testID="appver-notes-save"
+        onPress={saveNotes}
+        disabled={saving || loading}
+        style={[styles.saveBtn, (saving || loading) && { opacity: 0.6 }]}
+      >
+        {saving ? (
+          <ActivityIndicator color={colors.onBrandPrimary} />
+        ) : (
+          <Text style={styles.saveText}>Save notes</Text>
+        )}
+      </Pressable>
+    </View>
   );
 }
 
@@ -242,6 +339,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   label: { fontWeight: "800", color: colors.onSurface, fontSize: 14 },
+  subLabel: { fontWeight: "700", color: colors.onSurfaceSecondary, fontSize: 12 },
+  notesInput: { minHeight: 140, paddingTop: spacing.sm, paddingBottom: spacing.sm, lineHeight: 20 },
   input: {
     minHeight: 48,
     borderWidth: 1,

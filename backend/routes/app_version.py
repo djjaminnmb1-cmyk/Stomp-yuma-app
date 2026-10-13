@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from core.database import db
@@ -89,3 +89,73 @@ async def admin_set_version_policy(
         upsert=True,
     )
     return await _policy()
+
+
+# ------------------------------------------------------------ What's new
+# One-time Home card shown after an update. Notes are stored per version
+# in ``app_settings {_id: "whats_new", notes: {"1_1_0": [...]}}`` (dots
+# are not allowed in Mongo keys, hence ``_vkey``). Versions with no saved
+# notes fall back to ``DEFAULT_WHATS_NEW`` so a release ships with copy.
+
+DEFAULT_WHATS_NEW: dict[str, list[str]] = {
+    "1.1.0": [
+        "Smoother sign-up with a clear Terms checkbox — no more mystery errors",
+        "The keyboard stops hogging the screen on Android",
+        "Friendlier messages when something goes sideways (less robot, more cowboy)",
+        "A heads-up whenever a fresh version is ready to grab",
+        "Instructors: drafts and published dances now live in their own lists",
+    ],
+}
+_MAX_ITEMS = 12
+_MAX_ITEM_LEN = 160
+
+
+def _vkey(version: str) -> str:
+    return version.replace(".", "_")
+
+
+def _check_version(version: str) -> str:
+    v = (version or "").strip()
+    if not _VERSION_RE.match(v):
+        raise HTTPException(400, "Version must look like 1.2.0")
+    return v
+
+
+async def _whats_new(version: str) -> dict:
+    doc = await db.app_settings.find_one({"_id": "whats_new"}) or {}
+    notes = doc.get("notes") or {}
+    items = notes.get(_vkey(version))
+    if items is None:
+        items = DEFAULT_WHATS_NEW.get(version, [])
+    return {"version": version, "items": items}
+
+
+@router.get("/app/whats-new")
+async def get_whats_new(version: str = Query(...)):
+    """Public — the Home card asks for its own build's notes."""
+    return await _whats_new(_check_version(version))
+
+
+class WhatsNewIn(BaseModel):
+    version: str
+    items: list[str] = []
+
+
+@router.put("/admin/whats-new")
+async def admin_set_whats_new(body: WhatsNewIn, user: dict = Depends(require_admin)):
+    version = _check_version(body.version)
+    items = [i.strip() for i in body.items if i and i.strip()]
+    if len(items) > _MAX_ITEMS:
+        raise HTTPException(400, f"Keep it to {_MAX_ITEMS} items or fewer")
+    if any(len(i) > _MAX_ITEM_LEN for i in items):
+        raise HTTPException(400, f"Each item must be {_MAX_ITEM_LEN} characters or fewer")
+    await db.app_settings.update_one(
+        {"_id": "whats_new"},
+        {"$set": {
+            f"notes.{_vkey(version)}": items,
+            "updated_at": now_iso(),
+            "updated_by_email": user.get("email", ""),
+        }},
+        upsert=True,
+    )
+    return await _whats_new(version)

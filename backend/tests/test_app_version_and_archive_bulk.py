@@ -81,6 +81,31 @@ def test_admin_policy_requires_admin():
     assert requests.get(f"{API}/admin/app-version", timeout=20).status_code in (401, 403)
 
 
+def test_whats_new_defaults_save_and_validation(h, mongo):
+    r = requests.get(f"{API}/app/whats-new", params={"version": "1.1.0"}, timeout=20)
+    assert r.status_code == 200 and len(r.json()["items"]) >= 3, r.text
+    assert requests.get(f"{API}/app/whats-new", params={"version": "x"}, timeout=20).status_code == 400
+    assert requests.put(f"{API}/admin/whats-new", json={"version": "9.9.9", "items": ["a"]},
+                        timeout=20).status_code in (401, 403)
+    before = mongo.app_settings.find_one({"_id": "whats_new"})
+    try:
+        r = requests.put(f"{API}/admin/whats-new",
+                         json={"version": "9.9.9", "items": [" One ", "", "Two"]}, headers=h, timeout=20)
+        assert r.status_code == 200, r.text
+        assert r.json() == {"version": "9.9.9", "items": ["One", "Two"]}
+        g = requests.get(f"{API}/app/whats-new", params={"version": "9.9.9"}, timeout=20).json()
+        assert g["items"] == ["One", "Two"]
+        doc = mongo.app_settings.find_one({"_id": "whats_new"})
+        assert doc["notes"]["9_9_9"] == ["One", "Two"]  # dots never become nested keys
+        too_many = requests.put(f"{API}/admin/whats-new",
+                                json={"version": "9.9.9", "items": ["x"] * 13}, headers=h, timeout=20)
+        assert too_many.status_code == 400
+    finally:
+        mongo.app_settings.delete_one({"_id": "whats_new"})
+        if before:
+            mongo.app_settings.insert_one(before)
+
+
 # ------------------------------------------------------- archive bulk/undo
 
 def _archive(h):

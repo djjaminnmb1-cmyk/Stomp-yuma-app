@@ -78,7 +78,7 @@ export function AppVersionGate() {
         >
           <View style={styles.fullBody}>
             <View style={styles.bigOrb}>
-              <Ionicons name="rocket-outline" size={44} color={colors.onBrandPrimary} />
+              <Ionicons name="musical-notes" size={44} color={colors.onBrandPrimary} />
             </View>
             <Text style={styles.fullTitle}>{t("update.required_title")}</Text>
             <Text style={styles.fullText}>{t("update.required_body")}</Text>
@@ -93,7 +93,7 @@ export function AppVersionGate() {
             accessibilityRole="button"
           >
             <Ionicons name="download-outline" size={20} color={colors.onBrandPrimary} />
-            <Text style={styles.primaryBtnText}>{t("update.now")}</Text>
+            <Text style={styles.primaryBtnText}>{t("update.required_button")}</Text>
           </Pressable>
           {!user ? (
             <Pressable

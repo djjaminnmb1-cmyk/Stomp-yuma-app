@@ -47,6 +47,7 @@ export type User = {
   // startup and shows the Terms Accept screen if it doesn't match.
   accepted_terms_version?: string;
   accepted_terms_at?: string;
+  created_at?: string;
   // Moderation state. Any of these truthy means the server is
   // already refusing the auth token (403); we surface them just so
   // the client can render a friendly "your account is on hold" screen
@@ -1517,6 +1518,16 @@ export const api = {
       token
     ),
   getVersionPolicy: () => req<VersionPolicy>("/app/version-policy"),
+  getWhatsNew: (version: string) =>
+    req<{ version: string; items: string[] }>(
+      `/app/whats-new?version=${encodeURIComponent(version)}`
+    ),
+  adminSetWhatsNew: (version: string, items: string[], token: string) =>
+    req<{ version: string; items: string[] }>(
+      "/admin/whats-new",
+      { method: "PUT", body: JSON.stringify({ version, items }) },
+      token
+    ),
   adminGetVersionPolicy: (token: string) =>
     req<VersionPolicy>("/admin/app-version", {}, token),
   adminSetVersionPolicy: (

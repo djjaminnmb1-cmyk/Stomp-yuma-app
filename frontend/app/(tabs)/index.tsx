@@ -14,6 +14,7 @@ import { WeeklyRecapCard } from "@/src/components/WeeklyRecapCard";
 import { DanceOfTheDayCard } from "@/src/components/DanceOfTheDayCard";
 import { FollowedInstructorHub } from "@/src/components/FollowedInstructorHub";
 import { StreakSaveCard } from "@/src/components/StreakSaveCard";
+import { WhatsNewCard } from "@/src/components/WhatsNewCard";
 import { useTranslation } from "@/src/i18n";
 
 export default function Home() {
@@ -146,6 +147,11 @@ export default function Home() {
             </Pressable>
           ) : null}
         </View>
+
+        {/* One-time "What's new" card after an app update — renders
+            nothing once dismissed, for new sign-ups, or when the admin
+            hasn't written notes for this version. */}
+        <WhatsNewCard />
 
         {/* Dance Of The Day — one featured dance each day, prioritising
             unpracticed library content. Hero sized card that lives

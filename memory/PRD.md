@@ -2489,3 +2489,10 @@ No schema changes. Reuses existing `users.dotd_streak_current`,
 - Restore archive: Select mode + Select-all (respects search) + bulk Restore/Remove bar; single Remove has no confirm; in-modal Undo bar (6s). Endpoints `POST /api/dances/restore-bulk`, `/api/dances/removed/dismiss-bulk`, `/api/dances/removed/undo`.
 - Tests: `tests/test_app_version_and_archive_bulk.py` + `test_restore_archive.py` 10/10; UI self-tested via screenshots (banner, dismiss persistence, blocking screen, admin bypass, admin screen validation, bulk remove+undo, single remove+undo).
 - Note: old builds (≤1.0.0) don't contain the gate — only builds from 1.1.0 onward react to the policy. Web preview needed Metro cache refresh to pick up the version bump.
+
+## Witty update copy + What's New card — 2026-10-13
+- Update screen copy (8 locales): "You're dancing to an old song 🎶" / "This version is officially out of step…quicker than a 32-count." Button "Get Back in Line" (`update.required_button`), music-notes icon. Banner: "New moves just dropped 💃" / "Version {version} is warmed up and ready — grab it before the next song starts."
+- What's New: `GET /api/app/whats-new?version=` (public; falls back to `DEFAULT_WHATS_NEW` in routes/app_version.py — 1.1.0 notes prefilled), `PUT /api/admin/whats-new {version, items}` (admin; ≤12 items, ≤160 chars; stored `app_settings {_id:"whats_new", notes:{"1_1_0":[...]}}`).
+- `src/components/WhatsNewCard.tsx` on Home (top, above DOTD): shows once per version to existing members (AsyncStorage `whatsNew.lastSeenVersion`); accounts < 24 h old skip silently. `user_to_out` now returns `created_at`.
+- Admin → App Version screen: "What's new card" editor (version + one-line-per-item notes + Save notes).
+- Tests: test_app_version_and_archive_bulk.py 7/7; UI verified via screenshots (blocking copy, card show/dismiss/persist, new-member skip, admin editor load/save).
