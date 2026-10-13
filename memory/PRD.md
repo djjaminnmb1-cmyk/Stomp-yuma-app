@@ -2496,3 +2496,7 @@ No schema changes. Reuses existing `users.dotd_streak_current`,
 - `src/components/WhatsNewCard.tsx` on Home (top, above DOTD): shows once per version to existing members (AsyncStorage `whatsNew.lastSeenVersion`); accounts < 24 h old skip silently. `user_to_out` now returns `created_at`.
 - Admin → App Version screen: "What's new card" editor (version + one-line-per-item notes + Save notes).
 - Tests: test_app_version_and_archive_bulk.py 7/7; UI verified via screenshots (blocking copy, card show/dismiss/persist, new-member skip, admin editor load/save).
+
+## Android EAS build fix — 2026-10-13
+- Build failed at `eas project:init`: "Cannot automatically write to dynamic config at: app.config.js" — app.config.js exported a static object, ignoring the pipeline-written app.json (extra.eas.projectId, slug, version, versionCode).
+- Fix: app.config.js now exports a function that merges pipeline app.json fields: name (unless "App"), slug, higher of the two versions, android.versionCode, ios.buildNumber, extra.eas. Store identifiers (android.package com.stompinyuma.app, iOS bundleIdentifier) stay from app.config.js. Verified with `npx expo config` in a simulated pipeline dir.

@@ -50,8 +50,38 @@ const privacyPolicyUrl =
     ? `${process.env.EXPO_PUBLIC_BACKEND_URL.replace(/\/$/, "")}/api/legal/privacy`
     : "https://stompin-yuma-app.preview.emergentagent.com/api/legal/privacy");
 
-module.exports = {
-  expo: {
+// The Emergent build pipeline writes an ``app.json`` right before
+// ``eas project:init`` / ``eas build`` with the build identity:
+// name, slug, version, android.versionCode, ios.buildNumber and
+// extra.eas.projectId. A dynamic config that exports a plain object
+// IGNORES app.json, so EAS never saw the projectId and failed with
+// "Cannot automatically write to dynamic config". We read it here and
+// merge those fields in (store identifiers below stay authoritative).
+const appJsonPath = path.join(__dirname, "app.json");
+let pipelineExpo = {};
+try {
+  if (fs.existsSync(appJsonPath)) {
+    pipelineExpo = JSON.parse(fs.readFileSync(appJsonPath, "utf8")).expo || {};
+  }
+} catch (_) {
+  pipelineExpo = {};
+}
+
+/** Higher of two "X.Y.Z" versions, so a stale default in the build form
+ *  can never downgrade the version baked into this file (and vice versa). */
+function higherVersion(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  const pa = String(a).split(".").map((n) => parseInt(n, 10) || 0);
+  const pb = String(b).split(".").map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d > 0 ? a : b;
+  }
+  return a;
+}
+
+const baseExpo = {
     name: "Stompin' Ground Yuma",
     slug: "stompin-ground-yuma",
     version: "1.1.0",
@@ -184,5 +214,28 @@ module.exports = {
       // working after the app.json → app.config.js migration.
       privacyPolicyUrl,
     },
-  },
+};
+
+module.exports = () => {
+  const p = pipelineExpo;
+  return {
+    ...baseExpo,
+    // Build-form name wins (ignore the pipeline's generic "App" fallback).
+    name: p.name && p.name !== "App" ? p.name : baseExpo.name,
+    // Slug MUST match the EAS project behind extra.eas.projectId.
+    slug: p.slug || baseExpo.slug,
+    version: higherVersion(baseExpo.version, p.version),
+    ios: {
+      ...baseExpo.ios,
+      ...(p.ios && p.ios.buildNumber ? { buildNumber: p.ios.buildNumber } : {}),
+    },
+    android: {
+      ...baseExpo.android,
+      ...(p.android && p.android.versionCode ? { versionCode: p.android.versionCode } : {}),
+    },
+    extra: {
+      ...baseExpo.extra,
+      ...(p.extra && p.extra.eas ? { eas: p.extra.eas } : {}),
+    },
+  };
 };
