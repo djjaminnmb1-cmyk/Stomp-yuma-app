@@ -72,6 +72,16 @@ RETENTION_SECONDS = 90 * 24 * 60 * 60  # 90 days
 _INDEXES_READY = False
 
 
+def _retention_cutoff() -> str:
+    """ISO timestamp of the oldest row the feed still surfaces. Retention
+    is enforced at READ time (rows older than 90 days are simply hidden)
+    rather than by a background hard-delete, so no history is destroyed."""
+    from datetime import datetime, timedelta, timezone
+    return (
+        datetime.now(timezone.utc) - timedelta(seconds=RETENTION_SECONDS)
+    ).isoformat()
+
+
 async def ensure_indexes() -> None:
     """One-shot per process: TTL on ``created_at`` + lookup indexes.
 
@@ -85,9 +95,9 @@ async def ensure_indexes() -> None:
         return
     try:
         # Mongo TTL only works on native date fields — we store ISO
-        # strings for consistency with the rest of the app, so instead
-        # of a TTL index we rely on a daily scheduler sweep (see
-        # ``services/scheduler.py::purge_old_notifications``).
+        # strings for consistency with the rest of the app, so the
+        # 90-day window is applied as a read-time filter instead
+        # (see ``_retention_cutoff``).
         await db.notification_events.create_index(
             [("user_id", 1), ("created_at", -1)],
             name="user_created_desc",
@@ -158,8 +168,10 @@ async def list_for_user(
     that cursor (keyset pagination — stable across inserts).
     """
     q: dict[str, Any] = {"user_id": user_id}
+    created: dict[str, str] = {"$gte": _retention_cutoff()}
     if before_created_at:
-        q["created_at"] = {"$lt": before_created_at}
+        created["$lt"] = before_created_at
+    q["created_at"] = created
     cur = (
         db.notification_events.find(q, {"_id": 0})
         .sort("created_at", -1)
@@ -172,7 +184,11 @@ async def count_unread(user_id: str) -> int:
     try:
         return int(
             await db.notification_events.count_documents(
-                {"user_id": user_id, "read_at": None}
+                {
+                    "user_id": user_id,
+                    "read_at": None,
+                    "created_at": {"$gte": _retention_cutoff()},
+                }
             )
         )
     except Exception:
@@ -207,26 +223,3 @@ async def delete_event(user_id: str, event_id: str) -> bool:
 async def purge_user(user_id: str) -> None:
     """Called from account-deletion."""
     await db.notification_events.delete_many({"user_id": user_id})
-
-
-async def purge_expired() -> int:
-    """Daily scheduler sweep — delete any row older than
-    ``RETENTION_SECONDS``. Returns the count deleted."""
-    from datetime import datetime, timedelta, timezone
-    cutoff = (
-        datetime.now(timezone.utc) - timedelta(seconds=RETENTION_SECONDS)
-    ).isoformat()
-    try:
-        res = await db.notification_events.delete_many(
-            {"created_at": {"$lt": cutoff}}
-        )
-        n = int(res.deleted_count or 0)
-        if n:
-            logger.info(
-                f"notification_feed.purge_expired removed {n} rows "
-                f"older than {cutoff}"
-            )
-        return n
-    except Exception as e:
-        logger.warning(f"notification_feed.purge_expired failed: {e}")
-        return 0

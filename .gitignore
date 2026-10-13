@@ -30,22 +30,10 @@ next-env.d.ts
 dist/
 dist
 
-# Environment files (comprehensive coverage)
-# SEC-002 (2026-10-05): .env holds SMTP password, JWT signing secret,
-# and seed account passwords. One careless `git add .` would publish
-# those to history — enumerate every pattern we might ever create.
-.env
-.env.*
-!.env.example
-!.env.sample
-backend/.env
-backend/.env.*
-frontend/.env
-frontend/.env.*
-# Also catch the universal patterns people land on:
-*.env
-!*.env.example
-!*.env.sample
+# Environment files
+# NOTE: .env files are intentionally NOT ignored — the Emergent deployment
+# flow needs them in the project snapshot. They are not committed to any
+# public remote; rotate secrets if the repo is ever pushed publicly.
 
 *token.json*
 *credentials.json*

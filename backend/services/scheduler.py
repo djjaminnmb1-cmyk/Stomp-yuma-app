@@ -115,18 +115,6 @@ def start_scheduler() -> None:
             replace_existing=True,
             next_run_time=datetime.now(timezone.utc) + timedelta(seconds=20),
         )
-        # Notification-feed retention sweep — once a day, delete rows
-        # older than 90 days so the collection never balloons. 03:30
-        # UTC is a quiet window globally.
-        from services.notification_feed import purge_expired
-        scheduler.add_job(
-            purge_expired,
-            "interval",
-            hours=24,
-            id="notification_feed_purge",
-            replace_existing=True,
-            next_run_time=datetime.now(timezone.utc) + timedelta(minutes=10),
-        )
         # Refresh-recommendations drift scan — runs once every 24h at
         # 08:00 UTC (03:00 AZ time, well outside the busy dance-class
         # window). Rate-limited internally to ~1 req/sec so upstream

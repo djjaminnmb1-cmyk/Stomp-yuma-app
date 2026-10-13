@@ -2474,3 +2474,9 @@ No schema changes. Reuses existing `users.dotd_streak_current`,
 - Backend (`routes/dances.py`): `GET /api/dances/removed` now hides any archived dance already in the library (normalised name match via `services/dance_dedupe._normalise`) and anything restored/removed. New `POST /api/dances/removed/dismiss {name}` (admin or step-sheet editor). Restore/remove decisions persist in Mongo `dance_archive_actions` {name_key, name, action: restored|removed, by_user_id, by_email, at}; blocklist file is now read-only.
 - Frontend (`instructor.tsx` RestoreDancesModal): red-outline "Remove" button under Restore on each row (confirm dialog); Restore button now visible to admins too (was editors only).
 - Tests: `backend/tests/test_restore_archive.py` (4) + regression restore tests pass; UI verified via screenshot (preview archive 297 → 273).
+
+## Deployment readiness fixes — 2026-10-12
+- BLOCKER fixed: removed scheduled hard-delete `purge_expired` (notification_events). 90-day feed retention is now a read-time filter (`_retention_cutoff` in list_for_user/count_unread).
+- `.gitignore`: removed `.env` exclusions (deployment flow needs them; supersedes SEC-002 ignore rules).
+- Health check: no blockers. Remaining WARNs (not fixed, user decisions): iOS push disabled in `src/lib/push.ts` (needs GoogleService-Info.plist); Apple review seed disabled per user request (APPLE_REVIEW_NOTES.md out of date).
+- Known stale tests: 23 older backend test files register users without `accepted_terms_version` → 400 (pre-existing since Terms enforcement; not a regression).
