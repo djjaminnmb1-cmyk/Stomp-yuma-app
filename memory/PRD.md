@@ -2504,3 +2504,4 @@ No schema changes. Reuses existing `users.dotd_streak_current`,
 ## iOS push enabled — 2026-10-13
 - Per Emergent push playbook: iOS uses native APNs token (`getDevicePushTokenAsync`) via the Emergent relay; NO GoogleService-Info.plist / Firebase needed. Removed the `if (Platform.OS === "ios") return;` early-exit in `src/lib/push.ts`. User must upload an APNs `.p8` auth key in the build UI when generating the iOS build.
 - Not yet built: denied-permission weekly "Open Settings" nudge (playbook checklist item).
+- 2026-10-13 follow-up: app.config.js function now returns `{ expo: {...} }` (Expo's documented dynamic form) so detectors that look for an `expo` field still recognise the app (deployment agent reported "Not an Expo app" with the bare-object return). Verified public + prebuild config resolve (dev and simulated pipeline app.json).

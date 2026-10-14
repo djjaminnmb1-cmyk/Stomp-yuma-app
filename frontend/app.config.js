@@ -215,24 +215,28 @@ const baseExpo = {
 
 module.exports = () => {
   const p = pipelineExpo;
+  // Returned under an explicit `expo` key (Expo's documented dynamic
+  // form) so tools that look for the `expo` field still detect the app.
   return {
-    ...baseExpo,
-    // Build-form name wins (ignore the pipeline's generic "App" fallback).
-    name: p.name && p.name !== "App" ? p.name : baseExpo.name,
-    // Slug MUST match the EAS project behind extra.eas.projectId.
-    slug: p.slug || baseExpo.slug,
-    version: higherVersion(baseExpo.version, p.version),
-    ios: {
-      ...baseExpo.ios,
-      ...(p.ios && p.ios.buildNumber ? { buildNumber: p.ios.buildNumber } : {}),
-    },
-    android: {
-      ...baseExpo.android,
-      ...(p.android && p.android.versionCode ? { versionCode: p.android.versionCode } : {}),
-    },
-    extra: {
-      ...baseExpo.extra,
-      ...(p.extra && p.extra.eas ? { eas: p.extra.eas } : {}),
+    expo: {
+      ...baseExpo,
+      // Build-form name wins (ignore the pipeline's generic "App" fallback).
+      name: p.name && p.name !== "App" ? p.name : baseExpo.name,
+      // Slug MUST match the EAS project behind extra.eas.projectId.
+      slug: p.slug || baseExpo.slug,
+      version: higherVersion(baseExpo.version, p.version),
+      ios: {
+        ...baseExpo.ios,
+        ...(p.ios && p.ios.buildNumber ? { buildNumber: p.ios.buildNumber } : {}),
+      },
+      android: {
+        ...baseExpo.android,
+        ...(p.android && p.android.versionCode ? { versionCode: p.android.versionCode } : {}),
+      },
+      extra: {
+        ...baseExpo.extra,
+        ...(p.extra && p.extra.eas ? { eas: p.extra.eas } : {}),
+      },
     },
   };
 };
